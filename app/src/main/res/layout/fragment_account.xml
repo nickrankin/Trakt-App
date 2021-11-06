@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/accountfragment_swipe_layout"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".ui.auth.AccountFragment">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <ProgressBar
+            android:id="@+id/accountfragment_progressbar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <ImageView
+            android:id="@+id/accountfragment_avatar"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:src="@drawable/ic_baseline_sentiment_satisfied_alt_24"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <TextView
+            android:id="@+id/accountfragment_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="8dp"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textAllCaps="true"
+            app:layout_constraintStart_toEndOf="@id/accountfragment_avatar"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/accountfragment_privacy"
+            tools:text="John Smith (jsmith)"/>
+        <ImageView
+            android:id="@+id/accountfragment_privacy"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginStart="8dp"
+            app:layout_constraintTop_toTopOf="@id/accountfragment_name"
+            app:layout_constraintStart_toEndOf="@id/accountfragment_name"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:src="@drawable/ic_baseline_lock_24" />
+        <TextView
+            android:id="@+id/accountfragment_joined_trakt"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            app:layout_constraintTop_toBottomOf="@id/accountfragment_name"
+            app:layout_constraintStart_toStartOf="@id/accountfragment_name"
+            app:layout_constraintEnd_toEndOf="@id/accountfragment_name"
+            tools:text="Joined Trakt: 01/01/2010" />
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/accountfragment_topbarrier"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="accountfragment_avatar,accountfragment_name,accountfragment_joined_trakt,accountfragment_privacy" />
+
+        <TextView
+            android:id="@+id/accountfragment_age"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textStyle="bold"
+            app:layout_constraintTop_toBottomOf="@id/accountfragment_topbarrier"
+            app:layout_constraintStart_toStartOf="@id/accountfragment_avatar"
+            tools:text="Age: 33" />
+
+        <TextView
+            android:id="@+id/accountfragment_gender"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textStyle="bold"
+            app:layout_constraintTop_toBottomOf="@id/accountfragment_age"
+            app:layout_constraintStart_toStartOf="@id/accountfragment_avatar"
+            tools:text="Gender: Male" />
+
+        <TextView
+            android:id="@+id/accountfragment_location"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textStyle="bold"
+            app:layout_constraintTop_toBottomOf="@id/accountfragment_gender"
+            app:layout_constraintStart_toStartOf="@id/accountfragment_gender"
+            tools:text="Location: Ireland" />
+
+        <Button
+            android:id="@+id/accountfragment_logoff_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@id/accountfragment_location"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="Logoff" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+
+</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

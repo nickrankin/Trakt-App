@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/showdetailsactivity_swipe_refresh_layout"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:id="@+id/showdetailsactivity_poster"
+            android:layout_width="85dp"
+            android:layout_height="125dp"
+            android:layout_margin="8dp"
+            android:src="@drawable/ic_trakt_svgrepo_com"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/showdetailsactivity_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:textAllCaps="true"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_poster"
+            app:layout_constraintTop_toTopOf="@id/showdetailsactivity_poster"
+            tools:text="The Simpsons" />
+
+        <TextView
+            android:id="@+id/showdetailsactivity_first_aired"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/rounded_corners_background"
+            android:paddingStart="8dp"
+            android:paddingTop="2dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="2dp"
+            android:textColor="@android:color/white"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="@id/showdetailsactivity_title"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_title"
+            tools:text="Premiered: 01/01/1970" />
+
+        <TextView
+            android:id="@+id/showdetailsactivity_directed"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="13sp"
+            app:layout_constraintEnd_toEndOf="@id/showdetailsactivity_title"
+            app:layout_constraintStart_toStartOf="@id/showdetailsactivity_title"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_first_aired"
+            tools:text="Directed by: John Smith, Joe Bloggs" />
+
+        <TextView
+            android:id="@+id/showdetailsactivity_overview"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:textSize="13sp"
+            app:layout_constraintEnd_toEndOf="@id/showdetailsactivity_first_aired"
+            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_poster"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_directed"
+            tools:text="Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?" />
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/showdetailsactivity_topbarrier"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="showdetailsactivity_title,showdetailsactivity_directed,showdetailsactivity_first_aired,showdetailsactivity_overview,showdetailsactivity_poster" />
+
+
+        <TextView
+            android:id="@+id/showdetailsactivity_progress_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Show Progress"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:textAllCaps="true"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            app:barrierAllowsGoneWidgets="true"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_topbarrier"
+            app:layout_constraintStart_toStartOf="parent"
+            android:visibility="gone" />
+
+        <ProgressBar
+            android:id="@+id/showdetailsactivity_show_progress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            tools:progress="55"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_progress_title"
+            app:barrierAllowsGoneWidgets="true"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/showdetailsactivity_cast_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:text="Cast"
+            android:textAllCaps="true"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            app:barrierAllowsGoneWidgets="true"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_show_progress"
+            android:visibility="gone" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/showdetailsactivity_cast_recycler"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="8dp"
+            android:nestedScrollingEnabled="false"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:barrierAllowsGoneWidgets="true"
+            app:layout_constraintStart_toStartOf="@id/showdetailsactivity_cast_title"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_cast_title"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/showdetailsactivity_next_episode_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Next Episode"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:textAllCaps="true"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            app:barrierAllowsGoneWidgets="true"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_cast_recycler"
+            app:layout_constraintStart_toStartOf="parent"
+            android:visibility="gone" />
+
+        <include android:id="@+id/showdetailsactivity_next_episode" layout="@layout/episode_layout_item"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            app:barrierAllowsGoneWidgets="true"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_next_episode_title"
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/showdetailsactivity_seasons_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:text="Seasons"
+            android:textAllCaps="true"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_next_episode" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/showdetailsactivity_seasons_recycler"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_seasons_title"
+            app:layout_constraintStart_toStartOf="@id/showdetailsactivity_seasons_title"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</RelativeLayout>

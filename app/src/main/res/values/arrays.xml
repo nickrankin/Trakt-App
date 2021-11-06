@@ -1,0 +1,22 @@
+<resources>
+    <!-- Reply Preference -->
+    <string-array name="reply_entries">
+        <item>Reply</item>
+        <item>Reply to all</item>
+    </string-array>
+
+    <string-array name="reply_values">
+        <item>reply</item>
+        <item>reply_all</item>
+    </string-array>
+
+    <string-array name="date_format_label">
+        <item>(EU) day-month-year hour:minute</item>
+        <item>(US) month-day-year hour:minute</item>
+    </string-array>
+
+    <string-array name="date_format_values">
+        <item>dd-MM-YYYY HH:MM</item>
+        <item>MM-dd-YYYY HH:MM</item>
+    </string-array>
+</resources>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/navigation_home">
+
+    <fragment
+        android:id="@+id/navigation_home"
+        android:name="com.nickrankin.traktapp.ui.shows.OverviewFragment"
+        android:label="Upcoming Shows"
+        tools:layout="@layout/fragment_home" />
+
+    <fragment
+        android:id="@+id/navigation_watching_shows"
+        android:name="com.nickrankin.traktapp.ui.shows.WatchingFragment"
+        android:label="Currently Watching"
+        tools:layout="@layout/fragment_watching_shows" />
+
+    <fragment
+        android:id="@+id/navigation_collected_shows"
+        android:name="com.nickrankin.traktapp.ui.shows.CollectedShowsFragment"
+        android:label="Collected Shows"
+        tools:layout="@layout/fragment_notifications" />
+</navigation>

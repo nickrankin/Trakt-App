@@ -1,0 +1,23 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+    <PreferenceCategory app:title="General">
+        <ListPreference
+            app:key="date_format"
+            app:title="Default Date Format"
+            app:useSimpleSummaryProvider="true"
+            app:defaultValue="dd-MM-YYYY HH:MM"
+            app:entries="@array/date_format_label"
+            app:entryValues="@array/date_format_values" />
+
+        <CheckBoxPreference
+            app:key="enable_traked_show_notification"
+            app:title="Enable Show Tracking notifications"
+            app:defaultValue="true"
+            app:summary="If checked enables push notifications for shows that you track 24 hours before new episode airs." />
+
+
+        <Preference
+            app:key="trakt_connect"
+            app:title="Connect to Trakt"
+            app:summary="Connect your Trakt account."/>
+    </PreferenceCategory>
+</PreferenceScreen>
