@@ -172,7 +172,7 @@ class CollectedShowsFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener 
         recyclerView.adapter = adapter
     }
 
-    private fun navigateToShow(traktId: Int, tmdbId: Int, langauge: String) {
+    private fun navigateToShow(traktId: Int, tmdbId: Int, langauge: String?) {
         val intent = Intent(context, ShowDetailsActivity::class.java)
         intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
         intent.putExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, tmdbId)

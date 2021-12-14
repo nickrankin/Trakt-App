@@ -21,7 +21,7 @@ class SeasonEpisodesViewModel @Inject constructor(private val savedStateHandle: 
     private val showTraktId: Int = savedStateHandle.get(SeasonEpisodesRepository.SHOW_TRAKT_ID_KEY) ?: 0
     private val tmdbShowId: Int = savedStateHandle.get(SeasonEpisodesRepository.SHOW_TMDB_ID_KEY) ?: 0
     private val seasonNumber: Int = savedStateHandle.get(SeasonEpisodesRepository.SEASON_NUMBER_KEY) ?: 0
-    private val language: String = savedStateHandle.get(SeasonEpisodesRepository.LANGUAGE_KEY) ?: "en"
+    private val language: String? = savedStateHandle.get(SeasonEpisodesRepository.LANGUAGE_KEY)
 
     suspend fun season() = repository.getSeason(tmdbShowId, seasonNumber)
 

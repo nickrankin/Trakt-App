@@ -19,7 +19,7 @@ data class TmShow(
     val homepage: String?,
     val images: Images?,
     val in_production: Boolean,
-    val languages: List<String>,
+    val languages: List<String?>?,
     val first_aired: Date?,
     val last_air_date: Date?,
     val last_aired_episode: BaseTvEpisode?,

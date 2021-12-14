@@ -31,7 +31,7 @@ class CollectedShowsAdapter(private val sharedPreferences: SharedPreferences, pr
                 DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)))
             collectedentryitemOverview.text = currentItem.show_overview
 
-            imageLoader.loadImage(currentItem.show_tmdb_id, "en,null", callback = {posterPath ->
+            imageLoader.loadImage(currentItem.show_tmdb_id, currentItem.language, callback = {posterPath ->
                 if(posterPath.isNotEmpty()) {
                     glide
                         .load(AppConstants.TMDB_POSTER_URL + posterPath)

@@ -9,7 +9,7 @@ import org.threeten.bp.OffsetDateTime
 data class CollectedShow(@PrimaryKey
                          val show_trakt_id: Int,
                          val show_tmdb_id: Int,
-                         val language: String,
+                         val language: String?,
                          val collected_at: OffsetDateTime?,
                          val last_updated_at: OffsetDateTime?,
                          val last_watched_at: OffsetDateTime?,

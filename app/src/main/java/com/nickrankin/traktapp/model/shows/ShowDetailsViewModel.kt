@@ -56,8 +56,8 @@ class ShowDetailsViewModel @Inject constructor(
 
     val traktId: Int = savedStateHandle.get(ShowDetailsRepository.SHOW_TRAKT_ID_KEY) ?: 0
     private val tmdbId: Int = savedStateHandle.get(ShowDetailsRepository.SHOW_TMDB_ID_KEY) ?: 0
-    private val language: String =
-        savedStateHandle.get(ShowDetailsRepository.SHOW_LANGUAGE_KEY) ?: "en"
+    private val language: String? =
+        savedStateHandle.get(ShowDetailsRepository.SHOW_LANGUAGE_KEY)
 
     private val eventChannel = Channel<Event>()
     val events = eventChannel.receiveAsFlow()

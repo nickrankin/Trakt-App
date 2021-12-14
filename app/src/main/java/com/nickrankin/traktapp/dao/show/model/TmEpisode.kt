@@ -10,6 +10,7 @@ data class TmEpisode(
     @PrimaryKey val tmdb_id: Int,
     val show_tmdb_id: Int,
     val show_trakt_id: Int,
+    val language: String?,
     val season_number: Int?,
     val episode_number: Int?,
     val production_code: String?,

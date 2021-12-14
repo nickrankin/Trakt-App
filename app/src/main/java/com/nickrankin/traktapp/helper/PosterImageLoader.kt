@@ -16,7 +16,7 @@ class PosterImageLoader @Inject constructor(private val tmdbApi: TmdbApi, privat
     private val showPosterImagesDao = imagesDatabase.showPosterImagesDao()
     val scope = CoroutineScope(Dispatchers.IO)
     val mainThreadLopper = Handler(Looper.getMainLooper())
-    fun loadImage(tmbId: Int, language: String, callback: (posterPath: String) -> Unit) {
+    fun loadImage(tmbId: Int, language: String?, callback: (posterPath: String) -> Unit) {
         scope.launch {
 
             val cachedPosters = showPosterImagesDao.getPoster(tmbId)
@@ -28,7 +28,7 @@ class PosterImageLoader @Inject constructor(private val tmdbApi: TmdbApi, privat
                     }
             } else {
                 try {
-                    val images = tmdbApi.tmTvService().images(tmbId, language)
+                    val images = tmdbApi.tmTvService().images(tmbId, getTmdbLanguage(language))
 
                     if(images.posters?.isNotEmpty() == true) {
                         showPosterImagesDao.insert(

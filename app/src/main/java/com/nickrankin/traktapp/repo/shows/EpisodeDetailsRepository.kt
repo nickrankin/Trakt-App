@@ -10,6 +10,7 @@ import com.nickrankin.traktapp.dao.show.model.TmEpisode
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
 import com.nickrankin.traktapp.dao.watched.WatchedHistoryDatabase
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.helper.getTmdbLanguage
 import com.nickrankin.traktapp.helper.networkBoundResource
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.tmdb2.entities.AppendToResponse
@@ -41,7 +42,7 @@ class EpisodeDetailsRepository @Inject constructor(
         showTmdbId: Int,
         seasonNumber: Int,
         episodeNumber: Int,
-        language: String,
+        language: String?,
         shouldRefresh: Boolean
     ) = networkBoundResource(
         query = {
@@ -52,7 +53,7 @@ class EpisodeDetailsRepository @Inject constructor(
                 showTmdbId,
                 seasonNumber,
                 episodeNumber,
-                language,
+                getTmdbLanguage(language),
                 AppendToResponse(
                     AppendToResponseItem.CREDITS,
                     AppendToResponseItem.TV_CREDITS,
@@ -67,7 +68,7 @@ class EpisodeDetailsRepository @Inject constructor(
         saveFetchResult = { tvEpisode ->
 
             showsDatabase.withTransaction {
-               episodesDao.insert(listOf(convertEpisode(showTraktId, showTmdbId, tvEpisode)))
+               episodesDao.insert(listOf(convertEpisode(showTraktId, showTmdbId, language, tvEpisode)))
             }
 
         }
@@ -76,6 +77,7 @@ class EpisodeDetailsRepository @Inject constructor(
     private fun convertEpisode(
         showTraktId: Int,
         showTmdbId: Int,
+        language: String?,
         tvEpisode: TvEpisode
     ): TmEpisode {
 
@@ -83,6 +85,7 @@ class EpisodeDetailsRepository @Inject constructor(
             tvEpisode.id ?: 0,
             showTmdbId,
             showTraktId,
+            language,
             tvEpisode.season_number ?: 0,
             tvEpisode.episode_number ?: 0,
             tvEpisode.production_code,
@@ -130,7 +133,7 @@ class EpisodeDetailsRepository @Inject constructor(
                     historyEntry.id,
                     historyEntry.episode?.ids?.trakt ?: 0,
                     historyEntry.episode?.ids?.tmdb ?: 0,
-                    historyEntry.show?.language ?: "en",
+                    historyEntry.show?.language,
                     historyEntry.show?.ids?.trakt ?: 0,
                     null,
                     historyEntry.watched_at,

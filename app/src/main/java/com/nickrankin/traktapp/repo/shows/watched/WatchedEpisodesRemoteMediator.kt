@@ -184,7 +184,7 @@ class WatchedEpisodesRemoteMediator(
                     entry.id,
                     entry.episode?.ids?.trakt ?: 0,
                     entry.episode?.ids?.tmdb ?: 0,
-                    entry.show?.language ?: "en",
+                    entry.show?.language,
                     entry.show?.ids?.trakt ?: 0,
                     entry.show?.ids?.tmdb ?: 0,
                     entry.watched_at,

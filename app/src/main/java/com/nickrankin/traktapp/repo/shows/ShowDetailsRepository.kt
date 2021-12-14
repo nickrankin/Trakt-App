@@ -9,6 +9,7 @@ import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.show.model.*
 import com.nickrankin.traktapp.dao.watched.WatchedHistoryDatabase
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.helper.getTmdbLanguage
 import com.nickrankin.traktapp.helper.networkBoundResource
 import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
 import com.nickrankin.traktapp.repo.TrackedEpisodesRepository
@@ -40,12 +41,12 @@ class ShowDetailsRepository @Inject constructor(private val traktApi: TraktApi, 
     val processChannel = Channel<BaseShow>()
     val trackingStatusChannel = Channel<Boolean>()
 
-    fun getShowSummary(showTraktId: Int, showTmdbId: Int, language: String, shouldRefresh: Boolean) = networkBoundResource(
+    fun getShowSummary(showTraktId: Int, showTmdbId: Int, language: String?, shouldRefresh: Boolean) = networkBoundResource(
         query = {
                 tmShowDao.getShow(showTmdbId)
         },
         fetch = {
-                tmdbApi.tmTvService().tv(showTmdbId, language+",null", AppendToResponse(AppendToResponseItem.CREDITS, AppendToResponseItem.TV_CREDITS, AppendToResponseItem.EXTERNAL_IDS, AppendToResponseItem.VIDEOS))
+                tmdbApi.tmTvService().tv(showTmdbId, getTmdbLanguage(language), AppendToResponse(AppendToResponseItem.CREDITS, AppendToResponseItem.TV_CREDITS, AppendToResponseItem.EXTERNAL_IDS, AppendToResponseItem.VIDEOS))
         },
         shouldFetch = { tmShow ->
             tmShow == null || shouldRefresh
@@ -55,7 +56,7 @@ class ShowDetailsRepository @Inject constructor(private val traktApi: TraktApi, 
                 tmSeasonsDao.deleteAllSeasonsForShow(showTmdbId)
 
                 tmShowDao.insertShow(convertShow(showTraktId, tvShow))
-                tmSeasonsDao.insertSeasons(convertSeasons(showTraktId, showTmdbId, tvShow.seasons ?: emptyList()))
+                tmSeasonsDao.insertSeasons(convertSeasons(showTraktId, showTmdbId, language, tvShow.seasons ?: emptyList()))
             }
         }
     )
@@ -95,7 +96,7 @@ class ShowDetailsRepository @Inject constructor(private val traktApi: TraktApi, 
         )
     }
 
-    private fun convertSeasons(showTraktId: Int, showTmdbId: Int, seasons: List<TvSeason>): List<TmSeason> {
+    private fun convertSeasons(showTraktId: Int, showTmdbId: Int, language: String?, seasons: List<TvSeason>): List<TmSeason> {
         val tmSeasons: MutableList<TmSeason> = mutableListOf()
 
         seasons.map { tvSeason ->
@@ -104,6 +105,7 @@ class ShowDetailsRepository @Inject constructor(private val traktApi: TraktApi, 
                     tvSeason.id ?: 0,
                     showTmdbId,
                     showTraktId,
+                    language,
                     tvSeason.name ?: "",
                     tvSeason.overview ?: "",
                     tvSeason.credits,

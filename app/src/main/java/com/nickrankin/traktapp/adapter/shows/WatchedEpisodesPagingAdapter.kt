@@ -1,7 +1,6 @@
 package com.nickrankin.traktapp.adapter.shows
 
 import android.content.SharedPreferences
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.paging.PagingDataAdapter
@@ -33,7 +32,7 @@ class WatchedEpisodesPagingAdapter(private val sharedPreferences: SharedPreferen
             watchedentryitemSeasonEpisodeNumber.text = "Season ${currentItem?.episode_season} Episode ${currentItem?.episode_number}"
             watchedentryitemWatchedDate.text = "Watched: " + currentItem?.watched_at?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)))
 
-            imageLoader.loadImage(currentItem?.show_tmdb_id ?: 0, "en,null", callback = {posterPath ->
+            imageLoader.loadImage(currentItem?.show_tmdb_id ?: 0, currentItem?.language, callback = {posterPath ->
                 if(posterPath.isNotEmpty()) {
                     glide
                         .load(AppConstants.TMDB_POSTER_URL + posterPath)

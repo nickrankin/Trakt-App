@@ -51,7 +51,7 @@ class CollectedShowsRepository @Inject constructor(private val traktApi: TraktAp
                 CollectedShow(
                     baseShow.show?.ids?.trakt ?: 0,
                     baseShow.show?.ids?.tmdb ?: 0,
-                    baseShow.show?.language ?: "en",
+                    baseShow.show?.language,
                     baseShow.last_collected_at,
                     baseShow.last_updated_at,
                     baseShow.last_watched_at,

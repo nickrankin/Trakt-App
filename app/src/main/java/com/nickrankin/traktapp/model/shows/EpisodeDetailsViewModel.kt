@@ -33,7 +33,7 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
     private val showTmdbId: Int = savedStateHandle.get(EpisodeDetailsRepository.SHOW_TMDB_ID_KEY) ?: 0
     private val seasonNumber: Int = savedStateHandle.get(EpisodeDetailsRepository.SEASON_NUMBER_KEY) ?: 0
     private val episodeNumber: Int = savedStateHandle.get(EpisodeDetailsRepository.EPISODE_NUMBER_KEY) ?: 0
-    private val language: String = savedStateHandle.get(EpisodeDetailsRepository.LANGUAGE_KEY) ?: "en"
+    private val language: String? = savedStateHandle.get(EpisodeDetailsRepository.LANGUAGE_KEY)
     private val shouldRefreshWatchedEpisodes = savedStateHandle.get<Boolean>(EpisodeDetailsRepository.SHOULD_REFRESH_WATCHED_KEY) ?: false
 
     init {

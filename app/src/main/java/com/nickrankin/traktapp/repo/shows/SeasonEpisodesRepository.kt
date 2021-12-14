@@ -7,6 +7,7 @@ import com.nickrankin.traktapp.api.TmdbApi
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.show.model.TmEpisode
 import com.nickrankin.traktapp.dao.show.model.TmSeason
+import com.nickrankin.traktapp.helper.getTmdbLanguage
 import com.nickrankin.traktapp.helper.networkBoundResource
 import com.uwetrottmann.tmdb2.entities.AppendToResponse
 import com.uwetrottmann.tmdb2.entities.TvEpisode
@@ -31,7 +32,7 @@ class SeasonEpisodesRepository @Inject constructor(
         showTraktId: Int,
         showTmdbId: Int,
         seasonNumber: Int,
-        language: String,
+        language: String?,
         shouldRefresh: Boolean
     ) = networkBoundResource(
         query = {
@@ -41,7 +42,7 @@ class SeasonEpisodesRepository @Inject constructor(
             tmdbApi.tmTvSeasonService().season(
                 showTmdbId,
                 seasonNumber,
-                language,
+                getTmdbLanguage(language),
                 AppendToResponse(AppendToResponseItem.CREDITS)
             )
         },
@@ -53,19 +54,20 @@ class SeasonEpisodesRepository @Inject constructor(
             showsDatabase.withTransaction {
                 episodesDao.deleteEpisodes(showTmdbId, seasonNumber)
 
-                seasonDao.insertSeasons(listOf(convertSeason(showTraktId, showTmdbId, tvSeason)))
-                episodesDao.insert(convertEpisodes(showTraktId, showTmdbId, tvSeason.episodes ?: emptyList()))
+                seasonDao.insertSeasons(listOf(convertSeason(showTraktId, showTmdbId, language, tvSeason)))
+                episodesDao.insert(convertEpisodes(showTraktId, showTmdbId, language, tvSeason.episodes ?: emptyList()))
             }
 
         }
     )
 
-    private fun convertSeason(showTraktId: Int, showTmdbId: Int, tvSeason: TvSeason): TmSeason {
+    private fun convertSeason(showTraktId: Int, showTmdbId: Int, language: String?, tvSeason: TvSeason): TmSeason {
 
         return TmSeason(
             tvSeason.id ?: 0,
             showTmdbId,
             showTraktId,
+            language,
             tvSeason.name ?: "",
             tvSeason.overview ?: "",
             tvSeason.credits,
@@ -79,7 +81,7 @@ class SeasonEpisodesRepository @Inject constructor(
         )
     }
 
-    private fun convertEpisodes(showTraktId: Int, showTmdbId: Int, episodes: List<TvEpisode>): List<TmEpisode> {
+    private fun convertEpisodes(showTraktId: Int, showTmdbId: Int, language: String?, episodes: List<TvEpisode>): List<TmEpisode> {
         val tmEpisodes: MutableList<TmEpisode> = mutableListOf()
 
         episodes.map { tvEpisode ->
@@ -88,6 +90,7 @@ class SeasonEpisodesRepository @Inject constructor(
                     tvEpisode.id ?: 0,
                     showTmdbId,
                     showTraktId,
+                    language,
                     tvEpisode.season_number ?: 0,
                     tvEpisode.episode_number ?: 0,
                     tvEpisode.production_code,
