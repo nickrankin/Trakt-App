@@ -29,6 +29,7 @@ import com.nickrankin.traktapp.databinding.FragmentShowsOverviewBinding
 import com.nickrankin.traktapp.helper.PosterImageLoader
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.auth.shows.ShowsOverviewViewModel
+import com.nickrankin.traktapp.repo.shows.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import dagger.hilt.android.AndroidEntryPoint
@@ -131,7 +132,7 @@ class OverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
                     val data = myShowsResource.data
 
                     if(data?.isNotEmpty() == true) {
-                        adapter.updateEntries(data)
+                        adapter.submitList(data)
                     } else {
                         messageContainer.visibility = View.VISIBLE
                         messageContainer.text = "You have no shows :-("
@@ -151,7 +152,7 @@ class OverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
                     }
 
                     if(myShowsResource.data != null) {
-                        adapter.updateEntries(myShowsResource.data ?: emptyList())
+                        adapter.submitList(myShowsResource.data ?: emptyList())
                     }else {
                         messageContainer.visibility = View.VISIBLE
                         messageContainer.text = "An error occurred loading your shows. ${myShowsResource.error?.localizedMessage}"
@@ -168,8 +169,8 @@ class OverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
         recyclerView = bindings.showsoverviewfragmentRecyclerview
         layoutManager = LinearLayoutManager(context)
 
-        adapter = ShowCalendarEntriesAdapter(sharedPreferences, posterImageLoader, glide, callback = {selectedShow ->
-            navigateToShow(selectedShow.show_trakt_id, selectedShow.show_tmdb_id, selectedShow.language ?: "en")
+        adapter = ShowCalendarEntriesAdapter(sharedPreferences, posterImageLoader, glide, callback = {calendarEntry ->
+            navigateToEpisode(calendarEntry.show_trakt_id, calendarEntry.show_tmdb_id, calendarEntry.episode_season, calendarEntry.episode_number, calendarEntry.language ?: "en")
         })
 
         recyclerView.layoutManager = layoutManager
@@ -177,14 +178,20 @@ class OverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
 
     }
 
-    private fun navigateToShow(traktId: Int, tmdbId: Int, langauge: String) {
-        val intent = Intent(context, ShowDetailsActivity::class.java)
-        intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
-        intent.putExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, tmdbId)
-        intent.putExtra(ShowDetailsRepository.SHOW_LANGUAGE_KEY, langauge)
+    private fun navigateToEpisode(showTraktId: Int, showTmdbId: Int, seasonNumber: Int, episodeNumber: Int, language: String) {
+        val intent = Intent(context, EpisodeDetailsActivity::class.java)
+        intent.putExtra(EpisodeDetailsRepository.SHOW_TRAKT_ID_KEY, showTraktId)
+        intent.putExtra(EpisodeDetailsRepository.SHOW_TMDB_ID_KEY, showTmdbId)
+        intent.putExtra(EpisodeDetailsRepository.SEASON_NUMBER_KEY, seasonNumber)
+        intent.putExtra(EpisodeDetailsRepository.EPISODE_NUMBER_KEY, episodeNumber)
+        intent.putExtra(EpisodeDetailsRepository.LANGUAGE_KEY, language)
+
+        // We cannot guarantee Watched Episode data is up to date at this point so force refresh (user could have watched more of this show in meantime)
+        intent.putExtra(EpisodeDetailsRepository.SHOULD_REFRESH_WATCHED_KEY, true)
 
         startActivity(intent)
     }
+
 
     override fun onStart() {
         super.onStart()

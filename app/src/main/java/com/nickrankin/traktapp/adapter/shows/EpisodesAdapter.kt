@@ -3,6 +3,8 @@ package com.nickrankin.traktapp.adapter.shows
 import android.content.SharedPreferences
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.R
@@ -11,15 +13,15 @@ import com.nickrankin.traktapp.databinding.EpisodeLayoutItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import org.apache.commons.lang3.time.DateFormatUtils
 
-class EpisodesAdapter(private val sharedPreferences: SharedPreferences, private val glide: RequestManager, private val callback: (selectedEpisode: TmEpisode) -> Unit): RecyclerView.Adapter<EpisodesAdapter.EpisodesViewHolder>() {
-    private var episodes: List<TmEpisode> = listOf()
+class EpisodesAdapter(private val sharedPreferences: SharedPreferences, private val glide: RequestManager, private val callback: (selectedEpisode: TmEpisode) -> Unit): ListAdapter<TmEpisode, EpisodesAdapter.EpisodesViewHolder>(
+    COMPARATOR) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): EpisodesViewHolder {
         return EpisodesViewHolder(EpisodeLayoutItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
     }
 
     override fun onBindViewHolder(holder: EpisodesViewHolder, position: Int) {
-        val currentItem = episodes[position]
+        val currentItem = getItem(position)
 
         holder.bindings.apply {
             episodeitemStillImageview.setImageResource(R.drawable.ic_baseline_live_tv_24)
@@ -45,14 +47,17 @@ class EpisodesAdapter(private val sharedPreferences: SharedPreferences, private 
         }
     }
 
-    override fun getItemCount(): Int {
-        return episodes.size
-    }
-
-    fun updateData(episodes: List<TmEpisode>) {
-        this.episodes = episodes
-        notifyDataSetChanged()
-    }
-
     inner class EpisodesViewHolder(val bindings: EpisodeLayoutItemBinding): RecyclerView.ViewHolder(bindings.root)
+
+    companion object {
+        val COMPARATOR = object : DiffUtil.ItemCallback<TmEpisode>() {
+            override fun areItemsTheSame(oldItem: TmEpisode, newItem: TmEpisode): Boolean {
+                return oldItem == newItem
+            }
+
+            override fun areContentsTheSame(oldItem: TmEpisode, newItem: TmEpisode): Boolean {
+                return oldItem.tmdb_id == newItem.tmdb_id
+            }
+        }
+    }
 }

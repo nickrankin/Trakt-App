@@ -296,7 +296,7 @@ interface TmUsers {
         @Path("id") id: Int,
         @Query("page") page: Int,
         @Query("limit") limit: Int,
-        @Query(value = "extended", encoded = true) extended: Extended,
+        @Query(value = "extended", encoded = true) extended: Extended?,
         @Query("start_at") startAt: OffsetDateTime,
         @Query("end_at") endAt: OffsetDateTime
     ): List<HistoryEntry>
@@ -330,7 +330,7 @@ interface TmUsers {
     suspend fun ratingsShows(
         @Path("username") userSlug: UserSlug,
         @Path(value = "rating", encoded = true) filter: RatingsFilter,
-        @Query(value = "extended", encoded = true) extended: Extended
+        @Query(value = "extended", encoded = true) extended: Extended?
     ): List<RatedShow>
 
     /**
@@ -362,7 +362,7 @@ interface TmUsers {
     suspend fun ratingsEpisodes(
         @Path("username") userSlug: UserSlug,
         @Path(value = "rating", encoded = true) filter: RatingsFilter,
-        @Query(value = "extended", encoded = true) extended: Extended
+        @Query(value = "extended", encoded = true) extended: Extended?
     ): List<RatedEpisode>
 
     /**

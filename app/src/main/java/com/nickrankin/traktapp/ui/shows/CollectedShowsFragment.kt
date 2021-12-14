@@ -133,7 +133,7 @@ class CollectedShowsFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener 
                     val data = collectedShowsResource.data
 
                     if(data?.isNotEmpty() == true) {
-                        adapter.updateData(data)
+                        adapter.submitList(data)
 
                     } else {
                         messageContainer.visibility = View.VISIBLE
@@ -149,7 +149,7 @@ class CollectedShowsFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener 
                     progressBar.visibility = View.GONE
 
                     if(collectedShowsResource.data != null) {
-                        adapter.updateData(collectedShowsResource.data ?: emptyList())
+                        adapter.submitList(collectedShowsResource.data ?: emptyList())
                     } else {
                         messageContainer.visibility = View.VISIBLE
                         messageContainer.text = "An error occurred while loading your Collected shows. ${collectedShowsResource.error?.localizedMessage} "

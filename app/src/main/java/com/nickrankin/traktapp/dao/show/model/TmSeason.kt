@@ -12,6 +12,7 @@ import java.util.*
 data class TmSeason(
     @PrimaryKey val tmdb_id: Int,
     val show_tmdb_id: Int,
+    val show_trakt_id: Int,
     val name: String,
     val overview: String?,
     val credits: Credits?,

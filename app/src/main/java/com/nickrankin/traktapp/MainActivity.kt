@@ -14,14 +14,19 @@ import androidx.navigation.ui.setupWithNavController
 import androidx.preference.PreferenceManager
 import com.google.android.material.snackbar.Snackbar
 import com.nickrankin.traktapp.databinding.ActivityMainBinding
+import com.nickrankin.traktapp.services.helper.TrackedEpisodeAlarmScheduler
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.settings.SettingsActivity
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
     lateinit var bindings: ActivityMainBinding
+
+    @Inject
+    lateinit var trackedEpisodeAlarmScheduler: TrackedEpisodeAlarmScheduler
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

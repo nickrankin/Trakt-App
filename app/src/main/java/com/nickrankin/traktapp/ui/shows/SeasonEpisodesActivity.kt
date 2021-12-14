@@ -18,6 +18,7 @@ import com.nickrankin.traktapp.databinding.ActivitySeasonEpisodesBinding
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.shows.SeasonEpisodesViewModel
 import com.nickrankin.traktapp.repo.shows.EpisodeDetailsRepository
+import com.nickrankin.traktapp.repo.shows.SeasonEpisodesRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -92,7 +93,7 @@ class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
                     val data = episodesResource.data
 
                     if(data?.isNotEmpty() == true) {
-                        adapter.updateData(data)
+                        adapter.submitList(data)
                     }
                 }
                 is Resource.Error -> {
@@ -116,19 +117,23 @@ class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
         val layoutManager = LinearLayoutManager(this)
 
         adapter = EpisodesAdapter(sharedPreferences, glide, callback = {selectedEpisode ->
-            navigateToEpisode(selectedEpisode.show_tmdb_id, selectedEpisode.season_number, selectedEpisode.episode_number, "en")
+            navigateToEpisode(selectedEpisode.show_trakt_id, selectedEpisode.show_tmdb_id, selectedEpisode.season_number ?: 0, selectedEpisode.episode_number ?: 0, "en")
         })
 
         recyclerView.layoutManager = layoutManager
         recyclerView.adapter = adapter
     }
 
-    private fun navigateToEpisode(showTmdbId: Int, seasonNumber: Int, episodeNumber: Int, language: String) {
+    private fun navigateToEpisode(showTraktId: Int, showTmdbId: Int, seasonNumber: Int, episodeNumber: Int, language: String) {
         val intent = Intent(this, EpisodeDetailsActivity::class.java)
+        intent.putExtra(EpisodeDetailsRepository.SHOW_TRAKT_ID_KEY, showTraktId)
         intent.putExtra(EpisodeDetailsRepository.SHOW_TMDB_ID_KEY, showTmdbId)
         intent.putExtra(EpisodeDetailsRepository.SEASON_NUMBER_KEY, seasonNumber)
         intent.putExtra(EpisodeDetailsRepository.EPISODE_NUMBER_KEY, episodeNumber)
         intent.putExtra(EpisodeDetailsRepository.LANGUAGE_KEY, language)
+
+        // No need to force refresh of watched shows as this was done in previous step (ShowDetailsActivity) so assume the watched show data in cache is up to date
+        intent.putExtra(EpisodeDetailsRepository.SHOULD_REFRESH_WATCHED_KEY, false)
 
         startActivity(intent)
     }

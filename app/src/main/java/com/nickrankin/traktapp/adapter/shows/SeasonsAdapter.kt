@@ -2,6 +2,8 @@ package com.nickrankin.traktapp.adapter.shows
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.R
@@ -9,15 +11,15 @@ import com.nickrankin.traktapp.dao.show.model.TmSeason
 import com.nickrankin.traktapp.databinding.SeasonListEntryBinding
 import com.nickrankin.traktapp.helper.AppConstants
 
-class SeasonsAdapter(private val glide: RequestManager, val callback: (season: TmSeason) -> Unit): RecyclerView.Adapter<SeasonsAdapter.SeasonsViewHolder>() {
-    private var seasons: List<TmSeason> = listOf()
+class SeasonsAdapter(private val glide: RequestManager, val callback: (season: TmSeason) -> Unit): ListAdapter<TmSeason, SeasonsAdapter.SeasonsViewHolder>(
+    COMPARATOR) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SeasonsViewHolder {
         return SeasonsViewHolder(SeasonListEntryBinding.inflate(LayoutInflater.from(parent.context), parent, false))
     }
 
     override fun onBindViewHolder(holder: SeasonsViewHolder, position: Int) {
-        val currentItem = seasons[position]
+        val currentItem = getItem(position)
 
         holder.bindings.apply {
             seasonitemPoster.setImageResource(R.drawable.ic_trakt_svgrepo_com)
@@ -43,14 +45,17 @@ class SeasonsAdapter(private val glide: RequestManager, val callback: (season: T
             }
         }
     }
-
-    override fun getItemCount(): Int {
-        return seasons.size
-    }
-    fun updateSeasons(seasons: List<TmSeason>) {
-        this.seasons = seasons
-        notifyDataSetChanged()
-    }
-
     inner class SeasonsViewHolder(val bindings: SeasonListEntryBinding): RecyclerView.ViewHolder(bindings.root)
+
+    companion object {
+        val COMPARATOR = object: DiffUtil.ItemCallback<TmSeason>() {
+            override fun areItemsTheSame(oldItem: TmSeason, newItem: TmSeason): Boolean {
+                return oldItem == newItem
+            }
+
+            override fun areContentsTheSame(oldItem: TmSeason, newItem: TmSeason): Boolean {
+                return oldItem.tmdb_id == newItem.tmdb_id
+            }
+        }
+    }
 }

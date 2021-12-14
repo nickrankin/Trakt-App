@@ -38,8 +38,7 @@ class WatchedEpisodesRemoteMediator(
     val watchedEpisodesDao = showsDatabase.watchedEpisodesDao()
     private val remoteKeyDao = showsDatabase.watchedEpisodePageKeyDao()
     override suspend fun initialize(): InitializeAction {
-
-        when {
+        return when {
             shouldRefresh -> {
                 Log.d(TAG, "initialize: Refresh forcing")
                 InitializeAction.LAUNCH_INITIAL_REFRESH
@@ -58,7 +57,6 @@ class WatchedEpisodesRemoteMediator(
                 }
             }
         }
-       return InitializeAction.LAUNCH_INITIAL_REFRESH
     }
 
     override suspend fun load(
@@ -96,18 +94,16 @@ class WatchedEpisodesRemoteMediator(
             }
             
             if(loadType == LoadType.REFRESH) {
+                Log.d(TAG, "load: Refreshing Watched Shows. Deleting already cached")
+                showsDatabase.withTransaction {
+                    remoteKeyDao.deleteAll()
+                    watchedEpisodesDao.deleteAllCachedEpisodes()
+                }
+
                 // Save last refresh date
                 sharedPreferences.edit()
                     .putString(WATCHED_EPISODES_LAST_REFRESHED_KEY, OffsetDateTime.now().toString())
                     .apply()
-            }
-
-
-            showsDatabase.withTransaction {
-                if (loadType == LoadType.REFRESH) {
-                    watchedEpisodesDao.deleteAllCachedEpisodes()
-                    remoteKeyDao.deleteAll()
-                }
             }
 
             val data = convertHistoryEntries(
@@ -185,6 +181,7 @@ class WatchedEpisodesRemoteMediator(
         historyEntries.map { entry ->
             watchedEpisodes.add(
                 WatchedEpisode(
+                    entry.id,
                     entry.episode?.ids?.trakt ?: 0,
                     entry.episode?.ids?.tmdb ?: 0,
                     entry.show?.language ?: "en",

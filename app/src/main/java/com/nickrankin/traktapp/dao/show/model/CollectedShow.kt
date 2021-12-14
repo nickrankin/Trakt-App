@@ -18,4 +18,5 @@ data class CollectedShow(@PrimaryKey
                          val plays: Int,
                          val show_overview: String?,
                          val status: Status,
-                         val show_title: String)
+                         val show_title: String,
+                         var user_tracking: Boolean)

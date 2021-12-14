@@ -148,4 +148,14 @@ class TmdbShowTypeConverter {
         return gson.fromJson(json, Array<CastMember>::class.java).toList()
     }
 
+    @TypeConverter
+    fun convertFromPersons(persons: List<Person?>): String {
+        return gson.toJson(persons)
+    }
+
+    @TypeConverter
+    fun convertToPersons(json: String): List<Person?> {
+        return gson.fromJson(json, Array<Person?>::class.java).toList()
+    }
+
 }

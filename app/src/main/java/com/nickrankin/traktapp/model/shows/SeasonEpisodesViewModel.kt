@@ -18,6 +18,7 @@ class SeasonEpisodesViewModel @Inject constructor(private val savedStateHandle: 
     private val seasonEpisodesRefreshEventChannel = Channel<Boolean>()
     private val seasonEpisodesRefreshEvent = seasonEpisodesRefreshEventChannel.receiveAsFlow()
 
+    private val showTraktId: Int = savedStateHandle.get(SeasonEpisodesRepository.SHOW_TRAKT_ID_KEY) ?: 0
     private val tmdbShowId: Int = savedStateHandle.get(SeasonEpisodesRepository.SHOW_TMDB_ID_KEY) ?: 0
     private val seasonNumber: Int = savedStateHandle.get(SeasonEpisodesRepository.SEASON_NUMBER_KEY) ?: 0
     private val language: String = savedStateHandle.get(SeasonEpisodesRepository.LANGUAGE_KEY) ?: "en"
@@ -26,7 +27,7 @@ class SeasonEpisodesViewModel @Inject constructor(private val savedStateHandle: 
 
     @ExperimentalCoroutinesApi
     val episodes = seasonEpisodesRefreshEvent.flatMapLatest { shouldRefresh ->
-        repository.getSeasonEpisodes(tmdbShowId, seasonNumber, language, shouldRefresh)
+        repository.getSeasonEpisodes(showTraktId, tmdbShowId, seasonNumber, language, shouldRefresh)
     }
 
     fun onStart() {

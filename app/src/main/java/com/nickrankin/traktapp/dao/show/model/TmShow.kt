@@ -8,9 +8,11 @@ import java.util.*
 @Entity(tableName = "shows")
 data class TmShow(
     @PrimaryKey val tmdb_id: Int,
+    val trakt_id: Int,
     val name: String,
     val overview: String,
-    val country: String,
+    val country: List<String?>,
+    val created_by: List<Person?>,
     val credits: Credits?,
     val external_ids: TvExternalIds?,
     val genres: List<Genre>?,
@@ -29,5 +31,6 @@ data class TmShow(
     val poster_path: String?,
     val backdrop_path: String?,
     val type: String?,
-    val videos: Videos?
+    val videos: Videos?,
+    var user_tracking: Boolean
 )

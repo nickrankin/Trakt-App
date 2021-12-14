@@ -1,6 +1,7 @@
 package com.nickrankin.traktapp.adapter.shows
 
 import android.content.SharedPreferences
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.paging.PagingDataAdapter
@@ -20,12 +21,13 @@ class WatchedEpisodesPagingAdapter(private val sharedPreferences: SharedPreferen
         return WatchedEpisodeViewHolder(WatchedEpisodeEntryListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
     }
 
-
     override fun onBindViewHolder(holder: WatchedEpisodeViewHolder, position: Int) {
-        holder.setIsRecyclable(false)
         val currentItem = getItem(position)
 
         holder.bindings.apply {
+            // clear poster value to prevent flickering overlapping
+            watchedentryitemPoster.setImageDrawable(null)
+
             watchedentryitemTitle.text = currentItem?.episode_title
             watchedentryitemShowTitle.text = currentItem?.show_title
             watchedentryitemSeasonEpisodeNumber.text = "Season ${currentItem?.episode_season} Episode ${currentItem?.episode_number}"
@@ -53,8 +55,7 @@ class WatchedEpisodesPagingAdapter(private val sharedPreferences: SharedPreferen
                 oldItem: WatchedEpisode,
                 newItem: WatchedEpisode
             ): Boolean {
-                // Id is unique.
-                return oldItem.episode_tmdb_id == newItem.episode_tmdb_id
+                return oldItem.id == newItem.id
             }
 
             override fun areContentsTheSame(

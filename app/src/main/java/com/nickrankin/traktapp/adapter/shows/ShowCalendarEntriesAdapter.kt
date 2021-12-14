@@ -3,6 +3,8 @@ package com.nickrankin.traktapp.adapter.shows
 import android.content.SharedPreferences
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.dao.calendars.model.ShowCalendarEntry
@@ -12,8 +14,8 @@ import com.nickrankin.traktapp.helper.PosterImageLoader
 import org.threeten.bp.format.DateTimeFormatter
 import javax.inject.Inject
 
-class ShowCalendarEntriesAdapter @Inject constructor(private val sharedPreferences: SharedPreferences, private val posterImageLoader: PosterImageLoader, private val glide: RequestManager, private val callback: (selectedShow: ShowCalendarEntry) -> Unit): RecyclerView.Adapter<ShowCalendarEntriesAdapter.CalendarEntryViewHolder>() {
-    private var entries: List<ShowCalendarEntry> = listOf()
+class ShowCalendarEntriesAdapter @Inject constructor(private val sharedPreferences: SharedPreferences, private val posterImageLoader: PosterImageLoader, private val glide: RequestManager, private val callback: (selectedShow: ShowCalendarEntry) -> Unit): ListAdapter<ShowCalendarEntry, ShowCalendarEntriesAdapter.CalendarEntryViewHolder>(
+    COMPARATOR) {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CalendarEntryViewHolder {
         return CalendarEntryViewHolder(ShowCalendarEntryListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
     }
@@ -21,7 +23,7 @@ class ShowCalendarEntriesAdapter @Inject constructor(private val sharedPreferenc
     override fun onBindViewHolder(holder: CalendarEntryViewHolder, position: Int) {
         holder.setIsRecyclable(false)
 
-        val currentItem = entries[position]
+        val currentItem = getItem(position)
 
         holder.bindings.apply {
             showentryitemTitle.text = currentItem.episode_title
@@ -42,16 +44,23 @@ class ShowCalendarEntriesAdapter @Inject constructor(private val sharedPreferenc
         }
     }
 
-    override fun getItemCount(): Int {
-        return entries.size
-    }
+    class CalendarEntryViewHolder(val bindings: ShowCalendarEntryListItemBinding): RecyclerView.ViewHolder(bindings.root)
 
-    fun updateEntries(entries: List<ShowCalendarEntry>) {
-        this.entries = entries
-        notifyDataSetChanged()
-    }
+    companion object {
+        val COMPARATOR = object: DiffUtil.ItemCallback<ShowCalendarEntry>() {
+            override fun areItemsTheSame(
+                oldItem: ShowCalendarEntry,
+                newItem: ShowCalendarEntry
+            ): Boolean {
+                return  oldItem == newItem
+            }
 
-    class CalendarEntryViewHolder(val bindings: ShowCalendarEntryListItemBinding): RecyclerView.ViewHolder(bindings.root) {
-
+            override fun areContentsTheSame(
+                oldItem: ShowCalendarEntry,
+                newItem: ShowCalendarEntry
+            ): Boolean {
+                return oldItem.show_trakt_id == newItem.show_trakt_id
+            }
+        }
     }
 }

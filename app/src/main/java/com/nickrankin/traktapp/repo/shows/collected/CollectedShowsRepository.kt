@@ -60,7 +60,8 @@ class CollectedShowsRepository @Inject constructor(private val traktApi: TraktAp
                     baseShow.plays ?: 0,
                     baseShow.show?.overview,
                     baseShow.show?.status ?: Status.CANCELED,
-                    baseShow.show?.title ?: ""
+                    baseShow.show?.title ?: "",
+                    false
                 )
             )
         }

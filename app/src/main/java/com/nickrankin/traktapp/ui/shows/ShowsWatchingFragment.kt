@@ -13,6 +13,7 @@ import android.widget.TextView
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.LoadState
+import androidx.paging.PagingData
 import androidx.paging.map
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -25,6 +26,7 @@ import com.nickrankin.traktapp.adapter.shows.WatchedEpisodesPagingAdapter
 import com.nickrankin.traktapp.databinding.FragmentWatchingBinding
 import com.nickrankin.traktapp.helper.PosterImageLoader
 import com.nickrankin.traktapp.model.auth.shows.WatchedEpisodesViewModel
+import com.nickrankin.traktapp.repo.shows.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import dagger.hilt.android.AndroidEntryPoint
@@ -60,7 +62,6 @@ class WatchingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
     private var isLoggedIn = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Log.e(TAG, "onCreate: HERE", )
         super.onCreate(savedInstanceState)
 
     }
@@ -128,8 +129,8 @@ class WatchingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
     private fun initRecycler() {
         recyclerView = bindings.showwatchingfragmentRecyclerview
         layoutManager = LinearLayoutManager(context)
-        adapter = WatchedEpisodesPagingAdapter(sharedPreferences, imageLoader, glide, callback = {selectedShow ->
-            navigateToShow(selectedShow?.show_trakt_id ?: 0,selectedShow?.show_tmdb_id ?: 0, selectedShow?.language ?: "en")
+        adapter = WatchedEpisodesPagingAdapter(sharedPreferences, imageLoader, glide, callback = {selectedEpisode ->
+            navigateToEpisode(selectedEpisode?.show_trakt_id ?: 0,selectedEpisode?.show_tmdb_id ?: 0, selectedEpisode?.episode_season ?: 0, selectedEpisode?.episode_number ?: 0, selectedEpisode?.language ?: "en")
         })
         recyclerView.layoutManager = layoutManager
 
@@ -155,11 +156,16 @@ class WatchingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
 
     }
 
-    private fun navigateToShow(traktId: Int, tmdbId: Int, langauge: String) {
-        val intent = Intent(context, ShowDetailsActivity::class.java)
-        intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
-        intent.putExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, tmdbId)
-        intent.putExtra(ShowDetailsRepository.SHOW_LANGUAGE_KEY, langauge)
+    private fun navigateToEpisode(showTraktId: Int, showTmdbId: Int, seasonNumber: Int, episodeNumber: Int, language: String) {
+        val intent = Intent(context, EpisodeDetailsActivity::class.java)
+        intent.putExtra(EpisodeDetailsRepository.SHOW_TRAKT_ID_KEY, showTraktId)
+        intent.putExtra(EpisodeDetailsRepository.SHOW_TMDB_ID_KEY, showTmdbId)
+        intent.putExtra(EpisodeDetailsRepository.SEASON_NUMBER_KEY, seasonNumber)
+        intent.putExtra(EpisodeDetailsRepository.EPISODE_NUMBER_KEY, episodeNumber)
+        intent.putExtra(EpisodeDetailsRepository.LANGUAGE_KEY, language)
+
+        // We cannot guarantee Watched Episode data is up to date at this point so force refresh (user could have watched more of this show in meantime)
+        intent.putExtra(EpisodeDetailsRepository.SHOULD_REFRESH_WATCHED_KEY, true)
 
         startActivity(intent)
     }
@@ -173,7 +179,8 @@ class WatchingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
 
     override fun onRefresh() {
         if(isLoggedIn) {
-            viewModel.onRefresh()
+            //https://developer.android.com/reference/kotlin/androidx/paging/PagingDataAdapter#refresh()
+            adapter.refresh()
         }
     }
 

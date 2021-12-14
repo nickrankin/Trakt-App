@@ -1,5 +1,6 @@
 package com.nickrankin.traktapp.helper
 
+import android.util.Log
 import kotlinx.coroutines.flow.*
 
 inline fun <ResultType, RequestType> networkBoundResource(

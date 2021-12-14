@@ -2,10 +2,7 @@ package com.nickrankin.traktapp.api
 
 import android.util.Log
 import com.nickrankin.traktapp.ApiKeys
-import com.nickrankin.traktapp.api.services.TmAuth
-import com.nickrankin.traktapp.api.services.TmCalendars
-import com.nickrankin.traktapp.api.services.TmShows
-import com.nickrankin.traktapp.api.services.TmUsers
+import com.nickrankin.traktapp.api.services.*
 import com.uwetrottmann.trakt5.TraktV2
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -65,6 +62,10 @@ class TraktApi(private val loggingOn: Boolean, private val isStaging: Boolean): 
         }
     }
 
+    fun tmCheckin(): TmCheckin {
+        return retrofit().create(TmCheckin::class.java)
+    }
+
     fun tmUsers(): TmUsers {
         return retrofit().create(TmUsers::class.java)
     }
@@ -79,6 +80,10 @@ class TraktApi(private val loggingOn: Boolean, private val isStaging: Boolean): 
 
     fun tmCalendars(): TmCalendars {
         return retrofit().create(TmCalendars::class.java)
+    }
+
+    fun tmSync(): TmSync {
+        return retrofit().create(TmSync::class.java)
     }
 
 

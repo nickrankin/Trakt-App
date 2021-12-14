@@ -28,6 +28,7 @@ class SeasonEpisodesRepository @Inject constructor(
                           seasonNumber: Int) = seasonDao.getSeason(showTmdbId, seasonNumber)
 
     suspend fun getSeasonEpisodes(
+        showTraktId: Int,
         showTmdbId: Int,
         seasonNumber: Int,
         language: String,
@@ -41,30 +42,30 @@ class SeasonEpisodesRepository @Inject constructor(
                 showTmdbId,
                 seasonNumber,
                 language,
-                AppendToResponse(AppendToResponseItem.TV_CREDITS, AppendToResponseItem.CREDITS)
+                AppendToResponse(AppendToResponseItem.CREDITS)
             )
         },
         shouldFetch = { episodes ->
-            // A bit hacky this. It can happen user loads a single episode before loading all episodesso force a reload is only one episode is exist
-            shouldRefresh || episodes.isEmpty() || episodes.size == 1
+            shouldRefresh || episodes.isEmpty()
         },
         saveFetchResult = { tvSeason ->
 
             showsDatabase.withTransaction {
                 episodesDao.deleteEpisodes(showTmdbId, seasonNumber)
 
-                seasonDao.insertSeasons(listOf(convertSeason(showTmdbId, tvSeason)))
-                episodesDao.insert(convertEpisodes(showTmdbId, tvSeason.episodes ?: emptyList()))
+                seasonDao.insertSeasons(listOf(convertSeason(showTraktId, showTmdbId, tvSeason)))
+                episodesDao.insert(convertEpisodes(showTraktId, showTmdbId, tvSeason.episodes ?: emptyList()))
             }
 
         }
     )
 
-    private fun convertSeason(showTmdbId: Int, tvSeason: TvSeason): TmSeason {
+    private fun convertSeason(showTraktId: Int, showTmdbId: Int, tvSeason: TvSeason): TmSeason {
 
         return TmSeason(
             tvSeason.id ?: 0,
             showTmdbId,
+            showTraktId,
             tvSeason.name ?: "",
             tvSeason.overview ?: "",
             tvSeason.credits,
@@ -78,7 +79,7 @@ class SeasonEpisodesRepository @Inject constructor(
         )
     }
 
-    private fun convertEpisodes(showTmdbId: Int, episodes: List<TvEpisode>): List<TmEpisode> {
+    private fun convertEpisodes(showTraktId: Int, showTmdbId: Int, episodes: List<TvEpisode>): List<TmEpisode> {
         val tmEpisodes: MutableList<TmEpisode> = mutableListOf()
 
         episodes.map { tvEpisode ->
@@ -86,6 +87,7 @@ class SeasonEpisodesRepository @Inject constructor(
                 TmEpisode(
                     tvEpisode.id ?: 0,
                     showTmdbId,
+                    showTraktId,
                     tvEpisode.season_number ?: 0,
                     tvEpisode.episode_number ?: 0,
                     tvEpisode.production_code,
@@ -107,6 +109,7 @@ class SeasonEpisodesRepository @Inject constructor(
     }
 
     companion object {
+        const val SHOW_TRAKT_ID_KEY = "show_trakt_id"
         const val SHOW_TMDB_ID_KEY = "show_tmdb_id"
         const val SEASON_NUMBER_KEY = "season_number"
         const val LANGUAGE_KEY = "language"
