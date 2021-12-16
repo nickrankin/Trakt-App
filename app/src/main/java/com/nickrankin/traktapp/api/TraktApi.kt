@@ -74,6 +74,10 @@ class TraktApi(private val loggingOn: Boolean, private val isStaging: Boolean): 
         return retrofit().create(TmAuth::class.java)
     }
 
+    fun tmSearch(): TmSearch {
+        return retrofit().create(TmSearch::class.java)
+    }
+
     fun tmShows(): TmShows {
         return retrofit().create(TmShows::class.java)
     }

@@ -32,7 +32,7 @@ class ShowCalendarEntriesAdapter @Inject constructor(private val sharedPreferenc
             showentryitemAirDate.text = "Airing: " + currentItem.first_aired?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)))
             showentryitemOverview.text = currentItem.episode_overview
 
-            posterImageLoader.loadImage(currentItem.show_tmdb_id, currentItem.language, callback = { posterPath ->
+            posterImageLoader.loadImage(currentItem.show_tmdb_id, currentItem.language, true, callback = { posterPath ->
                 if(posterPath.isNotEmpty()) {
                     glide
                         .load(AppConstants.TMDB_POSTER_URL + posterPath)

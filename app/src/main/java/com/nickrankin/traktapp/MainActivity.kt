@@ -1,10 +1,13 @@
 package com.nickrankin.traktapp
 
+import android.app.SearchManager
+import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.RelativeLayout
+import android.widget.SearchView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
@@ -16,6 +19,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.nickrankin.traktapp.databinding.ActivityMainBinding
 import com.nickrankin.traktapp.services.helper.TrackedEpisodeAlarmScheduler
 import com.nickrankin.traktapp.ui.auth.AuthActivity
+import com.nickrankin.traktapp.ui.search.ShowSearchResultsActivity
 import com.nickrankin.traktapp.ui.settings.SettingsActivity
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -55,7 +59,35 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
+
+        // Get the SearchView and set the searchable configuration
+        val searchManager = getSystemService(SEARCH_SERVICE) as SearchManager
+        (menu?.findItem(R.id.mainmenu_search)?.actionView as SearchView).apply {
+            startSearch(this)
+        }
+
+
         return true
+    }
+
+    private fun startSearch(searchView: SearchView) {
+        val intent = Intent(this, ShowSearchResultsActivity::class.java)
+
+        searchView.setOnQueryTextListener(object: SearchView.OnQueryTextListener {
+
+            override fun onQueryTextChange(p0: String?): Boolean {
+                return true
+            }
+
+            override fun onQueryTextSubmit(query: String?): Boolean {
+
+                intent.putExtra(SearchManager.QUERY, query)
+
+                startActivity(intent)
+
+                return false
+            }
+        })
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -69,5 +101,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
         return false
+    }
+
+    override fun onSearchRequested(): Boolean {
+        return super.onSearchRequested()
     }
 }

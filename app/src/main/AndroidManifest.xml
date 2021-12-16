@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.nickrankin.traktapp" >
+    package="com.nickrankin.traktapp">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
-    <application
-        xmlns:tools="http://schemas.android.com/tools"
+    <application xmlns:tools="http://schemas.android.com/tools"
         android:name=".TmApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.TraktApp" >
+        android:theme="@style/Theme.TraktApp">
+
         <receiver
             android:name=".services.ScheduleTrackedEpisodesBootReceiver"
             android:enabled="true"
-            android:exported="true" >
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
@@ -28,8 +28,7 @@
         <receiver
             android:name=".services.helper.EpisodeNotificationReceiver"
             android:enabled="true"
-            android:exported="true">
-        </receiver>
+            android:exported="true" />
 
         <activity
             android:name=".ui.shows.EpisodeDetailsActivity"
@@ -43,7 +42,7 @@
         <activity
             android:name=".ui.auth.AuthActivity"
             android:exported="true"
-            android:launchMode="singleInstance" >
+            android:launchMode="singleInstance">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -56,21 +55,32 @@
         <activity
             android:name=".ui.settings.SettingsActivity"
             android:exported="true" />
+
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name" >
+            android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity> <!-- If you want to disable android.startup completely. -->
+
+        </activity>
+
+        <activity
+            android:name=".ui.search.ShowSearchResultsActivity"
+            android:launchMode="singleTop"
+            android:exported="true">
+
+        </activity>
+
+        <!-- If you want to disable android.startup completely. -->
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
-            tools:node="remove" >
-        </provider>
+            tools:node="remove" />
     </application>
 
 </manifest>

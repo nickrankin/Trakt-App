@@ -54,10 +54,10 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
     }
 
     fun getRatings() = viewModelScope.launch {
-        val ratingsResponse = repository.getRatings().collectLatest { ratedEpisodesResource ->
+        repository.getRatings().collectLatest { ratedEpisodesResource ->
             if(ratedEpisodesResource is Resource.Success) {
                 val ratedEpisode = ratedEpisodesResource.data?.find { episode ->
-                    episode.episode?.season ?: 0 == seasonNumber && episode.episode?.number ?: 0 == episodeNumber
+                    episode.show?.ids?.trakt == showTraktId && episode.episode?.season ?: 0 == seasonNumber && episode.episode?.number ?: 0 == episodeNumber
                 }
 
                 if(ratedEpisode != null) {
