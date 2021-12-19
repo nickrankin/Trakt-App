@@ -21,7 +21,7 @@ class ShowsOverviewRepository @Inject constructor(private val traktApi: TraktApi
     private val showCalendarEntryDao = showsDatabase.showCalendarentriesDao()
 
     suspend fun getMyShows(shouldRefresh: Boolean) = networkBoundResource(
-        query = {showCalendarEntryDao.getShowCalendarEntries()},
+        query = { showCalendarEntryDao.getShowCalendarEntries() },
         fetch = {
                 traktApi.tmCalendars().myShows(OffsetDateTime.now().format(DateTimeFormatter.ofPattern(
                     DEFAULT_TRAKT_DATE_FORMAT)), NUM_DAYS)
@@ -40,6 +40,17 @@ class ShowsOverviewRepository @Inject constructor(private val traktApi: TraktApi
             }
         }
     )
+
+    suspend fun removeAlreadyAiredEpisodes(shows: List<ShowCalendarEntry>) {
+        val dateNow = OffsetDateTime.now()
+        shows.map { calendarEntry ->
+            if(calendarEntry.first_aired?.isBefore(dateNow) == true) {
+                showsDatabase.withTransaction {
+                    showCalendarEntryDao.delete(calendarEntry)
+                }
+            }
+        }
+    }
 
     private fun convertEntries(entries: List<CalendarShowEntry>): List<ShowCalendarEntry> {
         val showCalendarEntries: MutableList<ShowCalendarEntry> = mutableListOf()

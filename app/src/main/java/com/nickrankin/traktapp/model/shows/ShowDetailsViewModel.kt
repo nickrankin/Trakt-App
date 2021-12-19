@@ -137,7 +137,7 @@ class ShowDetailsViewModel @Inject constructor(
     }
 
     suspend fun episode(showTraktId: Int, showTmdbId: Int, seasonNumber: Int, episodeNumber: Int, language: String) =
-        episodesRepository.getEpisode(showTraktId, showTmdbId, seasonNumber, episodeNumber, language, false)
+        episodesRepository.getEpisode(showTraktId, showTmdbId, seasonNumber, episodeNumber, language)
 
     fun getTrackingStatus() = viewModelScope.launch {
         Log.e(TAG, "getTrackingStatus: HERE")

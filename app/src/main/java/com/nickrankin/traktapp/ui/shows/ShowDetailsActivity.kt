@@ -56,7 +56,7 @@ import javax.inject.Inject
 private const val TAG = "ShowDetailsActivity"
 
 @AndroidEntryPoint
-class ShowDetailsActivity : AppCompatActivity() {
+class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
     private lateinit var bindings: ActivityShowDetailsBinding
 
     private lateinit var castRecyclerView: RecyclerView
@@ -304,10 +304,13 @@ class ShowDetailsActivity : AppCompatActivity() {
             }
 
             showdetailsactivityTitle.text = tmShow?.name
-            showdetailsactivityFirstAired.text = "Premiered: " + DateFormatUtils.format(
-                tmShow?.first_aired,
-                sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)
-            )
+            if(tmShow?.first_aired != null) {
+                showdetailsactivityFirstAired.text = "Premiered: " + DateFormatUtils.format(
+                    tmShow?.first_aired,
+                    sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)
+                )
+            }
+
             showdetailsactivityOverview.text = tmShow?.overview
         }
     }
@@ -538,13 +541,13 @@ class ShowDetailsActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
-    private fun navigateToEpisode(showTraktId: Int, showTmdbId: Int, seasonNumber: Int, episodeNumber: Int) {
+    override fun navigateToEpisode(showTraktId: Int, showTmdbId: Int, seasonNumber: Int, episodeNumber: Int, language: String?) {
         val intent = Intent(this, EpisodeDetailsActivity::class.java)
         intent.putExtra(EpisodeDetailsRepository.SHOW_TRAKT_ID_KEY, showTraktId)
         intent.putExtra(EpisodeDetailsRepository.SHOW_TMDB_ID_KEY, showTmdbId)
         intent.putExtra(EpisodeDetailsRepository.SEASON_NUMBER_KEY, seasonNumber)
         intent.putExtra(EpisodeDetailsRepository.EPISODE_NUMBER_KEY, episodeNumber)
-        intent.putExtra(EpisodeDetailsRepository.LANGUAGE_KEY, "en")
+        intent.putExtra(EpisodeDetailsRepository.LANGUAGE_KEY, language)
 
         // No need to force refresh of watched shows as this was done in this activity so assume the watched show data in cache is up to date
         intent.putExtra(EpisodeDetailsRepository.SHOULD_REFRESH_WATCHED_KEY, false)
@@ -698,7 +701,8 @@ class ShowDetailsActivity : AppCompatActivity() {
                                         intent.getIntExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, 0),
                                         showTmdbId,
                                         episode?.season_number ?: 0,
-                                        episode?.episode_number ?: 0
+                                        episode?.episode_number ?: 0,
+                                        episode?.language
                                     )
                                 }
                             }

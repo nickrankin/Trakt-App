@@ -26,7 +26,7 @@ import javax.inject.Inject
 
 private const val TAG = "SeasonEpisodesActivity"
 @AndroidEntryPoint
-class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener {
+class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, OnNavigateToEpisode {
     private lateinit var bindings: ActivitySeasonEpisodesBinding
     private val viewModel: SeasonEpisodesViewModel by viewModels()
 
@@ -124,7 +124,7 @@ class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
         recyclerView.adapter = adapter
     }
 
-    private fun navigateToEpisode(showTraktId: Int, showTmdbId: Int, seasonNumber: Int, episodeNumber: Int, language: String) {
+    override fun navigateToEpisode(showTraktId: Int, showTmdbId: Int, seasonNumber: Int, episodeNumber: Int, language: String?) {
         val intent = Intent(this, EpisodeDetailsActivity::class.java)
         intent.putExtra(EpisodeDetailsRepository.SHOW_TRAKT_ID_KEY, showTraktId)
         intent.putExtra(EpisodeDetailsRepository.SHOW_TMDB_ID_KEY, showTmdbId)

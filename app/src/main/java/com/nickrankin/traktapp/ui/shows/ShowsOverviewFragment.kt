@@ -8,10 +8,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
-import android.widget.ProgressBar
-import android.widget.RelativeLayout
-import android.widget.TextView
+import android.widget.*
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
@@ -39,7 +36,7 @@ import javax.inject.Inject
 
 private const val TAG = "OverviewFragment"
 @AndroidEntryPoint
-class OverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
+class OverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNavigateToShow, OnNavigateToEpisode {
     
     @Inject
     lateinit var sharedPreferences: SharedPreferences
@@ -178,7 +175,21 @@ class OverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
 
     }
 
-    private fun navigateToEpisode(showTraktId: Int, showTmdbId: Int, seasonNumber: Int, episodeNumber: Int, language: String) {
+    override fun navigateToShow(traktId: Int, tmdbId: Int, language: String?) {
+        if(tmdbId == 0) {
+            Toast.makeText(context, "Trakt does not have this show's TMDB", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        val intent = Intent(context, ShowDetailsActivity::class.java)
+        intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
+        intent.putExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, tmdbId)
+        intent.putExtra(ShowDetailsRepository.SHOW_LANGUAGE_KEY, language)
+
+        startActivity(intent)
+    }
+
+    override fun navigateToEpisode(showTraktId: Int, showTmdbId: Int, seasonNumber: Int, episodeNumber: Int, language: String?) {
         val intent = Intent(context, EpisodeDetailsActivity::class.java)
         intent.putExtra(EpisodeDetailsRepository.SHOW_TRAKT_ID_KEY, showTraktId)
         intent.putExtra(EpisodeDetailsRepository.SHOW_TMDB_ID_KEY, showTmdbId)

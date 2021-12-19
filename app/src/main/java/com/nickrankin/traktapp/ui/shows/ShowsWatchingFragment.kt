@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
+import android.widget.Toast
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.LoadState
@@ -21,6 +22,7 @@ import com.nickrankin.traktapp.databinding.FragmentWatchingBinding
 import com.nickrankin.traktapp.helper.PosterImageLoader
 import com.nickrankin.traktapp.model.auth.shows.WatchedEpisodesViewModel
 import com.nickrankin.traktapp.repo.shows.EpisodeDetailsRepository
+import com.nickrankin.traktapp.repo.shows.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
@@ -32,7 +34,7 @@ import javax.inject.Inject
 
 private const val TAG = "WatchingFragment"
 @AndroidEntryPoint
-class WatchingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
+class WatchingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNavigateToShow, OnNavigateToEpisode {
     
     private val viewModel by activityViewModels<WatchedEpisodesViewModel>()
 
@@ -149,7 +151,22 @@ class WatchingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
 
     }
 
-    private fun navigateToEpisode(showTraktId: Int, showTmdbId: Int, seasonNumber: Int, episodeNumber: Int, language: String) {
+    override fun navigateToShow(traktId: Int, tmdbId: Int, language: String?) {
+        if(tmdbId == 0) {
+            Toast.makeText(context, "Trakt does not have this show's TMDB", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        val intent = Intent(context, ShowDetailsActivity::class.java)
+        intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
+        intent.putExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, tmdbId)
+        intent.putExtra(ShowDetailsRepository.SHOW_LANGUAGE_KEY, language)
+
+        startActivity(intent)
+    }
+
+
+    override fun navigateToEpisode(showTraktId: Int, showTmdbId: Int, seasonNumber: Int, episodeNumber: Int, language: String?) {
         val intent = Intent(context, EpisodeDetailsActivity::class.java)
         intent.putExtra(EpisodeDetailsRepository.SHOW_TRAKT_ID_KEY, showTraktId)
         intent.putExtra(EpisodeDetailsRepository.SHOW_TMDB_ID_KEY, showTmdbId)

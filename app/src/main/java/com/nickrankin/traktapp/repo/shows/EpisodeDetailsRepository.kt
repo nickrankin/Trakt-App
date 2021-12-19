@@ -42,37 +42,23 @@ class EpisodeDetailsRepository @Inject constructor(
         showTmdbId: Int,
         seasonNumber: Int,
         episodeNumber: Int,
-        language: String?,
-        shouldRefresh: Boolean
-    ) = networkBoundResource(
-        query = {
-            episodesDao.getEpisode(showTmdbId, seasonNumber, episodeNumber)
-        },
-        fetch = {
-            tmdbApi.tmTvEpisodesService().episode(
+        language: String?) = flow {
+        emit(Resource.Loading(null))
+
+        try {
+            val response = tmdbApi.tmTvEpisodesService().episode(
                 showTmdbId,
                 seasonNumber,
                 episodeNumber,
-                getTmdbLanguage(language),
-                AppendToResponse(
-                    AppendToResponseItem.CREDITS,
-                    AppendToResponseItem.TV_CREDITS,
-                    AppendToResponseItem.EXTERNAL_IDS,
-                    AppendToResponseItem.VIDEOS
-                )
+                getTmdbLanguage(language)
             )
-        },
-        shouldFetch = { tmEpisode ->
-            shouldRefresh || tmEpisode == null
-        },
-        saveFetchResult = { tvEpisode ->
 
-            showsDatabase.withTransaction {
-               episodesDao.insert(listOf(convertEpisode(showTraktId, showTmdbId, language, tvEpisode)))
-            }
-
+            emit(Resource.Success(convertEpisode(showTraktId, showTmdbId, getTmdbLanguage(language),response)))
+        } catch (t: Throwable) {
+            emit(Resource.Error(t, null))
         }
-    )
+    }
+
 
     private fun convertEpisode(
         showTraktId: Int,

@@ -41,7 +41,7 @@ import javax.inject.Inject
 private const val TAG = "EpisodeDetailsActivity"
 
 @AndroidEntryPoint
-class EpisodeDetailsActivity : AppCompatActivity() {
+class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow {
     private lateinit var bindings: ActivityEpisodeDetailsBinding
     private val viewModel: EpisodeDetailsViewModel by viewModels()
 
@@ -403,14 +403,20 @@ class EpisodeDetailsActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun navigateToShow(traktId: Int, tmdbId: Int, langauge: String) {
+    override fun navigateToShow(traktId: Int, tmdbId: Int, language: String?) {
+        if(tmdbId == 0) {
+            Toast.makeText(this, "Trakt does not have this show's TMDB", Toast.LENGTH_LONG).show()
+            return
+        }
+
         val intent = Intent(this, ShowDetailsActivity::class.java)
         intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
         intent.putExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, tmdbId)
-        intent.putExtra(ShowDetailsRepository.SHOW_LANGUAGE_KEY, langauge)
+        intent.putExtra(ShowDetailsRepository.SHOW_LANGUAGE_KEY, language)
 
         startActivity(intent)
     }
+
     private fun displayMessageToast(message: String, length: Int) {
         Toast.makeText(this, message, length).show()
     }

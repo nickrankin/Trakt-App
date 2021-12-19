@@ -8,6 +8,7 @@ import android.view.*
 import androidx.fragment.app.Fragment
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -35,7 +36,7 @@ import javax.inject.Inject
 
 private const val TAG = "CollectedShowsFragment"
 @AndroidEntryPoint
-class CollectedShowsFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
+class CollectedShowsFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNavigateToShow {
     private lateinit var bindings: FragmentCollectedShowsBinding
     private lateinit var swipeLayout: SwipeRefreshLayout
     private lateinit var progressBar: ProgressBar
@@ -172,14 +173,21 @@ class CollectedShowsFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener 
         recyclerView.adapter = adapter
     }
 
-    private fun navigateToShow(traktId: Int, tmdbId: Int, langauge: String?) {
+    override fun navigateToShow(traktId: Int, tmdbId: Int, language: String?) {
+        if(tmdbId == 0) {
+            Toast.makeText(context, "Trakt does not have this show's TMDB", Toast.LENGTH_LONG).show()
+            return
+        }
+
         val intent = Intent(context, ShowDetailsActivity::class.java)
         intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
         intent.putExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, tmdbId)
-        intent.putExtra(ShowDetailsRepository.SHOW_LANGUAGE_KEY, langauge)
+        intent.putExtra(ShowDetailsRepository.SHOW_LANGUAGE_KEY, language)
 
         startActivity(intent)
     }
+
+
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {

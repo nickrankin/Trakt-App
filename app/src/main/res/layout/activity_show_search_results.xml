@@ -7,16 +7,36 @@
     tools:context=".ui.search.ShowSearchResultsActivity">
     <include android:id="@+id/toolbar_layout" layout="@layout/toolbar_layout" />
 
-    <LinearLayout
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="?attr/actionBarSize">
+        <ProgressBar
+            android:id="@+id/showsearchresultsactivity_progressbar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            />
+
+        <TextView
+            android:id="@+id/showsearchresultsactivity_no_results"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_gravity="center"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:text="No results for query!"
+            android:visibility="gone"
+            tools:visibility="visible"/>
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/showsearchresultsactivity_recyclerview"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            android:visibility="gone"/>
 
-    </LinearLayout>
+    </FrameLayout>
 
 
 </RelativeLayout>

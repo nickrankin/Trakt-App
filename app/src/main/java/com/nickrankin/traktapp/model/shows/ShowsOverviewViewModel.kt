@@ -2,11 +2,13 @@ package com.nickrankin.traktapp.model.auth.shows
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.repo.auth.shows.ShowsOverviewRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -19,6 +21,11 @@ class ShowsOverviewViewModel @Inject constructor(private val repository: ShowsOv
     @ExperimentalCoroutinesApi
     val myShows = myShowsRefreshEvent.flatMapLatest { shouldRefresh ->
         repository.getMyShows(shouldRefresh)
+    }.map { resource ->
+        if(resource is Resource.Success) {
+            repository.removeAlreadyAiredEpisodes(resource.data ?: emptyList())
+        }
+        resource
     }
 
     fun onStart() {

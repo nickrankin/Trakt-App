@@ -46,7 +46,7 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
     }
 
     val episode = refreshEvent.flatMapLatest { shouldRefresh ->
-        repository.getEpisode(showTraktId, showTmdbId, seasonNumber, episodeNumber, language, shouldRefresh)
+        repository.getEpisode(showTraktId, showTmdbId, seasonNumber, episodeNumber, language)
     }
 
     val watchedEpisodes = refreshEvent.flatMapLatest { shouldRefresh ->
