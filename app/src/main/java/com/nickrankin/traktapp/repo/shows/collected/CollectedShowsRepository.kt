@@ -10,8 +10,7 @@ import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.networkBoundResource
 import com.nickrankin.traktapp.helper.shouldRefreshContents
 import com.nickrankin.traktapp.ui.auth.AuthActivity
-import com.uwetrottmann.trakt5.entities.BaseShow
-import com.uwetrottmann.trakt5.entities.UserSlug
+import com.uwetrottmann.trakt5.entities.*
 import com.uwetrottmann.trakt5.enums.Extended
 import com.uwetrottmann.trakt5.enums.ProgressLastActivity
 import com.uwetrottmann.trakt5.enums.Status
@@ -67,6 +66,26 @@ class CollectedShowsRepository @Inject constructor(private val traktApi: TraktAp
         }
 
         return collectedShows
+    }
+
+    suspend fun removeFromCollection(collectedShow: CollectedShow): Resource<SyncResponse> {
+        return try {
+            val syncItems = SyncItems().apply {
+                this. shows = arrayListOf(
+                    SyncShow().id(ShowIds.trakt(collectedShow.show_trakt_id))
+                )
+            }
+
+            val response = traktApi.tmSync().deleteItemsFromCollection(syncItems)
+
+            showsDatabase.withTransaction {
+                collectedShowDao.delete(collectedShow)
+            }
+
+            return Resource.Success(response)
+        } catch(t: Throwable) {
+            Resource.Error(t, null)
+        }
     }
 
     companion object {

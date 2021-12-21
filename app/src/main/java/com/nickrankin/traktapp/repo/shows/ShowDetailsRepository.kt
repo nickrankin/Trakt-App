@@ -30,6 +30,7 @@ import org.threeten.bp.OffsetDateTime
 import java.lang.Exception
 import javax.inject.Inject
 
+private const val REFRESH_INTERVAL_HOURS = 48L
 private const val TAG = "ShowDetailsRepository"
 class ShowDetailsRepository @Inject constructor(private val traktApi: TraktApi, private val tmdbApi: TmdbApi, private val sharedPreferences: SharedPreferences, private val showsDatabase: ShowsDatabase, private val watchedHistoryDatabase: WatchedHistoryDatabase): TrackedEpisodesRepository(traktApi, tmdbApi, showsDatabase) {
     private val tmShowDao = showsDatabase.tmShowDao()
@@ -37,6 +38,7 @@ class ShowDetailsRepository @Inject constructor(private val traktApi: TraktApi, 
     private val trackedShowDao = showsDatabase.trackedShowDao()
     private val collectedShowDao = showsDatabase.collectedShowsDao()
     private val watchedEpisodesDao = watchedHistoryDatabase.watchedHistoryShowsDao()
+    private val lastRefreshedShowDao = showsDatabase.lastRefreshedShowDao()
 
     val processChannel = Channel<BaseShow>()
     val trackingStatusChannel = Channel<Boolean>()
@@ -49,10 +51,23 @@ class ShowDetailsRepository @Inject constructor(private val traktApi: TraktApi, 
                 tmdbApi.tmTvService().tv(showTmdbId, getTmdbLanguage(language), AppendToResponse(AppendToResponseItem.CREDITS, AppendToResponseItem.TV_CREDITS, AppendToResponseItem.EXTERNAL_IDS, AppendToResponseItem.VIDEOS))
         },
         shouldFetch = { tmShow ->
-            tmShow == null || shouldRefresh
+            val lastRefreshed = lastRefreshedShowDao.getShowLastRefreshDate(showTmdbId).first()?.lastRefreshDate
+            Log.d(TAG, "getShowSummary: Last Refreshed $lastRefreshed", )
+
+            if(lastRefreshed != null && !shouldRefresh) {
+                val shouldRefresh = OffsetDateTime.now().minusHours(REFRESH_INTERVAL_HOURS).isAfter(lastRefreshed)
+                Log.d(TAG, "getShowSummary: Should refresh: $shouldRefresh", )
+                shouldRefresh
+            } else {
+                tmShow == null || shouldRefresh
+            }
+
         },
         saveFetchResult = { tvShow ->
             showsDatabase.withTransaction {
+                
+                lastRefreshedShowDao.insert(LastRefreshedShow(showTmdbId, OffsetDateTime.now()))
+                
                 tmSeasonsDao.deleteAllSeasonsForShow(showTmdbId)
 
                 tmShowDao.insertShow(convertShow(showTraktId, tvShow))

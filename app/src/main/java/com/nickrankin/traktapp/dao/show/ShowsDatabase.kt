@@ -18,7 +18,8 @@ import com.nickrankin.traktapp.dao.show.model.*
         TmSeason::class,
         TmEpisode::class,
         TrackedShow::class,
-        TrackedEpisode::class],
+        TrackedEpisode::class,
+               LastRefreshedShow::class],
     version = 1,
     exportSchema = false
 )
@@ -33,6 +34,7 @@ abstract class ShowsDatabase : RoomDatabase() {
     abstract fun TmEpisodesDao(): TmEpisodesDao
     abstract fun trackedShowDao(): TrackedShowDao
     abstract fun trackedEpisodeDao(): TrackedEpisodeDao
+    abstract fun lastRefreshedShowDao(): LastRefreshedShowDao
 
     companion object {
         @Volatile

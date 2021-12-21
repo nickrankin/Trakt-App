@@ -74,9 +74,8 @@ class ShowDetailsViewModel @Inject constructor(
 
     }
 
-
     val show = refreshEvent.flatMapLatest { shouldRefresh ->
-        repository.getShowSummary(traktId, tmdbId, language, false)
+        repository.getShowSummary(traktId, tmdbId, language, shouldRefresh)
     }
 
     fun getProgress() = viewModelScope.launch { repository.getShowProgress(traktId) }

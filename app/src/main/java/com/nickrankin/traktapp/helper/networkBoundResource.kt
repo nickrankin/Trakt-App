@@ -8,7 +8,7 @@ inline fun <ResultType, RequestType> networkBoundResource(
     crossinline fetch: suspend () -> RequestType,
     crossinline saveFetchResult: suspend (RequestType) -> Unit,
     crossinline onFetchFailed: (Throwable) -> Unit = { Unit },
-    crossinline shouldFetch: (ResultType) -> Boolean = { true }
+    crossinline shouldFetch: suspend (ResultType) -> Boolean = { true }
 ) = flow<Resource<ResultType>> {
     emit(Resource.Loading(null))
     val data = query().first()

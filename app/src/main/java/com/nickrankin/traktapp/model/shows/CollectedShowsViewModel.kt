@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.nickrankin.traktapp.dao.show.model.CollectedShow
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.repo.shows.collected.CollectedShowsRepository
+import com.uwetrottmann.trakt5.entities.SyncResponse
 import com.uwetrottmann.trakt5.enums.SortBy
 import com.uwetrottmann.trakt5.enums.SortHow
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,6 +23,10 @@ class CollectedShowsViewModel @Inject constructor(val repository: CollectedShows
 
     private val showRefreshEventChannel = Channel<Boolean>()
     private val showRefreshEvent = showRefreshEventChannel.receiveAsFlow()
+
+    private val eventChannel = Channel<Event>()
+    val events = eventChannel.receiveAsFlow()
+
     private var sortBy = SortBy.ADDED
     private var sortHow = SortHow.DESC
 
@@ -71,6 +76,8 @@ class CollectedShowsViewModel @Inject constructor(val repository: CollectedShows
         return sortedShows
     }
 
+    fun deleteShowFromCollection(collectedShow: CollectedShow) = viewModelScope.launch { eventChannel.send(Event.DELETE_COLLECTION_EVENT(repository.removeFromCollection(collectedShow))) }
+
 
     fun onStart() {
         viewModelScope.launch {
@@ -87,6 +94,10 @@ class CollectedShowsViewModel @Inject constructor(val repository: CollectedShows
                 showRefreshEventChannel.send(true)
             }
         }
+    }
+
+    sealed class Event {
+        data class DELETE_COLLECTION_EVENT(val syncResponse: Resource<SyncResponse>): Event()
     }
 
 }
