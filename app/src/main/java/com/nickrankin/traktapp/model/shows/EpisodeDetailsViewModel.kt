@@ -71,6 +71,8 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
 
     fun checkin(episodeName: String, episodeCheckin: EpisodeCheckin) = viewModelScope.launch { eventsChannel.send(Event.AddCheckinEvent(episodeName, episodeCheckin, repository.checkin(episodeCheckin))) }
 
+    fun addItemsToWatchedHistory(syncItems: SyncItems) = viewModelScope.launch { eventsChannel.send(Event.AddToWatchedHistoryEvent(repository.addToWatchedHistory(syncItems))) }
+
     fun removeWatchedEpisode(syncItems: SyncItems) = viewModelScope.launch {
         eventsChannel.send(Event.DeleteWatchedEpisodeEvent(repository.removeWatchedEpisode(syncItems)))
     }
@@ -104,6 +106,7 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
     sealed class Event {
         data class AddRatingsEvent(val syncResponse: Resource<SyncResponse>): Event()
         data class AddCheckinEvent(val episodeName: String, val episodeCheckin: EpisodeCheckin, val checkinResponse: Resource<EpisodeCheckinResponse?>): Event()
+        data class AddToWatchedHistoryEvent(val syncResponse: Resource<SyncResponse>): Event()
         data class DeleteWatchedEpisodeEvent(val syncResponse: Resource<SyncResponse>): Event()
     }
 }

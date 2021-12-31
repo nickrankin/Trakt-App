@@ -14,7 +14,7 @@
     <fragment
         android:id="@+id/navigation_watching_shows"
         android:name="com.nickrankin.traktapp.ui.shows.WatchingFragment"
-        android:label="Currently Watching"
+        android:label="Last Watched"
         tools:layout="@layout/fragment_watching_shows" />
 
     <fragment

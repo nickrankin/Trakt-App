@@ -7,12 +7,14 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.adapter.credits.CastCreditsAdapter
 import com.nickrankin.traktapp.adapter.history.EpisodeWatchedHistoryItemAdapter
@@ -26,6 +28,7 @@ import com.nickrankin.traktapp.model.shows.EpisodeDetailsViewModel
 import com.nickrankin.traktapp.repo.shows.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.dialog.RatingPickerFragment
+import com.nickrankin.traktmanager.ui.dialoguifragments.WatchedDatePickerFragment
 import com.uwetrottmann.tmdb2.entities.CastMember
 import com.uwetrottmann.trakt5.entities.EpisodeCheckin
 import com.uwetrottmann.trakt5.entities.EpisodeIds
@@ -41,9 +44,12 @@ import javax.inject.Inject
 private const val TAG = "EpisodeDetailsActivity"
 
 @AndroidEntryPoint
-class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow {
+class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefreshLayout.OnRefreshListener {
     private lateinit var bindings: ActivityEpisodeDetailsBinding
     private val viewModel: EpisodeDetailsViewModel by viewModels()
+
+    private lateinit var progressBar: ProgressBar
+    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
     private lateinit var castRecyclerView: RecyclerView
     private lateinit var castAdapter: CastCreditsAdapter
@@ -68,6 +74,10 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow {
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
+        progressBar = bindings.episodedetailsactivityInner.episodedetailsactivityProgressbar
+        swipeRefreshLayout = bindings.episodedetailsactivitySwipeLayout
+        swipeRefreshLayout.setOnRefreshListener(this)
+
         isLoggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
 
         initRecycler()
@@ -84,6 +94,7 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow {
 
     private suspend fun collectShow() {
         viewModel.show.collectLatest { showResource ->
+            val show = showResource.data
             when (showResource) {
                 is Resource.Loading -> {
                     Log.d(TAG, "collectShow: Loading show..")
@@ -92,9 +103,15 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow {
 
                     Log.d(TAG, "collectShow: Got show! ${showResource.data}")
 
-                    displayShow(showResource.data)
+                    displayShow(show)
                 }
                 is Resource.Error -> {
+
+                    // Try display cached show if available
+                    if(show != null) {
+                        displayShow(show)
+                    }
+
                     Log.e(
                         TAG,
                         "collectShow: Error getting show. ${showResource.error?.localizedMessage}"
@@ -107,12 +124,21 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow {
 
     private suspend fun collectEpisode() {
         viewModel.episode.collectLatest { episodeResource ->
+            val episode = episodeResource.data
             when (episodeResource) {
                 is Resource.Loading -> {
                     Log.d(TAG, "collectEpisode: Loading Episode...")
                 }
                 is Resource.Success -> {
-                    val episode = episodeResource.data
+
+                    if(swipeRefreshLayout.isRefreshing) {
+                        swipeRefreshLayout.isRefreshing = false
+                    }
+                    progressBar.visibility = View.GONE
+
+                    // Make the container visible
+                    bindings.episodedetailsactivityInner.episodedetailsactivityContainer.visibility = View.VISIBLE
+
 
                     bindings.wpisodedetailsactivityCollapsingToolbarLayout.title = episode?.name ?: "Unknown"
 
@@ -120,7 +146,6 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow {
 
                     lifecycleScope.launch {
                         launch { collectedWatchedEpisodes(episode?.tmdb_id ?: 0) }
-
                     }
 
                     if (isLoggedIn) {
@@ -129,10 +154,17 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow {
                     }
                 }
                 is Resource.Error -> {
-                    Log.e(
-                        TAG,
-                        "collectEpisode: Error getting episode. ${episodeResource.error?.localizedMessage}"
-                    )
+                    displayMessageToast("Error getting episode. ${episodeResource.error?.localizedMessage}", Toast.LENGTH_LONG)
+
+                    // Try to display cached episode if available
+                    if(episodeResource.data != null) {
+                        displayEpisode(episode)
+
+                        if(isLoggedIn) {
+                            setupActionButtons(episode)
+                        }
+                    }
+
                     episodeResource.error?.printStackTrace()
                 }
             }
@@ -220,6 +252,26 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow {
                         }
                     }
                 }
+
+                is EpisodeDetailsViewModel.Event.AddToWatchedHistoryEvent -> {
+                    val syncResponse = event.syncResponse
+
+
+                    if(syncResponse is Resource.Success) {
+                        if(syncResponse.data?.added?.episodes ?: 0 > 0) {
+                            displayMessageToast("Successfully added episode to your watched history!", Toast.LENGTH_LONG)
+
+                            // Refresh watched history entries
+                            viewModel.onRefresh()
+                        } else {
+                            displayMessageToast("History entry not added", Toast.LENGTH_LONG)
+                        }
+
+                    } else if (syncResponse is Resource.Error) {
+                        displayMessageToast("Error adding episode to watched history. Error: ${syncResponse.error?.localizedMessage}", Toast.LENGTH_LONG)
+                    }
+                }
+
                 is EpisodeDetailsViewModel.Event.DeleteWatchedEpisodeEvent -> {
                     val syncResponseResource = event.syncResponse
 
@@ -257,6 +309,7 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow {
 
 
         setupCheckin(episode)
+        setupAddWatchedHistory(episode)
 
     }
 
@@ -369,6 +422,27 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow {
         }
     }
 
+    private fun setupAddWatchedHistory(episode: TmEpisode?) {
+        val addHistoryButton = bindings.episodedetailsactivityInner.episodedetailsactivityActionButtons.actionbuttonAddHistory
+
+        addHistoryButton.visibility = View.VISIBLE
+
+        val addHistoryDialog = WatchedDatePickerFragment(onWatchedDateChanged = { selectedDate ->
+            val syncItems = SyncItems().apply {
+                episodes = listOf(
+                    SyncEpisode()
+                        .id(EpisodeIds.tmdb(episode?.tmdb_id ?: 0))
+                        .watchedAt(selectedDate)
+                )
+            }
+
+            viewModel.addItemsToWatchedHistory(syncItems)
+        })
+
+        addHistoryButton.setOnClickListener { addHistoryDialog.show(supportFragmentManager, "Add to watched history") }
+
+    }
+
     private suspend fun clearActiveCheckins(): Boolean {
         val result = viewModel.deleteCheckins()
         return if (result is Resource.Success) {
@@ -466,5 +540,9 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow {
     override fun onStart() {
         super.onStart()
         viewModel.onStart()
+    }
+
+    override fun onRefresh() {
+        viewModel.onRefresh()
     }
 }

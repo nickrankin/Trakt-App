@@ -196,6 +196,17 @@ class EpisodeDetailsRepository @Inject constructor(
         }
     }
 
+    suspend fun addToWatchedHistory(syncItems: SyncItems): Resource<SyncResponse> {
+        return try {
+            val response = traktApi.tmSync().addItemsToWatchedHistory(syncItems)
+
+            Resource.Success(response)
+
+        } catch(t: Throwable) {
+            Resource.Error(t, null)
+        }
+    }
+
     suspend fun removeWatchedEpisode(syncItems: SyncItems): Resource<SyncResponse> {
         return try {
             val response =  traktApi.tmSync().deleteItemsFromWatchedHistory(syncItems)
