@@ -21,7 +21,7 @@ class ShowCalendarEntriesAdapter @Inject constructor(private val sharedPreferenc
     }
 
     override fun onBindViewHolder(holder: CalendarEntryViewHolder, position: Int) {
-        holder.setIsRecyclable(false)
+        //holder.setIsRecyclable(false)
 
         val currentItem = getItem(position)
 

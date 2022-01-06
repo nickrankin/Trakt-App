@@ -24,6 +24,7 @@ class ShowsOverviewViewModel @Inject constructor(private val repository: ShowsOv
     }.map { resource ->
         if(resource is Resource.Success) {
             repository.removeAlreadyAiredEpisodes(resource.data ?: emptyList())
+
         }
         resource
     }

@@ -53,7 +53,7 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
         repository.getWatchedEpisodes(shouldRefreshWatchedEpisodes, showTraktId)
     }
 
-    fun getRatings() = viewModelScope.launch {
+    private fun getRatings() = viewModelScope.launch {
         repository.getRatings().collectLatest { ratedEpisodesResource ->
             if(ratedEpisodesResource is Resource.Success) {
                 val ratedEpisode = ratedEpisodesResource.data?.find { episode ->
@@ -67,7 +67,11 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
         }
     }
 
-    fun addRatings(syncItems: SyncItems) = viewModelScope.launch { eventsChannel.send(Event.AddRatingsEvent(repository.addRatings(syncItems))) }
+    fun addRatings(syncItems: SyncItems) = viewModelScope.launch {
+        eventsChannel.send(Event.AddRatingsEvent(repository.addRatings(syncItems)))
+        // Refresh the ratings
+        getRatings()
+    }
 
     fun checkin(episodeName: String, episodeCheckin: EpisodeCheckin) = viewModelScope.launch { eventsChannel.send(Event.AddCheckinEvent(episodeName, episodeCheckin, repository.checkin(episodeCheckin))) }
 

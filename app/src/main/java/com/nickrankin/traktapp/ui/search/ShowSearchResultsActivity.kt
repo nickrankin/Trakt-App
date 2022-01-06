@@ -11,6 +11,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.paging.map
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
@@ -74,17 +75,19 @@ class ShowSearchResultsActivity : AppCompatActivity(), OnNavigateToShow {
         lifecycleScope.launchWhenStarted {
             viewModel.doSearch(query).collectLatest { pagingData ->
                 progressBar.visibility = View.GONE
+                noResultsBanner.visibility = View.GONE
+                recyclerView.visibility = View.VISIBLE
 
-                adapter.addLoadStateListener { loadState ->
-                    if(loadState.append.endOfPaginationReached) {
-                        if(adapter.itemCount < 1) {
-                            noResultsBanner.visibility = View.VISIBLE
-                        } else {
-                            noResultsBanner.visibility = View.GONE
-                            recyclerView.visibility = View.VISIBLE
-                        }
-                    }
-                }
+//                adapter.addLoadStateListener { loadState ->
+//                    if(loadState.append.endOfPaginationReached) {
+//                        if(adapter.itemCount < 1) {
+//                            noResultsBanner.visibility = View.VISIBLE
+//                        } else {
+//                            noResultsBanner.visibility = View.GONE
+//                            recyclerView.visibility = View.VISIBLE
+//                        }
+//                    }
+//                }
 
                 adapter.submitData(pagingData)
             }

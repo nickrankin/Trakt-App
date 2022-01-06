@@ -1,6 +1,7 @@
 package com.nickrankin.traktapp.repo.auth.shows
 
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TmdbApi
 import com.nickrankin.traktapp.api.TraktApi
@@ -14,6 +15,7 @@ import org.threeten.bp.OffsetDateTime
 import org.threeten.bp.format.DateTimeFormatter
 import javax.inject.Inject
 
+private const val TAG = "ShowsOverviewRepository"
 private const val DEFAULT_TRAKT_DATE_FORMAT = "yyyy-MM-dd"
 private const val REFRESH_INTERVAL = 24L
 private const val NUM_DAYS = 14
@@ -44,6 +46,7 @@ class ShowsOverviewRepository @Inject constructor(private val traktApi: TraktApi
     suspend fun removeAlreadyAiredEpisodes(shows: List<ShowCalendarEntry>) {
         val dateNow = OffsetDateTime.now()
         shows.map { calendarEntry ->
+            Log.d(TAG, "removeAlreadyAiredEpisodes: Entry ${calendarEntry.episode_title}. Aired ${calendarEntry.first_aired} Now $dateNow. Is before ${calendarEntry.first_aired?.isBefore(dateNow)}", )
             if(calendarEntry.first_aired?.isBefore(dateNow) == true) {
                 showsDatabase.withTransaction {
                     showCalendarEntryDao.delete(calendarEntry)

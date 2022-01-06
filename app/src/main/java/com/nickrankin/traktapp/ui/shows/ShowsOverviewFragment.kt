@@ -119,26 +119,29 @@ class OverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNav
                     progressBar.visibility = View.VISIBLE
                 }
                 is Resource.Success -> {
+
                     progressBar.visibility = View.GONE
                     messageContainer.visibility = View.GONE
 
                     if(refreshLayout.isRefreshing) {
                         refreshLayout.isRefreshing = false
                     }
-
                     val data = myShowsResource.data
 
-                    if(data?.isNotEmpty() == true) {
-                        adapter.submitList(data)
-                    } else {
-                        messageContainer.visibility = View.VISIBLE
-                        messageContainer.text = "You have no shows :-("
-                    }
+                    Log.d(TAG, "getMyShows: Got ${data?.size} SHOWS")
 
 
                     data?.map {
                         Log.d(TAG, "getMyShows: Got show ${it.show_title} airing episode ${it.episode_title} S${it.episode_season} // E${it.episode_number} on ${it.first_aired.toString()}")
                     }
+
+                    if(data?.isEmpty() == true) {
+                        messageContainer.visibility = View.VISIBLE
+                        messageContainer.text = "No upcoming shows!"
+                    } else {
+                        messageContainer.visibility = View.GONE
+                    }
+                    adapter.submitList(data)
                 }
                 is Resource.Error -> {
                     messageContainer.visibility = View.GONE
