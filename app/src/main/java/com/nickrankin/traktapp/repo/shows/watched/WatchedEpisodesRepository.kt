@@ -13,6 +13,8 @@ import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.networkBoundResource
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.trakt5.entities.HistoryEntry
+import com.uwetrottmann.trakt5.entities.SyncItems
+import com.uwetrottmann.trakt5.entities.SyncResponse
 import com.uwetrottmann.trakt5.entities.UserSlug
 import com.uwetrottmann.trakt5.enums.Extended
 import com.uwetrottmann.trakt5.enums.HistoryType
@@ -33,5 +35,19 @@ class WatchedEpisodesRepository @Inject constructor(private val traktApi: TraktA
     ) {
         showsDatabase.watchedEpisodesDao().getWatchedEpisodes()
     }.flow
+
+    suspend fun deleteFromWatchedHistory(syncItems: SyncItems): Resource<SyncResponse> {
+        return try {
+            val response = traktApi.tmSync().deleteItemsFromWatchedHistory(syncItems)
+
+            showsDatabase.withTransaction {
+                watchedEpisodesDao.deleteWatchedEpisodeById(syncItems.ids?.first() ?: 0L)
+            }
+            Resource.Success(response)
+
+        } catch(t: Throwable) {
+            Resource.Error(t, null)
+        }
+    }
 
 }

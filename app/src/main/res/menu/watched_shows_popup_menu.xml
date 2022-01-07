@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/watchedshowspopup_nav_episode"
+        android:icon="@drawable/ic_baseline_live_tv_24"
+        android:title="Go to Episode" />
+    <item
+        android:id="@+id/watchedshowspopup_nav_show"
+        android:icon="@drawable/ic_baseline_live_tv_24"
+        android:title="Go to Show" />
+    <item
+        android:id="@+id/watchedshowspopup_remove_show"
+        android:icon="@drawable/ic_baseline_delete_forever_24"
+        android:title="Remove this Play"/>
+</menu>

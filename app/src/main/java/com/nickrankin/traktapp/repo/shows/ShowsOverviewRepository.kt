@@ -5,12 +5,15 @@ import android.util.Log
 import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TmdbApi
 import com.nickrankin.traktapp.api.TraktApi
+import com.nickrankin.traktapp.dao.calendars.model.HiddenShowCalendarEntry
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.calendars.model.ShowCalendarEntry
+import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.networkBoundResource
 import com.nickrankin.traktapp.helper.shouldRefreshContents
 import com.uwetrottmann.trakt5.entities.CalendarShowEntry
 import com.uwetrottmann.trakt5.enums.Status
+import kotlinx.coroutines.flow.first
 import org.threeten.bp.OffsetDateTime
 import org.threeten.bp.format.DateTimeFormatter
 import javax.inject.Inject
@@ -43,6 +46,14 @@ class ShowsOverviewRepository @Inject constructor(private val traktApi: TraktApi
         }
     )
 
+    suspend fun setShowHiddenState(showTmdbId: Int, isHidden: Boolean) {
+        showsDatabase.withTransaction {
+            showCalendarEntryDao.updateHiddenState(
+                HiddenShowCalendarEntry(showTmdbId, isHidden)
+            )
+        }
+    }
+
     suspend fun removeAlreadyAiredEpisodes(shows: List<ShowCalendarEntry>) {
         val dateNow = OffsetDateTime.now()
         shows.map { calendarEntry ->
@@ -74,15 +85,34 @@ class ShowsOverviewRepository @Inject constructor(private val traktApi: TraktApi
                     entry.episode?.runtime,
                     entry.episode?.title,
                     entry.show?.status ?: Status.CANCELED,
-                    entry.show?.title ?: ""
-
+                    entry.show?.title ?: "",
+                    false
                 )
             )
 
         }
 
         return showCalendarEntries
+    }
 
+    suspend fun getHiddenStatus(showHidden: Boolean, showEntries: List<ShowCalendarEntry>): Resource<List<ShowCalendarEntry>> {
+        val hiddenShows = showCalendarEntryDao.getShowHiddenStatus().first()
+
+        showEntries.map { showCalendarEntry ->
+            val foundShow = hiddenShows.find { showCalendarEntry.show_tmdb_id == it.showTmdbId }
+
+            if(foundShow?.isHidden == true) {
+                showCalendarEntry.hidden = true
+            }
+        }
+
+        if(!showHidden) {
+            return Resource.Success(showEntries.filter {
+                !it.hidden
+            })
+        }
+
+        return Resource.Success(showEntries)
     }
 
     companion object {

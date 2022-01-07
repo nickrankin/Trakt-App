@@ -6,6 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.nickrankin.traktapp.dao.calendars.ShowCalendarEntryDao
+import com.nickrankin.traktapp.dao.calendars.model.HiddenShowCalendarEntry
 import com.nickrankin.traktapp.dao.calendars.model.ShowCalendarEntry
 import com.nickrankin.traktapp.dao.show.model.*
 
@@ -19,7 +20,8 @@ import com.nickrankin.traktapp.dao.show.model.*
         TmEpisode::class,
         TrackedShow::class,
         TrackedEpisode::class,
-               LastRefreshedShow::class],
+        LastRefreshedShow::class,
+        HiddenShowCalendarEntry::class],
     version = 1,
     exportSchema = false
 )

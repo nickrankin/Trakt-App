@@ -20,5 +20,6 @@ data class ShowCalendarEntry(
     val episode_runtime: Int?,
     val episode_title: String?,
     val status: Status,
-    val show_title: String
+    val show_title: String,
+    var hidden: Boolean
 )

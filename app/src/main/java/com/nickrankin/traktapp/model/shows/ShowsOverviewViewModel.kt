@@ -18,6 +18,8 @@ class ShowsOverviewViewModel @Inject constructor(private val repository: ShowsOv
     private val myShowsRefreshEventChannel = Channel<Boolean>()
     private val myShowsRefreshEvent = myShowsRefreshEventChannel.receiveAsFlow()
 
+    private var showHiddenEntries = false
+
     @ExperimentalCoroutinesApi
     val myShows = myShowsRefreshEvent.flatMapLatest { shouldRefresh ->
         repository.getMyShows(shouldRefresh)
@@ -27,9 +29,17 @@ class ShowsOverviewViewModel @Inject constructor(private val repository: ShowsOv
 
         }
         resource
+    }.map { resource ->
+        repository.getHiddenStatus(showHiddenEntries, resource.data ?: emptyList())
     }
 
-    fun onStart() {
+    fun showHiddenEntries(showHidden: Boolean) {
+        this.showHiddenEntries = showHidden
+    }
+
+    fun setShowHiddenState(showTmdbId: Int, isHidden: Boolean) = viewModelScope.launch { repository.setShowHiddenState(showTmdbId, isHidden) }
+
+    fun onReload() {
         viewModelScope.launch {
             launch {
                 myShowsRefreshEventChannel.send(false)

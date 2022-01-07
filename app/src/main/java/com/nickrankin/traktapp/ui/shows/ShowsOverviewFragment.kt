@@ -4,24 +4,17 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
+import android.view.*
 import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.widget.*
-import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
-import com.google.android.material.snackbar.Snackbar
-import com.nickrankin.traktapp.MainActivity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.shows.ShowCalendarEntriesAdapter
-import com.nickrankin.traktapp.dao.calendars.model.ShowCalendarEntry
-import com.nickrankin.traktapp.dao.show.model.CollectedShow
 import com.nickrankin.traktapp.databinding.FragmentShowsOverviewBinding
 import com.nickrankin.traktapp.helper.PosterImageLoader
 import com.nickrankin.traktapp.helper.Resource
@@ -64,6 +57,8 @@ class OverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNav
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        setHasOptionsMenu(true)
+
     }
 
     override fun onCreateView(
@@ -94,6 +89,12 @@ class OverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNav
             handleLoggedOutState()
         }
 
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+
+        inflater.inflate(R.menu.calendar_shows_filter_menu, menu)
     }
 
     private fun handleLoggedOutState() {
@@ -130,10 +131,9 @@ class OverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNav
 
                     Log.d(TAG, "getMyShows: Got ${data?.size} SHOWS")
 
-
-                    data?.map {
-                        Log.d(TAG, "getMyShows: Got show ${it.show_title} airing episode ${it.episode_title} S${it.episode_season} // E${it.episode_number} on ${it.first_aired.toString()}")
-                    }
+//                    data?.map {
+//                        Log.d(TAG, "getMyShows: Got show ${it.show_title} airing episode ${it.episode_title} S${it.episode_season} // E${it.episode_number} on ${it.first_aired.toString()}")
+//                    }
 
                     if(data?.isEmpty() == true) {
                         messageContainer.visibility = View.VISIBLE
@@ -169,8 +169,26 @@ class OverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNav
         recyclerView = bindings.showsoverviewfragmentRecyclerview
         layoutManager = LinearLayoutManager(context)
 
-        adapter = ShowCalendarEntriesAdapter(sharedPreferences, posterImageLoader, glide, callback = {calendarEntry ->
-            navigateToEpisode(calendarEntry.show_trakt_id, calendarEntry.show_tmdb_id, calendarEntry.episode_season, calendarEntry.episode_number, calendarEntry.language ?: "en")
+        adapter = ShowCalendarEntriesAdapter(sharedPreferences, posterImageLoader, glide, callback = { calendarEntry, action ->
+            when(action) {
+                ShowCalendarEntriesAdapter.ACTION_NAVIGATE_EPISODE -> {
+                    navigateToEpisode(calendarEntry.show_trakt_id, calendarEntry.show_tmdb_id, calendarEntry.episode_season, calendarEntry.episode_number, calendarEntry.language ?: "en")
+                }
+                ShowCalendarEntriesAdapter.ACTION_NAVIGATE_SHOW -> {
+                    navigateToShow(calendarEntry.show_trakt_id, calendarEntry.show_tmdb_id, calendarEntry.language)
+                }
+                ShowCalendarEntriesAdapter.ACTION_REMOVE_COLLECTION-> {
+                    viewModel.setShowHiddenState(calendarEntry.show_tmdb_id, !calendarEntry.hidden)
+
+                    // Force refresh of list
+                    viewModel.onReload()
+
+                }
+
+                else -> {
+                    navigateToEpisode(calendarEntry.show_trakt_id, calendarEntry.show_tmdb_id, calendarEntry.episode_season, calendarEntry.episode_number, calendarEntry.language ?: "en")
+                }
+            }
         })
 
         recyclerView.layoutManager = layoutManager
@@ -206,17 +224,30 @@ class OverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNav
         startActivity(intent)
     }
 
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId) {
+            R.id.calendarshowsmenu_show_hidden -> {
+                viewModel.showHiddenEntries(true)
+                viewModel.onReload()
+            }
+        }
+
+        return false
+    }
+
 
     override fun onStart() {
         super.onStart()
 
         if(isLoggedIn) {
-            viewModel.onStart()
+            viewModel.showHiddenEntries(false)
+            viewModel.onReload()
         }
     }
 
     override fun onRefresh() {
         if(isLoggedIn) {
+            viewModel.showHiddenEntries(false)
             viewModel.onRefresh()
         }
     }
