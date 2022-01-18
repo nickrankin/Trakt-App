@@ -1,4 +1,4 @@
-package com.nickrankin.traktapp.api.services
+package com.nickrankin.traktapp.api.services.trakt
 
 import com.uwetrottmann.trakt5.entities.*
 import com.uwetrottmann.trakt5.enums.Extended

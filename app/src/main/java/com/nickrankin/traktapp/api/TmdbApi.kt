@@ -1,9 +1,9 @@
 package com.nickrankin.traktapp.api
 
 import com.nickrankin.traktapp.ApiKeys
-import com.nickrankin.traktapp.api.services.tmdbservices.TmEpisodes
-import com.nickrankin.traktapp.api.services.tmdbservices.TmSeasons
-import com.nickrankin.traktapp.api.services.tmdbservices.TmTvService
+import com.nickrankin.traktapp.api.services.tmdb.TmEpisodes
+import com.nickrankin.traktapp.api.services.tmdb.TmSeasons
+import com.nickrankin.traktapp.api.services.tmdb.TmTvService
 import com.uwetrottmann.tmdb2.Tmdb
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor

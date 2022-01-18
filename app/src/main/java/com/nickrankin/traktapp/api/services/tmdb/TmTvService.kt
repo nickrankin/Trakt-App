@@ -1,7 +1,6 @@
-package com.nickrankin.traktapp.api.services.tmdbservices
+package com.nickrankin.traktapp.api.services.tmdb
 
 import com.uwetrottmann.tmdb2.entities.*
-import retrofit2.Call
 import retrofit2.http.*
 
 interface TmTvService {

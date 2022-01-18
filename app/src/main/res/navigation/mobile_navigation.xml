@@ -15,11 +15,17 @@
         android:id="@+id/navigation_watching_shows"
         android:name="com.nickrankin.traktapp.ui.shows.WatchingFragment"
         android:label="Last Watched"
-        tools:layout="@layout/fragment_watching_shows" />
+        tools:layout="@layout/fragment_watching" />
 
     <fragment
         android:id="@+id/navigation_collected_shows"
         android:name="com.nickrankin.traktapp.ui.shows.CollectedShowsFragment"
         android:label="Collected Shows"
-        tools:layout="@layout/fragment_notifications" />
+        tools:layout="@layout/fragment_collected_shows" />
+
+    <fragment
+        android:id="@+id/navigation_show_reccomendations"
+        android:name="com.nickrankin.traktapp.ui.shows.ShowsRecommendedFragment"
+        android:label="Recommended Shows"
+        tools:layout="@layout/fragment_shows_recommended" />
 </navigation>
