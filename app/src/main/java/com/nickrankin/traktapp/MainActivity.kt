@@ -103,7 +103,4 @@ class MainActivity : AppCompatActivity() {
         return false
     }
 
-    override fun onSearchRequested(): Boolean {
-        return super.onSearchRequested()
-    }
 }

@@ -79,6 +79,11 @@ class ShowsRecommendedFragment : Fragment(), OnNavigateToShow {
         collectEvents()
     }
 
+    override fun onResume() {
+        super.onResume()
+        viewModel.onInit()
+    }
+
     private fun initRecycler() {
         recyclerView = bindings.fragmentreccomendedshowsRecyclerview
 

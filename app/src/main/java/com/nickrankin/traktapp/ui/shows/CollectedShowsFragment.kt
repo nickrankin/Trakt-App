@@ -283,8 +283,8 @@ class CollectedShowsFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener,
         return false
     }
 
-    override fun onStart() {
-        super.onStart()
+    override fun onResume() {
+        super.onResume()
 
         if (isLoggedIn) {
             viewModel.onStart()

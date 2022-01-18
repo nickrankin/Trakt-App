@@ -236,8 +236,8 @@ class OverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNav
     }
 
 
-    override fun onStart() {
-        super.onStart()
+    override fun onResume() {
+        super.onResume()
 
         if(isLoggedIn) {
             viewModel.showHiddenEntries(false)

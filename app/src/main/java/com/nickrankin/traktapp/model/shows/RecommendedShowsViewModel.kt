@@ -24,7 +24,7 @@ class RecommendedShowsViewModel @Inject constructor(private val repository: Reco
     private val eventsChannel = Channel<Event>()
     val events = eventsChannel.receiveAsFlow()
 
-    init {
+    fun onInit() {
         viewModelScope.launch {
             repository.getSuggestedShows()
         }
