@@ -1,28 +1,38 @@
 package com.nickrankin.traktapp.ui.shows
 
+import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Canvas
+import android.graphics.Typeface
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.util.Log
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
+import com.google.android.material.snackbar.Snackbar
+import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.credits.CastCreditsAdapter
 import com.nickrankin.traktapp.adapter.history.EpisodeWatchedHistoryItemAdapter
+import com.nickrankin.traktapp.dao.show.model.CollectedShow
 import com.nickrankin.traktapp.dao.show.model.TmEpisode
 import com.nickrankin.traktapp.dao.show.model.TmShow
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
 import com.nickrankin.traktapp.databinding.ActivityEpisodeDetailsBinding
 import com.nickrankin.traktapp.helper.AppConstants
+import com.nickrankin.traktapp.helper.ItemDecorator
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.shows.EpisodeDetailsViewModel
 import com.nickrankin.traktapp.repo.shows.ShowDetailsRepository
@@ -461,8 +471,14 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
         }
     }
 
-    private fun handleWatchedEpisodeDelete(watchedEpisode: WatchedEpisode) {
+    private fun handleWatchedEpisodeDelete(watchedEpisode: WatchedEpisode, showConfirmation: Boolean) {
         val syncItem = SyncItems().ids(watchedEpisode.id)
+
+        if(!showConfirmation) {
+            viewModel.removeWatchedEpisode(syncItem)
+            return
+        }
+
         val dialog = AlertDialog.Builder(this)
             .setTitle("Delete ${watchedEpisode.episode_title} from your watched history?")
             .setMessage("Are you sure you want to remove ${watchedEpisode.episode_title} from your Trakt History?")
@@ -491,6 +507,131 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
         startActivity(intent)
     }
 
+    private fun setupViewSwipeBehaviour(context: Context) {
+
+        var itemTouchHelper: ItemTouchHelper? = null
+
+        itemTouchHelper = ItemTouchHelper(
+            object :
+                ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+                override fun onMove(
+                    recyclerView: RecyclerView,
+                    viewHolder: RecyclerView.ViewHolder,
+                    target: RecyclerView.ViewHolder
+                ): Boolean {
+                    viewHolder.itemView.background = null
+
+                    return true
+                }
+
+                override fun onChildDraw(
+                    c: Canvas,
+                    recyclerView: RecyclerView,
+                    viewHolder: RecyclerView.ViewHolder,
+                    dX: Float,
+                    dY: Float,
+                    actionState: Int,
+                    isCurrentlyActive: Boolean
+                ) {
+                    val colorAlert = ContextCompat.getColor(context, R.color.red)
+                    val teal200 = ContextCompat.getColor(context, R.color.teal_200)
+                    val defaultWhiteColor = ContextCompat.getColor(context, R.color.white)
+
+                    ItemDecorator.Builder(c, recyclerView, viewHolder, dX, actionState).set(
+                        iconHorizontalMargin = 23f,
+                        backgroundColorFromStartToEnd = teal200,
+                        backgroundColorFromEndToStart = colorAlert,
+                        textFromStartToEnd = "",
+                        textFromEndToStart = "Remove from History",
+                        textColorFromStartToEnd = defaultWhiteColor,
+                        textColorFromEndToStart = defaultWhiteColor,
+                        iconTintColorFromStartToEnd = defaultWhiteColor,
+                        iconTintColorFromEndToStart = defaultWhiteColor,
+                        textSizeFromStartToEnd = 16f,
+                        textSizeFromEndToStart = 16f,
+                        typeFaceFromStartToEnd = Typeface.DEFAULT_BOLD,
+                        typeFaceFromEndToStart = Typeface.SANS_SERIF,
+                        iconResIdFromStartToEnd = R.drawable.ic_baseline_delete_forever_24,
+                        iconResIdFromEndToStart = R.drawable.ic_trakt_svgrepo_com
+                    )
+
+                    super.onChildDraw(
+                        c,
+                        recyclerView,
+                        viewHolder,
+                        dX,
+                        dY,
+                        actionState,
+                        isCurrentlyActive
+                    )
+
+                }
+
+                override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                    val episodesList: MutableList<WatchedEpisode> = mutableListOf()
+                    episodesList.addAll(watchedEpisodesAdapter.currentList)
+
+                    val episodePosition = viewHolder.layoutPosition
+                    val episode = episodesList[episodePosition]
+
+                    when (direction) {
+                        ItemTouchHelper.LEFT -> {
+                            val updatedList: MutableList<WatchedEpisode> = mutableListOf()
+                            updatedList.addAll(episodesList)
+                            updatedList.remove(episode)
+
+                            watchedEpisodesAdapter.submitList(updatedList)
+
+                            val timer = getTimer() {
+                                Log.e(TAG, "onFinish: Timer ended for remove show ${episode.episode_title}!")
+
+                                handleWatchedEpisodeDelete(episode, false)
+
+                            }.start()
+
+                            getSnackbar(
+                                bindings.episodedetailsactivityInner.episodedetailsactivityWatchedRecyclerview,
+                                "You have removed history item: ${episode.episode_title}"
+                            ) {
+                                timer.cancel()
+                                watchedEpisodesAdapter.submitList(episodesList) {
+                                    // For first and last element, always scroll to the position to bring the element to focus
+                                    if (episodePosition == 0) {
+                                        watchedEpisodesRecyclerView.scrollToPosition(0)
+                                    } else if (episodePosition == episodesList.size - 1) {
+                                        watchedEpisodesRecyclerView.scrollToPosition(episodesList.size - 1)
+                                    }
+                                }
+                            }.show()
+                        }
+                    }
+                }
+            }
+        )
+
+        itemTouchHelper.attachToRecyclerView(watchedEpisodesRecyclerView)
+    }
+
+    private fun getTimer(doAction: () -> Unit): CountDownTimer {
+        return object : CountDownTimer(5000, 1000) {
+            override fun onTick(p0: Long) {
+            }
+
+            override fun onFinish() {
+                doAction()
+            }
+        }
+    }
+
+    private fun getSnackbar(v: View, message: String, listener: View.OnClickListener): Snackbar {
+        return Snackbar.make(
+            v,
+            message,
+            Snackbar.LENGTH_LONG
+        )
+            .setAction("Cancel", listener)
+    }
+
     private fun displayMessageToast(message: String, length: Int) {
         Toast.makeText(this, message, length).show()
     }
@@ -512,6 +653,7 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
 
     private fun initRecycler() {
         castRecyclerView = bindings.episodedetailsactivityInner.episodedetailsactivityCastRecycler
+
         val castLayoutManager = LinearLayoutManager(this)
         castLayoutManager.orientation = LinearLayoutManager.HORIZONTAL
 
@@ -523,13 +665,15 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
         val watchedEpisodesLayoutManager = LinearLayoutManager(this)
 
         watchedEpisodesAdapter = EpisodeWatchedHistoryItemAdapter(callback = { selectedEpisode ->
-            handleWatchedEpisodeDelete(selectedEpisode)
+            handleWatchedEpisodeDelete(selectedEpisode, true)
         })
 
         watchedEpisodesRecyclerView = bindings.episodedetailsactivityInner.episodedetailsactivityWatchedRecyclerview
 
         watchedEpisodesRecyclerView.layoutManager = watchedEpisodesLayoutManager
         watchedEpisodesRecyclerView.adapter = watchedEpisodesAdapter
+
+        setupViewSwipeBehaviour(this)
     }
 
     override fun onSupportNavigateUp(): Boolean {

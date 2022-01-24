@@ -1,4 +1,4 @@
-package com.nickrankin.traktapp.model.auth.shows
+package com.nickrankin.traktapp.model.shows
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,7 +10,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -29,7 +28,9 @@ class WatchedEpisodesViewModel @Inject constructor(private val repository: Watch
         repository.watchedEpisodes(shouldRefresh)
     }
 
-    fun removeFromWatchedHistory(syncItems: SyncItems) = viewModelScope.launch { eventsChannel.send(Event.RemoveWatchedHistoryEvent(repository.deleteFromWatchedHistory(syncItems))) }
+    fun removeFromWatchedHistory(syncItems: SyncItems) = viewModelScope.launch { eventsChannel.send(
+        Event.RemoveWatchedHistoryEvent(repository.deleteFromWatchedHistory(syncItems))
+    ) }
 
     fun onStart() {
         viewModelScope.launch {

@@ -3,14 +3,19 @@ package com.nickrankin.traktapp.ui.shows
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Canvas
+import android.graphics.Typeface
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.util.Log
 import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -22,12 +27,14 @@ import com.nickrankin.traktapp.adapter.shows.CollectedShowsAdapter
 import com.nickrankin.traktapp.dao.show.model.CollectedShow
 import com.nickrankin.traktapp.dao.show.model.ShowProgress
 import com.nickrankin.traktapp.databinding.FragmentCollectedShowsBinding
+import com.nickrankin.traktapp.helper.ItemDecorator
 import com.nickrankin.traktapp.helper.PosterImageLoader
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.calculateProgress
 import com.nickrankin.traktapp.model.auth.shows.CollectedShowsViewModel
 import com.nickrankin.traktapp.repo.shows.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
+import com.uwetrottmann.trakt5.entities.Show
 import com.uwetrottmann.trakt5.entities.ShowIds
 import com.uwetrottmann.trakt5.entities.SyncItems
 import com.uwetrottmann.trakt5.entities.SyncShow
@@ -208,6 +215,8 @@ class CollectedShowsFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener,
 
     private fun initRecycler() {
         recyclerView = bindings.collectedshowsfragmentRecyclerview
+        setupViewSwipeBehaviour()
+
         layoutManager = LinearLayoutManager(context)
         adapter = CollectedShowsAdapter(
             sharedPreferences,
@@ -260,6 +269,130 @@ class CollectedShowsFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener,
 
         alertDialog.show()
 
+    }
+
+    private fun setupViewSwipeBehaviour() {
+
+        var itemTouchHelper: ItemTouchHelper? = null
+
+        itemTouchHelper = ItemTouchHelper(
+            object :
+                ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+                override fun onMove(
+                    recyclerView: RecyclerView,
+                    viewHolder: RecyclerView.ViewHolder,
+                    target: RecyclerView.ViewHolder
+                ): Boolean {
+                    viewHolder.itemView.background = null
+
+                    return true
+                }
+
+                override fun onChildDraw(
+                    c: Canvas,
+                    recyclerView: RecyclerView,
+                    viewHolder: RecyclerView.ViewHolder,
+                    dX: Float,
+                    dY: Float,
+                    actionState: Int,
+                    isCurrentlyActive: Boolean
+                ) {
+                    val colorAlert = ContextCompat.getColor(requireContext(), R.color.red)
+                    val teal200 = ContextCompat.getColor(requireContext(), R.color.teal_200)
+                    val defaultWhiteColor = ContextCompat.getColor(requireContext(), R.color.white)
+
+                    ItemDecorator.Builder(c, recyclerView, viewHolder, dX, actionState).set(
+                        iconHorizontalMargin = 23f,
+                        backgroundColorFromStartToEnd = teal200,
+                        backgroundColorFromEndToStart = colorAlert,
+                        textFromStartToEnd = "",
+                        textFromEndToStart = "Remove from Collection",
+                        textColorFromStartToEnd = defaultWhiteColor,
+                        textColorFromEndToStart = defaultWhiteColor,
+                        iconTintColorFromStartToEnd = defaultWhiteColor,
+                        iconTintColorFromEndToStart = defaultWhiteColor,
+                        textSizeFromStartToEnd = 16f,
+                        textSizeFromEndToStart = 16f,
+                        typeFaceFromStartToEnd = Typeface.DEFAULT_BOLD,
+                        typeFaceFromEndToStart = Typeface.SANS_SERIF,
+                        iconResIdFromStartToEnd = R.drawable.ic_baseline_delete_forever_24,
+                        iconResIdFromEndToStart = R.drawable.ic_trakt_svgrepo_com
+                    )
+
+                    super.onChildDraw(
+                        c,
+                        recyclerView,
+                        viewHolder,
+                        dX,
+                        dY,
+                        actionState,
+                        isCurrentlyActive
+                    )
+
+                }
+
+                override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                    val showsList: MutableList<CollectedShow> = mutableListOf()
+                    showsList.addAll(adapter.currentList)
+
+                    val showPosition = viewHolder.layoutPosition
+                    val show = showsList[showPosition]
+
+                    when (direction) {
+                        ItemTouchHelper.LEFT -> {
+                            val updatedList: MutableList<CollectedShow> = mutableListOf()
+                            updatedList.addAll(showsList)
+                            updatedList.remove(show)
+
+                            adapter.submitList(updatedList)
+
+                            val timer = getTimer() {
+                                Log.e(TAG, "onFinish: Timer ended for remove show ${show.show_title}!")
+                                viewModel.deleteShowFromCollection(show)
+
+                            }.start()
+
+                            getSnackbar(
+                                bindings.collectedshowsfragmentRecyclerview,
+                                "You have removed collected Show: ${show.show_title}"
+                            ) {
+                                timer.cancel()
+                                adapter.submitList(showsList) {
+                                    // For first and last element, always scroll to the position to bring the element to focus
+                                    if (showPosition == 0) {
+                                        recyclerView.scrollToPosition(0)
+                                    } else if (showPosition == showsList.size - 1) {
+                                        recyclerView.scrollToPosition(showsList.size - 1)
+                                    }
+                                }
+                            }.show()
+                        }
+                    }
+                }
+            }
+        )
+
+        itemTouchHelper.attachToRecyclerView(recyclerView)
+    }
+
+    private fun getTimer(doAction: () -> Unit): CountDownTimer {
+        return object : CountDownTimer(5000, 1000) {
+            override fun onTick(p0: Long) {
+            }
+
+            override fun onFinish() {
+                doAction()
+            }
+        }
+    }
+
+    private fun getSnackbar(v: View, message: String, listener: View.OnClickListener): Snackbar {
+        return Snackbar.make(
+            v,
+            message,
+            Snackbar.LENGTH_LONG
+        )
+            .setAction("Cancel", listener)
     }
 
     private fun displayMessageToast(message: String, duration: Int) {

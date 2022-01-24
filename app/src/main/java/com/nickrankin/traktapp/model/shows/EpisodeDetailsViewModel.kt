@@ -1,5 +1,6 @@
 package com.nickrankin.traktapp.model.shows
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+private const val TAG = "EpisodeDetailsViewModel"
 @HiltViewModel
 class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: SavedStateHandle, private val showDetailsRepository: ShowDetailsRepository,  private val repository: EpisodeDetailsRepository): ViewModel() {
 
@@ -34,7 +36,6 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
     private val seasonNumber: Int = savedStateHandle.get(EpisodeDetailsRepository.SEASON_NUMBER_KEY) ?: 0
     private val episodeNumber: Int = savedStateHandle.get(EpisodeDetailsRepository.EPISODE_NUMBER_KEY) ?: 0
     private val language: String? = savedStateHandle.get(EpisodeDetailsRepository.LANGUAGE_KEY)
-    private val shouldRefreshWatchedEpisodes = savedStateHandle.get<Boolean>(EpisodeDetailsRepository.SHOULD_REFRESH_WATCHED_KEY) ?: false
 
     init {
         getRatings()
@@ -50,7 +51,7 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
     }
 
     val watchedEpisodes = refreshEvent.flatMapLatest { shouldRefresh ->
-        repository.getWatchedEpisodes(shouldRefreshWatchedEpisodes, showTraktId)
+        repository.getWatchedEpisodes(shouldRefresh, showTraktId)
     }
 
     private fun getRatings() = viewModelScope.launch {
