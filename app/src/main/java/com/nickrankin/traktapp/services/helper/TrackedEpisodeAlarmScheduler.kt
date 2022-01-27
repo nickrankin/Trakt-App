@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import androidx.room.withTransaction
 import com.nickrankin.traktapp.MainActivity
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.show.model.TrackedEpisode
@@ -34,7 +35,9 @@ class TrackedEpisodeAlarmScheduler(private val context: Context, private val ala
             return
         }
 
-        trackedEpisodes.map { trackedEpisode ->
+        Log.d(TAG, "scheduleAllAlarms: Scheduling ${trackedEpisodes.size} alarms")
+
+        trackedEpisodes.sortedBy { it.airs_date }.reversed().map { trackedEpisode ->
             scheduleTrackedEpisodeAlarm(trackedEpisode)
         }
     }
@@ -47,11 +50,16 @@ class TrackedEpisodeAlarmScheduler(private val context: Context, private val ala
             return
         }
 
+        // Already notified we won't reschedule alarm
+        if(trackedEpisode.alreadyNotified) {
+            Log.d(TAG, "scheduleTrackedEpisodeAlarm: Episode ${trackedEpisode.trakt_id} already had notification dismissed")
+            return
+        }
+
         val notificationTimeMillis = notificationDateTime.toInstant().toEpochMilli()
+        Log.d(TAG, "scheduleTrackedEpisodeAlarm: Notification time (millis) $notificationTimeMillis for ${trackedEpisode.trakt_id}")
 
-        Log.d(TAG, "scheduleTrackedEpisodeAlarm: Notification time (millis) $notificationTimeMillis")
-
-        alarmManager.set(
+        alarmManager.setExact(
             AlarmManager.RTC_WAKEUP,
             notificationTimeMillis,
             getPendingIntent(trackedEpisode.trakt_id)
@@ -62,11 +70,22 @@ class TrackedEpisodeAlarmScheduler(private val context: Context, private val ala
         Log.d(TAG, "cancelAlarm: Alarm for Episode $episodeTraktId cancelled!")
         alarmManager.cancel(getPendingIntent(episodeTraktId))
     }
+    
+    suspend fun dismissNotification(episodeTraktId: Int) {
+        Log.d(TAG, "dismissNotification: Dismissed alarm for $episodeTraktId")
+        // Cancel any potential remaining alarms
+        alarmManager.cancel(getPendingIntent(episodeTraktId))
+        
+        // Set Trakt Episode status in Database to 1 to prevent further notifications
+        showsDatabase.withTransaction { 
+            trackedEpisodeDao.setNotificationStatus(episodeTraktId, 1)
+        }
+    }
 
     private fun getPendingIntent(episodeTraktId: Int): PendingIntent {
         val intent = Intent(context, EpisodeNotificationReceiver::class.java)
         intent.putExtra(EpisodeNotificationReceiver.TRAKT_ID_KEY, episodeTraktId)
 
-        return PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+        return PendingIntent.getBroadcast(context, episodeTraktId, intent, PendingIntent.FLAG_UPDATE_CURRENT)
     }
 }

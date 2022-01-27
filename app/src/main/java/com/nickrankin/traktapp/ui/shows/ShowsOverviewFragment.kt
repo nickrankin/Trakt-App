@@ -141,7 +141,9 @@ class OverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNav
                     } else {
                         messageContainer.visibility = View.GONE
                     }
-                    adapter.submitList(data)
+                    adapter.submitList(data?.sortedBy {
+                        it.first_aired
+                    })
                 }
                 is Resource.Error -> {
                     messageContainer.visibility = View.GONE

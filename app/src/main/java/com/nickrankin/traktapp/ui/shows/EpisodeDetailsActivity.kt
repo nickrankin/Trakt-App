@@ -35,7 +35,10 @@ import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.ItemDecorator
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.shows.EpisodeDetailsViewModel
+import com.nickrankin.traktapp.repo.shows.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.ShowDetailsRepository
+import com.nickrankin.traktapp.services.helper.TrackedEpisodeAlarmScheduler
+import com.nickrankin.traktapp.services.helper.TrackedEpisodeNotificationsBuilder
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.dialog.RatingPickerFragment
 import com.nickrankin.traktmanager.ui.dialoguifragments.WatchedDatePickerFragment
@@ -73,6 +76,9 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
     lateinit var sharedPreferences: SharedPreferences
 
     @Inject
+    lateinit var trackedEpisodesAlarmScheduler: TrackedEpisodeAlarmScheduler
+
+    @Inject
     lateinit var glide: RequestManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -90,6 +96,10 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
 
         isLoggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
 
+        if(intent.hasExtra(TrackedEpisodeNotificationsBuilder.FROM_NOTIFICATION_TAP) && intent.extras?.getBoolean(TrackedEpisodeNotificationsBuilder.FROM_NOTIFICATION_TAP, false) == true) {
+            dismissEipsodeNotifications()
+        }
+
         initRecycler()
 
         collectRatings()
@@ -101,6 +111,14 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
         }
     }
 
+    private fun dismissEipsodeNotifications() {
+        val episodeTraktId = intent.extras?.getInt(TrackedEpisodeNotificationsBuilder.EPISODE_TRAKT_ID)
+        Log.d(TAG, "dismissEipsodeNotifications: Dismissing notifications for episode ${episodeTraktId}", )
+
+        lifecycleScope.launchWhenStarted {
+            trackedEpisodesAlarmScheduler.dismissNotification(episodeTraktId ?: 0)
+        }
+    }
 
     private suspend fun collectShow() {
         viewModel.show.collectLatest { showResource ->

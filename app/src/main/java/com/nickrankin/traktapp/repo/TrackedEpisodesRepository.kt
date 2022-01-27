@@ -16,7 +16,7 @@ import org.threeten.bp.OffsetDateTime
 import org.threeten.bp.format.DateTimeFormatter
 import javax.inject.Inject
 
-private const val DAYS_TO_TRACK_UPCOMING = 2
+private const val DAYS_TO_TRACK_UPCOMING = 3
 private const val DEFAULT_TRAKT_DATE_FORMAT = "yyyy-MM-dd"
 private const val TAG = "TrackedEpisodesReposito"
 open class TrackedEpisodesRepository @Inject constructor(private val traktApi: TraktApi, private val tmdbApi: TmdbApi, private val showsDatabase: ShowsDatabase) {
@@ -100,7 +100,8 @@ open class TrackedEpisodesRepository @Inject constructor(private val traktApi: T
             calendarShowEntry.episode?.title,
             calendarShowEntry.show?.title ?: "",
             calendarShowEntry.episode?.season ?: 0,
-            calendarShowEntry.episode?.number ?: 0
+            calendarShowEntry.episode?.number ?: 0,
+            false
         )
     }
 

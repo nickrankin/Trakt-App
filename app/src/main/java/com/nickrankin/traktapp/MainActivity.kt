@@ -10,6 +10,7 @@ import android.widget.RelativeLayout
 import android.widget.SearchView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
@@ -29,14 +30,20 @@ class MainActivity : AppCompatActivity() {
 
     lateinit var bindings: ActivityMainBinding
 
-    @Inject
-    lateinit var trackedEpisodeAlarmScheduler: TrackedEpisodeAlarmScheduler
+//    @Inject
+//    lateinit var trackedEpisodeAlarmScheduler: TrackedEpisodeAlarmScheduler
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         // Load the default preferences
         PreferenceManager.setDefaultValues(this, R.xml.root_preferences, false)
+
+//        lifecycleScope.launchWhenStarted {
+//            trackedEpisodeAlarmScheduler.scheduleAllAlarms()
+//
+//        }
+
 
         bindings = ActivityMainBinding.inflate(layoutInflater)
         setContentView(bindings.root)

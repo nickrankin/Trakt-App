@@ -18,7 +18,11 @@ interface TrackedEpisodeDao {
     @Query("SELECT * FROM notifications_episode WHERE trakt_id = :traktId")
     fun getTrackedEpisode(traktId: Int): Flow<TrackedEpisode?>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Transaction
+    @Query("UPDATE notifications_episode SET alreadyNotified = :status WHERE trakt_id = :episodeTraktId")
+    fun setNotificationStatus(episodeTraktId: Int, status: Int)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(trackedEpisode: TrackedEpisode)
 
     @Update
