@@ -56,7 +56,7 @@ class EpisodesAdapter(private val sharedPreferences: SharedPreferences, private 
             }
 
             override fun areContentsTheSame(oldItem: TmEpisode, newItem: TmEpisode): Boolean {
-                return oldItem.tmdb_id == newItem.tmdb_id
+                return oldItem.episode_trakt_id == newItem.episode_trakt_id
             }
         }
     }

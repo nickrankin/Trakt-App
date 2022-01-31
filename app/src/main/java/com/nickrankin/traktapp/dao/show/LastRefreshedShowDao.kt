@@ -7,8 +7,8 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface LastRefreshedShowDao {
     @Transaction
-    @Query("SELECT * FROM show_last_refresh WHERE tmdbId = :tmdbId")
-    fun getShowLastRefreshDate(tmdbId: Int): Flow<LastRefreshedShow?>
+    @Query("SELECT * FROM show_last_refresh WHERE trakt_id = :traktId")
+    fun getShowLastRefreshDate(traktId: Int): Flow<LastRefreshedShow?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(lastRefreshedShow: LastRefreshedShow)

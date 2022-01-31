@@ -199,10 +199,6 @@ class OverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNav
     }
 
     override fun navigateToShow(traktId: Int, tmdbId: Int, language: String?) {
-        if(tmdbId == 0) {
-            Toast.makeText(context, "Trakt does not have this show's TMDB", Toast.LENGTH_LONG).show()
-            return
-        }
 
         val intent = Intent(context, ShowDetailsActivity::class.java)
         intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)

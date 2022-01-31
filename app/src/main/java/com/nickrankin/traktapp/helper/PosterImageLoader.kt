@@ -11,7 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-const val TAG = "PosterImageLoader"
+private const val TAG = "PosterImageLoader"
 class PosterImageLoader @Inject constructor(private val tmdbApi: TmdbApi, private val imagesDatabase: ImagesDatabase) {
     private val showPosterImagesDao = imagesDatabase.showPosterImagesDao()
     val scope = CoroutineScope(Dispatchers.IO)

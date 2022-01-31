@@ -1,6 +1,7 @@
 package com.nickrankin.traktapp.api
 
 import com.nickrankin.traktapp.ApiKeys
+import com.nickrankin.traktapp.api.services.tmdb.SearchService
 import com.nickrankin.traktapp.api.services.tmdb.TmEpisodes
 import com.nickrankin.traktapp.api.services.tmdb.TmSeasons
 import com.nickrankin.traktapp.api.services.tmdb.TmTvService
@@ -42,5 +43,9 @@ class TmdbApi(private val enableLogging: Boolean): Tmdb(ApiKeys.TMDB_API_KEY) {
     }
     fun tmTvEpisodesService(): TmEpisodes {
         return retrofit.create(TmEpisodes::class.java)
+    }
+
+    fun tmSearchService(): SearchService {
+        return retrofit.create(SearchService::class.java)
     }
 }

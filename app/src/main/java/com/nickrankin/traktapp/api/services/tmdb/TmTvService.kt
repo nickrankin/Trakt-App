@@ -14,7 +14,7 @@ interface TmTvService {
     @GET("tv/{tv_id}")
     suspend fun tv(
         @Path("tv_id") tvShowId: Int,
-        @Query("language") language: String
+        @Query("language") language: String?
     ): TvShow
 
     /**
@@ -27,7 +27,7 @@ interface TmTvService {
     @GET("tv/{tv_id}")
     suspend fun tv(
         @Path("tv_id") tvShowId: Int,
-        @Query("language") language: String,
+        @Query("language") language: String?,
         @Query("append_to_response") appendToResponse: AppendToResponse
     ): TvShow
 

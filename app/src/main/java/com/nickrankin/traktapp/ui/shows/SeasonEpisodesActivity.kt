@@ -101,7 +101,7 @@ class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
                     if(swipeLayout.isRefreshing) {
                         swipeLayout.isRefreshing = false
                     }
-                    Log.e(TAG, "collectEpisodes: Error getting resource ${episodesResource.error?.localizedMessage}" )
+                    //Log.e(TAG, "collectEpisodes: Error getting resource ${episodesResource.error?.localizedMessage}" )
                     episodesResource.error?.printStackTrace()
                 }
             }
@@ -117,7 +117,7 @@ class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
         val layoutManager = LinearLayoutManager(this)
 
         adapter = EpisodesAdapter(sharedPreferences, glide, callback = {selectedEpisode ->
-            navigateToEpisode(selectedEpisode.show_trakt_id, selectedEpisode.show_tmdb_id, selectedEpisode.season_number ?: 0, selectedEpisode.episode_number ?: 0, "en")
+            navigateToEpisode(selectedEpisode.show_trakt_id, selectedEpisode.show_tmdb_id ?: -1, selectedEpisode.season_number ?: 0, selectedEpisode.episode_number ?: 0, "en")
         })
 
         recyclerView.layoutManager = layoutManager

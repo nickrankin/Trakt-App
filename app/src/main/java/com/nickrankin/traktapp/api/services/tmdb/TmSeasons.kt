@@ -19,7 +19,7 @@ interface TmSeasons {
     suspend fun season(
         @Path("tv_id") tvShowId: Int,
         @Path("season_number") tvShowSeasonNumber: Int,
-        @Query("language") language: String
+        @Query("language") language: String?
     ): TvSeason
 
     /**

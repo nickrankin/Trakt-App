@@ -129,13 +129,13 @@ class TmdbShowTypeConverter {
     }
 
     @TypeConverter
-    fun convertFromCrewList(crewMembers: List<CrewMember>?): String {
+    fun convertFromCrewList(crewMembers: List<CrewMember?>?): String {
         return gson.toJson(crewMembers)
     }
 
     @TypeConverter
-    fun convertToCrewList(json: String): List<CrewMember>? {
-        return gson.fromJson(json, Array<CrewMember>::class.java).toList()
+    fun convertToCrewList(json: String): List<CrewMember?>? {
+        return gson.fromJson(json, Array<CrewMember?>::class.java).toList()
     }
 
     @TypeConverter
@@ -144,8 +144,8 @@ class TmdbShowTypeConverter {
     }
 
     @TypeConverter
-    fun convertToCastList(json: String): List<CastMember>? {
-        return gson.fromJson(json, Array<CastMember>::class.java).toList()
+    fun convertToCastList(json: String): List<CastMember?>? {
+        return gson.fromJson(json, Array<CastMember?>::class.java).toList()
     }
 
     @TypeConverter

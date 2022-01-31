@@ -7,8 +7,10 @@ import java.util.*
 
 @Entity(tableName = "episodes")
 data class TmEpisode(
-    @PrimaryKey val tmdb_id: Int,
-    val show_tmdb_id: Int,
+    @PrimaryKey val id: Int,
+    val episode_trakt_id: Int,
+    val episode_tmdb_id: Int?,
+    val show_tmdb_id: Int?,
     val show_trakt_id: Int,
     val language: String?,
     val season_number: Int?,
@@ -18,10 +20,16 @@ data class TmEpisode(
     val overview: String?,
     val air_date: Date?,
     val credits: Credits?,
-    val crew: List<CrewMember>?,
-    val guest_stars: List<CastMember>?,
+    val crew: List<CrewMember>,
+    val guest_stars: List<CastMember>,
     val images: Images?,
     val externalIds: TvEpisodeExternalIds?,
     val still_path: String?,
-    val videos: Videos?
-)
+    val videos: Videos?,
+    val source: String
+) {
+    companion object {
+        const val SOURCE_TRAKT = "trakt"
+        const val SOURCE_TMDB = "tmdb"
+    }
+}

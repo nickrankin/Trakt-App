@@ -16,6 +16,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -74,11 +75,10 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
     private var isLoggedIn: Boolean = false
 
     private var showTraktId = 0
-    private var showTmdbId: Int = 0
 
     private lateinit var addCollectionButton: CardView
 
-    private lateinit var show: TmShow
+    private var show: TmShow? = null
 
     private var isCollected = false
     private var isTracked = false
@@ -106,7 +106,6 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         showTraktId = intent.getIntExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, 0)
-        showTmdbId = intent.getIntExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, 0)
 
         isLoggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
 
@@ -153,16 +152,16 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
                     Log.d(TAG, "collectShow: Show loading")
                 }
                 is Resource.Success -> {
-                    show = showResource.data!!
+                    show = showResource.data
 
                     displayShow(show)
 
                     // Populate the cast  members
-                    if (show.created_by.isNotEmpty()) {
-                        displayCrew(convertPersonToCrew(show.created_by))
+                    if (show?.created_by?.isNotEmpty() == true) {
+                        displayCrew(convertPersonToCrew(show!!.created_by))
                     }
-                    if (show.credits?.cast?.isNotEmpty() == true) {
-                        displayCast(show.credits)
+                    if (show?.credits?.cast?.isNotEmpty() == true) {
+                        displayCast(show?.credits)
                     }
 
                     if (isLoggedIn) {
@@ -174,6 +173,7 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
                     }
                 }
                 is Resource.Error -> {
+                    displayToastMessage("Error getting Show Details. ${showResource.error?.localizedMessage}", Toast.LENGTH_LONG)
                     Log.e(
                         TAG,
                         "collectShow: Couldn't get the show. ${showResource.error?.localizedMessage}",
@@ -202,9 +202,12 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
     }
 
     private suspend fun collectSeasons() {
-        viewModel.seasons.collectLatest { seasonsList ->
-            seasonsAdapter.submitList(seasonsList.sortedBy { it.season_number })
-        }
+            lifecycleScope.launchWhenStarted {
+                viewModel.seasons.collectLatest { seasonsList ->
+                    seasonsAdapter.submitList(seasonsList.data?.sortedBy { it.season_number })
+                }
+            }
+
     }
 
     private suspend fun collectEvents() {
@@ -214,7 +217,7 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
                     if (event.syncResponse is Resource.Success) {
                         if (event.syncResponse.data?.added?.episodes ?: 0 > 0) {
                             displayToastMessage(
-                                "${show.name} added to your collection successfully!",
+                                "${show?.name} added to your collection successfully!",
                                 Toast.LENGTH_LONG
                             )
                         }
@@ -227,7 +230,7 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
                     if (event.syncResponse is Resource.Success) {
                         if (event.syncResponse.data?.deleted?.episodes ?: 0 > 0) {
                             displayToastMessage(
-                                "${show.name} was removed from your collection successfully!",
+                                "${show?.name} was removed from your collection successfully!",
                                 Toast.LENGTH_LONG
                             )
                         }
@@ -242,7 +245,7 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
                         if (syncResponse?.added?.shows ?: 0 > 0) {
                             viewModel.refreshRating(event.newRating)
                             displayToastMessage(
-                                "Rated ${show.name} with ${Rating.fromValue(event.newRating).name} (${event.newRating}) successfully!",
+                                "Rated ${show?.name} with ${Rating.fromValue(event.newRating).name} (${event.newRating}) successfully!",
                                 Toast.LENGTH_LONG
                             )
                         } else {
@@ -355,14 +358,14 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
         if (newRating == -1) {
             resetRatings = true
             syncItems.apply {
-                shows = listOf(SyncShow().id(ShowIds.tmdb(showTmdbId)))
+                shows = listOf(SyncShow().id(ShowIds.trakt(showTraktId)))
             }
 
         } else {
             syncItems.apply {
                 shows = listOf(
                     SyncShow().ratedAt(OffsetDateTime.now()).rating(Rating.fromValue(newRating))
-                        .id(ShowIds.tmdb(showTmdbId))
+                        .id(ShowIds.trakt(showTraktId))
                 )
             }
         }
@@ -380,9 +383,9 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
         showTrackingButton.setOnClickListener {
             showTrackingButton.isEnabled = false
             if (isTracked) {
-                viewModel.setTracking(showTraktId, showTmdbId)
+                viewModel.setTracking(showTraktId, -1)
             } else {
-                viewModel.setTracking(showTraktId, showTmdbId)
+                viewModel.setTracking(showTraktId, -1)
             }
         }
 
@@ -524,7 +527,7 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
         seasonsRecyclerView = bindings.showdetailsactivityInner.showdetailsactivitySeasonsRecycler
         val layoutManager = LinearLayoutManager(this)
         seasonsAdapter = SeasonsAdapter(glide, callback = { selectedSeason ->
-            navigateToSeason(selectedSeason.show_trakt_id, selectedSeason.show_tmdb_id, selectedSeason.season_number ?: 0)
+            navigateToSeason(selectedSeason.show_trakt_id, selectedSeason.show_tmdb_id ?: 0, selectedSeason.season_number ?: 0)
         })
 
         seasonsRecyclerView.layoutManager = layoutManager
@@ -631,18 +634,18 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
         val progressText = bindings.showdetailsactivityInner.showdetailsactivityProgressTitle
         val progressBar = bindings.showdetailsactivityInner.showdetailsactivityShowProgress
 
-        viewModel.progressLiveData.observe(this, { progress ->
+        viewModel.progressLiveData.observe(this) { progress ->
             progressText.visibility = View.VISIBLE
             progressBar.visibility = View.VISIBLE
 
             progressText.text = "Show Progress ($progress% watched)"
 
             progressBar.progress = progress
-        })
+        }
     }
 
     private fun displayNextEpisode() {
-        viewModel.nextEpisodeLiveData.observe(this, {
+        viewModel.nextEpisodeLiveData.observe(this) {
             if (it.isNotEmpty()) {
 
 
@@ -651,10 +654,9 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
                 lifecycleScope.launchWhenStarted {
                     viewModel.episode(
                         intent.getIntExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, 0),
-                        showTmdbId,
+                        intent.getIntExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, -1),
                         traktEpisode?.season ?: 0,
                         traktEpisode?.number ?: 0,
-                        "en"
                     ).collectLatest { episodeResource ->
                         when (episodeResource) {
                             is Resource.Success -> {
@@ -667,7 +669,8 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
                                 // Enable Next episode title and layout (CardView)
                                 bindings.showdetailsactivityInner.showdetailsactivityNextEpisodeTitle.visibility =
                                     View.VISIBLE
-                                val cardView = findViewById<CardView>(R.id.showdetailsactivity_next_episode)
+                                val cardView =
+                                    findViewById<CardView>(R.id.showdetailsactivity_next_episode)
                                 cardView.visibility = View.VISIBLE
 
                                 val episode = episodeResource.data
@@ -698,8 +701,11 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
 
                                 cardView.setOnClickListener {
                                     navigateToEpisode(
-                                        intent.getIntExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, 0),
-                                        showTmdbId,
+                                        intent.getIntExtra(
+                                            ShowDetailsRepository.SHOW_TRAKT_ID_KEY,
+                                            0
+                                        ),
+                                        showTraktId,
                                         episode?.season_number ?: 0,
                                         episode?.episode_number ?: 0,
                                         episode?.language
@@ -713,12 +719,13 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
                                 )
                                 episodeResource.error?.printStackTrace()
                             }
-                            else -> {}
+                            else -> {
+                            }
                         }
                     }
                 }
             }
-        })
+        }
     }
 
 

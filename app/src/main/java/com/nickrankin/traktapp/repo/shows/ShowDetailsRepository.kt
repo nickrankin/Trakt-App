@@ -9,9 +9,9 @@ import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.show.model.*
 import com.nickrankin.traktapp.dao.watched.WatchedHistoryDatabase
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.helper.ShowDataHelper
 import com.nickrankin.traktapp.helper.getTmdbLanguage
 import com.nickrankin.traktapp.helper.networkBoundResource
-import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
 import com.nickrankin.traktapp.repo.TrackedEpisodesRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.tmdb2.entities.AppendToResponse
@@ -19,20 +19,29 @@ import com.uwetrottmann.tmdb2.entities.TvSeason
 import com.uwetrottmann.tmdb2.entities.TvShow
 import com.uwetrottmann.tmdb2.enumerations.AppendToResponseItem
 import com.uwetrottmann.trakt5.entities.*
+import com.uwetrottmann.trakt5.enums.Extended
 import com.uwetrottmann.trakt5.enums.HistoryType
 import com.uwetrottmann.trakt5.enums.ProgressLastActivity
 import com.uwetrottmann.trakt5.enums.RatingsFilter
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
+import org.threeten.bp.DateTimeUtils
 import org.threeten.bp.OffsetDateTime
 import java.lang.Exception
 import javax.inject.Inject
 
 private const val REFRESH_INTERVAL_HOURS = 48L
 private const val TAG = "ShowDetailsRepository"
-class ShowDetailsRepository @Inject constructor(private val traktApi: TraktApi, private val tmdbApi: TmdbApi, private val sharedPreferences: SharedPreferences, private val showsDatabase: ShowsDatabase, private val watchedHistoryDatabase: WatchedHistoryDatabase): TrackedEpisodesRepository(traktApi, tmdbApi, showsDatabase) {
+
+class ShowDetailsRepository @Inject constructor(
+    private val traktApi: TraktApi,
+    private val tmdbApi: TmdbApi,
+    private val showDataHelper: ShowDataHelper,
+    private val sharedPreferences: SharedPreferences,
+    private val showsDatabase: ShowsDatabase,
+    private val watchedHistoryDatabase: WatchedHistoryDatabase
+) : TrackedEpisodesRepository(traktApi, tmdbApi, showsDatabase) {
     private val tmShowDao = showsDatabase.tmShowDao()
     private val tmSeasonsDao = showsDatabase.TmSeasonsDao()
     private val trackedShowDao = showsDatabase.trackedShowDao()
@@ -43,119 +52,91 @@ class ShowDetailsRepository @Inject constructor(private val traktApi: TraktApi, 
     val processChannel = Channel<BaseShow>()
     val trackingStatusChannel = Channel<Boolean>()
 
-    fun getShowSummary(showTraktId: Int, showTmdbId: Int, language: String?, shouldRefresh: Boolean) = networkBoundResource(
+
+    fun getShowSummary(showTraktId: Int, shouldRefresh: Boolean) = networkBoundResource(
         query = {
-                tmShowDao.getShow(showTmdbId)
+            tmShowDao.getShow(showTraktId)
         },
         fetch = {
-                tmdbApi.tmTvService().tv(showTmdbId, getTmdbLanguage(language), AppendToResponse(AppendToResponseItem.CREDITS, AppendToResponseItem.TV_CREDITS, AppendToResponseItem.EXTERNAL_IDS, AppendToResponseItem.VIDEOS))
+            showDataHelper.getShow(showTraktId)
         },
         shouldFetch = { tmShow ->
-            val lastRefreshed = lastRefreshedShowDao.getShowLastRefreshDate(showTmdbId).first()?.lastRefreshDate
-            Log.d(TAG, "getShowSummary: Last Refreshed $lastRefreshed", )
+            val lastRefreshed =
+                lastRefreshedShowDao.getShowLastRefreshDate(showTraktId).first()?.lastRefreshDate
+            Log.d(TAG, "getShowSummary: Last Refreshed $lastRefreshed")
 
-            if(lastRefreshed != null && !shouldRefresh) {
-                val shouldRefresh = OffsetDateTime.now().minusHours(REFRESH_INTERVAL_HOURS).isAfter(lastRefreshed)
-                Log.d(TAG, "getShowSummary: Should refresh: $shouldRefresh", )
-                shouldRefresh
+            if (lastRefreshed != null && !shouldRefresh) {
+                val forceRefresh =
+                    OffsetDateTime.now().minusHours(REFRESH_INTERVAL_HOURS).isAfter(lastRefreshed)
+                Log.d(TAG, "getShowSummary: Should refresh: $forceRefresh")
+                forceRefresh
             } else {
                 tmShow == null || shouldRefresh
             }
 
         },
-        saveFetchResult = { tvShow ->
+        saveFetchResult = { traktShow ->
             showsDatabase.withTransaction {
-                
-                lastRefreshedShowDao.insert(LastRefreshedShow(showTmdbId, OffsetDateTime.now()))
-                
-                tmSeasonsDao.deleteAllSeasonsForShow(showTmdbId)
-
-                tmShowDao.insertShow(convertShow(showTraktId, tvShow))
-                tmSeasonsDao.insertSeasons(convertSeasons(showTraktId, showTmdbId, language, tvShow.seasons ?: emptyList()))
+                lastRefreshedShowDao.insert(LastRefreshedShow(showTraktId, OffsetDateTime.now()))
+                tmShowDao.insertShow(traktShow!!)
             }
         }
     )
 
-    fun getSeasons(showTmdbId: Int): Flow<List<TmSeason>> {
-        return tmSeasonsDao.getSeasonsForShow(showTmdbId)
-    }
 
-    private fun convertShow(traktId: Int, tvShow: TvShow): TmShow {
-        return TmShow(
-            tvShow.id ?: 0,
-            traktId,
-            tvShow.name ?: "",
-            tvShow.overview ?: "",
-            tvShow.origin_country ?: emptyList(),
-            tvShow.created_by ?: emptyList(),
-            tvShow.credits,
-            tvShow.external_ids,
-            tvShow.genres,
-            tvShow.homepage,
-            tvShow.images,
-            tvShow.in_production,
-            tvShow.languages ?: emptyList(),
-            tvShow.first_air_date,
-            tvShow.last_air_date,
-            tvShow.last_episode_to_air,
-            tvShow.networks,
-            tvShow.next_episode_to_air,
-            tvShow.number_of_episodes ?: 0,
-            tvShow.number_of_seasons ?: 0,
-            tvShow.status ?: "",
-            tvShow.poster_path,
-            tvShow.backdrop_path,
-            tvShow.type,
-            tvShow.videos,
-            false
+    suspend fun getSeasons(traktId: Int, tmdbId: Int?, language: String?, shouldRefresh: Boolean) =
+        networkBoundResource(
+            query = {
+                tmSeasonsDao.getSeasonsForShow(traktId)
+            },
+            fetch = {
+                showDataHelper.getSeasons(traktId, tmdbId, language)
+            },
+            shouldFetch = { seasons ->
+                seasons.isEmpty() || shouldRefresh
+            },
+            saveFetchResult = { seasons ->
+
+                showsDatabase.withTransaction {
+                    tmSeasonsDao.insertSeasons(
+                        seasons
+                    )
+                }
+            }
         )
-    }
-
-    private fun convertSeasons(showTraktId: Int, showTmdbId: Int, language: String?, seasons: List<TvSeason>): List<TmSeason> {
-        val tmSeasons: MutableList<TmSeason> = mutableListOf()
-
-        seasons.map { tvSeason ->
-            tmSeasons.add(
-                TmSeason(
-                    tvSeason.id ?: 0,
-                    showTmdbId,
-                    showTraktId,
-                    language,
-                    tvSeason.name ?: "",
-                    tvSeason.overview ?: "",
-                    tvSeason.credits,
-                    tvSeason.external_ids,
-                    tvSeason.images,
-                    tvSeason.videos,
-                    tvSeason.air_date,
-                    tvSeason.episode_count ?: 0,
-                    tvSeason.season_number ?: 0,
-                    tvSeason.poster_path
-                )
-            )
-        }
-
-        return tmSeasons
-    }
 
     suspend fun getShowProgress(showTraktId: Int) {
         try {
-            val progressCall = traktApi.tmShows().watchedProgress(showTraktId.toString(), false, false, false, ProgressLastActivity.WATCHED, null)
+            val progressCall = traktApi.tmShows().watchedProgress(
+                showTraktId.toString(),
+                false,
+                false,
+                false,
+                ProgressLastActivity.WATCHED,
+                null
+            )
 
             processChannel.send(progressCall)
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
     suspend fun getRatings(): List<RatedShow> {
-        Log.e(TAG, "getRatings: Getting ratings ...", )
+        Log.e(TAG, "getRatings: Getting ratings ...")
         try {
-            val ratings = traktApi.tmUsers().ratingsShows(UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "null")?: "null"), RatingsFilter.ALL, null)
+            val ratings = traktApi.tmUsers().ratingsShows(
+                UserSlug(
+                    sharedPreferences.getString(
+                        AuthActivity.USER_SLUG_KEY,
+                        "null"
+                    ) ?: "null"
+                ), RatingsFilter.ALL, null
+            )
 
             return ratings
-           // ratingsChannel.send(ratings)
-        } catch(t: Throwable) {
+            // ratingsChannel.send(ratings)
+        } catch (t: Throwable) {
             t.printStackTrace()
         }
 
@@ -164,11 +145,15 @@ class ShowDetailsRepository @Inject constructor(private val traktApi: TraktApi, 
 
     suspend fun setRatings(syncItems: SyncItems, resetRatings: Boolean): Resource<SyncResponse> {
         return try {
-            val syncResponse = if (!resetRatings) {traktApi.tmSync().addRatings(syncItems)} else {traktApi.tmSync().deleteRatings(syncItems)}
+            val syncResponse = if (!resetRatings) {
+                traktApi.tmSync().addRatings(syncItems)
+            } else {
+                traktApi.tmSync().deleteRatings(syncItems)
+            }
 
             // Trigger call to getRatings() to notify all active observers or rating channel
             Resource.Success(syncResponse)
-        } catch(t: Throwable) {
+        } catch (t: Throwable) {
             Resource.Error(t, null)
         }
     }
@@ -178,44 +163,52 @@ class ShowDetailsRepository @Inject constructor(private val traktApi: TraktApi, 
 
         val trackedShow = trackedShows.find { it.trakt_id == traktId }
 
-        Log.e(TAG, "getTrackingStatus: State is now ${trackedShow != null}", )
+        Log.e(TAG, "getTrackingStatus: State is now ${trackedShow != null}")
 
         trackingStatusChannel.send(trackedShow != null)
     }
 
     suspend fun setShowTracked(traktId: Int, tmdbId: Int) {
-        Log.e(TAG, "setShowTracked: here", )
+        Log.e(TAG, "setShowTracked: here")
         var newStatus = false
         val trackedShow = trackedShowDao.getTrackedShow(traktId).first()
-        if(trackedShow != null) {
+        if (trackedShow != null) {
             cancelShowTracking(trackedShow)
         } else {
             newStatus = true
             val trackedShow = TrackedShow(traktId, tmdbId, OffsetDateTime.now())
 
             showsDatabase.withTransaction {
-                    trackedShowDao.insertTrackedShow(
-                        trackedShow
-                    )
+                trackedShowDao.insertTrackedShow(
+                    trackedShow
+                )
             }
             insertTrackedShow(trackedShow)
         }
 
-        Log.e(TAG, "setShowTracked: New Status $newStatus", )
+        Log.e(TAG, "setShowTracked: New Status $newStatus")
 
         trackingStatusChannel.send(newStatus)
     }
 
     suspend fun getWatchedEpisodes(shouldRefresh: Boolean, showTraktId: Int) = networkBoundResource(
         query = {
-                watchedEpisodesDao.getWatchedEpisodesPerShow(showTraktId)
+            watchedEpisodesDao.getWatchedEpisodesPerShow(showTraktId)
         },
         fetch = {
-                traktApi.tmUsers().history(UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, null)), HistoryType.SHOWS, showTraktId, 1,999, null,
-                    OffsetDateTime.now().minusYears(99), OffsetDateTime.now())
+            traktApi.tmUsers().history(
+                UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, null)),
+                HistoryType.SHOWS,
+                showTraktId,
+                1,
+                999,
+                null,
+                OffsetDateTime.now().minusYears(99),
+                OffsetDateTime.now()
+            )
         },
         shouldFetch = { episodes ->
-                      shouldRefresh || episodes.isEmpty()
+            shouldRefresh || episodes.isEmpty()
         },
         saveFetchResult = { historyEntries ->
             watchedHistoryDatabase.withTransaction {
@@ -247,7 +240,7 @@ class ShowDetailsRepository @Inject constructor(private val traktApi: TraktApi, 
                     historyEntry.episode?.title,
                     null,
                     null
-                    )
+                )
             )
         }
 
@@ -264,11 +257,14 @@ class ShowDetailsRepository @Inject constructor(private val traktApi: TraktApi, 
         }
     }
 
-    suspend fun removeFromCollection(collectedShow: CollectedShow?, syncItems: SyncItems): Resource<SyncResponse> {
+    suspend fun removeFromCollection(
+        collectedShow: CollectedShow?,
+        syncItems: SyncItems
+    ): Resource<SyncResponse> {
         return try {
             val result = traktApi.tmSync().deleteItemsFromCollection(syncItems)
 
-            if(collectedShow != null) {
+            if (collectedShow != null) {
                 showsDatabase.withTransaction {
                     collectedShowDao.delete(collectedShow)
                 }
@@ -283,14 +279,14 @@ class ShowDetailsRepository @Inject constructor(private val traktApi: TraktApi, 
 
     suspend fun removeWatchedEpisode(syncItems: SyncItems): Resource<SyncResponse> {
         return try {
-            val response =  traktApi.tmSync().deleteItemsFromWatchedHistory(syncItems)
+            val response = traktApi.tmSync().deleteItemsFromWatchedHistory(syncItems)
 
             showsDatabase.withTransaction {
                 watchedEpisodesDao.deleteWatchedEpisodeById(syncItems.ids?.first() ?: 0L)
             }
 
             Resource.Success(response)
-        }catch (e: Throwable) {
+        } catch (e: Throwable) {
             Resource.Error(e, null)
         }
     }

@@ -19,15 +19,15 @@ class SeasonEpisodesViewModel @Inject constructor(private val savedStateHandle: 
     private val seasonEpisodesRefreshEvent = seasonEpisodesRefreshEventChannel.receiveAsFlow()
 
     private val showTraktId: Int = savedStateHandle.get(SeasonEpisodesRepository.SHOW_TRAKT_ID_KEY) ?: 0
-    private val tmdbShowId: Int = savedStateHandle.get(SeasonEpisodesRepository.SHOW_TMDB_ID_KEY) ?: 0
-    private val seasonNumber: Int = savedStateHandle.get(SeasonEpisodesRepository.SEASON_NUMBER_KEY) ?: 0
-    private val language: String? = savedStateHandle.get(SeasonEpisodesRepository.LANGUAGE_KEY)
+    private val showTmdbtId: Int = savedStateHandle.get(SeasonEpisodesRepository.SHOW_TMDB_ID_KEY) ?: 0
 
-    suspend fun season() = repository.getSeason(tmdbShowId, seasonNumber)
+    private val seasonNumber: Int = savedStateHandle.get(SeasonEpisodesRepository.SEASON_NUMBER_KEY) ?: 0
+
+    suspend fun season() = repository.getSeason(showTraktId, seasonNumber)
 
     @ExperimentalCoroutinesApi
     val episodes = seasonEpisodesRefreshEvent.flatMapLatest { shouldRefresh ->
-        repository.getSeasonEpisodes(showTraktId, tmdbShowId, seasonNumber, language, shouldRefresh)
+        repository.getSeasonEpisodes(showTraktId, showTmdbtId, seasonNumber, shouldRefresh)
     }
 
     fun onStart() {

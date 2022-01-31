@@ -44,7 +44,7 @@ interface TmShows {
     @GET("shows/{id}")
     suspend fun summary(
         @Path("id") showId: String,
-        @Query(value = "extended", encoded = true) extended: Extended
+        @Query(value = "extended", encoded = true) extended: Extended?
     ): Show
 
     /**

@@ -4,112 +4,68 @@ import android.content.SharedPreferences
 import android.util.Log
 import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TmdbApi
+import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.show.model.TmEpisode
 import com.nickrankin.traktapp.dao.show.model.TmSeason
+import com.nickrankin.traktapp.helper.ShowDataHelper
 import com.nickrankin.traktapp.helper.getTmdbLanguage
 import com.nickrankin.traktapp.helper.networkBoundResource
 import com.uwetrottmann.tmdb2.entities.AppendToResponse
 import com.uwetrottmann.tmdb2.entities.TvEpisode
 import com.uwetrottmann.tmdb2.entities.TvSeason
 import com.uwetrottmann.tmdb2.enumerations.AppendToResponseItem
-import org.threeten.bp.OffsetDateTime
+import com.uwetrottmann.trakt5.enums.Extended
+import kotlinx.coroutines.flow.first
+import java.lang.Exception
 import javax.inject.Inject
 
 private const val TAG = "SeasonEpisodesRepositor"
+
 class SeasonEpisodesRepository @Inject constructor(
+    private val traktApi: TraktApi,
     private val tmdbApi: TmdbApi,
+    private val showDataHelper: ShowDataHelper,
     private val showsDatabase: ShowsDatabase,
     private val sharedPreferences: SharedPreferences
 ) {
+    private val showDao = showsDatabase.tmShowDao()
     private val seasonDao = showsDatabase.TmSeasonsDao()
     private val episodesDao = showsDatabase.TmEpisodesDao()
 
-    fun getSeason(showTmdbId: Int,
-                          seasonNumber: Int) = seasonDao.getSeason(showTmdbId, seasonNumber)
+    fun getSeason(
+        showTraktId: Int,
+        seasonNumber: Int
+    ) = seasonDao.getSeason(showTraktId, seasonNumber)
 
     suspend fun getSeasonEpisodes(
         showTraktId: Int,
-        showTmdbId: Int,
+        showTmdbId: Int?,
         seasonNumber: Int,
-        language: String?,
         shouldRefresh: Boolean
     ) = networkBoundResource(
         query = {
-            episodesDao.getEpisodes(showTmdbId, seasonNumber)
+            episodesDao.getEpisodes(showTraktId, seasonNumber)
         },
         fetch = {
-            tmdbApi.tmTvSeasonService().season(
-                showTmdbId,
-                seasonNumber,
-                getTmdbLanguage(language),
-                AppendToResponse(AppendToResponseItem.CREDITS)
-            )
+            showDataHelper.getSeasonEpisodesData(showTraktId, showTmdbId, seasonNumber, null)
         },
         shouldFetch = { episodes ->
             shouldRefresh || episodes.isEmpty()
         },
-        saveFetchResult = { tvSeason ->
+        saveFetchResult = { episodes ->
+
 
             showsDatabase.withTransaction {
-                episodesDao.deleteEpisodes(showTmdbId, seasonNumber)
+                episodesDao.deleteEpisodes(showTraktId, seasonNumber)
 
-                seasonDao.insertSeasons(listOf(convertSeason(showTraktId, showTmdbId, language, tvSeason)))
-                episodesDao.insert(convertEpisodes(showTraktId, showTmdbId, language, tvSeason.episodes ?: emptyList()))
+                episodesDao.insert(
+                  episodes
+                )
             }
 
         }
     )
-
-    private fun convertSeason(showTraktId: Int, showTmdbId: Int, language: String?, tvSeason: TvSeason): TmSeason {
-
-        return TmSeason(
-            tvSeason.id ?: 0,
-            showTmdbId,
-            showTraktId,
-            language,
-            tvSeason.name ?: "",
-            tvSeason.overview ?: "",
-            tvSeason.credits,
-            tvSeason.external_ids,
-            tvSeason.images,
-            tvSeason.videos,
-            tvSeason.air_date,
-            tvSeason.episode_count ?: 0,
-            tvSeason.season_number ?: 0,
-            tvSeason.poster_path
-        )
-    }
-
-    private fun convertEpisodes(showTraktId: Int, showTmdbId: Int, language: String?, episodes: List<TvEpisode>): List<TmEpisode> {
-        val tmEpisodes: MutableList<TmEpisode> = mutableListOf()
-
-        episodes.map { tvEpisode ->
-            tmEpisodes.add(
-                TmEpisode(
-                    tvEpisode.id ?: 0,
-                    showTmdbId,
-                    showTraktId,
-                    language,
-                    tvEpisode.season_number ?: 0,
-                    tvEpisode.episode_number ?: 0,
-                    tvEpisode.production_code,
-                    tvEpisode.name ?: "",
-                    tvEpisode.overview,
-                    tvEpisode.air_date,
-                    tvEpisode.credits,
-                    tvEpisode.crew ?: emptyList(),
-                    tvEpisode.guest_stars ?: emptyList(),
-                    tvEpisode.images,
-                    tvEpisode.external_ids,
-                    tvEpisode.still_path,
-                    tvEpisode.videos
-                )
-            )
-        }
-
-        return tmEpisodes
-    }
 
     companion object {
         const val SHOW_TRAKT_ID_KEY = "show_trakt_id"

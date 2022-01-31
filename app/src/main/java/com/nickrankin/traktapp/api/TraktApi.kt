@@ -86,6 +86,9 @@ class TraktApi(private val loggingOn: Boolean, private val isStaging: Boolean): 
         return retrofit().create(TmShows::class.java)
     }
 
+    fun tmSeasons(): TraktSeasons {
+        return retrofit().create(TraktSeasons::class.java)
+    }
     fun tmCalendars(): TmCalendars {
         return retrofit().create(TmCalendars::class.java)
     }

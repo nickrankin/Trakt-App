@@ -7,12 +7,12 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface TmEpisodesDao {
     @Transaction
-    @Query("SELECT * FROM episodes WHERE show_tmdb_id = :showTmdbId AND season_number = :seasonNumber")
-    fun getEpisodes(showTmdbId: Int, seasonNumber: Int): Flow<List<TmEpisode>>
+    @Query("SELECT * FROM episodes WHERE show_trakt_id = :showTraktId AND season_number = :seasonNumber")
+    fun getEpisodes(showTraktId: Int, seasonNumber: Int): Flow<List<TmEpisode>>
 
     @Transaction
-    @Query("SELECT * FROM episodes WHERE show_tmdb_id = :showTmdbId AND season_number = :seasonNumber AND episode_number = :episodeNumber")
-    fun getEpisode(showTmdbId: Int, seasonNumber: Int, episodeNumber: Int): Flow<TmEpisode?>
+    @Query("SELECT * FROM episodes WHERE show_trakt_id = :showTraktId AND season_number = :seasonNumber AND episode_number = :episodeNumber")
+    fun getEpisode(showTraktId: Int, seasonNumber: Int, episodeNumber: Int): Flow<TmEpisode?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(episodes: List<TmEpisode>)
@@ -23,6 +23,6 @@ interface TmEpisodesDao {
     @Delete
     fun delete(tmEpisode: TmEpisode)
 
-    @Query("DELETE FROM episodes WHERE show_tmdb_id = :showTmdbId AND season_number = :seasonNumber")
-    fun deleteEpisodes(showTmdbId: Int, seasonNumber: Int)
+    @Query("DELETE FROM episodes WHERE show_trakt_id = :showTraktId AND season_number = :seasonNumber")
+    fun deleteEpisodes(showTraktId: Int, seasonNumber: Int)
 }

@@ -55,9 +55,7 @@ class ShowDetailsViewModel @Inject constructor(
     val trackingLiveData = savedStateHandle.getLiveData<Boolean>("tracking")
 
     val traktId: Int = savedStateHandle.get(ShowDetailsRepository.SHOW_TRAKT_ID_KEY) ?: 0
-    private val tmdbId: Int = savedStateHandle.get(ShowDetailsRepository.SHOW_TMDB_ID_KEY) ?: 0
-    private val language: String? =
-        savedStateHandle.get(ShowDetailsRepository.SHOW_LANGUAGE_KEY)
+    val tmdbId: Int = savedStateHandle.get(ShowDetailsRepository.SHOW_TMDB_ID_KEY) ?: -1
 
     private val eventChannel = Channel<Event>()
     val events = eventChannel.receiveAsFlow()
@@ -75,12 +73,13 @@ class ShowDetailsViewModel @Inject constructor(
     }
 
     val show = refreshEvent.flatMapLatest { shouldRefresh ->
-        repository.getShowSummary(traktId, tmdbId, language, shouldRefresh)
+        repository.getShowSummary(traktId, shouldRefresh)
     }
 
-    fun getProgress() = viewModelScope.launch { repository.getShowProgress(traktId) }
 
-    val seasons = repository.getSeasons(tmdbId)
+    val seasons =  refreshEvent.flatMapLatest { shouldRefresh ->
+        repository.getSeasons(traktId, tmdbId, null, shouldRefresh)
+    }
 
     val collectedShow = refreshEvent.flatMapLatest { shouldRefresh ->
         collectedShowsRepository.getCollectedShows(shouldRefresh)
@@ -88,7 +87,7 @@ class ShowDetailsViewModel @Inject constructor(
         when (resource) {
             is Resource.Success -> {
                 val foundShow = resource.data?.find { collectedShow ->
-                    collectedShow.show_tmdb_id == tmdbId
+                    collectedShow.show_trakt_id == traktId
                 }
                 (Resource.Success(listOf(foundShow)))
             }
@@ -108,6 +107,11 @@ class ShowDetailsViewModel @Inject constructor(
             it
         }
     }
+
+    fun getProgress() = viewModelScope.launch { repository.getShowProgress(traktId) }
+
+    suspend fun episode(showTraktId: Int, showTmdbId: Int?, seasonNumber: Int, episodeNumber: Int) = episodesRepository.getEpisodes(showTraktId, showTmdbId, seasonNumber, episodeNumber, false)
+
 
     fun getRatings() = viewModelScope.launch {
         if (ratingsLiveData.value == null) {
@@ -135,8 +139,7 @@ class ShowDetailsViewModel @Inject constructor(
         savedStateHandle.set("rating", newRating)
     }
 
-    suspend fun episode(showTraktId: Int, showTmdbId: Int, seasonNumber: Int, episodeNumber: Int, language: String) =
-        episodesRepository.getEpisode(showTraktId, showTmdbId, seasonNumber, episodeNumber, language)
+
 
     fun getTrackingStatus() = viewModelScope.launch {
         Log.e(TAG, "getTrackingStatus: HERE")

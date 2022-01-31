@@ -10,8 +10,10 @@ import java.util.*
 
 @Entity(tableName = "seasons")
 data class TmSeason(
-    @PrimaryKey val tmdb_id: Int,
-    val show_tmdb_id: Int,
+    @PrimaryKey val id: Int,
+    val trakt_id: Int?,
+    val tmdb_id: Int?,
+    val show_tmdb_id: Int?,
     val show_trakt_id: Int,
     val language: String?,
     val name: String,
@@ -23,5 +25,11 @@ data class TmSeason(
     val air_date: Date?,
     val episode_count: Int,
     val season_number: Int,
-    val poster_path: String?
-    )
+    val poster_path: String?,
+    val source: String
+    ) {
+    companion object {
+        const val SOURCE_TRAKT = "trakt"
+        const val SOURCE_TMDB = "tmdb"
+    }
+}

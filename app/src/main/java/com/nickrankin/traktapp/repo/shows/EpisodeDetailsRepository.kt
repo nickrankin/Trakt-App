@@ -10,6 +10,7 @@ import com.nickrankin.traktapp.dao.show.model.TmEpisode
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
 import com.nickrankin.traktapp.dao.watched.WatchedHistoryDatabase
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.helper.ShowDataHelper
 import com.nickrankin.traktapp.helper.getTmdbLanguage
 import com.nickrankin.traktapp.helper.networkBoundResource
 import com.nickrankin.traktapp.ui.auth.AuthActivity
@@ -27,9 +28,10 @@ import java.lang.Exception
 import javax.inject.Inject
 
 private const val TAG = "EpisodeDetailsRepositor"
+
 class EpisodeDetailsRepository @Inject constructor(
-    private val tmdbApi: TmdbApi,
     private val traktApi: TraktApi,
+    private val showDataHelper: ShowDataHelper,
     private val sharedPreferences: SharedPreferences,
     private val showsDatabase: ShowsDatabase,
     private val watchedHistoryDatabase: WatchedHistoryDatabase
@@ -37,64 +39,47 @@ class EpisodeDetailsRepository @Inject constructor(
     private val episodesDao = showsDatabase.TmEpisodesDao()
     private val watchedHistoryShowsDao = watchedHistoryDatabase.watchedHistoryShowsDao()
 
-    suspend fun getEpisode(
+    suspend fun getEpisodes(
         showTraktId: Int,
-        showTmdbId: Int,
+        showTmdbId: Int?,
         seasonNumber: Int,
         episodeNumber: Int,
-        language: String?) = flow {
-        emit(Resource.Loading(null))
+        shouldRefresh: Boolean
+    ) = networkBoundResource(
+        query = {
+            episodesDao.getEpisode(showTraktId, seasonNumber, episodeNumber)
+        },
+        fetch = {
+            showDataHelper.getSeasonEpisodesData(showTraktId, showTmdbId, seasonNumber, null)
+        },
+        shouldFetch = { episode ->
+            shouldRefresh || episode == null
+        },
+        saveFetchResult = { episodes ->
+            showsDatabase.withTransaction {
+                episodesDao.deleteEpisodes(showTraktId, seasonNumber)
 
-        try {
-            val response = tmdbApi.tmTvEpisodesService().episode(
-                showTmdbId,
-                seasonNumber,
-                episodeNumber,
-                getTmdbLanguage(language)
-            )
-
-            emit(Resource.Success(convertEpisode(showTraktId, showTmdbId, getTmdbLanguage(language),response)))
-        } catch (t: Throwable) {
-            emit(Resource.Error(t, null))
+                episodesDao.insert(episodes)
+            }
         }
-    }
+    )
 
-
-    private fun convertEpisode(
-        showTraktId: Int,
-        showTmdbId: Int,
-        language: String?,
-        tvEpisode: TvEpisode
-    ): TmEpisode {
-
-        return TmEpisode(
-            tvEpisode.id ?: 0,
-            showTmdbId,
-            showTraktId,
-            language,
-            tvEpisode.season_number ?: 0,
-            tvEpisode.episode_number ?: 0,
-            tvEpisode.production_code,
-            tvEpisode.name ?: "",
-            tvEpisode.overview,
-            tvEpisode.air_date,
-            tvEpisode.credits,
-            tvEpisode.crew ?: emptyList(),
-            tvEpisode.guest_stars ?: emptyList(),
-            tvEpisode.images,
-            tvEpisode.external_ids,
-            tvEpisode.still_path,
-            tvEpisode.videos
-        )
-    }
 
     suspend fun getWatchedEpisodes(shouldRefresh: Boolean, showTraktId: Int) = networkBoundResource(
         query = {
             watchedHistoryShowsDao.getWatchedEpisodesPerShow(showTraktId)
         },
         fetch = {
-            traktApi.tmUsers().history(UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, null)), HistoryType.SHOWS, showTraktId, 1,999, null,
-                OffsetDateTime.now().minusYears(99), OffsetDateTime.now())
+            traktApi.tmUsers().history(
+                UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, null)),
+                HistoryType.SHOWS,
+                showTraktId,
+                1,
+                999,
+                null,
+                OffsetDateTime.now().minusYears(99),
+                OffsetDateTime.now()
+            )
         },
         shouldFetch = { episodes ->
             shouldRefresh || episodes.isEmpty()
@@ -141,11 +126,18 @@ class EpisodeDetailsRepository @Inject constructor(
 
     suspend fun getRatings() = flow {
         try {
-            val response = traktApi.tmUsers().ratingsEpisodes(UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "NULL")), RatingsFilter.ALL, null)
+            val response = traktApi.tmUsers().ratingsEpisodes(
+                UserSlug(
+                    sharedPreferences.getString(
+                        AuthActivity.USER_SLUG_KEY,
+                        "NULL"
+                    )
+                ), RatingsFilter.ALL, null
+            )
 
             emit(Resource.Success(response))
 
-        } catch(e: Throwable) {
+        } catch (e: Throwable) {
             e.printStackTrace()
             emit(Resource.Error(e, null))
         }
@@ -160,7 +152,7 @@ class EpisodeDetailsRepository @Inject constructor(
 
             Resource.Success(response)
 
-        } catch(t: Throwable) {
+        } catch (t: Throwable) {
             Resource.Error(t, null)
         }
     }
@@ -172,14 +164,14 @@ class EpisodeDetailsRepository @Inject constructor(
 
             Resource.Success(response)
 
-        } catch(e: HttpException) {
-            if(e.code() == 409) {
+        } catch (e: HttpException) {
+            if (e.code() == 409) {
                 // User is already checked in so not really an error as such. Null EpisodeCheckinResponse = need to delete active checkin first
                 Resource.Success(null)
             } else {
                 Resource.Error(e, null)
             }
-        } catch(t: Throwable) {
+        } catch (t: Throwable) {
             Resource.Error(t, null)
         }
     }
@@ -191,7 +183,7 @@ class EpisodeDetailsRepository @Inject constructor(
 
             Resource.Success(true)
 
-        } catch(t: Throwable) {
+        } catch (t: Throwable) {
             Resource.Error(t, false)
         }
     }
@@ -202,21 +194,21 @@ class EpisodeDetailsRepository @Inject constructor(
 
             Resource.Success(response)
 
-        } catch(t: Throwable) {
+        } catch (t: Throwable) {
             Resource.Error(t, null)
         }
     }
 
     suspend fun removeWatchedEpisode(syncItems: SyncItems): Resource<SyncResponse> {
         return try {
-            val response =  traktApi.tmSync().deleteItemsFromWatchedHistory(syncItems)
+            val response = traktApi.tmSync().deleteItemsFromWatchedHistory(syncItems)
 
             showsDatabase.withTransaction {
                 watchedHistoryShowsDao.deleteWatchedEpisodeById(syncItems.ids?.first() ?: 0L)
             }
 
             Resource.Success(response)
-        }catch (e: Throwable) {
+        } catch (e: Throwable) {
             Resource.Error(e, null)
         }
     }

@@ -5,4 +5,4 @@ import androidx.room.PrimaryKey
 import org.threeten.bp.OffsetDateTime
 
 @Entity(tableName = "show_last_refresh")
-data class LastRefreshedShow(@PrimaryKey val tmdbId: Int, val lastRefreshDate: OffsetDateTime)
+data class LastRefreshedShow(@PrimaryKey val trakt_id: Int, val lastRefreshDate: OffsetDateTime)

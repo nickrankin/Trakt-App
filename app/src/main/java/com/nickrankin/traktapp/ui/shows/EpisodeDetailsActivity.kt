@@ -173,7 +173,7 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
                     displayEpisode(episode)
 
                     lifecycleScope.launch {
-                        launch { collectedWatchedEpisodes(episode?.tmdb_id ?: 0) }
+                        launch { collectedWatchedEpisodes(episode?.episode_trakt_id ?: 0) }
                     }
 
                     if (isLoggedIn) {
@@ -349,7 +349,7 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
                     SyncEpisode().rating(
                         Rating.fromValue(newRating)
                     )
-                        .id(EpisodeIds.tmdb(episode?.tmdb_id ?: 0))
+                        .id(EpisodeIds.trakt(episode?.episode_trakt_id ?: 0))
                 )
             }
 
@@ -440,7 +440,7 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
         val checkinButton =
             bindings.episodedetailsactivityInner.episodedetailsactivityActionButtons.actionbuttonCheckin
         val episodeCheckin = EpisodeCheckin.Builder(
-            SyncEpisode().id(EpisodeIds.tmdb(episode?.tmdb_id ?: 0)),
+            SyncEpisode().id(EpisodeIds.trakt(episode?.episode_trakt_id ?: 0)),
             AppConstants.APP_VERSION,
             AppConstants.APP_DATE
         ).build()
@@ -459,7 +459,7 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
             val syncItems = SyncItems().apply {
                 episodes = listOf(
                     SyncEpisode()
-                        .id(EpisodeIds.tmdb(episode?.tmdb_id ?: 0))
+                        .id(EpisodeIds.trakt(episode?.episode_trakt_id ?: 0))
                         .watchedAt(selectedDate)
                 )
             }
