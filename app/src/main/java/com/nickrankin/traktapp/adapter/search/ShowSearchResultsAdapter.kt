@@ -29,8 +29,8 @@ class ShowSearchResultsAdapter(private val glide: RequestManager, private val im
             collectedentryitemCollectedDate.visibility = View.GONE
             collectedentryitemOverview.text = currentSearchItem?.show?.overview
 
-            imageLoader.loadImage(currentSearchItem?.show?.ids?.tmdb ?: 0, currentSearchItem?.show?.language, false, callback = {posterPath ->
-                if(posterPath.isNotBlank()) {
+            imageLoader.loadImage(currentSearchItem?.show?.ids?.trakt ?: 0, currentSearchItem?.show?.ids?.tmdb ?: 0, currentSearchItem?.show?.language,currentSearchItem?.show?.title ?: "", currentSearchItem?.show?.year, false, callback = {posterPath ->
+                if(posterPath != null) {
                     glide
                         .load(AppConstants.TMDB_POSTER_URL + posterPath)
                         .into(collectedentryitemPoster)

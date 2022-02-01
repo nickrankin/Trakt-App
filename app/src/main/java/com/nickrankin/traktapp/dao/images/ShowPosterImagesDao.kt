@@ -7,8 +7,8 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ShowPosterImagesDao {
     @Transaction
-    @Query("SELECT * FROM show_posters WHERE tmdb_id = :tmdbId")
-    fun getPoster(tmdbId: Int): ShowPosterImage?
+    @Query("SELECT * FROM show_posters WHERE trakt_id = :traktId")
+    fun getPoster(traktId: Int): ShowPosterImage?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(showPosterImage: ShowPosterImage)

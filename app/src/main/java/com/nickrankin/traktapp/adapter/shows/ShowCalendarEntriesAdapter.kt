@@ -44,10 +44,10 @@ class ShowCalendarEntriesAdapter @Inject constructor(private val sharedPreferenc
             showentryitemAirDate.text = "Airing: " + currentItem.first_aired?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)))
             showentryitemOverview.text = currentItem.episode_overview
 
-            posterImageLoader.loadImage(currentItem.show_tmdb_id, currentItem.language, true, callback = { posterPath ->
-                if(posterPath.isNotEmpty()) {
+            posterImageLoader.loadImage(currentItem.show_trakt_id, currentItem.show_tmdb_id, currentItem?.language, currentItem?.show_title ?: "", currentItem.first_aired?.year, true, callback = { posterImage ->
+                if(posterImage.poster_path != null) {
                     glide
-                        .load(AppConstants.TMDB_POSTER_URL + posterPath)
+                        .load(AppConstants.TMDB_POSTER_URL + posterImage.poster_path)
                         .into(showentryitemPoster)
                 }
             })

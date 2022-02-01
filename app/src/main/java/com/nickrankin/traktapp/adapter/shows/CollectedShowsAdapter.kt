@@ -66,13 +66,16 @@ class CollectedShowsAdapter(
             collectedentryitemOverview.text = currentItem.show_overview
 
             imageLoader.loadImage(
+                currentItem.show_trakt_id,
                 currentItem.show_tmdb_id,
-                currentItem.language,
+                currentItem?.language,
+                currentItem.show_title,
+                null,
                 true,
-                callback = { posterPath ->
-                    if (posterPath.isNotEmpty()) {
+                callback = { posterImage ->
+                    if (posterImage.poster_path != null) {
                         glide
-                            .load(AppConstants.TMDB_POSTER_URL + posterPath)
+                            .load(AppConstants.TMDB_POSTER_URL + posterImage.poster_path)
                             .into(collectedentryitemPoster)
                     }
                 })

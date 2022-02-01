@@ -31,10 +31,10 @@ class RecommendedShowsAdapter(private val glide: RequestManager, private val ima
             collectedentryitemCollectedDate.visibility = View.GONE
             collectedentryitemOverview.text = currentItem?.overview
 
-            imageLoader.loadImage(currentItem?.ids?.tmdb ?: 0, currentItem?.language, false, callback = {posterPath ->
-                if(posterPath.isNotBlank()) {
+            imageLoader.loadImage(currentItem?.ids?.trakt ?: 0, currentItem?.ids?.tmdb ?: 0, currentItem?.language,currentItem?.title ?: "", currentItem?.year, false, callback = {posterImage ->
+                if(posterImage.poster_path != null) {
                     glide
-                        .load(AppConstants.TMDB_POSTER_URL + posterPath)
+                        .load(AppConstants.TMDB_POSTER_URL + posterImage.poster_path)
                         .into(collectedentryitemPoster)
                 }
             })
