@@ -266,6 +266,7 @@ class ShowDataHelper @Inject constructor(
                             tmdbEpisode?.external_ids,
                             tmdbEpisode?.still_path,
                             tmdbEpisode?.videos,
+                            null,
                             TmEpisode.SOURCE_TMDB
                         )
                     )
@@ -347,6 +348,7 @@ class ShowDataHelper @Inject constructor(
                     null,
                     emptyList(),
                     emptyList(),
+                    null,
                     null,
                     null,
                     null,

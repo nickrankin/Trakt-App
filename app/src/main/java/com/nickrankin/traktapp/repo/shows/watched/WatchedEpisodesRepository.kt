@@ -8,6 +8,7 @@ import androidx.paging.PagingConfig
 import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
+import com.nickrankin.traktapp.dao.show.WatchedShowsMediatorDatabase
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.networkBoundResource
@@ -24,7 +25,7 @@ import org.threeten.bp.OffsetDateTime
 import javax.inject.Inject
 
 private const val TAG = "WatchedEpisodesReposito"
-class WatchedEpisodesRepository @Inject constructor(private val traktApi: TraktApi, private val sharedPreferences: SharedPreferences, private val showsDatabase: ShowsDatabase) {
+class WatchedEpisodesRepository @Inject constructor(private val traktApi: TraktApi, private val sharedPreferences: SharedPreferences, private val showsDatabase: WatchedShowsMediatorDatabase) {
 
     private val watchedEpisodesDao = showsDatabase.watchedEpisodesDao()
 

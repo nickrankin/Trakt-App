@@ -4,6 +4,7 @@ import android.content.Context
 import com.nickrankin.traktapp.dao.auth.AuthDatabase
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.images.ImagesDatabase
+import com.nickrankin.traktapp.dao.show.WatchedShowsMediatorDatabase
 import com.nickrankin.traktapp.dao.watched.WatchedHistoryDatabase
 import dagger.Module
 import dagger.Provides
@@ -23,6 +24,11 @@ object DaoModules {
     @Provides
     fun provideShowsDatabase(@ApplicationContext context: Context): ShowsDatabase {
         return ShowsDatabase.getDatabase(context)
+    }
+
+    @Provides
+    fun provideWatchedShowMediatorDatabase(@ApplicationContext context: Context): WatchedShowsMediatorDatabase {
+        return WatchedShowsMediatorDatabase.getDatabase(context)
     }
 
     @Provides

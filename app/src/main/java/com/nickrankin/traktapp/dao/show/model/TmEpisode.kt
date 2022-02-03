@@ -26,6 +26,7 @@ data class TmEpisode(
     val externalIds: TvEpisodeExternalIds?,
     val still_path: String?,
     val videos: Videos?,
+    var watched: Boolean?,
     val source: String
 ) {
     companion object {

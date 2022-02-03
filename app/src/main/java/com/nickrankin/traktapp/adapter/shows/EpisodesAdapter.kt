@@ -1,8 +1,11 @@
 package com.nickrankin.traktapp.adapter.shows
 
 import android.content.SharedPreferences
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -29,6 +32,26 @@ class EpisodesAdapter(private val sharedPreferences: SharedPreferences, private 
 
             if(currentItem.air_date != null) {
                 episodeitemAirDate.text = "First aired: " + DateFormatUtils.format(currentItem.air_date, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT))
+            }
+
+            if(currentItem.watched == true) {
+
+                DrawableCompat.setTint(
+                    DrawableCompat.wrap(episodeitemWatchedStatusIcon.drawable),
+                    ContextCompat.getColor(root.context, R.color.dark_green)
+                )
+
+               episodeitemWatchedStatusText.setTextColor(ContextCompat.getColor(root.context, R.color.dark_green))
+                episodeitemWatchedStatusText.text = "Watched"
+            } else {
+
+                DrawableCompat.setTint(
+                    DrawableCompat.wrap(episodeitemWatchedStatusIcon.drawable),
+                    ContextCompat.getColor(root.context, R.color.red)
+                )
+
+                episodeitemWatchedStatusText.setTextColor(ContextCompat.getColor(root.context, R.color.red))
+                episodeitemWatchedStatusText.text = "Unwatched"
             }
 
             episodeitemNumber.text = "Episode Number: " + currentItem.episode_number

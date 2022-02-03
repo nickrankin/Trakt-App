@@ -6,27 +6,124 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.shows.SeasonEpisodesActivity">
-    <RelativeLayout
+
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-        <include android:id="@+id/seasonepisodesactivity_toolbar" layout="@layout/toolbar_layout" />
-        <FrameLayout
+        android:layout_height="match_parent"
+        android:layout_marginTop="?attr/actionBarSize">
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginTop="?attr/actionBarSize">
+            android:orientation="vertical">
+
+            <include
+                android:id="@+id/seasonepisodesactivity_toolbar"
+                layout="@layout/toolbar_layout" />
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/seasonepisodeactivity_season_info"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <ImageView
+                    android:id="@+id/seasonepisodeactivity_season_poster"
+                    android:layout_width="45dp"
+                    android:layout_height="70dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="8dp"
+                    android:src="@drawable/ic_trakt_svgrepo_com"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/seasonepisodeactivity_season_title"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/seasonepisodeactivity_season_poster"
+                    app:layout_constraintTop_toTopOf="parent"
+                    tools:text="Season 1" />
+
+                <TextView
+                    android:id="@+id/seasonepisodeactivity_season_aired"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/rounded_corners_background"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:paddingStart="8dp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    android:layout_marginTop="4dp"
+                    tools:text="Aired: 21/01/2001 14:30"
+                    app:layout_constraintStart_toStartOf="@id/seasonepisodeactivity_season_title"
+                    app:layout_constraintTop_toBottomOf="@id/seasonepisodeactivity_season_title" />
+
+                <TextView
+                    android:id="@+id/seasonepisodeactivity_season_episode_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/rounded_corners_background"
+                    android:backgroundTint="@color/dark_green"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:paddingStart="8dp"
+                    android:paddingRight="8dp"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginEnd="8dp"
+                    tools:text="6 Episodes"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/seasonepisodeactivity_season_title" />
+
+                <TextView
+                    android:id="@+id/seasonepisodeactivity_season_overview"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginEnd="8dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/seasonepisodeactivity_season_poster" />
+
+                <androidx.constraintlayout.widget.Barrier
+                    android:id="@+id/seasonepisodeactivity_season_top_barrier"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:barrierDirection="bottom"
+                    app:constraint_referenced_ids="seasonepisodeactivity_season_overview,seasonepisodeactivity_season_title,seasonepisodeactivity_season_poster" />
+
+                <View
+                    style="@style/Divider"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginEnd="8dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/seasonepisodeactivity_season_top_barrier" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/seasonepisodesactivity_recyclerview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
 
             <ProgressBar
                 android:id="@+id/seasonepisodesactivity_progressbar"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/seasonepisodesactivity_recyclerview"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-        </FrameLayout>
-
-    </RelativeLayout>
-
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

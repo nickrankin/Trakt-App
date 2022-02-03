@@ -3,42 +3,58 @@ package com.nickrankin.traktapp.model.shows
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.repo.shows.SeasonEpisodesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class SeasonEpisodesViewModel @Inject constructor(private val savedStateHandle: SavedStateHandle, private val repository: SeasonEpisodesRepository): ViewModel() {
 
-    private val seasonEpisodesRefreshEventChannel = Channel<Boolean>()
-    private val seasonEpisodesRefreshEvent = seasonEpisodesRefreshEventChannel.receiveAsFlow()
+    private val refreshEventChannel = Channel<Boolean>()
+    private val refreshEvent = refreshEventChannel.receiveAsFlow()
+        .shareIn(viewModelScope, replay = 1, started = SharingStarted.WhileSubscribed())
 
     private val showTraktId: Int = savedStateHandle.get(SeasonEpisodesRepository.SHOW_TRAKT_ID_KEY) ?: 0
-    private val showTmdbtId: Int = savedStateHandle.get(SeasonEpisodesRepository.SHOW_TMDB_ID_KEY) ?: 0
+    private val showTmdbId: Int = savedStateHandle.get(SeasonEpisodesRepository.SHOW_TMDB_ID_KEY) ?: 0
 
     private val seasonNumber: Int = savedStateHandle.get(SeasonEpisodesRepository.SEASON_NUMBER_KEY) ?: 0
 
-    suspend fun season() = repository.getSeason(showTraktId, seasonNumber)
+    val show = refreshEvent.flatMapLatest { shouldRefresh ->
+        repository.getShow(showTraktId, showTmdbId, shouldRefresh)
+    }
+
+    val season = refreshEvent.flatMapLatest { shouldRefresh ->
+        repository.getSeason(showTraktId, showTmdbId, shouldRefresh).map { seasonResource ->
+            if(seasonResource is Resource.Success) {
+                seasonResource.data = seasonResource.data?.filter { season ->
+                    season.season_number == seasonNumber
+                }
+            }
+            seasonResource
+        }
+    }
 
     @ExperimentalCoroutinesApi
-    val episodes = seasonEpisodesRefreshEvent.flatMapLatest { shouldRefresh ->
-        repository.getSeasonEpisodes(showTraktId, showTmdbtId, seasonNumber, shouldRefresh)
+    val episodes = refreshEvent.flatMapLatest { shouldRefresh ->
+        repository.getWatchedEpisodes(showTraktId, seasonNumber, shouldRefresh).flatMapLatest { watchedEpisodesResource ->
+                repository.getSeasonEpisodes(showTraktId, showTmdbId, seasonNumber, shouldRefresh, watchedEpisodesResource.data ?: emptyList())
+        }
     }
 
     fun onStart() {
         viewModelScope.launch {
-            seasonEpisodesRefreshEventChannel.send(false)
+            refreshEventChannel.send(false)
         }
     }
 
     fun onRefresh() {
         viewModelScope.launch {
-            seasonEpisodesRefreshEventChannel.send(true)
+            refreshEventChannel.send(true)
 
         }
     }

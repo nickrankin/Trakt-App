@@ -10,6 +10,7 @@ import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.calendars.model.ShowCalendarEntry
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
+import com.nickrankin.traktapp.dao.show.WatchedShowsMediatorDatabase
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisodePageKey
 import com.nickrankin.traktapp.helper.AppConstants
@@ -32,7 +33,7 @@ private const val TAG = "WatchedEpisodesRemoteMe"
 class WatchedEpisodesRemoteMediator(
     private val traktApi: TraktApi,
     private val shouldRefresh: Boolean,
-    private val showsDatabase: ShowsDatabase,
+    private val showsDatabase: WatchedShowsMediatorDatabase,
     private val sharedPreferences: SharedPreferences
 ) : RemoteMediator<Int, WatchedEpisode>() {
     val watchedEpisodesDao = showsDatabase.watchedEpisodesDao()

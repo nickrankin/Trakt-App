@@ -15,13 +15,15 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.adapter.shows.EpisodesAdapter
 import com.nickrankin.traktapp.databinding.ActivitySeasonEpisodesBinding
+import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.shows.SeasonEpisodesViewModel
 import com.nickrankin.traktapp.repo.shows.EpisodeDetailsRepository
-import com.nickrankin.traktapp.repo.shows.SeasonEpisodesRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
+import org.apache.commons.lang3.time.DateFormatUtils
+import org.threeten.bp.OffsetDateTime
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 private const val TAG = "SeasonEpisodesActivity"
@@ -35,6 +37,9 @@ class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: EpisodesAdapter
+
+    private var showTitle = "Show"
+    private var seasonTitle = "Season Episodes"
 
 
     @Inject
@@ -59,57 +64,118 @@ class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
 
         initRecycler()
 
-        lifecycleScope.launch {
-            launch {
-                getSeason()
-            }
-            launch {
-                collectEpisodes()
-            }
-        }
+        getShow()
+        getSeason()
+        getEpisodes()
+
     }
 
-    private suspend fun getSeason() {
-        viewModel.season().collectLatest { season ->
-            Log.e(TAG, "getSeason: Got season ${season?.name}" )
-            updateTitle(season?.name ?: "Episodes")
-
-        }
-    }
-
-    private suspend fun collectEpisodes() {
-        viewModel.episodes.collectLatest { episodesResource ->
-            when (episodesResource) {
-                is Resource.Loading -> {
-                    progressBar.visibility = View.VISIBLE
-                    Log.d(TAG, "collectEpisodes: Episodes loading")
-                }
-                is Resource.Success -> {
-                    progressBar.visibility = View.GONE
-                    if(swipeLayout.isRefreshing) {
-                        swipeLayout.isRefreshing = false
+    private fun getShow() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.show.collectLatest { showResource ->
+                val show = showResource.data
+                when(showResource) {
+                    is Resource.Loading -> {
+                        Log.d(TAG, "getShow: Loading show ..")
                     }
+                    is Resource.Success -> {
+                        if(show != null) {
+                            showTitle = show.name
 
-                    val data = episodesResource.data
+                            updateTitle()
+                        }
+                    }
+                    is Resource.Error -> {
+                        Log.e(TAG, "getShow: Error getting the Show ${showResource.error?.localizedMessage}", )
+                        if(show != null) {
+                            showTitle = show.name
 
-                    if(data?.isNotEmpty() == true) {
-                        adapter.submitList(data)
+                            updateTitle()
+                        }
                     }
-                }
-                is Resource.Error -> {
-                    progressBar.visibility = View.GONE
-                    if(swipeLayout.isRefreshing) {
-                        swipeLayout.isRefreshing = false
-                    }
-                    //Log.e(TAG, "collectEpisodes: Error getting resource ${episodesResource.error?.localizedMessage}" )
-                    episodesResource.error?.printStackTrace()
                 }
             }
         }
     }
 
-    private fun updateTitle(title: String) {
-        supportActionBar?.title = title
+    private fun getSeason() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.season.collectLatest { seasonResource ->
+                val season = seasonResource.data?.first()
+                when(seasonResource) {
+                    is Resource.Loading -> {
+                        Log.d(TAG, "getSeason: Loading season ...")
+                    }
+                    is Resource.Success -> {
+                        Log.d(TAG, "getSeason: Got season ${season?.name}" )
+
+                        if(season != null) {
+                            seasonTitle = season.name
+                            updateTitle()
+
+                            bindings.seasonepisodeactivitySeasonTitle.text = season.name
+                            bindings.seasonepisodeactivitySeasonOverview.text = season.overview
+                            if(season.air_date != null) {
+                                bindings.seasonepisodeactivitySeasonAired.text = "First aired ${DateFormatUtils.format(season.air_date, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT))}"
+                            } else {
+                                bindings.seasonepisodeactivitySeasonAired.visibility = View.GONE
+                            }
+                            bindings.seasonepisodeactivitySeasonEpisodeCount.text = "${season.episode_count} Episodes"
+
+                            if(season.poster_path != null) {
+                                glide
+                                    .load(AppConstants.TMDB_POSTER_URL + season.poster_path)
+                                    .into(bindings.seasonepisodeactivitySeasonPoster)
+                            }
+
+                        }
+                    }
+                    is Resource.Error -> {
+                        Log.e(TAG, "getSeason: Error getting season data ${seasonResource.error?.localizedMessage}", )
+                        seasonTitle = season?.name ?: "Episodes"
+
+                        if(season != null) {
+                            seasonTitle = season.name
+                            updateTitle()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun getEpisodes() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.episodes.collectLatest { episodesResource ->
+                when (episodesResource) {
+                    is Resource.Loading -> {
+                        progressBar.visibility = View.VISIBLE
+                        Log.d(TAG, "collectEpisodes: Episodes loading")
+                    }
+                    is Resource.Success -> {
+                        progressBar.visibility = View.GONE
+                        if(swipeLayout.isRefreshing) {
+                            swipeLayout.isRefreshing = false
+                        }
+
+                        val data = episodesResource.data
+
+                        if(data?.isNotEmpty() == true) {
+                            adapter.submitList(data.sortedBy {
+                                it.episode_number
+                            })
+                        }
+                    }
+                    is Resource.Error -> {
+                        progressBar.visibility = View.GONE
+                        if(swipeLayout.isRefreshing) {
+                            swipeLayout.isRefreshing = false
+                        }
+                        episodesResource.error?.printStackTrace()
+                    }
+                }
+            }
+        }
     }
 
     private fun initRecycler() {
@@ -137,6 +203,14 @@ class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
 
         startActivity(intent)
     }
+
+    private fun updateTitle() {
+        // Title consists of Show name and Season Name. To prevent colision sync title update to ensure both titles are displayed successfully
+        synchronized(this) {
+            supportActionBar?.title = "$seasonTitle - $showTitle"
+        }
+    }
+
 
     override fun onStart() {
         super.onStart()

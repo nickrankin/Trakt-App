@@ -15,6 +15,14 @@ interface WatchedEpisodesDao {
     @Query("SELECT * FROM watched_episodes WHERE show_trakt_id = :showTraktId")
     fun getWatchedEpisodesByShowId(showTraktId: Int): Flow<List<WatchedEpisode>>
 
+    @Transaction
+    @Query("SELECT * FROM watched_episodes WHERE show_trakt_id = :showTraktId AND episode_season = :seasonNumber")
+    fun getWatchedEpisodesByShowIdSeasonNumber(showTraktId: Int, seasonNumber: Int): Flow<List<WatchedEpisode>>
+
+    @Transaction
+    @Query("DELETE FROM watched_episodes WHERE show_trakt_id = :showTraktId AND episode_season = :seasonNumber")
+    fun deleteWatchedEpisodesByShowIdSeasonNumber(showTraktId: Int, seasonNumber: Int)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(watchedEpisodes: List<WatchedEpisode>)
 
