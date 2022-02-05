@@ -13,14 +13,11 @@ import com.nickrankin.traktapp.repo.TrackedEpisodesRepository
 import com.nickrankin.traktapp.repo.shows.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.ShowDetailsRepository
 import com.nickrankin.traktapp.repo.shows.collected.CollectedShowsRepository
-import com.nickrankin.traktapp.repo.shows.watched.WatchedEpisodesRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.trakt5.entities.SyncItems
 import com.uwetrottmann.trakt5.entities.SyncResponse
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.consume
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -62,9 +59,10 @@ class ShowDetailsViewModel @Inject constructor(
 
     init {
         if (isLoggedIn) {
-            getRatings()
+            getUserRatings()
             getTrackingStatus()
             getProgress()
+            getRatings()
 
             collectTrackingState()
             collectProgress()
@@ -112,10 +110,21 @@ class ShowDetailsViewModel @Inject constructor(
 
     suspend fun episode(showTraktId: Int, showTmdbId: Int?, seasonNumber: Int, episodeNumber: Int) = episodesRepository.getEpisodes(showTraktId, showTmdbId, seasonNumber, episodeNumber, false)
 
-
     fun getRatings() = viewModelScope.launch {
+        val ratings = repository.getRatings(traktId)
+
+        if(ratings is Resource.Success) {
+            if(ratings.data != null) {
+                savedStateHandle.set("trakt_ratings", ratings.data!!.rating)
+            }
+        } else {
+            Log.e(TAG, "Error getting Trakt Ratings ${ratings.error?.localizedMessage}: ", )
+        }
+    }
+
+    fun getUserRatings() = viewModelScope.launch {
         if (ratingsLiveData.value == null) {
-            val ratings = repository.getRatings()
+            val ratings = repository.getUserRatings()
 
             val foundShow = ratings.find {
                 it.show?.ids?.trakt ?: 0 == traktId
@@ -189,7 +198,11 @@ class ShowDetailsViewModel @Inject constructor(
                     baseShow.aired?.toDouble() ?: 0.0
                 )
             )
-            savedStateHandle.set("next_episode", gson.toJson(baseShow.next_episode))
+
+            // There is a next episode
+            if(baseShow.next_episode != null) {
+                savedStateHandle.set("next_episode", gson.toJson(baseShow.next_episode))
+            }
         }
     }
 
@@ -203,6 +216,7 @@ class ShowDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             refreshEventChannel.send(true)
             getRatings()
+            getUserRatings()
             getProgress()
             getTrackingStatus()
         }

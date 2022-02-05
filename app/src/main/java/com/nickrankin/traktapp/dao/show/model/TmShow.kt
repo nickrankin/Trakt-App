@@ -29,6 +29,7 @@ data class TmShow(
     val next_episode: BaseTvEpisode?,
     val num_episodes: Int?,
     val num_seasons: Int?,
+    val runtime: Int?,
     val status: String?,
     val poster_path: String?,
     val backdrop_path: String?,

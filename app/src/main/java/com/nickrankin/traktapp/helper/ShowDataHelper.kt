@@ -39,9 +39,9 @@ class ShowDataHelper @Inject constructor(
     ): TmShow? {
         var tmShow: TmShow? = null
 
-        val traktResponse = traktApi.tmShows().summary(traktId.toString(), Extended.FULL)
+        val traktShowResponse = traktApi.tmShows().summary(traktId.toString(), Extended.FULL)
 
-        val showTmdbId = traktResponse.ids?.tmdb ?: -1
+        val showTmdbId = traktShowResponse.ids?.tmdb ?: -1
 
         if (showTmdbId != -1) {
             // We can get Show using Tmdb Id
@@ -57,29 +57,29 @@ class ShowDataHelper @Inject constructor(
                         AppendToResponseItem.VIDEOS
                     )
                 )
-                return convertTmdbShow(traktId ?: -1, response)
+                return convertTmdbShow(traktShowResponse, response)
             } catch(e: HttpException) {
                 Log.e(TAG, "getShow: HttpException occurred. Code: ${e.code()}. ${e.message()}", )
-                return convertTraktShow(traktResponse)
+                return convertTraktShow(traktShowResponse)
 
             }catch(e: Exception) {
                 e.printStackTrace()
                 Log.e(TAG, "getShow: Error getting TMDB Data", )
-                return convertTraktShow(traktResponse)
+                return convertTraktShow(traktShowResponse)
             }
 
         } else {
             // Try to find TV Show on TMDB
-            tmShow = findTmdbShow(traktId ?: -1, traktResponse.title ?: "", traktResponse.year)
+            tmShow = findTmdbShow(traktShowResponse)
 
             // If TmShow still null, fallback to Trakt Data
-            return tmShow ?: convertTraktShow(traktResponse)
+            return tmShow ?: convertTraktShow(traktShowResponse)
         }
     }
 
-    suspend fun findTmdbShow(traktId: Int, title: String, year: Int?): TmShow? {
+    suspend fun findTmdbShow(traktShow: Show): TmShow? {
         val findShowResponse =
-            tmdbApi.tmSearchService().tv(title, 1, null, year, false)
+            tmdbApi.tmSearchService().tv(traktShow.title, 1, getTmdbLanguage(traktShow.language), traktShow.year, false)
 
         if (findShowResponse.results?.isNotEmpty() == true) {
             // Base TV Show gets us Tmdb ID
@@ -98,7 +98,7 @@ class ShowDataHelper @Inject constructor(
 
             Log.d(TAG, "findTmdbShow: Found show $tvShow")
 
-            return convertTmdbShow(traktId, tvShow)
+            return convertTmdbShow(traktShow, tvShow)
         } else {
             return null
         }
@@ -360,37 +360,42 @@ class ShowDataHelper @Inject constructor(
         return episodes
     }
 
-    private fun convertTmdbShow(traktId: Int, tvShow: TvShow?): TmShow? {
-        if (tvShow == null) {
+    private fun convertTmdbShow(traktShow: Show, tmdbShow: TvShow?): TmShow? {
+        if (tmdbShow == null) {
             return null
         }
+
+        val traktId = traktShow.ids?.trakt ?: -1
+
+
         return TmShow(
             traktId,
             traktId,
-            tvShow.id ?: 0,
-            tvShow.name ?: "",
-            tvShow.overview ?: "",
-            tvShow.origin_country ?: emptyList(),
-            tvShow.created_by ?: emptyList(),
-            tvShow.credits,
-            tvShow.external_ids,
-            tvShow.genres,
-            tvShow.homepage,
-            tvShow.images,
-            tvShow.in_production,
-            tvShow.languages ?: emptyList(),
-            tvShow.first_air_date,
-            tvShow.last_air_date,
-            tvShow.last_episode_to_air,
-            tvShow.networks,
-            tvShow.next_episode_to_air,
-            tvShow.number_of_episodes ?: 0,
-            tvShow.number_of_seasons ?: 0,
-            tvShow.status ?: "",
-            tvShow.poster_path,
-            tvShow.backdrop_path,
-            tvShow.type,
-            tvShow.videos,
+            tmdbShow.id ?: 0,
+            tmdbShow.name ?: "",
+            tmdbShow.overview ?: "",
+            tmdbShow.origin_country ?: emptyList(),
+            tmdbShow.created_by ?: emptyList(),
+            tmdbShow.credits,
+            tmdbShow.external_ids,
+            tmdbShow.genres,
+            tmdbShow.homepage,
+            tmdbShow.images,
+            tmdbShow.in_production,
+            tmdbShow.languages ?: emptyList(),
+            tmdbShow.first_air_date,
+            tmdbShow.last_air_date,
+            tmdbShow.last_episode_to_air,
+            tmdbShow.networks,
+            tmdbShow.next_episode_to_air,
+            tmdbShow.number_of_episodes ?: 0,
+            tmdbShow.number_of_seasons ?: 0,
+            traktShow.runtime,
+            tmdbShow.status ?: "",
+            tmdbShow.poster_path,
+            tmdbShow.backdrop_path,
+            tmdbShow.type,
+            tmdbShow.videos,
             false,
             TmShow.SOURCE_TMDB
         )
@@ -432,6 +437,7 @@ class ShowDataHelper @Inject constructor(
             null,
             null,
             null,
+            show.runtime,
             null,
             null,
             null,

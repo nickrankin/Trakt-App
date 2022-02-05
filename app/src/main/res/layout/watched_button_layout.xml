@@ -2,7 +2,7 @@
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/watchedbutton_cardview"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
+    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:backgroundTint="@color/blue"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -17,8 +17,8 @@
         android:padding="5dp">
         <ImageView
             android:id="@+id/watchedbutton_icon"
-            android:layout_width="45dp"
-            android:layout_height="45dp"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
             android:layout_marginTop="4dp"
             android:layout_marginBottom="4dp"
             android:src="@drawable/ic_baseline_smart_display_24"
@@ -30,8 +30,8 @@
             android:id="@+id/watchedbutton_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Watched"
-            android:textSize="14sp"
+            android:text="Last Watched"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:textColor="@color/white"
             android:layout_marginStart="8dp"
@@ -44,35 +44,15 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:textStyle="bold"
+            android:textSize="11sp"
             android:layout_marginTop="4dp"
             android:layout_marginEnd="4dp"
+            android:layout_marginBottom="8dp"
             android:textColor="@color/white"
             app:layout_constraintTop_toBottomOf="@id/watchedbutton_title"
             app:layout_constraintStart_toStartOf="@id/watchedbutton_title"
-            app:layout_constraintEnd_toStartOf="@id/watchedbutton_all"
-            tools:text="Last Watched: Episode 1 (S01E01)" />
-
-        <TextView
-            android:id="@+id/watchedbutton_collected_at"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textStyle="bold"
-            android:textColor="@color/white"
-            android:layout_marginTop="4dp"
-
-            app:layout_constraintTop_toBottomOf="@id/watchedbutton_episode_title"
-            app:layout_constraintStart_toStartOf="@id/watchedbutton_title"
-            tools:text="Last Watched at: 24/01/2021 14:52" />
-
-        <Button
-            android:id="@+id/watchedbutton_all"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:backgroundTint="?colorPrimary"
-            android:text="All"
-            app:layout_constraintTop_toTopOf="@id/watchedbutton_title"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            tools:text="Last Watched: Episode 1 (S01E01)" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.cardview.widget.CardView>

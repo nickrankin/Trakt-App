@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/showdetailsactivity_swipe_refresh_layout"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    app:layout_behavior="@string/appbar_scrolling_view_behavior">
+    android:layout_height="match_parent">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -24,44 +22,184 @@
             android:id="@+id/showdetailsactivity_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
             android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
             android:textAllCaps="true"
             android:textSize="18sp"
             android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/showdetailsactivity_status"
             app:layout_constraintStart_toEndOf="@id/showdetailsactivity_poster"
             app:layout_constraintTop_toTopOf="@id/showdetailsactivity_poster"
-            tools:text="The Simpsons" />
+            app:layout_constraintBottom_toBottomOf="@id/showdetailsactivity_title_barrier"
+            tools:text="The Simpsons (This is a extra extra large title)" />
+
+        <TextView
+            android:id="@+id/showdetailsactivity_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            android:background="@drawable/border"
+            android:backgroundTint="@color/red"
+            android:paddingStart="4dp"
+            android:paddingTop="2dp"
+            android:paddingEnd="4dp"
+            android:paddingBottom="2dp"
+            android:textAllCaps="true"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            app:layout_constraintBaseline_toBaselineOf="@id/showdetailsactivity_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_title"
+            app:layout_constraintTop_toTopOf="@id/showdetailsactivity_title"
+            tools:text="Status: Ended" />
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/showdetailsactivity_title_barrier"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="showdetailsactivity_title, showdetailsactivity_status" />
+
 
         <TextView
             android:id="@+id/showdetailsactivity_first_aired"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:background="@drawable/rounded_corners_background"
-            android:paddingStart="8dp"
-            android:paddingTop="2dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="2dp"
-            android:textColor="@android:color/white"
-            android:textSize="13sp"
+            android:textSize="11sp"
             android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="@id/showdetailsactivity_title"
-            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_title"
+            app:layout_constraintEnd_toStartOf="@id/showdetailsactivity_network"
+            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_poster"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_title_barrier"
             tools:text="Premiered: 01/01/1970" />
+
+        <TextView
+            android:id="@+id/showdetailsactivity_network"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_first_aired"
+            app:layout_constraintTop_toTopOf="@id/showdetailsactivity_first_aired"
+            tools:text="Network: Netflix" />
+
+        <TextView
+            android:id="@+id/showdetailsactivity_runtime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_poster"
+            app:layout_constraintStart_toStartOf="@+id/showdetailsactivity_first_aired"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_first_aired"
+            tools:text="Runtime: 60 Minutes" />
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/showdetailsactivity_infobox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="showdetailsactivity_first_aired, showdetailsactivity_network, showdetailsactivity_runtime, showdetailsactivity_country," />
+
+
+        <TextView
+            android:id="@+id/showdetailsactivity_country"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_first_aired"
+            app:layout_constraintStart_toStartOf="@+id/showdetailsactivity_network"
+            app:layout_constraintTop_toTopOf="@id/showdetailsactivity_runtime"
+            tools:text="Country: USA" />
+
+        <TextView
+            android:id="@+id/showdetailsactivity_genres"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="8dp"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:barrierAllowsGoneWidgets="true"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@id/showdetailsactivity_title"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_infobox"
+            tools:text="Genres: Drame, Thriller, Action"
+            tools:visibility="visible" />
 
         <TextView
             android:id="@+id/showdetailsactivity_directed"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:textSize="13sp"
-            app:layout_constraintEnd_toEndOf="@id/showdetailsactivity_title"
-            app:layout_constraintStart_toStartOf="@id/showdetailsactivity_title"
-            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_first_aired"
-            tools:text="Directed by: John Smith, Joe Bloggs" />
+            android:layout_marginEnd="8dp"
+            android:textSize="12sp"
+            android:textStyle="bold|italic"
+            android:visibility="gone"
+            app:barrierAllowsGoneWidgets="true"
+            app:layout_constraintStart_toStartOf="@+id/showdetailsactivity_genres"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_genres"
+            tools:text="Directed by: John Smith, Joe Bloggs"
+            tools:visibility="visible" />
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/showdetailsactivity_midsection_barrier"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:barrierAllowsGoneWidgets="true"
+            app:constraint_referenced_ids="showdetailsactivity_genres,showdetailsactivity_directed,showdetailsactivity_poster" />
+
+        <TextView
+            android:id="@+id/showdetailsactivity_trakt_rating"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="4dp"
+            android:background="@drawable/rounded_corners_background"
+            android:paddingStart="4dp"
+            android:paddingTop="2dp"
+            android:paddingEnd="4dp"
+            android:paddingBottom="2dp"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:barrierAllowsGoneWidgets="true"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/showdetailsactivity_total_episodes"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_midsection_barrier"
+            tools:text="Trakt Rating: 10 (XX Users)"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/showdetailsactivity_total_episodes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
+            android:background="@drawable/rounded_corners_background"
+            android:backgroundTint="@color/dark_green"
+            android:paddingStart="4dp"
+            android:paddingTop="2dp"
+            android:paddingEnd="4dp"
+            android:paddingBottom="2dp"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintBaseline_toBaselineOf="@id/showdetailsactivity_trakt_rating"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_trakt_rating"
+            app:layout_constraintTop_toTopOf="@id/showdetailsactivity_trakt_rating"
+            tools:text="Total episodes: 52" />
+
 
         <TextView
             android:id="@+id/showdetailsactivity_overview"
@@ -69,113 +207,123 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
             android:textSize="13sp"
-            app:layout_constraintEnd_toEndOf="@id/showdetailsactivity_first_aired"
-            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_poster"
-            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_directed"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_trakt_rating"
             tools:text="Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?" />
+
 
         <androidx.constraintlayout.widget.Barrier
             android:id="@+id/showdetailsactivity_topbarrier"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:barrierDirection="bottom"
-            app:constraint_referenced_ids="showdetailsactivity_title,showdetailsactivity_directed,showdetailsactivity_first_aired,showdetailsactivity_overview,showdetailsactivity_poster" />
+            app:constraint_referenced_ids="showdetailsactivity_title,showdetailsactivity_directed,showdetailsactivity_first_aired,showdetailsactivity_overview,showdetailsactivity_poster, showdetailsactivity_trakt_rating" />
 
         <include
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
             android:id="@+id/showdetailsactivity_action_buttons"
             layout="@layout/action_button_layout"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
-            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_topbarrier"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            />
-
-        <include
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_topbarrier" />
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/showdetailsactivity_progress_buttons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="showdetailsactivity_collected_button, showdetailsactivity_watched_button" />
+
+        <include
             android:id="@+id/showdetailsactivity_collected_button"
             layout="@layout/collected_button_layout"
-            android:layout_margin="4dp"
-            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_action_buttons"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            app:layout_constraintEnd_toStartOf="@id/showdetailsactivity_watched_button"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            />
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_action_buttons"
+            app:layout_constraintWidth_percent=".46" />
 
         <include
             android:id="@+id/showdetailsactivity_watched_button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
             layout="@layout/watched_button_layout"
-            android:layout_margin="4dp"
-
-            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_collected_button"
-            app:layout_constraintStart_toStartOf="@id/showdetailsactivity_collected_button"
-            app:layout_constraintEnd_toEndOf="@id/showdetailsactivity_collected_button" />
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:visibility="visible"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_collected_button"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_action_buttons"
+            app:layout_constraintWidth_percent=".46" />
 
         <TextView
             android:id="@+id/showdetailsactivity_progress_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Show Progress"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
+            android:text="Show Progress"
             android:textAllCaps="true"
             android:textSize="14sp"
             android:textStyle="bold"
+            android:visibility="gone"
             app:barrierAllowsGoneWidgets="true"
-            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_watched_button"
             app:layout_constraintStart_toStartOf="parent"
-            android:visibility="gone" />
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_progress_buttons" />
 
         <ProgressBar
             android:id="@+id/showdetailsactivity_show_progress"
+            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-            tools:progress="55"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
-            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_progress_title"
+            android:visibility="gone"
             app:barrierAllowsGoneWidgets="true"
-            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            android:visibility="gone" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_progress_title"
+            tools:progress="55" />
 
         <TextView
-            android:id="@+id/showdetailsactivity_crew_title"
+            android:id="@+id/showdetailsactivity_next_episode_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:text="Next Episode"
             android:textAllCaps="true"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
-            app:barrierAllowsGoneWidgets="true"
-            android:text="Crew"
-            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_show_progress"
-            app:layout_constraintStart_toStartOf="@id/showdetailsactivity_crew_title"
-            app:layout_constraintEnd_toEndOf="@id/showdetailsactivity_crew_title"
             android:visibility="gone"
-            tools:visibility="visible" />
+            tools:visibility="visible"
+            app:barrierAllowsGoneWidgets="true"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_show_progress" />
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/showdetailsactivity_crew_recycler"
+        <include
+            android:id="@+id/showdetailsactivity_next_episode"
+            layout="@layout/next_episode_layout_item"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
-            android:nestedScrollingEnabled="false"
-            android:orientation="horizontal"
-            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp"
             app:barrierAllowsGoneWidgets="true"
-            app:layout_constraintStart_toStartOf="@id/showdetailsactivity_crew_title"
-            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_crew_title"
-            android:visibility="gone"
-            tools:visibility="visible" />
+            tools:visibility="visible"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_next_episode_title" />
+
+
         <TextView
             android:id="@+id/showdetailsactivity_cast_title"
             android:layout_width="wrap_content"
@@ -186,10 +334,10 @@
             android:textAllCaps="true"
             android:textSize="14sp"
             android:textStyle="bold"
+            android:visibility="gone"
             app:barrierAllowsGoneWidgets="true"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_crew_recycler"
-            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_next_episode"
             tools:visibility="visible" />
 
         <androidx.recyclerview.widget.RecyclerView
@@ -200,38 +348,12 @@
             android:layout_marginEnd="8dp"
             android:nestedScrollingEnabled="false"
             android:orientation="horizontal"
-            app:layout_constraintEnd_toEndOf="parent"
+            android:visibility="gone"
             app:barrierAllowsGoneWidgets="true"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@id/showdetailsactivity_cast_title"
             app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_cast_title"
-            android:visibility="gone"
             tools:visibility="visible" />
-
-        <TextView
-            android:id="@+id/showdetailsactivity_next_episode_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Next Episode"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
-            android:textAllCaps="true"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            app:barrierAllowsGoneWidgets="true"
-            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_cast_recycler"
-            app:layout_constraintStart_toStartOf="parent"
-            android:visibility="gone" />
-
-        <include android:id="@+id/showdetailsactivity_next_episode" layout="@layout/episode_layout_item"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
-            app:barrierAllowsGoneWidgets="true"
-            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_next_episode_title"
-            android:visibility="gone"/>
 
         <TextView
             android:id="@+id/showdetailsactivity_seasons_title"
@@ -244,7 +366,7 @@
             android:textSize="14sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_next_episode" />
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_cast_recycler" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/showdetailsactivity_seasons_recycler"
@@ -252,9 +374,9 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
-            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_seasons_title"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@id/showdetailsactivity_seasons_title"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_seasons_title" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

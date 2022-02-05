@@ -52,7 +52,6 @@ class ShowDetailsRepository @Inject constructor(
     val processChannel = Channel<BaseShow>()
     val trackingStatusChannel = Channel<Boolean>()
 
-
     fun getShowSummary(showTraktId: Int, shouldRefresh: Boolean) = networkBoundResource(
         query = {
             tmShowDao.getShow(showTraktId)
@@ -122,7 +121,17 @@ class ShowDetailsRepository @Inject constructor(
         }
     }
 
-    suspend fun getRatings(): List<RatedShow> {
+    suspend fun getRatings(traktId: Int): Resource<Ratings> {
+        return try {
+            val showRatingsResponse = traktApi.tmShows().ratings(traktId.toString())
+            Resource.Success(showRatingsResponse)
+
+        } catch (t: Throwable) {
+            Resource.Error(t, null)
+        }
+    }
+
+    suspend fun getUserRatings(): List<RatedShow> {
         Log.e(TAG, "getRatings: Getting ratings ...")
         try {
             val ratings = traktApi.tmUsers().ratingsShows(

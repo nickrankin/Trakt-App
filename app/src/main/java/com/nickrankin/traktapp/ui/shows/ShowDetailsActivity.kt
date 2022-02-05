@@ -16,10 +16,10 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.google.gson.Gson
 import com.nickrankin.traktapp.R
@@ -34,7 +34,6 @@ import com.nickrankin.traktapp.databinding.ActivityShowDetailsBinding
 import com.nickrankin.traktapp.databinding.DialogWatchedHistoryItemsBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.helper.calculateProgress
 import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
 import com.nickrankin.traktapp.repo.shows.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.SeasonEpisodesRepository
@@ -42,23 +41,23 @@ import com.nickrankin.traktapp.repo.shows.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.dialog.RatingPickerFragment
 import com.uwetrottmann.tmdb2.entities.Credits
-import com.uwetrottmann.tmdb2.entities.CrewMember
-import com.uwetrottmann.tmdb2.entities.Person
 import com.uwetrottmann.trakt5.entities.*
 import com.uwetrottmann.trakt5.enums.Rating
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 import org.apache.commons.lang3.time.DateFormatUtils
 import org.threeten.bp.OffsetDateTime
 import org.threeten.bp.format.DateTimeFormatter
+import java.math.RoundingMode
 import javax.inject.Inject
 
 private const val TAG = "ShowDetailsActivity"
 
 @AndroidEntryPoint
-class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
+class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode, SwipeRefreshLayout.OnRefreshListener {
     private lateinit var bindings: ActivityShowDetailsBinding
+
+    private lateinit var swipeRefeshLayout: SwipeRefreshLayout
 
     private lateinit var castRecyclerView: RecyclerView
     private lateinit var castCreditsAdapter: CastCreditsAdapter
@@ -100,7 +99,11 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         bindings = ActivityShowDetailsBinding.inflate(layoutInflater)
+
         setContentView(bindings.root)
+
+        swipeRefeshLayout = bindings.showdetailsactivitySwipeRefreshLayout
+        swipeRefeshLayout.setOnRefreshListener(this)
 
         setSupportActionBar(bindings.showdetailsactivityToolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -122,180 +125,135 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
         displayNextEpisode()
         setupTrackingButton()
 
-        lifecycleScope.launchWhenStarted {
-            launch {
-                collectShow()
-            }
-            launch {
-                collectSeasons()
-            }
-            launch {
-                collectEvents()
-            }
-            if (isLoggedIn) {
-                launch {
-                    collectWatchedStatus()
-                }
-            }
+        getShow()
+
+        getTraktRatings()
+
+        getSeasons()
+
+        getEvents()
+
+        if (isLoggedIn) {
+            getWatchedStatus()
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.entity_details_menu, menu)
-        return true
-    }
-
-    private suspend fun collectShow() {
-        viewModel.show.collectLatest { showResource ->
-            when (showResource) {
-                is Resource.Loading -> {
-                    Log.d(TAG, "collectShow: Show loading")
-                }
-                is Resource.Success -> {
-                    show = showResource.data
-
-                    displayShow(show)
-
-                    // Populate the cast  members
-                    if (show?.created_by?.isNotEmpty() == true) {
-                        displayCrew(convertPersonToCrew(show!!.created_by))
+    private fun getShow() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.show.collectLatest { showResource ->
+                when (showResource) {
+                    is Resource.Loading -> {
+                        Log.d(TAG, "collectShow: Show loading")
                     }
-                    if (show?.credits?.cast?.isNotEmpty() == true) {
-                        displayCast(show?.credits)
-                    }
+                    is Resource.Success -> {
+                        if(swipeRefeshLayout.isRefreshing) {
+                            swipeRefeshLayout.isRefreshing = false
+                        }
 
-                    if (isLoggedIn) {
-                        setupActionButtons(show)
+                        show = showResource.data
 
-                        lifecycleScope.launchWhenStarted {
-                            collectCollectedShows(show)
+                            displayShow(show)
+
+                            displayCredits(show?.credits)
+
+                        if (isLoggedIn) {
+                            setupActionButtons(show)
+
+                            lifecycleScope.launchWhenStarted {
+                                collectCollectedShows(show)
+                            }
                         }
                     }
-                }
-                is Resource.Error -> {
-                    displayToastMessage("Error getting Show Details. ${showResource.error?.localizedMessage}", Toast.LENGTH_LONG)
-                    Log.e(
-                        TAG,
-                        "collectShow: Couldn't get the show. ${showResource.error?.localizedMessage}",
-                    )
-                    showResource.error?.printStackTrace()
+                    is Resource.Error -> {
+                        if(swipeRefeshLayout.isRefreshing) {
+                            swipeRefeshLayout.isRefreshing = false
+                        }
+
+                        displayToastMessage(
+                            "Error getting Show Details. ${showResource.error?.localizedMessage}",
+                            Toast.LENGTH_LONG
+                        )
+                        Log.e(
+                            TAG,
+                            "collectShow: Couldn't get the show. ${showResource.error?.localizedMessage}",
+                        )
+                        showResource.error?.printStackTrace()
+                    }
                 }
             }
         }
     }
 
-    private fun convertPersonToCrew(personList: List<Person?>): List<CrewMember> {
-        val crewMemberList: MutableList<CrewMember> = mutableListOf()
-
-        personList.map { person ->
-            val crewMember = CrewMember().apply {
-                id = person?.id
-                job = "Director"
-                name = person?.name
-                profile_path = person?.profile_path ?: ""
-            }
-            crewMemberList.add(
-                crewMember
-            )
+    private fun getTraktRatings() {
+        viewModel.state.getLiveData<Double>("trakt_ratings").observe(this) { rating ->
+                bindings.showdetailsactivityInner.showdetailsactivityTraktRating.visibility = View.VISIBLE
+                bindings.showdetailsactivityInner.showdetailsactivityTraktRating.text = "Trakt user rating: ${rating.toBigDecimal().setScale(1, RoundingMode.UP)}/10"
         }
-        return crewMemberList
     }
 
-    private suspend fun collectSeasons() {
+    private fun getSeasons() {
+        lifecycleScope.launchWhenStarted {
             lifecycleScope.launchWhenStarted {
                 viewModel.seasons.collectLatest { seasonsList ->
                     seasonsAdapter.submitList(seasonsList.data?.sortedBy { it.season_number })
                 }
             }
-
+        }
     }
 
-    private suspend fun collectEvents() {
-        viewModel.events.collectLatest { event ->
-            when (event) {
-                is ShowDetailsViewModel.Event.AddToCollectionEvent -> {
-                    if (event.syncResponse is Resource.Success) {
-                        if (event.syncResponse.data?.added?.episodes ?: 0 > 0) {
-                            displayToastMessage(
-                                "${show?.name} added to your collection successfully!",
-                                Toast.LENGTH_LONG
-                            )
-                        }
-                    } else if (event.syncResponse is Resource.Error) {
-                        Log.e(TAG, "collectEvents: ${event.syncResponse.error?.localizedMessage}")
-                    }
-                }
-                is ShowDetailsViewModel.Event.RemoveFromCollectionEvent -> {
+    private fun getWatchedStatus() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.watchedEpisodes.collectLatest { watchedShowsResource ->
+                when (watchedShowsResource) {
+                    is Resource.Success -> {
+                        val watchedEpisodes = watchedShowsResource.data
 
-                    if (event.syncResponse is Resource.Success) {
-                        if (event.syncResponse.data?.deleted?.episodes ?: 0 > 0) {
-                            displayToastMessage(
-                                "${show?.name} was removed from your collection successfully!",
-                                Toast.LENGTH_LONG
-                            )
-                        }
-                    } else if (event.syncResponse is Resource.Error) {
-                        Log.e(TAG, "collectEvents: ${event.syncResponse.error?.localizedMessage}")
-                    }
-                }
-                is ShowDetailsViewModel.Event.RatingSetEvent -> {
-                    if (event.syncResponse is Resource.Success) {
-                        val syncResponse = event.syncResponse.data
-
-                        if (syncResponse?.added?.shows ?: 0 > 0) {
-                            viewModel.refreshRating(event.newRating)
-                            displayToastMessage(
-                                "Rated ${show?.name} with ${Rating.fromValue(event.newRating).name} (${event.newRating}) successfully!",
-                                Toast.LENGTH_LONG
-                            )
-                        } else {
-                            viewModel.refreshRating(-1)
-                            displayToastMessage("Rating successfully reset!", Toast.LENGTH_LONG)
+                        if (watchedEpisodes?.isNotEmpty() == true) {
+                            setupWatchedButton()
                         }
 
-                    } else if (event.syncResponse is Resource.Error) {
-                        Log.e(TAG, "collectEvents: ${event.syncResponse.error?.localizedMessage}")
+                        if (watchedEpisodes?.isNotEmpty() == true) {
+                            val watchedButton =
+                                bindings.showdetailsactivityInner.showdetailsactivityWatchedButton
+
+                            val lastWatchedEpisode = watchedEpisodes.first()
+
+                            watchedButton.apply {
+                                watchedButton.watchedbuttonEpisodeTitle.text =
+                                    "${lastWatchedEpisode.episode_title} - S${lastWatchedEpisode.episode_season}E${lastWatchedEpisode.episode_number}\n(${
+                                        lastWatchedEpisode?.watched_at?.format(
+                                            DateTimeFormatter.ofPattern(
+                                                sharedPreferences.getString(
+                                                    "date_format",
+                                                    AppConstants.DEFAULT_DATE_TIME_FORMAT
+                                                )
+                                            )
+                                        )
+                                    })"
+
+
+                            }
+
+                            watchedHistoryItemAdapter.submitList(watchedEpisodes)
+                        }
 
                     }
-                }
-                is ShowDetailsViewModel.Event.DeleteWatchedEpisodeEvent -> {
-                    val syncResponse = event.syncResponse.data
-
-                    if(event.syncResponse is Resource.Success) {
-                        if(syncResponse?.deleted?.episodes ?: 0 > 0) {
-                            displayToastMessage("Successfully removed play", Toast.LENGTH_LONG)
-                        } else if(syncResponse?.not_found?.episodes?.isNotEmpty() == true) {
-                            displayToastMessage("Could not locate play with this ID, error deleting watched history.", Toast.LENGTH_LONG)
-                        }
-                    } else {
-                        displayToastMessage("Error removing play ${event.syncResponse.error?.localizedMessage}", Toast.LENGTH_LONG)
+                    is Resource.Error -> {
+                        Log.e(TAG, "collectWatchedStatus: Error getting watched Status")
+                        watchedShowsResource.error?.printStackTrace()
                     }
                 }
             }
         }
-    }
 
-    private fun setupActionButtons(show: TmShow?) {
-        bindings.showdetailsactivityInner.showdetailsactivityActionButtons.actionbuttonToolbar.visibility =
-            View.VISIBLE
-        bindings.showdetailsactivityInner.showdetailsactivityActionButtons.actionbuttonCheckin.visibility =
-            View.GONE
-
-        ratingsDialog = RatingPickerFragment(callback = { newRating ->
-            setRating(newRating)
-        }, show?.name ?: "Unknown")
-
-        bindings.showdetailsactivityInner.showdetailsactivityActionButtons.actionbuttonRate.setOnClickListener {
-            ratingsDialog.show(supportFragmentManager, "ratings_dialog")
-        }
     }
 
     private fun displayShow(tmShow: TmShow?) {
         bindings.showdetailsactivityCollapsingToolbarLayout.title = tmShow?.name
 
-        if (tmShow?.poster_path?.isNotEmpty() == true) {
+        if (tmShow?.backdrop_path?.isNotEmpty() == true) {
             glide
-                .load(AppConstants.TMDB_POSTER_URL + tmShow.poster_path)
+                .load(AppConstants.TMDB_POSTER_URL + tmShow.backdrop_path)
                 .into(bindings.showdetailsactivityBackdrop)
         }
 
@@ -306,48 +264,106 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
                     .into(showdetailsactivityPoster)
             }
 
-            showdetailsactivityTitle.text = tmShow?.name
-            if(tmShow?.first_aired != null) {
+            showdetailsactivityTitle.text = "${tmShow?.name}"
+
+            showdetailsactivityStatus.text = "${tmShow?.status ?: "Unknown"}"
+
+            if (tmShow?.first_aired != null) {
                 showdetailsactivityFirstAired.text = "Premiered: " + DateFormatUtils.format(
                     tmShow?.first_aired,
-                    sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)
+                    "dd MMM YYYY"
                 )
             }
 
+            if (tmShow?.networks?.isNotEmpty() == true) {
+                if(tmShow.networks.size > 1) {
+                    var networksString = "Networks: "
+
+                    tmShow.networks.map { network ->
+                        networksString += network?.name
+                        if(network != tmShow.networks.last()) {
+                            networksString += ", "
+                        }
+                    }
+
+                    showdetailsactivityNetwork.text = networksString
+                } else {
+                    showdetailsactivityNetwork.text = "Network: ${tmShow.networks.first()?.name}"
+                }
+            }
+
+            if (tmShow?.country?.isNotEmpty() == true) {
+                showdetailsactivityCountry.text = "Countery: ${tmShow.country[0]}"
+            }
+
+            if (tmShow?.runtime != null) {
+                showdetailsactivityRuntime.text = "Runtime: ${tmShow.runtime} Minutes"
+            }
+
+            if(tmShow?.genres?.isNotEmpty() == true) {
+               showdetailsactivityGenres.visibility = View.VISIBLE
+
+                    var networksString = "Genres: "
+
+                    tmShow.genres.map { genre ->
+                        networksString += genre?.name
+                        if(genre != tmShow.genres.last()) {
+                            networksString += ", "
+                        }
+                    }
+
+                showdetailsactivityGenres.text = networksString
+            }
+
+            if(tmShow?.created_by?.isNotEmpty() == true) {
+                // Directed by names
+                if(tmShow.created_by.isNotEmpty()) {
+                    bindings.showdetailsactivityInner.showdetailsactivityDirected.visibility = View.VISIBLE
+
+                    // More than one creator/director
+                    if(tmShow.created_by.size > 1) {
+                        var directedByText = "Creators: "
+
+                        tmShow.created_by.map { director ->
+                            directedByText += director?.name
+                            if(director != tmShow.created_by.last()) {
+                                directedByText += ", "
+                            }
+                        }
+                        bindings.showdetailsactivityInner.showdetailsactivityDirected.text = directedByText
+                    } else {
+                        bindings.showdetailsactivityInner.showdetailsactivityDirected.text = "Creator: ${tmShow.created_by.first()?.name}"
+                    }
+
+                }
+            }
+
             showdetailsactivityOverview.text = tmShow?.overview
+
+            showdetailsactivityTotalEpisodes.text = "Total episodes: ${tmShow?.num_episodes}"
         }
     }
 
-    private fun displayCrew(crewList: List<CrewMember>) {
-        bindings.showdetailsactivityInner.showdetailsactivityCrewTitle.visibility = View.VISIBLE
 
-        crewRecyclerView = bindings.showdetailsactivityInner.showdetailsactivityCrewRecycler
-        crewRecyclerView.visibility = View.VISIBLE
+    private fun displayCredits(credits: Credits?) {
 
-        val layoutManager = LinearLayoutManager(this)
-        layoutManager.orientation = LinearLayoutManager.HORIZONTAL
-        crewCreditsAdapter = CrewCreditsAdapter(glide)
+        if(credits?.cast?.isNotEmpty() == true) {
+            bindings.showdetailsactivityInner.showdetailsactivityCastTitle.visibility = View.VISIBLE
 
-        crewRecyclerView.layoutManager = layoutManager
-        crewRecyclerView.adapter = crewCreditsAdapter
+            castRecyclerView = bindings.showdetailsactivityInner.showdetailsactivityCastRecycler
+            castRecyclerView.visibility = View.VISIBLE
 
-        crewCreditsAdapter.updateCredits(crewList)
-    }
+            val layoutManager = LinearLayoutManager(this)
+            layoutManager.orientation = LinearLayoutManager.HORIZONTAL
+            castCreditsAdapter = CastCreditsAdapter(glide)
 
-    private fun displayCast(credits: Credits?) {
-        bindings.showdetailsactivityInner.showdetailsactivityCastTitle.visibility = View.VISIBLE
+            castRecyclerView.layoutManager = layoutManager
+            castRecyclerView.adapter = castCreditsAdapter
 
-        castRecyclerView = bindings.showdetailsactivityInner.showdetailsactivityCastRecycler
-        castRecyclerView.visibility = View.VISIBLE
+            castCreditsAdapter.updateCredits(credits?.cast ?: emptyList())
+        }
 
-        val layoutManager = LinearLayoutManager(this)
-        layoutManager.orientation = LinearLayoutManager.HORIZONTAL
-        castCreditsAdapter = CastCreditsAdapter(glide)
 
-        castRecyclerView.layoutManager = layoutManager
-        castRecyclerView.adapter = castCreditsAdapter
-
-        castCreditsAdapter.updateCredits(credits?.cast ?: emptyList())
     }
 
     private fun setRating(newRating: Int) {
@@ -372,6 +388,21 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
         viewModel.setRatings(syncItems, resetRatings)
     }
 
+    private fun setupActionButtons(show: TmShow?) {
+        bindings.showdetailsactivityInner.showdetailsactivityActionButtons.actionbuttonToolbar.visibility =
+            View.VISIBLE
+        bindings.showdetailsactivityInner.showdetailsactivityActionButtons.actionbuttonCheckin.visibility =
+            View.GONE
+
+        ratingsDialog = RatingPickerFragment(callback = { newRating ->
+            setRating(newRating)
+        }, show?.name ?: "Unknown")
+
+        bindings.showdetailsactivityInner.showdetailsactivityActionButtons.actionbuttonRate.setOnClickListener {
+            ratingsDialog.show(supportFragmentManager, "ratings_dialog")
+        }
+    }
+
     private fun setupTrackingButton() {
         val showTrackingButton =
             bindings.showdetailsactivityInner.showdetailsactivityActionButtons.actionbuttonTrack
@@ -390,8 +421,8 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
         }
 
         viewModel.trackingLiveData.observe(this, { isTracking ->
-            Log.e(TAG, "setupTrackingButton: HERE", )
-            if(isTracking) {
+            Log.e(TAG, "setupTrackingButton: HERE")
+            if (isTracking) {
                 showTrackingIcon.setColorFilter(colorGreen)
             } else {
                 showTrackingIcon.setColorFilter(colorRed)
@@ -407,7 +438,7 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
     private fun setupCollectedButton(show: TmShow?, collectedShow: CollectedShow?) {
         bindings.showdetailsactivityInner.showdetailsactivityCollectedButton.apply {
             collectedbuttonCollectedAt.text =
-                "Collected at: " + collectedShow?.collected_at?.format(
+                "Collected at:\n" + collectedShow?.collected_at?.format(
                     DateTimeFormatter.ofPattern(
                         sharedPreferences.getString(
                             "date_format",
@@ -425,7 +456,6 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
     private fun setupWatchedButton() {
         Log.d(TAG, "setupWatchedButton: Setting up watched button")
         val watchedButton = bindings.showdetailsactivityInner.showdetailsactivityWatchedButton
-        val allButton = watchedButton.watchedbuttonAll
 
         watchedButton.watchedbuttonCardview.visibility = View.VISIBLE
 
@@ -448,7 +478,7 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
         watchedHistoryRecyclerView.layoutManager = layoutManager
         watchedHistoryRecyclerView.adapter = watchedHistoryItemAdapter
 
-        allButton.setOnClickListener {
+        watchedButton.root.setOnClickListener {
             watchedHistoryDialog.show()
         }
     }
@@ -463,49 +493,6 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
         })
     }
 
-
-    private suspend fun collectWatchedStatus() {
-        viewModel.watchedEpisodes.collectLatest { watchedShowsResource ->
-            when (watchedShowsResource) {
-                is Resource.Success -> {
-                    val watchedEpisodes = watchedShowsResource.data
-
-                    if(watchedEpisodes?.isNotEmpty() == true) {
-                        setupWatchedButton()
-                    }
-
-                    if (watchedEpisodes?.isNotEmpty() == true) {
-                        val watchedButton =
-                            bindings.showdetailsactivityInner.showdetailsactivityWatchedButton
-
-                        val lastWatchedEpisode = watchedEpisodes.first()
-
-                        watchedButton.apply {
-                            watchedButton.watchedbuttonEpisodeTitle.text =
-                                lastWatchedEpisode.episode_title
-
-                            watchedButton.watchedbuttonCollectedAt.text =
-                                "Last watched at: " + lastWatchedEpisode?.watched_at?.format(
-                                    DateTimeFormatter.ofPattern(
-                                        sharedPreferences.getString(
-                                            "date_format",
-                                            AppConstants.DEFAULT_DATE_TIME_FORMAT
-                                        )
-                                    )
-                                )
-                        }
-
-                        watchedHistoryItemAdapter.submitList(watchedEpisodes)
-                    }
-
-                }
-                is Resource.Error -> {
-                    Log.e(TAG, "collectWatchedStatus: Error getting watched Status", )
-                    watchedShowsResource.error?.printStackTrace()
-                }
-            }
-        }
-    }
 
     private fun handleWatchedShowDelete(watchedEpisode: WatchedEpisode) {
         val syncItem = SyncItems().ids(watchedEpisode.id)
@@ -527,7 +514,11 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
         seasonsRecyclerView = bindings.showdetailsactivityInner.showdetailsactivitySeasonsRecycler
         val layoutManager = LinearLayoutManager(this)
         seasonsAdapter = SeasonsAdapter(glide, callback = { selectedSeason ->
-            navigateToSeason(selectedSeason.show_trakt_id, selectedSeason.show_tmdb_id ?: 0, selectedSeason.season_number ?: 0)
+            navigateToSeason(
+                selectedSeason.show_trakt_id,
+                selectedSeason.show_tmdb_id ?: 0,
+                selectedSeason.season_number ?: 0
+            )
         })
 
         seasonsRecyclerView.layoutManager = layoutManager
@@ -544,7 +535,13 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
         startActivity(intent)
     }
 
-    override fun navigateToEpisode(showTraktId: Int, showTmdbId: Int, seasonNumber: Int, episodeNumber: Int, language: String?) {
+    override fun navigateToEpisode(
+        showTraktId: Int,
+        showTmdbId: Int,
+        seasonNumber: Int,
+        episodeNumber: Int,
+        language: String?
+    ) {
         val intent = Intent(this, EpisodeDetailsActivity::class.java)
         intent.putExtra(EpisodeDetailsRepository.SHOW_TRAKT_ID_KEY, showTraktId)
         intent.putExtra(EpisodeDetailsRepository.SHOW_TMDB_ID_KEY, showTmdbId)
@@ -647,8 +644,6 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
     private fun displayNextEpisode() {
         viewModel.nextEpisodeLiveData.observe(this) {
             if (it.isNotEmpty()) {
-
-
                 val traktEpisode = gson.fromJson(it, Episode::class.java)
 
                 lifecycleScope.launchWhenStarted {
@@ -728,6 +723,87 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
         }
     }
 
+    private fun getEvents() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.events.collectLatest { event ->
+                when (event) {
+                    is ShowDetailsViewModel.Event.AddToCollectionEvent -> {
+                        if (event.syncResponse is Resource.Success) {
+                            if (event.syncResponse.data?.added?.episodes ?: 0 > 0) {
+                                displayToastMessage(
+                                    "${show?.name} added to your collection successfully!",
+                                    Toast.LENGTH_LONG
+                                )
+                            }
+                        } else if (event.syncResponse is Resource.Error) {
+                            Log.e(
+                                TAG,
+                                "collectEvents: ${event.syncResponse.error?.localizedMessage}"
+                            )
+                        }
+                    }
+                    is ShowDetailsViewModel.Event.RemoveFromCollectionEvent -> {
+
+                        if (event.syncResponse is Resource.Success) {
+                            if (event.syncResponse.data?.deleted?.episodes ?: 0 > 0) {
+                                displayToastMessage(
+                                    "${show?.name} was removed from your collection successfully!",
+                                    Toast.LENGTH_LONG
+                                )
+                            }
+                        } else if (event.syncResponse is Resource.Error) {
+                            Log.e(
+                                TAG,
+                                "collectEvents: ${event.syncResponse.error?.localizedMessage}"
+                            )
+                        }
+                    }
+                    is ShowDetailsViewModel.Event.RatingSetEvent -> {
+                        if (event.syncResponse is Resource.Success) {
+                            val syncResponse = event.syncResponse.data
+
+                            if (syncResponse?.added?.shows ?: 0 > 0) {
+                                viewModel.refreshRating(event.newRating)
+                                displayToastMessage(
+                                    "Rated ${show?.name} with ${Rating.fromValue(event.newRating).name} (${event.newRating}) successfully!",
+                                    Toast.LENGTH_LONG
+                                )
+                            } else {
+                                viewModel.refreshRating(-1)
+                                displayToastMessage("Rating successfully reset!", Toast.LENGTH_LONG)
+                            }
+
+                        } else if (event.syncResponse is Resource.Error) {
+                            Log.e(
+                                TAG,
+                                "collectEvents: ${event.syncResponse.error?.localizedMessage}"
+                            )
+
+                        }
+                    }
+                    is ShowDetailsViewModel.Event.DeleteWatchedEpisodeEvent -> {
+                        val syncResponse = event.syncResponse.data
+
+                        if (event.syncResponse is Resource.Success) {
+                            if (syncResponse?.deleted?.episodes ?: 0 > 0) {
+                                displayToastMessage("Successfully removed play", Toast.LENGTH_LONG)
+                            } else if (syncResponse?.not_found?.episodes?.isNotEmpty() == true) {
+                                displayToastMessage(
+                                    "Could not locate play with this ID, error deleting watched history.",
+                                    Toast.LENGTH_LONG
+                                )
+                            }
+                        } else {
+                            displayToastMessage(
+                                "Error removing play ${event.syncResponse.error?.localizedMessage}",
+                                Toast.LENGTH_LONG
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     override fun onSupportNavigateUp(): Boolean {
         onBackPressed()
@@ -740,7 +816,7 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode {
         viewModel.onStart()
     }
 
-    private fun onRefresh() {
+    override fun onRefresh() {
         viewModel.onRefresh()
     }
 

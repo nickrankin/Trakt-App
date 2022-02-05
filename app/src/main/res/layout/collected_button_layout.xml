@@ -2,7 +2,7 @@
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/collectedbutton_cardview"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
+    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:backgroundTint="?colorPrimary"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -15,8 +15,8 @@
         android:padding="5dp">
         <ImageView
             android:id="@+id/collectedbutton_icon"
-            android:layout_width="45dp"
-            android:layout_height="45dp"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
             android:layout_marginTop="4dp"
             android:layout_marginBottom="4dp"
             android:src="@drawable/ic_baseline_movie_filter_24"
@@ -29,7 +29,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Collected"
-            android:textSize="14sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:textColor="@color/white"
             android:layout_marginStart="8dp"
@@ -42,18 +42,20 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textStyle="bold"
+            android:textSize="11sp"
             android:textColor="@color/white"
             app:layout_constraintTop_toBottomOf="@id/collectedbutton_title"
             app:layout_constraintStart_toStartOf="@id/collectedbutton_title"
-            tools:text="Collected at: 24/01/2021 14:52" />
+            tools:text="Collected at: \n 24/01/2021 14:52" />
 
         <ImageView
             android:id="@+id/collectedbutton_state"
-            android:layout_width="45dp"
-            android:layout_height="45dp"
+            android:layout_width="15dp"
+            android:layout_height="15dp"
             app:tint="@color/white"
             android:src="@drawable/ic_baseline_check_24"
             app:layout_constraintTop_toTopOf="@id/collectedbutton_title"
+            app:layout_constraintStart_toEndOf="@id/collectedbutton_collected_at"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toBottomOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
