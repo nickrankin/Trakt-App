@@ -106,7 +106,7 @@ interface TmTvService {
     @GET("tv/{tv_id}/credits")
     suspend fun credits(
         @Path("tv_id") tvShowId: Int,
-        @Query("language") language: String
+        @Query("language") language: String?
     ): Credits
 
     /**

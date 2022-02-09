@@ -1,5 +1,6 @@
 package com.nickrankin.traktapp.api
 
+import android.content.Context
 import android.util.Log
 import com.nickrankin.traktapp.ApiKeys
 import com.nickrankin.traktapp.api.services.trakt.*
@@ -12,7 +13,7 @@ import java.lang.UnsupportedOperationException
 import java.net.URLEncoder
 
 private const val TAG = "TraktApi"
-class TraktApi(private val loggingOn: Boolean, private val isStaging: Boolean): TraktV2(ApiKeys.TRAKT_API_KEY, ApiKeys.TRAKT_API_SECRET, CALLBACK_URL, isStaging) {
+class TraktApi(private val context: Context, private val loggingOn: Boolean, private val isStaging: Boolean): TraktV2(ApiKeys.TRAKT_API_KEY, ApiKeys.TRAKT_API_SECRET, CALLBACK_URL, isStaging) {
     private var okHttpClient: OkHttpClient? = null
     private var redirectUri: String? = null
     val STAGING_OAUTH2_AUTHORIZATION_URL = "$API_STAGING_URL/oauth/authorize"

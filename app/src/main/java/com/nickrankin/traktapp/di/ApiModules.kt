@@ -33,8 +33,8 @@ import javax.inject.Singleton
 object ApiModules {
     @Singleton
     @Provides
-    fun providesTraktApi(): TraktApi {
-        return TraktApi(true, false)
+    fun providesTraktApi(@ApplicationContext context: Context): TraktApi {
+        return TraktApi(context, false, false)
     }
 
     @Singleton

@@ -340,19 +340,46 @@
             app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_next_episode"
             tools:visibility="visible" />
 
+        <TextView
+            android:id="@+id/showdetailsactivity_cast_regular_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            tools:visibility="visible"
+            android:textColor="?colorPrimaryDark"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:padding="6dp"
+            tools:text="Season Regulars (15)"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_cast_title"
+            app:layout_constraintStart_toStartOf="@id/showdetailsactivity_cast_title" />
+        <TextView
+            android:id="@+id/showdetailsactivity_cast_guest_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:textColor="?colorPrimaryDark"
+            android:textSize="16sp"
+            android:padding="6dp"
+            tools:visibility="visible"
+            tools:text="Guest Stars (15)"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_cast_title"
+            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_cast_regular_button" />
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/showdetailsactivity_cast_recycler"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:layout_marginEnd="8dp"
+            android:layout_marginBottom="8dp"
             android:nestedScrollingEnabled="false"
-            android:orientation="horizontal"
             android:visibility="gone"
             app:barrierAllowsGoneWidgets="true"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@id/showdetailsactivity_cast_title"
-            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_cast_title"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_cast_regular_button"
+            app:layout_constraintBottom_toTopOf="@id/showdetailsactivity_seasons_title"
             tools:visibility="visible" />
 
         <TextView

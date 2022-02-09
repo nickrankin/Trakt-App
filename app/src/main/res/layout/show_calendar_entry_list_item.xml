@@ -24,12 +24,14 @@
             android:id="@+id/showentryitem_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
             android:layout_marginTop="8dp"
             android:textAllCaps="true"
             android:textSize="16sp"
             android:textStyle="bold"
             app:layout_constraintStart_toEndOf="@id/showentryitem_poster"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="Season 1 Episode 1" />
 
@@ -40,6 +42,7 @@
             android:layout_marginTop="8dp"
             android:textSize="12sp"
             app:layout_constraintStart_toStartOf="@id/showentryitem_title"
+            app:layout_constraintEnd_toEndOf="@id/showentryitem_title"
             app:layout_constraintTop_toBottomOf="@id/showentryitem_title"
             tools:text="The Simpsons" />
 

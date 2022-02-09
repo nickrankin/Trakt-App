@@ -34,8 +34,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
     }
 
-    override fun onPreferenceTreeClick(preference: Preference?): Boolean {
-        when(preference?.key) {
+    override fun onPreferenceTreeClick(preference: Preference): Boolean {
+        when(preference.key) {
             "trakt_connect" -> {
                 val intent = Intent(context, AuthActivity::class.java)
                 startActivity(intent)

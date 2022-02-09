@@ -5,28 +5,20 @@ import android.util.Log
 import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TmdbApi
 import com.nickrankin.traktapp.api.TraktApi
+import com.nickrankin.traktapp.dao.credits.CreditsDatabase
+import com.nickrankin.traktapp.dao.credits.model.ShowCastPersonData
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.show.model.*
 import com.nickrankin.traktapp.dao.watched.WatchedHistoryDatabase
-import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.helper.ShowDataHelper
-import com.nickrankin.traktapp.helper.getTmdbLanguage
-import com.nickrankin.traktapp.helper.networkBoundResource
+import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.repo.TrackedEpisodesRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
-import com.uwetrottmann.tmdb2.entities.AppendToResponse
-import com.uwetrottmann.tmdb2.entities.TvSeason
-import com.uwetrottmann.tmdb2.entities.TvShow
-import com.uwetrottmann.tmdb2.enumerations.AppendToResponseItem
 import com.uwetrottmann.trakt5.entities.*
-import com.uwetrottmann.trakt5.enums.Extended
 import com.uwetrottmann.trakt5.enums.HistoryType
 import com.uwetrottmann.trakt5.enums.ProgressLastActivity
 import com.uwetrottmann.trakt5.enums.RatingsFilter
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import org.threeten.bp.DateTimeUtils
 import org.threeten.bp.OffsetDateTime
 import java.lang.Exception
 import javax.inject.Inject
@@ -38,8 +30,10 @@ class ShowDetailsRepository @Inject constructor(
     private val traktApi: TraktApi,
     private val tmdbApi: TmdbApi,
     private val showDataHelper: ShowDataHelper,
+    private val creditsHelper: ShowCreditsHelper,
     private val sharedPreferences: SharedPreferences,
     private val showsDatabase: ShowsDatabase,
+    private val creditsDatabase: CreditsDatabase,
     private val watchedHistoryDatabase: WatchedHistoryDatabase
 ) : TrackedEpisodesRepository(traktApi, tmdbApi, showsDatabase) {
     private val tmShowDao = showsDatabase.tmShowDao()
@@ -48,6 +42,9 @@ class ShowDetailsRepository @Inject constructor(
     private val collectedShowDao = showsDatabase.collectedShowsDao()
     private val watchedEpisodesDao = watchedHistoryDatabase.watchedHistoryShowsDao()
     private val lastRefreshedShowDao = showsDatabase.lastRefreshedShowDao()
+
+    private val showCastPeopleDao = creditsDatabase.showCastPeopleDao()
+    private val castPersonDao = creditsDatabase.castPersonDao()
 
     val processChannel = Channel<BaseShow>()
     val trackingStatusChannel = Channel<Boolean>()
@@ -103,6 +100,31 @@ class ShowDetailsRepository @Inject constructor(
                 }
             }
         )
+
+    suspend fun getCredits(traktId: Int, tmdbId: Int?, showGuestStars: Boolean, shouldRefresh: Boolean) = networkBoundResource(
+        query = {
+                showCastPeopleDao.getShowCast(traktId, showGuestStars)
+        },
+        fetch = {
+                creditsHelper.getShowCredits(traktId, tmdbId)
+        },
+        shouldFetch = { showCastPersonList ->
+            showCastPersonList.isEmpty() || shouldRefresh
+        },
+        saveFetchResult = { castPersons ->
+            creditsDatabase.withTransaction {
+                showCastPeopleDao.deleteShowCast(traktId)
+            }
+
+            showsDatabase.withTransaction {
+                castPersons.map { castPersonPair ->
+                    castPersonDao.insert(castPersonPair.second)
+                    showCastPeopleDao.insert(castPersonPair.first)
+                }
+
+            }
+        }
+    )
 
     suspend fun getShowProgress(showTraktId: Int) {
         try {

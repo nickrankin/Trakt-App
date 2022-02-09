@@ -3,11 +3,11 @@ package com.nickrankin.traktapp.ui.shows
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Typeface
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.TextView
@@ -21,12 +21,17 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
+import com.google.android.flexbox.FlexDirection
+import com.google.android.flexbox.FlexWrap
+import com.google.android.flexbox.FlexboxLayoutManager
 import com.google.gson.Gson
 import com.nickrankin.traktapp.R
-import com.nickrankin.traktapp.adapter.credits.CastCreditsAdapter
+import com.nickrankin.traktapp.adapter.credits.ShowCastCreditsAdapter
 import com.nickrankin.traktapp.adapter.credits.CrewCreditsAdapter
 import com.nickrankin.traktapp.adapter.history.EpisodeWatchedHistoryItemAdapter
 import com.nickrankin.traktapp.adapter.shows.SeasonsAdapter
+import com.nickrankin.traktapp.dao.credits.ShowCastPerson
+import com.nickrankin.traktapp.dao.credits.model.CastPerson
 import com.nickrankin.traktapp.dao.show.model.CollectedShow
 import com.nickrankin.traktapp.dao.show.model.TmShow
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
@@ -40,7 +45,6 @@ import com.nickrankin.traktapp.repo.shows.SeasonEpisodesRepository
 import com.nickrankin.traktapp.repo.shows.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.dialog.RatingPickerFragment
-import com.uwetrottmann.tmdb2.entities.Credits
 import com.uwetrottmann.trakt5.entities.*
 import com.uwetrottmann.trakt5.enums.Rating
 import dagger.hilt.android.AndroidEntryPoint
@@ -60,7 +64,7 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode, SwipeRefre
     private lateinit var swipeRefeshLayout: SwipeRefreshLayout
 
     private lateinit var castRecyclerView: RecyclerView
-    private lateinit var castCreditsAdapter: CastCreditsAdapter
+    private lateinit var showCastCreditsAdapter: ShowCastCreditsAdapter
 
     private lateinit var crewRecyclerView: RecyclerView
     private lateinit var crewCreditsAdapter: CrewCreditsAdapter
@@ -126,6 +130,7 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode, SwipeRefre
         setupTrackingButton()
 
         getShow()
+        getCast()
 
         getTraktRatings()
 
@@ -154,7 +159,6 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode, SwipeRefre
 
                             displayShow(show)
 
-                            displayCredits(show?.credits)
 
                         if (isLoggedIn) {
                             setupActionButtons(show)
@@ -181,6 +185,56 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode, SwipeRefre
                     }
                 }
             }
+        }
+    }
+
+    private fun getCast() {
+        setupCastSwitcher()
+
+        lifecycleScope.launchWhenStarted {
+            viewModel.cast.collectLatest { castResource ->
+                when(castResource) {
+                    is Resource.Loading -> {
+                        Log.d(TAG, "getCast: Loading Cast People")
+                    }
+                    is Resource.Success -> {
+                       displayCast(castResource.data ?: emptyList())
+                    }
+                    is Resource.Error -> {
+                        Log.e(TAG, "getCast: Error getting Cast People. ${castResource.error?.localizedMessage}", )
+                        castResource.error?.printStackTrace()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun setupCastSwitcher() {
+        bindings.showdetailsactivityInner.apply {
+            val regularCastButton= showdetailsactivityCastRegularButton
+            val guestStarsButton = showdetailsactivityCastGuestButton
+
+            regularCastButton.visibility = View.VISIBLE
+            guestStarsButton.visibility = View.VISIBLE
+
+            regularCastButton.text = "Season Regulars"
+            guestStarsButton.text = "Guest Stars"
+
+            regularCastButton.setOnClickListener {
+                regularCastButton.setTypeface(null, Typeface.BOLD)
+                guestStarsButton.setTypeface(null, Typeface.NORMAL)
+
+                viewModel.filterCast(false)
+            }
+
+            guestStarsButton.setOnClickListener {
+                regularCastButton.setTypeface(null, Typeface.NORMAL)
+                guestStarsButton.setTypeface(null, Typeface.BOLD)
+
+                viewModel.filterCast(true)
+            }
+
+
         }
     }
 
@@ -345,22 +399,24 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode, SwipeRefre
     }
 
 
-    private fun displayCredits(credits: Credits?) {
+    private fun displayCast(castPersons: List<ShowCastPerson>) {
 
-        if(credits?.cast?.isNotEmpty() == true) {
+        if(castPersons.isNotEmpty()) {
             bindings.showdetailsactivityInner.showdetailsactivityCastTitle.visibility = View.VISIBLE
 
             castRecyclerView = bindings.showdetailsactivityInner.showdetailsactivityCastRecycler
             castRecyclerView.visibility = View.VISIBLE
 
-            val layoutManager = LinearLayoutManager(this)
-            layoutManager.orientation = LinearLayoutManager.HORIZONTAL
-            castCreditsAdapter = CastCreditsAdapter(glide)
+            val layoutManager = FlexboxLayoutManager(this)
+            layoutManager.flexDirection = FlexDirection.ROW
+            layoutManager.flexWrap = FlexWrap.NOWRAP
+
+            showCastCreditsAdapter = ShowCastCreditsAdapter(glide)
 
             castRecyclerView.layoutManager = layoutManager
-            castRecyclerView.adapter = castCreditsAdapter
+            castRecyclerView.adapter = showCastCreditsAdapter
 
-            castCreditsAdapter.updateCredits(credits?.cast ?: emptyList())
+            showCastCreditsAdapter.updateCredits(castPersons)
         }
 
 

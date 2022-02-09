@@ -24,9 +24,8 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.google.android.material.snackbar.Snackbar
 import com.nickrankin.traktapp.R
-import com.nickrankin.traktapp.adapter.credits.CastCreditsAdapter
+import com.nickrankin.traktapp.adapter.credits.ShowCastCreditsAdapter
 import com.nickrankin.traktapp.adapter.history.EpisodeWatchedHistoryItemAdapter
-import com.nickrankin.traktapp.dao.show.model.CollectedShow
 import com.nickrankin.traktapp.dao.show.model.TmEpisode
 import com.nickrankin.traktapp.dao.show.model.TmShow
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
@@ -35,7 +34,6 @@ import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.ItemDecorator
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.shows.EpisodeDetailsViewModel
-import com.nickrankin.traktapp.repo.shows.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.ShowDetailsRepository
 import com.nickrankin.traktapp.services.helper.TrackedEpisodeAlarmScheduler
 import com.nickrankin.traktapp.services.helper.TrackedEpisodeNotificationsBuilder
@@ -65,7 +63,7 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
     private lateinit var castRecyclerView: RecyclerView
-    private lateinit var castAdapter: CastCreditsAdapter
+    private lateinit var showCastAdapter: ShowCastCreditsAdapter
 
     private lateinit var watchedEpisodesRecyclerView: RecyclerView
     private lateinit var watchedEpisodesAdapter: EpisodeWatchedHistoryItemAdapter
@@ -431,7 +429,7 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
             View.VISIBLE
 
         if (guestStars.isNotEmpty()) {
-            castAdapter.updateCredits(guestStars)
+            //castAdapter.updateCredits(guestStars)
 
         }
     }
@@ -675,10 +673,10 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
         val castLayoutManager = LinearLayoutManager(this)
         castLayoutManager.orientation = LinearLayoutManager.HORIZONTAL
 
-        castAdapter = CastCreditsAdapter(glide)
+        showCastAdapter = ShowCastCreditsAdapter(glide)
 
         castRecyclerView.layoutManager = castLayoutManager
-        castRecyclerView.adapter = castAdapter
+        castRecyclerView.adapter = showCastAdapter
 
         val watchedEpisodesLayoutManager = LinearLayoutManager(this)
 

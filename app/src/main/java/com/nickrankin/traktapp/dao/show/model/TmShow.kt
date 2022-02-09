@@ -15,7 +15,6 @@ data class TmShow(
     val overview: String,
     val country: List<String?>,
     val created_by: List<Person?>,
-    val credits: Credits?,
     val external_ids: TvExternalIds?,
     val genres: List<Genre?>,
     val homepage: String?,

@@ -2,6 +2,7 @@ package com.nickrankin.traktapp.di
 
 import android.content.Context
 import com.nickrankin.traktapp.dao.auth.AuthDatabase
+import com.nickrankin.traktapp.dao.credits.CreditsDatabase
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.images.ImagesDatabase
 import com.nickrankin.traktapp.dao.show.WatchedShowsMediatorDatabase
@@ -19,6 +20,11 @@ object DaoModules {
     @Provides
     fun provideAuthDatabase(@ApplicationContext context: Context): AuthDatabase {
         return AuthDatabase.getDatabase(context)
+    }
+
+    @Provides
+    fun provideCreditsDatabase(@ApplicationContext context: Context): CreditsDatabase {
+        return CreditsDatabase.getDatabase(context)
     }
 
     @Provides

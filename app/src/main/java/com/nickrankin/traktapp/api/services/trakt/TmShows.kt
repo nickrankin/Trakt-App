@@ -1,5 +1,6 @@
 package com.nickrankin.traktapp.api.services.trakt
 
+import com.nickrankin.traktapp.api.services.trakt.model.TmCredits
 import com.uwetrottmann.trakt5.entities.*
 import com.uwetrottmann.trakt5.enums.Extended
 import com.uwetrottmann.trakt5.enums.ProgressLastActivity
@@ -180,8 +181,9 @@ interface TmShows {
      */
     @GET("shows/{id}/people")
     suspend fun people(
-        @Path("id") showId: String
-    ): Credits
+        @Path("id") showId: String,
+        @Query("extended", encoded = true) extendedString: String?
+    ): TmCredits
 
     /**
      * Returns rating (between 0 and 10) and distribution for a show.

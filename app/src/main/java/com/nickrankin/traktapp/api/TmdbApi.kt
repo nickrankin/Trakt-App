@@ -1,10 +1,7 @@
 package com.nickrankin.traktapp.api
 
 import com.nickrankin.traktapp.ApiKeys
-import com.nickrankin.traktapp.api.services.tmdb.SearchService
-import com.nickrankin.traktapp.api.services.tmdb.TmEpisodes
-import com.nickrankin.traktapp.api.services.tmdb.TmSeasons
-import com.nickrankin.traktapp.api.services.tmdb.TmTvService
+import com.nickrankin.traktapp.api.services.tmdb.*
 import com.uwetrottmann.tmdb2.Tmdb
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -29,7 +26,7 @@ class TmdbApi(private val enableLogging: Boolean): Tmdb(ApiKeys.TMDB_API_KEY) {
 
     private fun getLogger(): HttpLoggingInterceptor {
         val logger = HttpLoggingInterceptor()
-        logger.setLevel(HttpLoggingInterceptor.Level.BODY)
+        logger.setLevel(HttpLoggingInterceptor.Level.HEADERS)
 
         return logger
     }
@@ -41,6 +38,11 @@ class TmdbApi(private val enableLogging: Boolean): Tmdb(ApiKeys.TMDB_API_KEY) {
     fun tmTvSeasonService(): TmSeasons {
         return retrofit.create(TmSeasons::class.java)
     }
+
+    fun tmPersonService(): TmPersonService {
+        return retrofit.create(TmPersonService::class.java)
+    }
+
     fun tmTvEpisodesService(): TmEpisodes {
         return retrofit.create(TmEpisodes::class.java)
     }

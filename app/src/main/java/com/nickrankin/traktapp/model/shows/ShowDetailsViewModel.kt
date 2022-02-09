@@ -41,6 +41,14 @@ class ShowDetailsViewModel @Inject constructor(
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
         .shareIn(viewModelScope, replay = 1, started = SharingStarted.WhileSubscribed())
 
+    /**
+     *
+     * First: showGuestStars
+     * Second: shouldRefresh
+     * */
+    private val castRefreshEventChannel = Channel<Pair<Boolean, Boolean>>()
+    private val castRefreshEvent = castRefreshEventChannel.receiveAsFlow()
+
     private val trackingStatus = repository.trackingStatusChannel
     val progress = repository.processChannel.receiveAsFlow()
 
@@ -77,6 +85,15 @@ class ShowDetailsViewModel @Inject constructor(
 
     val seasons =  refreshEvent.flatMapLatest { shouldRefresh ->
         repository.getSeasons(traktId, tmdbId, null, shouldRefresh)
+    }
+
+    val cast = castRefreshEvent.flatMapLatest { updateCast ->
+        repository.getCredits(traktId, tmdbId, updateCast.first, updateCast.second)
+    }
+
+    fun filterCast(showGuestStars: Boolean) = viewModelScope.launch {
+
+        castRefreshEventChannel.send(Pair(showGuestStars, false))
     }
 
     val collectedShow = refreshEvent.flatMapLatest { shouldRefresh ->
@@ -210,11 +227,15 @@ class ShowDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             refreshEventChannel.send(false)
         }
+        viewModelScope.launch {
+            castRefreshEventChannel.send(Pair(false, false))
+        }
     }
 
     fun onRefresh() {
         viewModelScope.launch {
             refreshEventChannel.send(true)
+            castRefreshEventChannel.send(Pair(false, true))
             getRatings()
             getUserRatings()
             getProgress()
