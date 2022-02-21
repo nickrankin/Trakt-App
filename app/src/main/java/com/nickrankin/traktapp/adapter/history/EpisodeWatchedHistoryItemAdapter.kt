@@ -28,10 +28,7 @@ class EpisodeWatchedHistoryItemAdapter(private val callback: (WatchedEpisode) ->
             watchedHistoryItemTitle.text = currentItem.episode_title + "(S${currentItem?.episode_season}E${currentItem?.episode_number})"
             watchedHistoryItemWatchedAt.text = "Last Watched at: " + currentItem.watched_at?.format(
                 DateTimeFormatter.ofPattern(AppConstants.DEFAULT_DATE_TIME_FORMAT))
-
-            watchedHistoryItemDelete.setOnClickListener {
-                callback(currentItem)
-            }
+            root.setOnClickListener { callback(currentItem) }
         }
     }
 

@@ -1,34 +1,48 @@
 package com.nickrankin.traktapp.ui.shows
 
+import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import androidx.appcompat.app.AppCompatActivity
+import android.graphics.Typeface
 import android.os.Bundle
 import android.util.Log
+import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.TextView
 import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
+import com.google.android.flexbox.FlexDirection
+import com.google.android.flexbox.FlexWrap
+import com.google.android.flexbox.FlexboxLayout
+import com.google.android.flexbox.JustifyContent
+import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.shows.EpisodesAdapter
+import com.nickrankin.traktapp.dao.show.model.TmSeason
 import com.nickrankin.traktapp.databinding.ActivitySeasonEpisodesBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.shows.SeasonEpisodesViewModel
 import com.nickrankin.traktapp.repo.shows.EpisodeDetailsRepository
+import com.nickrankin.traktapp.repo.shows.SeasonEpisodesRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import org.apache.commons.lang3.time.DateFormatUtils
-import org.threeten.bp.OffsetDateTime
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 private const val TAG = "SeasonEpisodesActivity"
+
 @AndroidEntryPoint
-class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener, OnNavigateToEpisode {
+class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
+    OnNavigateToEpisode {
     private lateinit var bindings: ActivitySeasonEpisodesBinding
     private val viewModel: SeasonEpisodesViewModel by viewModels()
 
@@ -38,12 +52,15 @@ class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: EpisodesAdapter
 
+    private var seasonBarSetup = false
+
     private var showTitle = "Show"
     private var seasonTitle = "Season Episodes"
-
+    private var seasonNumber = 0
 
     @Inject
     lateinit var sharedPreferences: SharedPreferences
+
     @Inject
     lateinit var glide: RequestManager
 
@@ -62,10 +79,12 @@ class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
+        seasonNumber = intent.extras?.getInt(SeasonEpisodesRepository.SEASON_NUMBER_KEY) ?: 0
+
         initRecycler()
 
         getShow()
-        getSeason()
+        getSeasons()
         getEpisodes()
 
     }
@@ -74,20 +93,23 @@ class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
         lifecycleScope.launchWhenStarted {
             viewModel.show.collectLatest { showResource ->
                 val show = showResource.data
-                when(showResource) {
+                when (showResource) {
                     is Resource.Loading -> {
                         Log.d(TAG, "getShow: Loading show ..")
                     }
                     is Resource.Success -> {
-                        if(show != null) {
+                        if (show != null) {
                             showTitle = show.name
 
                             updateTitle()
                         }
                     }
                     is Resource.Error -> {
-                        Log.e(TAG, "getShow: Error getting the Show ${showResource.error?.localizedMessage}", )
-                        if(show != null) {
+                        Log.e(
+                            TAG,
+                            "getShow: Error getting the Show ${showResource.error?.localizedMessage}"
+                        )
+                        if (show != null) {
                             showTitle = show.name
 
                             updateTitle()
@@ -98,31 +120,47 @@ class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
         }
     }
 
-    private fun getSeason() {
+    private fun getSeasons() {
         lifecycleScope.launchWhenStarted {
-            viewModel.season.collectLatest { seasonResource ->
-                val season = seasonResource.data?.first()
-                when(seasonResource) {
+            viewModel.seasons.collectLatest { seasonResource ->
+                val season = seasonResource.data?.find { tmSeason ->
+                    tmSeason.season_number == seasonNumber
+                }
+
+                when (seasonResource) {
                     is Resource.Loading -> {
                         Log.d(TAG, "getSeason: Loading season ...")
                     }
                     is Resource.Success -> {
-                        Log.d(TAG, "getSeason: Got season ${season?.name}" )
 
-                        if(season != null) {
+                        Log.d(TAG, "getSeason: Got season ${season?.name}")
+
+                        setupSeasonSwitcher(seasonResource.data ?: emptyList())
+
+                        if (season != null) {
                             seasonTitle = season.name
                             updateTitle()
 
                             bindings.seasonepisodeactivitySeasonTitle.text = season.name
                             bindings.seasonepisodeactivitySeasonOverview.text = season.overview
-                            if(season.air_date != null) {
-                                bindings.seasonepisodeactivitySeasonAired.text = "First aired ${DateFormatUtils.format(season.air_date, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT))}"
+
+                            if (season.air_date != null) {
+                                bindings.seasonepisodeactivitySeasonAired.text = "First aired ${
+                                    DateFormatUtils.format(
+                                        season.air_date,
+                                        sharedPreferences.getString(
+                                            "date_format",
+                                            AppConstants.DEFAULT_DATE_TIME_FORMAT
+                                        )
+                                    )
+                                }"
                             } else {
                                 bindings.seasonepisodeactivitySeasonAired.visibility = View.GONE
                             }
-                            bindings.seasonepisodeactivitySeasonEpisodeCount.text = "${season.episode_count} Episodes"
+                            bindings.seasonepisodeactivitySeasonEpisodeCount.text =
+                                "${season.episode_count} Episodes"
 
-                            if(season.poster_path != null) {
+                            if (season.poster_path != null) {
                                 glide
                                     .load(AppConstants.TMDB_POSTER_URL + season.poster_path)
                                     .into(bindings.seasonepisodeactivitySeasonPoster)
@@ -131,10 +169,13 @@ class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
                         }
                     }
                     is Resource.Error -> {
-                        Log.e(TAG, "getSeason: Error getting season data ${seasonResource.error?.localizedMessage}", )
+                        Log.e(
+                            TAG,
+                            "getSeason: Error getting season data ${seasonResource.error?.localizedMessage}"
+                        )
                         seasonTitle = season?.name ?: "Episodes"
 
-                        if(season != null) {
+                        if (season != null) {
                             seasonTitle = season.name
                             updateTitle()
                         }
@@ -154,13 +195,13 @@ class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
                     }
                     is Resource.Success -> {
                         progressBar.visibility = View.GONE
-                        if(swipeLayout.isRefreshing) {
+                        if (swipeLayout.isRefreshing) {
                             swipeLayout.isRefreshing = false
                         }
 
                         val data = episodesResource.data
 
-                        if(data?.isNotEmpty() == true) {
+                        if (data?.isNotEmpty() == true) {
                             adapter.submitList(data.sortedBy {
                                 it.episode_number
                             })
@@ -168,7 +209,7 @@ class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
                     }
                     is Resource.Error -> {
                         progressBar.visibility = View.GONE
-                        if(swipeLayout.isRefreshing) {
+                        if (swipeLayout.isRefreshing) {
                             swipeLayout.isRefreshing = false
                         }
                         episodesResource.error?.printStackTrace()
@@ -178,19 +219,79 @@ class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
         }
     }
 
+    private fun setupSeasonSwitcher(seasons: List<TmSeason>) {
+        if (!seasonBarSetup) {
+            val seasonSwitcherTitle = bindings.seasonepisodeactivitySeasonSwitcherTitle
+            val seasonButtonContainer =
+                bindings.seasonepisodeactivitySeasonSwitcher as FlexboxLayout
+            seasonButtonContainer.flexDirection = FlexDirection.ROW
+            seasonButtonContainer.justifyContent = JustifyContent.FLEX_START
+            seasonButtonContainer.flexWrap = FlexWrap.WRAP
+
+            seasonSwitcherTitle.visibility = View.VISIBLE
+
+            seasons.sortedBy { it.season_number }.map { tmSeason ->
+                val button = getSeasonButton(seasonButtonContainer.context, tmSeason.season_number)
+
+                button.setOnClickListener {
+                    seasonNumber = tmSeason.season_number
+                    viewModel.switchSeason(tmSeason.season_number)
+                }
+                seasonButtonContainer.addView(button)
+            }
+            seasonBarSetup = true
+        }
+    }
+
+    private fun getSeasonButton(context: Context, seasonNumber: Int): TextView {
+        val button = TextView(context)
+        button.text = "$seasonNumber"
+        val params: LinearLayout.LayoutParams =
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        params.setMargins(0, 0, 12, 16)
+
+        params.width = 125
+        params.height = 125
+
+        button.layoutParams = params
+
+        button.gravity = Gravity.CENTER
+        button.typeface = Typeface.DEFAULT_BOLD
+        button.textAlignment = View.TEXT_ALIGNMENT_CENTER
+        button.setBackgroundResource(R.drawable.button_round)
+
+        return button
+
+    }
+
     private fun initRecycler() {
         recyclerView = bindings.seasonepisodesactivityRecyclerview
         val layoutManager = LinearLayoutManager(this)
 
-        adapter = EpisodesAdapter(sharedPreferences, glide, callback = {selectedEpisode ->
-            navigateToEpisode(selectedEpisode.show_trakt_id, selectedEpisode.show_tmdb_id ?: -1, selectedEpisode.season_number ?: 0, selectedEpisode.episode_number ?: 0, "en")
+        adapter = EpisodesAdapter(sharedPreferences, glide, callback = { selectedEpisode ->
+            navigateToEpisode(
+                selectedEpisode.show_trakt_id,
+                selectedEpisode.show_tmdb_id,
+                selectedEpisode.season_number ?: 0,
+                selectedEpisode.episode_number ?: 0,
+                "en"
+            )
         })
 
         recyclerView.layoutManager = layoutManager
         recyclerView.adapter = adapter
     }
 
-    override fun navigateToEpisode(showTraktId: Int, showTmdbId: Int, seasonNumber: Int, episodeNumber: Int, language: String?) {
+    override fun navigateToEpisode(
+        showTraktId: Int,
+        showTmdbId: Int?,
+        seasonNumber: Int,
+        episodeNumber: Int,
+        language: String?
+    ) {
         val intent = Intent(this, EpisodeDetailsActivity::class.java)
         intent.putExtra(EpisodeDetailsRepository.SHOW_TRAKT_ID_KEY, showTraktId)
         intent.putExtra(EpisodeDetailsRepository.SHOW_TMDB_ID_KEY, showTmdbId)

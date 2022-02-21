@@ -32,8 +32,9 @@ import com.nickrankin.traktapp.helper.PosterImageLoader
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.calculateProgress
 import com.nickrankin.traktapp.model.auth.shows.CollectedShowsViewModel
-import com.nickrankin.traktapp.repo.shows.ShowDetailsRepository
+import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
+import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.uwetrottmann.trakt5.entities.Show
 import com.uwetrottmann.trakt5.entities.ShowIds
 import com.uwetrottmann.trakt5.entities.SyncItems
@@ -226,7 +227,7 @@ class CollectedShowsFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener,
 
                 when (action) {
                     CollectedShowsAdapter.ACTION_NAVIGATE_SHOW -> {
-                        navigateToShow(show.show_trakt_id, show.show_tmdb_id, show.language)
+                        navigateToShow(show.show_trakt_id, show.show_tmdb_id, show.show_title, show.language)
                     }
                     CollectedShowsAdapter.ACTION_REMOVE_COLLECTION -> {
                         removeFromCollection(show)
@@ -240,10 +241,11 @@ class CollectedShowsFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener,
     }
 
 
-    override fun navigateToShow(traktId: Int, tmdbId: Int, language: String?) {
+    override fun navigateToShow(traktId: Int, tmdbId: Int, showTitle: String?, language: String?) {
         val intent = Intent(context, ShowDetailsActivity::class.java)
         intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
         intent.putExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, tmdbId)
+        intent.putExtra(ShowDetailsRepository.SHOW_TITLE_KEY, showTitle)
 
         startActivity(intent)
     }

@@ -20,8 +20,9 @@ import com.nickrankin.traktapp.helper.PosterImageLoader
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.auth.shows.ShowsOverviewViewModel
 import com.nickrankin.traktapp.repo.shows.EpisodeDetailsRepository
-import com.nickrankin.traktapp.repo.shows.ShowDetailsRepository
+import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
+import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -29,7 +30,7 @@ import javax.inject.Inject
 
 private const val TAG = "OverviewFragment"
 @AndroidEntryPoint
-class OverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNavigateToShow, OnNavigateToEpisode {
+class ShowsUpcomingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNavigateToShow, OnNavigateToEpisode {
     
     @Inject
     lateinit var sharedPreferences: SharedPreferences
@@ -177,7 +178,7 @@ class OverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNav
                     navigateToEpisode(calendarEntry.show_trakt_id, calendarEntry.show_tmdb_id, calendarEntry.episode_season, calendarEntry.episode_number, calendarEntry.language ?: "en")
                 }
                 ShowCalendarEntriesAdapter.ACTION_NAVIGATE_SHOW -> {
-                    navigateToShow(calendarEntry.show_trakt_id, calendarEntry.show_tmdb_id, calendarEntry.language)
+                    navigateToShow(calendarEntry.show_trakt_id, calendarEntry.show_tmdb_id, calendarEntry.show_title, calendarEntry.language)
                 }
                 ShowCalendarEntriesAdapter.ACTION_REMOVE_COLLECTION-> {
                     viewModel.setShowHiddenState(calendarEntry.show_tmdb_id, !calendarEntry.hidden)
@@ -198,17 +199,18 @@ class OverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNav
 
     }
 
-    override fun navigateToShow(traktId: Int, tmdbId: Int, language: String?) {
+    override fun navigateToShow(traktId: Int, tmdbId: Int, showTitle: String?, language: String?) {
 
         val intent = Intent(context, ShowDetailsActivity::class.java)
         intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
         intent.putExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, tmdbId)
+        intent.putExtra(ShowDetailsRepository.SHOW_TITLE_KEY, showTitle)
         intent.putExtra(ShowDetailsRepository.SHOW_LANGUAGE_KEY, language)
 
         startActivity(intent)
     }
 
-    override fun navigateToEpisode(showTraktId: Int, showTmdbId: Int, seasonNumber: Int, episodeNumber: Int, language: String?) {
+    override fun navigateToEpisode(showTraktId: Int, showTmdbId: Int?, seasonNumber: Int, episodeNumber: Int, language: String?) {
         val intent = Intent(context, EpisodeDetailsActivity::class.java)
         intent.putExtra(EpisodeDetailsRepository.SHOW_TRAKT_ID_KEY, showTraktId)
         intent.putExtra(EpisodeDetailsRepository.SHOW_TMDB_ID_KEY, showTmdbId)
@@ -254,6 +256,6 @@ class OverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNav
         // TODO: Rename and change types and number of parameters
         @JvmStatic
         fun newInstance() =
-            OverviewFragment()
+            ShowsUpcomingFragment()
     }
 }

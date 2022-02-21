@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.repo.shows.EpisodeDetailsRepository
-import com.nickrankin.traktapp.repo.shows.ShowDetailsRepository
+import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.uwetrottmann.trakt5.entities.EpisodeCheckin
 import com.uwetrottmann.trakt5.entities.EpisodeCheckinResponse
 import com.uwetrottmann.trakt5.entities.SyncItems

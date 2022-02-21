@@ -37,7 +37,7 @@
             android:name=".ui.shows.SeasonEpisodesActivity"
             android:exported="true" />
         <activity
-            android:name=".ui.shows.ShowDetailsActivity"
+            android:name=".ui.shows.showdetails.ShowDetailsActivity"
             android:exported="true" />
         <activity
             android:name=".ui.auth.AuthActivity"

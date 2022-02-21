@@ -34,13 +34,13 @@ object ApiModules {
     @Singleton
     @Provides
     fun providesTraktApi(@ApplicationContext context: Context): TraktApi {
-        return TraktApi(context, false, false)
+        return TraktApi(context, true, false)
     }
 
     @Singleton
     @Provides
     fun provideTmdbApi(): TmdbApi {
-        return TmdbApi(true)
+        return TmdbApi(false)
     }
 
     @Singleton

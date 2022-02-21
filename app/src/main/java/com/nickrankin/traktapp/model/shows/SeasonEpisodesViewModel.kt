@@ -22,21 +22,25 @@ class SeasonEpisodesViewModel @Inject constructor(private val savedStateHandle: 
     private val showTraktId: Int = savedStateHandle.get(SeasonEpisodesRepository.SHOW_TRAKT_ID_KEY) ?: 0
     private val showTmdbId: Int = savedStateHandle.get(SeasonEpisodesRepository.SHOW_TMDB_ID_KEY) ?: 0
 
-    private val seasonNumber: Int = savedStateHandle.get(SeasonEpisodesRepository.SEASON_NUMBER_KEY) ?: 0
+    private var seasonNumber: Int = savedStateHandle.get(SeasonEpisodesRepository.SEASON_NUMBER_KEY) ?: 0
 
     val show = refreshEvent.flatMapLatest { shouldRefresh ->
         repository.getShow(showTraktId, showTmdbId, shouldRefresh)
     }
 
-    val season = refreshEvent.flatMapLatest { shouldRefresh ->
-        repository.getSeason(showTraktId, showTmdbId, shouldRefresh).map { seasonResource ->
-            if(seasonResource is Resource.Success) {
-                seasonResource.data = seasonResource.data?.filter { season ->
-                    season.season_number == seasonNumber
+    val seasons = refreshEvent.flatMapLatest { shouldRefresh ->
+        repository.getSeason(showTraktId, showTmdbId, shouldRefresh)
+    }
+
+    fun switchSeason(seasonNumber: Int) {
+            if(this.seasonNumber != seasonNumber) {
+                this.seasonNumber = seasonNumber
+                viewModelScope.launch {
+                    refreshEventChannel.send(false)
                 }
+
             }
-            seasonResource
-        }
+
     }
 
     @ExperimentalCoroutinesApi

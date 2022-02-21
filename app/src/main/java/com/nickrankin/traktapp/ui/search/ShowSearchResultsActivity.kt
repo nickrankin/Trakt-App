@@ -20,9 +20,9 @@ import com.nickrankin.traktapp.adapter.search.ShowSearchResultsAdapter
 import com.nickrankin.traktapp.databinding.ActivityShowSearchResultsBinding
 import com.nickrankin.traktapp.helper.PosterImageLoader
 import com.nickrankin.traktapp.model.search.ShowSearchViewModel
-import com.nickrankin.traktapp.repo.shows.ShowDetailsRepository
+import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.shows.OnNavigateToShow
-import com.nickrankin.traktapp.ui.shows.ShowDetailsActivity
+import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.uwetrottmann.trakt5.entities.Show
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -107,6 +107,7 @@ class ShowSearchResultsActivity : AppCompatActivity(), OnNavigateToShow {
                 navigateToShow(
                     show?.ids?.trakt ?: 0,
                     show?.ids?.tmdb ?: 0,
+                    show.title,
                     show?.language
                 )
             } else {
@@ -122,7 +123,7 @@ class ShowSearchResultsActivity : AppCompatActivity(), OnNavigateToShow {
         recyclerView.adapter = adapter
     }
 
-    override fun navigateToShow(traktId: Int, tmdbId: Int, language: String?) {
+    override fun navigateToShow(traktId: Int, tmdbId: Int, showTitle: String?, language: String?) {
         if(tmdbId == 0) {
             Toast.makeText(this, "Trakt does not have this show's TMDB", Toast.LENGTH_LONG).show()
             return
@@ -132,6 +133,7 @@ class ShowSearchResultsActivity : AppCompatActivity(), OnNavigateToShow {
         val intent = Intent(this, ShowDetailsActivity::class.java)
         intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
         intent.putExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, tmdbId)
+        intent.putExtra(ShowDetailsRepository.SHOW_TITLE_KEY, showTitle)
         intent.putExtra(ShowDetailsRepository.SHOW_LANGUAGE_KEY, language)
 
         startActivity(intent)

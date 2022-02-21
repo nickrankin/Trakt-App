@@ -10,6 +10,11 @@ interface CollectedShowDao {
     @Query("SELECT * FROM collected_shows")
     fun getCollectedShows(): Flow<List<CollectedShow>>
 
+    @Transaction
+    @Query("SELECT * FROM collected_shows WHERE show_trakt_id = :traktId")
+    fun getCollectedShow(traktId: Int): Flow<CollectedShow?>
+
+
     @Insert
     fun insert(collectedShows: List<CollectedShow>)
 
@@ -18,6 +23,9 @@ interface CollectedShowDao {
 
     @Delete
     fun delete(collectedShow: CollectedShow)
+
+    @Query("DELETE FROM collected_shows WHERE show_trakt_id = :traktId")
+    fun deleteShowById(traktId: Int)
 
     @Transaction
     @Query("DELETE FROM collected_shows")

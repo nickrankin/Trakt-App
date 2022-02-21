@@ -26,12 +26,13 @@ import com.nickrankin.traktapp.helper.ItemDecorator
 import com.nickrankin.traktapp.helper.PosterImageLoader
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.shows.RecommendedShowsViewModel
-import com.nickrankin.traktapp.repo.shows.ShowDetailsRepository
+import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
 import com.google.android.material.snackbar.Snackbar
 import com.nickrankin.traktapp.ui.auth.AuthActivity
+import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.uwetrottmann.trakt5.entities.Show
 import com.uwetrottmann.trakt5.entities.ShowIds
 import com.uwetrottmann.trakt5.entities.SyncItems
@@ -93,6 +94,7 @@ class ShowsRecommendedFragment : Fragment(), OnNavigateToShow {
             navigateToShow(
                 selectedShow?.ids?.trakt ?: 0,
                 selectedShow?.ids?.tmdb ?: 0,
+                selectedShow?.title,
                 selectedShow?.language
             )
         })
@@ -158,7 +160,7 @@ class ShowsRecommendedFragment : Fragment(), OnNavigateToShow {
         }
     }
 
-    override fun navigateToShow(traktId: Int, tmdbId: Int, language: String?) {
+    override fun navigateToShow(traktId: Int, tmdbId: Int, showTitle: String?, language: String?) {
         if (tmdbId == 0) {
             Toast.makeText(context, "Trakt does not have this show's TMDB", Toast.LENGTH_LONG)
                 .show()
@@ -168,6 +170,7 @@ class ShowsRecommendedFragment : Fragment(), OnNavigateToShow {
         val intent = Intent(context, ShowDetailsActivity::class.java)
         intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
         intent.putExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, tmdbId)
+        intent.putExtra(ShowDetailsRepository.SHOW_TITLE_KEY, showTitle)
         intent.putExtra(ShowDetailsRepository.SHOW_LANGUAGE_KEY, language)
 
         startActivity(intent)

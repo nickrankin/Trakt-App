@@ -34,11 +34,12 @@ import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.ItemDecorator
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.shows.EpisodeDetailsViewModel
-import com.nickrankin.traktapp.repo.shows.ShowDetailsRepository
+import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.services.helper.TrackedEpisodeAlarmScheduler
 import com.nickrankin.traktapp.services.helper.TrackedEpisodeNotificationsBuilder
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.dialog.RatingPickerFragment
+import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.nickrankin.traktmanager.ui.dialoguifragments.WatchedDatePickerFragment
 import com.uwetrottmann.tmdb2.entities.CastMember
 import com.uwetrottmann.trakt5.entities.EpisodeCheckin
@@ -174,10 +175,6 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
                         launch { collectedWatchedEpisodes(episode?.episode_trakt_id ?: 0) }
                     }
 
-                    if (isLoggedIn) {
-                        setupActionButtons(episode)
-
-                    }
                 }
                 is Resource.Error -> {
                     displayMessageToast("Error getting episode. ${episodeResource.error?.localizedMessage}", Toast.LENGTH_LONG)
@@ -186,9 +183,6 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
                     if(episodeResource.data != null) {
                         displayEpisode(episode)
 
-                        if(isLoggedIn) {
-                            setupActionButtons(episode)
-                        }
                     }
 
                     episodeResource.error?.printStackTrace()
@@ -316,29 +310,6 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
         }
     }
 
-    private fun setupActionButtons(episode: TmEpisode?) {
-        bindings.episodedetailsactivityInner.episodedetailsactivityActionButtons.actionbuttonToolbar.visibility =
-            View.VISIBLE
-
-        // Hide collect + Tracking button
-        bindings.episodedetailsactivityInner.episodedetailsactivityCollectedButton.collectedbuttonCardview.visibility =
-            View.GONE
-        bindings.episodedetailsactivityInner.episodedetailsactivityActionButtons.actionbuttonTrack.visibility =
-            View.GONE
-
-        val ratingsButton =
-            bindings.episodedetailsactivityInner.episodedetailsactivityActionButtons.actionbuttonRate
-
-        ratingsButton.setOnClickListener {
-            addRatings(episode)
-        }
-
-
-        setupCheckin(episode)
-        setupAddWatchedHistory(episode)
-
-    }
-
     private fun addRatings(episode: TmEpisode?) {
 
         RatingPickerFragment({ newRating ->
@@ -386,11 +357,11 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
             }
 
             episodedetailsactivityShowTitle.setOnClickListener {
-                navigateToShow(show?.trakt_id ?: 0, show?.tmdb_id ?: 0, show?.languages?.first() ?: "en")
+                navigateToShow(show?.trakt_id ?: 0, show?.tmdb_id ?: 0, show?.name,show?.languages?.first() ?: "en")
             }
 
             episodedetailsactivityShowPoster.setOnClickListener {
-                navigateToShow(show?.trakt_id ?: 0, show?.tmdb_id ?: 0, show?.languages?.first() ?: "en")
+                navigateToShow(show?.trakt_id ?: 0, show?.tmdb_id ?: 0, show?.name,show?.languages?.first() ?: "en")
             }
         }
     }
@@ -509,7 +480,7 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
         dialog.show()
     }
 
-    override fun navigateToShow(traktId: Int, tmdbId: Int, language: String?) {
+    override fun navigateToShow(traktId: Int, tmdbId: Int, showTitle: String?, language: String?) {
         if(tmdbId == 0) {
             Toast.makeText(this, "Trakt does not have this show's TMDB", Toast.LENGTH_LONG).show()
             return
@@ -518,6 +489,7 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
         val intent = Intent(this, ShowDetailsActivity::class.java)
         intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
         intent.putExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, tmdbId)
+        intent.putExtra(ShowDetailsRepository.SHOW_TITLE_KEY, showTitle)
         intent.putExtra(ShowDetailsRepository.SHOW_LANGUAGE_KEY, language)
 
         startActivity(intent)
