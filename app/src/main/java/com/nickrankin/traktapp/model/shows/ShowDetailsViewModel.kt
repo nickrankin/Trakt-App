@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.repo.TrackedEpisodesRepository
-import com.nickrankin.traktapp.repo.shows.EpisodeDetailsRepository
+import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.repo.shows.collected.CollectedShowsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity

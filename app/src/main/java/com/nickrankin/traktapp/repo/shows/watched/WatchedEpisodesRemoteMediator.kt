@@ -48,7 +48,8 @@ class WatchedEpisodesRemoteMediator(
                 Log.d(TAG, "initialize: Initialize first refresh")
 
                 return if(shouldRefreshContents(sharedPreferences.getString(
-                        WATCHED_EPISODES_LAST_REFRESHED_KEY, "") ?: "", REFRESH_INTERVAL)) {
+                        WATCHED_EPISODES_LAST_REFRESHED_KEY, "") ?: "", REFRESH_INTERVAL) || sharedPreferences.getBoolean(
+                        WATCHED_EPISODES_FORCE_REFRESH_KEY, false)) {
 
                     Log.d(TAG, "initialize: Performing scheduled refresh")
                     InitializeAction.LAUNCH_INITIAL_REFRESH
@@ -104,6 +105,7 @@ class WatchedEpisodesRemoteMediator(
                 // Save last refresh date
                 sharedPreferences.edit()
                     .putString(WATCHED_EPISODES_LAST_REFRESHED_KEY, OffsetDateTime.now().toString())
+                    .putBoolean(WATCHED_EPISODES_FORCE_REFRESH_KEY, false)
                     .apply()
             }
 
@@ -205,5 +207,6 @@ class WatchedEpisodesRemoteMediator(
     
     companion object {
         const val WATCHED_EPISODES_LAST_REFRESHED_KEY = "watched_episodes_last_refreshed"
+        const val WATCHED_EPISODES_FORCE_REFRESH_KEY = "force_refresh_watched_episodes"
     }
 }

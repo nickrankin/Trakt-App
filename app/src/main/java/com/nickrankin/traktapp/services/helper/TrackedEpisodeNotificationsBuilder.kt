@@ -12,8 +12,8 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.preference.PreferenceManager
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.dao.show.model.TrackedEpisode
-import com.nickrankin.traktapp.repo.shows.EpisodeDetailsRepository
-import com.nickrankin.traktapp.ui.shows.EpisodeDetailsActivity
+import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
+import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
 import org.threeten.bp.OffsetDateTime
 import org.threeten.bp.format.DateTimeFormatter
 import java.util.*

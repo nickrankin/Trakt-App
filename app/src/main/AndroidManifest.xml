@@ -31,13 +31,13 @@
             android:exported="true" />
 
         <activity
-            android:name=".ui.shows.EpisodeDetailsActivity"
+            android:name=".ui.shows.showdetails.ShowDetailsActivity"
             android:exported="true" />
         <activity
             android:name=".ui.shows.SeasonEpisodesActivity"
             android:exported="true" />
         <activity
-            android:name=".ui.shows.showdetails.ShowDetailsActivity"
+            android:name=".ui.shows.episodedetails.EpisodeDetailsActivity"
             android:exported="true" />
         <activity
             android:name=".ui.auth.AuthActivity"

@@ -36,9 +36,10 @@ import com.nickrankin.traktapp.helper.ItemDecorator
 import com.nickrankin.traktapp.helper.PosterImageLoader
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.shows.WatchedEpisodesViewModel
-import com.nickrankin.traktapp.repo.shows.EpisodeDetailsRepository
+import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
+import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.uwetrottmann.trakt5.entities.SyncItems
 import dagger.hilt.android.AndroidEntryPoint

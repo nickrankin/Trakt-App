@@ -1,4 +1,4 @@
-package com.nickrankin.traktapp.ui.shows
+package com.nickrankin.traktapp.ui.shows.episodedetails
 
 import android.content.Context
 import android.content.DialogInterface
@@ -33,28 +33,24 @@ import com.nickrankin.traktapp.databinding.ActivityEpisodeDetailsBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.ItemDecorator
 import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.model.shows.EpisodeDetailsViewModel
+import com.nickrankin.traktapp.model.shows.episodedetails.EpisodeDetailsViewModel
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.services.helper.TrackedEpisodeAlarmScheduler
 import com.nickrankin.traktapp.services.helper.TrackedEpisodeNotificationsBuilder
 import com.nickrankin.traktapp.ui.auth.AuthActivity
-import com.nickrankin.traktapp.ui.dialog.RatingPickerFragment
+import com.nickrankin.traktapp.ui.shows.OnNavigateToShow
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
-import com.nickrankin.traktmanager.ui.dialoguifragments.WatchedDatePickerFragment
 import com.uwetrottmann.tmdb2.entities.CastMember
-import com.uwetrottmann.trakt5.entities.EpisodeCheckin
-import com.uwetrottmann.trakt5.entities.EpisodeIds
-import com.uwetrottmann.trakt5.entities.SyncEpisode
 import com.uwetrottmann.trakt5.entities.SyncItems
-import com.uwetrottmann.trakt5.enums.Rating
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 import org.apache.commons.lang3.time.DateFormatUtils
+import org.threeten.bp.format.DateTimeFormatter
 import javax.inject.Inject
 
 private const val TAG = "EpisodeDetailsActivity"
 
+private const val FRAGMENT_ACTION_BUTTONS ="action_buttons_fragment"
 @AndroidEntryPoint
 class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefreshLayout.OnRefreshListener {
     private lateinit var bindings: ActivityEpisodeDetailsBinding
@@ -82,12 +78,19 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         bindings = ActivityEpisodeDetailsBinding.inflate(layoutInflater)
         setContentView(bindings.root)
 
         setSupportActionBar(bindings.episodedetailsactivityToolbar)
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        if(savedInstanceState == null) {
+                supportFragmentManager.beginTransaction()
+                    .add(bindings.episodedetailsactivityInner.episodedetailsactivityActionButtonsFragmentContainer.id, EpisodeDetailsActionButtonsFragment.newInstance(), FRAGMENT_ACTION_BUTTONS)
+                    .commit()
+        }
 
         progressBar = bindings.episodedetailsactivityInner.episodedetailsactivityProgressbar
         swipeRefreshLayout = bindings.episodedetailsactivitySwipeLayout
@@ -99,15 +102,14 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
             dismissEipsodeNotifications()
         }
 
-        initRecycler()
+        initCastRecycler()
+        initDeleteWatchedEpisodeRecycler()
 
-        collectRatings()
+        getShow()
+        getEpisode()
+        getWatchedEpisodes()
+        getEvents()
 
-        lifecycleScope.launchWhenStarted {
-            launch { collectShow() }
-            launch { collectEpisode() }
-            launch { collectEvents() }
-        }
     }
 
     private fun dismissEipsodeNotifications() {
@@ -119,229 +121,148 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
         }
     }
 
-    private suspend fun collectShow() {
-        viewModel.show.collectLatest { showResource ->
-            val show = showResource.data
-            when (showResource) {
-                is Resource.Loading -> {
-                    Log.d(TAG, "collectShow: Loading show..")
-                }
-                is Resource.Success -> {
-
-                    Log.d(TAG, "collectShow: Got show! ${showResource.data}")
-
-                    displayShow(show)
-                }
-                is Resource.Error -> {
-
-                    // Try display cached show if available
-                    if(show != null) {
-                        displayShow(show)
+    private fun getShow() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.show.collectLatest { showResource ->
+                val show = showResource.data
+                when (showResource) {
+                    is Resource.Loading -> {
+                        Log.d(TAG, "collectShow: Loading show..")
                     }
+                    is Resource.Success -> {
 
-                    Log.e(
-                        TAG,
-                        "collectShow: Error getting show. ${showResource.error?.localizedMessage}"
-                    )
-                    showResource.error?.printStackTrace()
+                        Log.d(TAG, "collectShow: Got show! ${showResource.data}")
+
+                        displayShow(show)
+
+                    }
+                    is Resource.Error -> {
+
+                        // Try display cached show if available
+                        if(show != null) {
+                            displayShow(show)
+                        }
+
+                        Log.e(
+                            TAG,
+                            "collectShow: Error getting show. ${showResource.error?.localizedMessage}"
+                        )
+                        showResource.error?.printStackTrace()
+                    }
                 }
             }
         }
+
     }
 
-    private suspend fun collectEpisode() {
-        viewModel.episode.collectLatest { episodeResource ->
-            val episode = episodeResource.data
-            when (episodeResource) {
-                is Resource.Loading -> {
-                    Log.d(TAG, "collectEpisode: Loading Episode...")
-                }
-                is Resource.Success -> {
-
-                    if(swipeRefreshLayout.isRefreshing) {
-                        swipeRefreshLayout.isRefreshing = false
+    private fun getEpisode() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.episode.collectLatest { episodeResource ->
+                val episode = episodeResource.data
+                when (episodeResource) {
+                    is Resource.Loading -> {
+                        Log.d(TAG, "collectEpisode: Loading Episode...")
                     }
-                    progressBar.visibility = View.GONE
+                    is Resource.Success -> {
 
-                    // Make the container visible
-                    bindings.episodedetailsactivityInner.episodedetailsactivityContainer.visibility = View.VISIBLE
+                        if(swipeRefreshLayout.isRefreshing) {
+                            swipeRefreshLayout.isRefreshing = false
+                        }
+                        progressBar.visibility = View.GONE
 
 
-                    bindings.wpisodedetailsactivityCollapsingToolbarLayout.title = episode?.name ?: "Unknown"
+                            // Make the container visible
+                        bindings.episodedetailsactivityInner.episodedetailsactivityContainer.visibility = View.VISIBLE
 
-                    displayEpisode(episode)
 
-                    lifecycleScope.launch {
-                        launch { collectedWatchedEpisodes(episode?.episode_trakt_id ?: 0) }
-                    }
+                        bindings.wpisodedetailsactivityCollapsingToolbarLayout.title = episode?.name ?: "Unknown"
 
-                }
-                is Resource.Error -> {
-                    displayMessageToast("Error getting episode. ${episodeResource.error?.localizedMessage}", Toast.LENGTH_LONG)
-
-                    // Try to display cached episode if available
-                    if(episodeResource.data != null) {
                         displayEpisode(episode)
 
+                        setupActionBarFragment(episode!!)
                     }
+                    is Resource.Error -> {
+                        displayMessageToast("Error getting episode. ${episodeResource.error?.localizedMessage}", Toast.LENGTH_LONG)
 
-                    episodeResource.error?.printStackTrace()
+                        // Try to display cached episode if available
+                        if(episodeResource.data != null) {
+                            displayEpisode(episode)
+
+                        }
+
+                        episodeResource.error?.printStackTrace()
+                    }
                 }
             }
         }
     }
 
-    private  suspend fun collectedWatchedEpisodes(episodeId: Int) {
-        viewModel.watchedEpisodes.collectLatest { watchedEpisodesResource ->
-            if(watchedEpisodesResource is Resource.Success) {
+    private fun getWatchedEpisodes() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.watchedEpisodes.collectLatest { watchedEpisodes ->
 
-                val playedEpisodes = watchedEpisodesResource.data?.filter {
-                    it.episode_tmdb_id == episodeId
-                }?.sortedBy { it.watched_at }?.reversed()
+                        displayWatchedEpisodes(watchedEpisodes ?: emptyList())
 
-                bindings.episodedetailsactivityInner.episodedetailsactivityTotalPlays.text = "Plays: ${if(playedEpisodes?.size?: 0 > 0) playedEpisodes?.size else "Not watched"}"
 
-                if(playedEpisodes != null && playedEpisodes.isNotEmpty()) {
-                    bindings.episodedetailsactivityInner.episodedetailsactivityWatchedTitle.visibility = View.VISIBLE
-                    bindings.episodedetailsactivityInner.episodedetailsactivityWatchedRecyclerview.visibility = View.VISIBLE
-
-                    watchedEpisodesAdapter.submitList(playedEpisodes)
-                }
-                //Log.e(TAG, "collectedWatchedEpisodes: Watched at ${filtered?.first()}", )
-            } else if (watchedEpisodesResource is Resource.Error) {
-                Log.e(TAG, "collectedWatchedEpisodes: Error getting watched episodes ${watchedEpisodesResource.error?.localizedMessage}", )
             }
         }
     }
 
-    private suspend fun collectEvents() {
-        viewModel.events.collectLatest { event ->
-            when(event) {
-                is EpisodeDetailsViewModel.Event.AddRatingsEvent -> {
-                    when(event.syncResponse) {
-                        is Resource.Success -> {
-                            if (event.syncResponse.data?.added?.episodes ?: 0 > 0) {
-                                displayMessageToast("Successfully rated Episode!", Toast.LENGTH_LONG)
-                            }
-                        }
-                        is Resource.Error -> {
-                            displayMessageToast(
-                                "Error rating Episode! Error ${event.syncResponse.error?.localizedMessage}",
-                                Toast.LENGTH_LONG
-                            )
-                        }
-                    }
-                }
-                is EpisodeDetailsViewModel.Event.AddCheckinEvent -> {
-                    when (event.checkinResponse) {
-                        is Resource.Success -> {
-                            val episodeName = event.episodeName
+    private fun getEvents() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.events.collectLatest { event ->
+                when(event) {
+                    is EpisodeDetailsViewModel.Event.DeleteWatchedHistoryItem -> {
+                        val eventResource = event.syncResponse
 
-                            if (event.checkinResponse.data != null) {
+                        if(eventResource is Resource.Success) {
+                            val syncResponse = eventResource.data
 
-                                displayMessageToast(
-                                    "You are watching ${episodeName ?: "Unknown Episode"}",
-                                    Toast.LENGTH_LONG
-                                )
+                            if(syncResponse?.deleted?.episodes ?: 0 > 0) {
+                                displayMessageToast("Successfully removed play", Toast.LENGTH_SHORT)
                             } else {
-                                displayAlertDialog(
-                                    "Active Checkins found",
-                                    "You are currently watching something else on Trakt. Delete all active checkins now and checkin to episode ${episodeName}?",
-                                    { dialogInterface, i ->
-                                        lifecycleScope.launch {
-                                            val checkinsCleared = clearActiveCheckins()
-
-                                            if (checkinsCleared) {
-                                                viewModel.checkin(episodeName, event.episodeCheckin)
-                                            }
-                                        }
-                                    },
-                                    { dialogInterface, i ->
-                                        dialogInterface.dismiss()
-                                    }
-                                )
+                                displayMessageToast("Didn't remove play", Toast.LENGTH_SHORT)
                             }
+
+                        } else if (eventResource is Resource.Error) {
+                            displayMessageToast("Error deleting history item! ${eventResource.error?.localizedMessage}", Toast.LENGTH_LONG)
+                            eventResource.error?.printStackTrace()
                         }
-                        is Resource.Error -> {
-                            event.checkinResponse.error?.printStackTrace()
-                            displayMessageToast(
-                                "Error checking in to episode. Error: ${event.checkinResponse.error?.localizedMessage}",
-                                Toast.LENGTH_LONG
-                            )
-
-                        }
-                    }
-                }
-
-                is EpisodeDetailsViewModel.Event.AddToWatchedHistoryEvent -> {
-                    val syncResponse = event.syncResponse
-
-
-                    if(syncResponse is Resource.Success) {
-                        if(syncResponse.data?.added?.episodes ?: 0 > 0) {
-                            displayMessageToast("Successfully added episode to your watched history!", Toast.LENGTH_LONG)
-
-                            // Refresh watched history entries
-                            viewModel.onRefresh()
-                        } else {
-                            displayMessageToast("History entry not added", Toast.LENGTH_LONG)
-                        }
-
-                    } else if (syncResponse is Resource.Error) {
-                        displayMessageToast("Error adding episode to watched history. Error: ${syncResponse.error?.localizedMessage}", Toast.LENGTH_LONG)
-                    }
-                }
-
-                is EpisodeDetailsViewModel.Event.DeleteWatchedEpisodeEvent -> {
-                    val syncResponseResource = event.syncResponse
-
-                    if(syncResponseResource is Resource.Success) {
-                        if(syncResponseResource.data?.deleted?.episodes ?: 0 > 0) {
-                            displayMessageToast("Successfully deleted watched episode from your Trakt library!", Toast.LENGTH_LONG)
-                        } else {
-                            displayMessageToast("Could not delete watched Episode. Please try again later.", Toast.LENGTH_LONG)
-                        }
-                    } else if(syncResponseResource is Resource.Error) {
-                        syncResponseResource.error?.printStackTrace()
-                        displayMessageToast("Error removing watched episode. ${syncResponseResource.error?.localizedMessage}", Toast.LENGTH_LONG)
                     }
                 }
             }
         }
     }
 
-    private fun addRatings(episode: TmEpisode?) {
+    private fun displayWatchedEpisodes(episodes: List<WatchedEpisode>) {
+        if(episodes.isNotEmpty()) {
+            // Total plays badge
+            bindings.episodedetailsactivityInner.episodedetailsactivityTotalPlays.visibility = View.VISIBLE
+            bindings.episodedetailsactivityInner.episodedetailsactivityTotalPlays.text = "Total plays: ${episodes.size} (Last play: ${
+                    episodes.first().watched_at?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)))
+            })"
 
-        RatingPickerFragment({ newRating ->
-            val syncItems = SyncItems().apply {
-                episodes = listOf(
-                    SyncEpisode().rating(
-                        Rating.fromValue(newRating)
-                    )
-                        .id(EpisodeIds.trakt(episode?.episode_trakt_id ?: 0))
-                )
-            }
+            // All plays list
+            bindings.episodedetailsactivityInner.episodedetailsactivityWatchedTitle.visibility = View.VISIBLE
+            bindings.episodedetailsactivityInner.episodedetailsactivityWatchedRecyclerview.visibility = View.VISIBLE
 
-            viewModel.addRatings(syncItems)
-
-
-        }, "${episode?.name ?: "Unknown Episode"}")
-            .show(supportFragmentManager, "Ratings dialog")
+            watchedEpisodesAdapter.submitList(episodes)
+        }
     }
 
-    private fun collectRatings() {
-        val ratingTextView =
-            bindings.episodedetailsactivityInner.episodedetailsactivityActionButtons.actionbuttonRateText
+    private fun setupActionBarFragment(episode: TmEpisode) {
+        try {
+            val fragment = supportFragmentManager.findFragmentByTag(
+                FRAGMENT_ACTION_BUTTONS) as OnEpisodeChangeListener
 
-        ratingTextView.text = " - "
-        viewModel.ratings.observe(this, {rating ->
-            if (rating != -1) {
-                ratingTextView.text = rating?.toString()
-            } else {
-                ratingTextView.text = " - "
-            }
-
-        })
+            fragment.bindEpisode(episode!!)
+        } catch(e: ClassCastException) {
+            Log.e(TAG, "getShow: Cannot cast ${supportFragmentManager.findFragmentByTag(
+                FRAGMENT_ACTION_BUTTONS)} as OnEpisodeIdChangeListener", )
+            e.printStackTrace()
+        } catch(e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun displayShow(show: TmShow?) {
@@ -378,6 +299,8 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
             episodedetailsactivityOverview.text = episode?.overview
 
             if (episode?.air_date != null) {
+                bindings.episodedetailsactivityInner.episodedetailsactivityFirstAired.visibility = View.VISIBLE
+
                 episodedetailsactivityFirstAired.text = "Aired: " + DateFormatUtils.format(
                     episode.air_date,
                     sharedPreferences.getString(
@@ -405,80 +328,6 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
         }
     }
 
-    private fun setupCheckin(episode: TmEpisode?) {
-        val checkinButton =
-            bindings.episodedetailsactivityInner.episodedetailsactivityActionButtons.actionbuttonCheckin
-        val episodeCheckin = EpisodeCheckin.Builder(
-            SyncEpisode().id(EpisodeIds.trakt(episode?.episode_trakt_id ?: 0)),
-            AppConstants.APP_VERSION,
-            AppConstants.APP_DATE
-        ).build()
-
-        checkinButton.setOnClickListener {
-                viewModel.checkin(episode?.name ?: "Unknown", episodeCheckin)
-        }
-    }
-
-    private fun setupAddWatchedHistory(episode: TmEpisode?) {
-        val addHistoryButton = bindings.episodedetailsactivityInner.episodedetailsactivityActionButtons.actionbuttonAddHistory
-
-        addHistoryButton.visibility = View.VISIBLE
-
-        val addHistoryDialog = WatchedDatePickerFragment(onWatchedDateChanged = { selectedDate ->
-            val syncItems = SyncItems().apply {
-                episodes = listOf(
-                    SyncEpisode()
-                        .id(EpisodeIds.trakt(episode?.episode_trakt_id ?: 0))
-                        .watchedAt(selectedDate)
-                )
-            }
-
-            viewModel.addItemsToWatchedHistory(syncItems)
-        })
-
-        addHistoryButton.setOnClickListener { addHistoryDialog.show(supportFragmentManager, "Add to watched history") }
-
-    }
-
-    private suspend fun clearActiveCheckins(): Boolean {
-        val result = viewModel.deleteCheckins()
-        return if (result is Resource.Success) {
-            displayMessageToast("Succesfully cleared Trakt checkins", Toast.LENGTH_LONG)
-
-            true
-        } else {
-            Log.e(TAG, "clearActiveCheckins: Error clearing checkins")
-            result.error?.printStackTrace()
-            displayMessageToast(
-                "Error clearing active Trakt checkins. Error: ${result.error?.localizedMessage}",
-                Toast.LENGTH_LONG
-            )
-
-            false
-        }
-    }
-
-    private fun handleWatchedEpisodeDelete(watchedEpisode: WatchedEpisode, showConfirmation: Boolean) {
-        val syncItem = SyncItems().ids(watchedEpisode.id)
-
-        if(!showConfirmation) {
-            viewModel.removeWatchedEpisode(syncItem)
-            return
-        }
-
-        val dialog = AlertDialog.Builder(this)
-            .setTitle("Delete ${watchedEpisode.episode_title} from your watched history?")
-            .setMessage("Are you sure you want to remove ${watchedEpisode.episode_title} from your Trakt History?")
-            .setPositiveButton("Yes", DialogInterface.OnClickListener { dialogInterface, i ->
-                viewModel.removeWatchedEpisode(syncItem)
-            })
-            .setNegativeButton("No", DialogInterface.OnClickListener { dialogInterface, i ->
-                dialogInterface.dismiss()
-            })
-            .create()
-
-        dialog.show()
-    }
 
     override fun navigateToShow(traktId: Int, tmdbId: Int, showTitle: String?, language: String?) {
         if(tmdbId == 0) {
@@ -493,6 +342,30 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
         intent.putExtra(ShowDetailsRepository.SHOW_LANGUAGE_KEY, language)
 
         startActivity(intent)
+    }
+
+
+
+    private fun handleWatchedEpisodeDelete(watchedEpisode: WatchedEpisode, showConfirmation: Boolean) {
+        val syncItem = SyncItems().ids(watchedEpisode.id)
+
+        if(!showConfirmation) {
+            viewModel.removeWatchedHistoryItem(syncItem)
+            return
+        }
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Delete ${watchedEpisode.episode_title} from your watched history?")
+            .setMessage("Are you sure you want to remove ${watchedEpisode.episode_title} from your Trakt History?")
+            .setPositiveButton("Yes", DialogInterface.OnClickListener { dialogInterface, i ->
+                viewModel.removeWatchedHistoryItem(syncItem)
+            })
+            .setNegativeButton("No", DialogInterface.OnClickListener { dialogInterface, i ->
+                dialogInterface.dismiss()
+            })
+            .create()
+
+        dialog.show()
     }
 
     private fun setupViewSwipeBehaviour(context: Context) {
@@ -552,7 +425,6 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
                         actionState,
                         isCurrentlyActive
                     )
-
                 }
 
                 override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
@@ -638,8 +510,7 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
             .show()
     }
 
-
-    private fun initRecycler() {
+    private fun initCastRecycler() {
         castRecyclerView = bindings.episodedetailsactivityInner.episodedetailsactivityCastRecycler
 
         val castLayoutManager = LinearLayoutManager(this)
@@ -649,7 +520,10 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
 
         castRecyclerView.layoutManager = castLayoutManager
         castRecyclerView.adapter = showCastAdapter
+    }
 
+
+    private fun initDeleteWatchedEpisodeRecycler() {
         val watchedEpisodesLayoutManager = LinearLayoutManager(this)
 
         watchedEpisodesAdapter = EpisodeWatchedHistoryItemAdapter(callback = { selectedEpisode ->

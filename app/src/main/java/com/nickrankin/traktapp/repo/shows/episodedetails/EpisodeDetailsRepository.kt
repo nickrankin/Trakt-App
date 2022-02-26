@@ -1,4 +1,4 @@
-package com.nickrankin.traktapp.repo.shows
+package com.nickrankin.traktapp.repo.shows.episodedetails
 
 import android.content.SharedPreferences
 import android.util.Log
@@ -13,6 +13,7 @@ import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.ShowDataHelper
 import com.nickrankin.traktapp.helper.getTmdbLanguage
 import com.nickrankin.traktapp.helper.networkBoundResource
+import com.nickrankin.traktapp.repo.shows.watched.WatchedEpisodesRemoteMediator
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.tmdb2.entities.AppendToResponse
 import com.uwetrottmann.tmdb2.entities.TvEpisode
@@ -37,8 +38,8 @@ class EpisodeDetailsRepository @Inject constructor(
     private val watchedHistoryDatabase: WatchedHistoryDatabase
 ) {
     private val episodesDao = showsDatabase.TmEpisodesDao()
-    private val watchedHistoryShowsDao = watchedHistoryDatabase.watchedHistoryShowsDao()
-
+    private val showsDbWatchedHistoryShowsDao = showsDatabase.watchedEpisodesDao()
+    private val watchedHistoryDbWatchedHistoryDao = watchedHistoryDatabase.watchedHistoryShowsDao()
     suspend fun getEpisodes(
         showTraktId: Int,
         showTmdbId: Int?,
@@ -67,7 +68,7 @@ class EpisodeDetailsRepository @Inject constructor(
 
     suspend fun getWatchedEpisodes(shouldRefresh: Boolean, showTraktId: Int) = networkBoundResource(
         query = {
-            watchedHistoryShowsDao.getWatchedEpisodesPerShow(showTraktId)
+            watchedHistoryDbWatchedHistoryDao.getWatchedEpisodesPerShow(showTraktId)
         },
         fetch = {
             traktApi.tmUsers().history(
@@ -88,12 +89,40 @@ class EpisodeDetailsRepository @Inject constructor(
             Log.d(TAG, "getWatchedEpisodes: Refreshing watched episodes")
 
             watchedHistoryDatabase.withTransaction {
-                watchedHistoryShowsDao.deleteAllWatchedEpisodesPerShow(showTraktId)
+                watchedHistoryDbWatchedHistoryDao.deleteAllWatchedEpisodesPerShow(showTraktId)
 
-                watchedHistoryShowsDao.insertEpisodes(getWatchedEpisodes(historyEntries))
+                watchedHistoryDbWatchedHistoryDao.insertEpisodes(getWatchedEpisodes(historyEntries))
             }
         }
     )
+
+    suspend fun refreshWatchedEpisodes(showTraktId: Int): Boolean {
+        return try {
+            val response = traktApi.tmUsers().history(
+                UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, null)),
+                HistoryType.SHOWS,
+                showTraktId,
+                1,
+                999,
+                null,
+                OffsetDateTime.now().minusYears(99),
+                OffsetDateTime.now()
+            )
+
+                Log.d(TAG, "getWatchedEpisodes: Refreshing watched episodes")
+
+                watchedHistoryDatabase.withTransaction {
+                    watchedHistoryDbWatchedHistoryDao.deleteAllWatchedEpisodesPerShow(showTraktId)
+
+                    watchedHistoryDbWatchedHistoryDao.insertEpisodes(getWatchedEpisodes(response))
+                }
+
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
 
     private fun getWatchedEpisodes(historyEntries: List<HistoryEntry>): List<WatchedEpisode> {
         val watchedEpisodes: MutableList<WatchedEpisode> = mutableListOf()
@@ -124,88 +153,25 @@ class EpisodeDetailsRepository @Inject constructor(
         return watchedEpisodes
     }
 
-    suspend fun getRatings() = flow {
-        try {
-            val response = traktApi.tmUsers().ratingsEpisodes(
-                UserSlug(
-                    sharedPreferences.getString(
-                        AuthActivity.USER_SLUG_KEY,
-                        "NULL"
-                    )
-                ), RatingsFilter.ALL, null
-            )
-
-            emit(Resource.Success(response))
-
-        } catch (e: Throwable) {
-            e.printStackTrace()
-            emit(Resource.Error(e, null))
-        }
-    }
-
-    suspend fun addRatings(syncItems: SyncItems): Resource<SyncResponse> {
-        return try {
-            val response = traktApi.tmSync().addRatings(syncItems)
-
-            // Notify active Rating channel observers
-            getRatings()
-
-            Resource.Success(response)
-
-        } catch (t: Throwable) {
-            Resource.Error(t, null)
-        }
-    }
-
-    suspend fun checkin(episodeCheckin: EpisodeCheckin): Resource<EpisodeCheckinResponse?> {
-
-        return try {
-            val response = traktApi.tmCheckin().checkin(episodeCheckin)
-
-            Resource.Success(response)
-
-        } catch (e: HttpException) {
-            if (e.code() == 409) {
-                // User is already checked in so not really an error as such. Null EpisodeCheckinResponse = need to delete active checkin first
-                Resource.Success(null)
-            } else {
-                Resource.Error(e, null)
-            }
-        } catch (t: Throwable) {
-            Resource.Error(t, null)
-        }
-    }
-
-    suspend fun deleteActiveCheckin(): Resource<Boolean> {
-
-        return try {
-            traktApi.tmCheckin().deleteActiveCheckin()
-
-            Resource.Success(true)
-
-        } catch (t: Throwable) {
-            Resource.Error(t, false)
-        }
-    }
-
-    suspend fun addToWatchedHistory(syncItems: SyncItems): Resource<SyncResponse> {
-        return try {
-            val response = traktApi.tmSync().addItemsToWatchedHistory(syncItems)
-
-            Resource.Success(response)
-
-        } catch (t: Throwable) {
-            Resource.Error(t, null)
-        }
-    }
-
     suspend fun removeWatchedEpisode(syncItems: SyncItems): Resource<SyncResponse> {
         return try {
             val response = traktApi.tmSync().deleteItemsFromWatchedHistory(syncItems)
 
+            val historyId = syncItems.ids?.first() ?: 0L
+
+            /// Clean up the databases
             showsDatabase.withTransaction {
-                watchedHistoryShowsDao.deleteWatchedEpisodeById(syncItems.ids?.first() ?: 0L)
+                showsDbWatchedHistoryShowsDao.deleteWatchedEpisodeById(historyId)
             }
+
+            watchedHistoryDatabase.withTransaction {
+                watchedHistoryDbWatchedHistoryDao.deleteWatchedEpisodeById(historyId)
+            }
+
+            // Ensure Watched History pager gets refreshed on next call if we remove a play
+            sharedPreferences.edit()
+                .putBoolean(WatchedEpisodesRemoteMediator.WATCHED_EPISODES_FORCE_REFRESH_KEY, true)
+                .apply()
 
             Resource.Success(response)
         } catch (e: Throwable) {

@@ -20,11 +20,11 @@ import com.nickrankin.traktapp.databinding.ActivityShowDetailsBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
-import com.nickrankin.traktapp.repo.shows.EpisodeDetailsRepository
+import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
-import com.nickrankin.traktapp.ui.shows.EpisodeDetailsActivity
 import com.nickrankin.traktapp.ui.shows.OnNavigateToEpisode
+import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import org.apache.commons.lang3.time.DateFormatUtils

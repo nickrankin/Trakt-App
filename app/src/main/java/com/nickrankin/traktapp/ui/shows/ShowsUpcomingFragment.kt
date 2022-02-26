@@ -19,9 +19,10 @@ import com.nickrankin.traktapp.databinding.FragmentShowsOverviewBinding
 import com.nickrankin.traktapp.helper.PosterImageLoader
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.auth.shows.ShowsOverviewViewModel
-import com.nickrankin.traktapp.repo.shows.EpisodeDetailsRepository
+import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
+import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -253,7 +254,6 @@ class ShowsUpcomingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, 
     }
 
     companion object {
-        // TODO: Rename and change types and number of parameters
         @JvmStatic
         fun newInstance() =
             ShowsUpcomingFragment()

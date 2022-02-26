@@ -31,9 +31,9 @@ import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.calculateProgress
 import com.nickrankin.traktapp.model.shows.showdetails.ShowDetailsProgressViewModel
-import com.nickrankin.traktapp.repo.shows.EpisodeDetailsRepository
+import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
-import com.nickrankin.traktapp.ui.shows.EpisodeDetailsActivity
+import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
 import com.nickrankin.traktapp.ui.shows.OnNavigateToEpisode
 import com.uwetrottmann.trakt5.entities.*
 import dagger.hilt.android.AndroidEntryPoint

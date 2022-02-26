@@ -71,6 +71,8 @@
             android:textColor="@android:color/white"
             android:textSize="13sp"
             android:textStyle="bold"
+            android:visibility="gone"
+            tools:visibility="visible"
             app:layout_constraintStart_toStartOf="@id/episodedetailsactivity_title"
             app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_show_title"
             tools:text="Premiered: 01/01/1970" />
@@ -80,6 +82,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
             android:background="@drawable/rounded_corners_background"
             android:backgroundTint="@color/green"
             android:textColor="@color/white"
@@ -89,8 +92,11 @@
             android:paddingBottom="2dp"
             android:textSize="13sp"
             android:textStyle="bold"
+            android:visibility="gone"
+            tools:visibility="visible"
             app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_first_aired"
             app:layout_constraintStart_toStartOf="@id/episodedetailsactivity_first_aired"
+            app:layout_constraintEnd_toStartOf="@id/episodedetailsactivity_show_poster"
             tools:text="Plays: 1" />
 
 
@@ -113,27 +119,14 @@
             app:barrierDirection="bottom"
             app:constraint_referenced_ids="episodedetailsactivity_title,episodedetailsactivity_first_aired,episodedetailsactivity_overview" />
 
-        <include
-            android:id="@+id/episodedetailsactivity_action_buttons"
-            layout="@layout/action_button_layout"
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/episodedetailsactivity_action_buttons_fragment_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="8dp"
-            app:barrierAllowsGoneWidgets="true"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_topbarrier"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_topbarrier" />
+            app:layout_constraintEnd_toEndOf="parent" />
 
-        <include
-            android:id="@+id/episodedetailsactivity_collected_button"
-            layout="@layout/collected_button_layout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="8dp"
-            app:barrierAllowsGoneWidgets="true"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_action_buttons" />
 
         <TextView
             android:id="@+id/episodedetailsactivity_cast_title"
@@ -148,7 +141,7 @@
             android:visibility="gone"
             app:barrierAllowsGoneWidgets="true"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_collected_button" />
+            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_action_buttons_fragment_container" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/episodedetailsactivity_cast_recycler"

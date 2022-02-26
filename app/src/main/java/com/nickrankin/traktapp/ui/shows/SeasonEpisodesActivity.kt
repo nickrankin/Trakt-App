@@ -31,8 +31,9 @@ import com.nickrankin.traktapp.databinding.ActivitySeasonEpisodesBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.shows.SeasonEpisodesViewModel
-import com.nickrankin.traktapp.repo.shows.EpisodeDetailsRepository
+import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.SeasonEpisodesRepository
+import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import org.apache.commons.lang3.time.DateFormatUtils
