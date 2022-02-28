@@ -5,14 +5,13 @@ import android.util.Log
 import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TmdbApi
 import com.nickrankin.traktapp.api.TraktApi
+import com.nickrankin.traktapp.dao.credits.CreditsDatabase
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.show.model.TmEpisode
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
 import com.nickrankin.traktapp.dao.watched.WatchedHistoryDatabase
-import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.helper.ShowDataHelper
-import com.nickrankin.traktapp.helper.getTmdbLanguage
-import com.nickrankin.traktapp.helper.networkBoundResource
+import com.nickrankin.traktapp.helper.*
+import com.nickrankin.traktapp.repo.shows.CreditsRepository
 import com.nickrankin.traktapp.repo.shows.watched.WatchedEpisodesRemoteMediator
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.tmdb2.entities.AppendToResponse
@@ -34,9 +33,11 @@ class EpisodeDetailsRepository @Inject constructor(
     private val traktApi: TraktApi,
     private val showDataHelper: ShowDataHelper,
     private val sharedPreferences: SharedPreferences,
+    private val showCreditsHelper: ShowCreditsHelper,
+    private val showCreditsDatabase: CreditsDatabase,
     private val showsDatabase: ShowsDatabase,
     private val watchedHistoryDatabase: WatchedHistoryDatabase
-) {
+): CreditsRepository(showCreditsHelper, showsDatabase, showCreditsDatabase) {
     private val episodesDao = showsDatabase.TmEpisodesDao()
     private val showsDbWatchedHistoryShowsDao = showsDatabase.watchedEpisodesDao()
     private val watchedHistoryDbWatchedHistoryDao = watchedHistoryDatabase.watchedHistoryShowsDao()

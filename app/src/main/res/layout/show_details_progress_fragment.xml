@@ -14,29 +14,34 @@
         android:layout_marginTop="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp">
+
         <LinearLayout
+            android:id="@+id/linearLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
+
             <include
                 android:id="@+id/showdetailsprogressfragment_overallprogress"
                 layout="@layout/item_progress_layout_item"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
+
             <View
+                style="@style/Divider"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
                 android:layout_marginTop="2dp"
-                android:layout_marginBottom="4dp"
-                style="@style/Divider" />
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="4dp" />
+
             <LinearLayout
                 android:id="@+id/showdetailsprogressfragment_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:visibility="gone"/>
+                android:visibility="gone" />
         </LinearLayout>
         <ProgressBar
             android:id="@+id/showdetailsprogressfragment_loading_progressbar"
@@ -66,6 +71,13 @@
         android:layout_below="@id/showdetailsprogressfragment_last_watched"
         android:id="@+id/showdetailsprogressfragment_next_episode"
         layout="@layout/card_episode_layout_item" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/showdetailsprogressfragment_main_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:constraint_referenced_ids="showdetailsprogressfragment_loading_progressbar,showdetailsprogressfragment_next_episode,showdetailsprogressfragment_last_watched,linearLayout" />
 
 
 </RelativeLayout>

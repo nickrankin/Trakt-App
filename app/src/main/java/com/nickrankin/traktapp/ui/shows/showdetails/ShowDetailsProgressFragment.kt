@@ -115,6 +115,8 @@ class ShowDetailsProgressFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
                     }
                     is Resource.Success -> {
                         bindings.apply {
+                            showdetailsprogressfragmentMainGroup.visibility = View.VISIBLE
+
                             showdetailsprogressfragmentLoadingProgressbar.visibility = View.GONE
                             showdetailsprogressfragmentContainer.visibility =
                                 if (progressVisibilityToggle) View.VISIBLE else View.GONE
@@ -153,6 +155,8 @@ class ShowDetailsProgressFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
                     }
                     is Resource.Error -> {
                         bindings.apply {
+                            showdetailsprogressfragmentMainGroup.visibility = View.GONE
+
                             showdetailsprogressfragmentLoadingProgressbar.visibility = View.GONE
                             showdetailsprogressfragmentContainer.visibility = View.GONE
                         }

@@ -79,9 +79,12 @@ class ShowDetailsOverviewFragment() : Fragment(), SwipeRefreshLayout.OnRefreshLi
                         Log.d(TAG, "getCast: Loading Cast People")
                     }
                     is Resource.Success -> {
+                        bindings.showdetailsoverviewMainGroup.visibility = View.VISIBLE
                         displayCast(castResource.data ?: emptyList())
                     }
                     is Resource.Error -> {
+                        bindings.showdetailsoverviewMainGroup.visibility = View.GONE
+
                         Log.e(
                             TAG,
                             "getCast: Error getting Cast People. ${castResource.error?.localizedMessage}",

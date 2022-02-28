@@ -1,5 +1,6 @@
 package com.nickrankin.traktapp.ui.shows.episodedetails
 
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -14,19 +15,28 @@ import com.nickrankin.traktapp.dao.show.model.TmEpisode
 import com.nickrankin.traktapp.databinding.ActionButtonsFragmentBinding
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.shows.episodedetails.EpisodeDetailsActionButtonsViewModel
+import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.dialog.RatingPickerFragment
 import com.nickrankin.traktmanager.ui.dialoguifragments.WatchedDatePickerFragment
 import com.uwetrottmann.trakt5.enums.Rating
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import retrofit2.HttpException
+import javax.inject.Inject
 
 private const val TAG = "EpisodeDetailsActionBut"
 @AndroidEntryPoint
 class EpisodeDetailsActionButtonsFragment(): Fragment(), OnEpisodeChangeListener {
 
     private val viewModel: EpisodeDetailsActionButtonsViewModel by activityViewModels()
+
+    @Inject
+    lateinit var sharedPreferences: SharedPreferences
+
     private lateinit var bindings: ActionButtonsFragmentBinding
+
+    private var isLoggedIn = false
+
     private var episode: TmEpisode? = null
 
     private var checkinDialog: AlertDialog? = null
@@ -43,6 +53,12 @@ class EpisodeDetailsActionButtonsFragment(): Fragment(), OnEpisodeChangeListener
         return bindings.root
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        isLoggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
+    }
+
     override fun bindEpisode(episode: TmEpisode) {
         this.episode = episode
 
@@ -52,14 +68,16 @@ class EpisodeDetailsActionButtonsFragment(): Fragment(), OnEpisodeChangeListener
         // Only setup the buttons once we have Episode Trakt ID
         // Setup the buttons
         //setupAddCollectionButton()
-        setupCheckinButton()
-        setupAddToHistoryButton()
-        setupRatingButton()
 
-        // Get Data
-        getRatings()
-        getEvents()
+        if(isLoggedIn) {
+            setupCheckinButton()
+            setupAddToHistoryButton()
+            setupRatingButton()
 
+            // Get Data
+            getRatings()
+            getEvents()
+        }
     }
 
     private fun setupCheckinButton() {

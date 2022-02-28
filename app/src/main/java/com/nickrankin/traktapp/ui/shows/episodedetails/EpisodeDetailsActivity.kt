@@ -22,10 +22,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
+import com.google.android.flexbox.FlexDirection
+import com.google.android.flexbox.FlexWrap
+import com.google.android.flexbox.FlexboxLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.credits.ShowCastCreditsAdapter
 import com.nickrankin.traktapp.adapter.history.EpisodeWatchedHistoryItemAdapter
+import com.nickrankin.traktapp.dao.credits.ShowCastPerson
 import com.nickrankin.traktapp.dao.show.model.TmEpisode
 import com.nickrankin.traktapp.dao.show.model.TmShow
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
@@ -46,6 +50,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import org.apache.commons.lang3.time.DateFormatUtils
 import org.threeten.bp.format.DateTimeFormatter
+import retrofit2.HttpException
 import javax.inject.Inject
 
 private const val TAG = "EpisodeDetailsActivity"
@@ -107,8 +112,12 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
 
         getShow()
         getEpisode()
-        getWatchedEpisodes()
+        getCast()
         getEvents()
+
+        if(isLoggedIn) {
+            getWatchedEpisodes()
+        }
 
     }
 
@@ -134,7 +143,6 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
                         Log.d(TAG, "collectShow: Got show! ${showResource.data}")
 
                         displayShow(show)
-
                     }
                     is Resource.Error -> {
 
@@ -157,23 +165,28 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
 
     private fun getEpisode() {
         lifecycleScope.launchWhenStarted {
+            // Contains error text and retry button
+            val errorWidgets = bindings.episodedetailsactivityInner.episodedetailsactivityErrorWidgets
+            // Contains all UI elements for the Episode Details View
+            val mainGroup = bindings.episodedetailsactivityInner.episodedetailsactivityMainGroup
+            mainGroup.visibility = View.VISIBLE
+
             viewModel.episode.collectLatest { episodeResource ->
                 val episode = episodeResource.data
+
                 when (episodeResource) {
                     is Resource.Loading -> {
+                        toggleProgressBar(true)
+
+                        errorWidgets.visibility = View.GONE
+                        mainGroup.visibility = View.GONE
                         Log.d(TAG, "collectEpisode: Loading Episode...")
                     }
                     is Resource.Success -> {
+                        toggleProgressBar(false)
 
-                        if(swipeRefreshLayout.isRefreshing) {
-                            swipeRefreshLayout.isRefreshing = false
-                        }
-                        progressBar.visibility = View.GONE
-
-
-                            // Make the container visible
-                        bindings.episodedetailsactivityInner.episodedetailsactivityContainer.visibility = View.VISIBLE
-
+                        mainGroup.visibility = View.VISIBLE
+                        errorWidgets.visibility = View.GONE
 
                         bindings.wpisodedetailsactivityCollapsingToolbarLayout.title = episode?.name ?: "Unknown"
 
@@ -182,12 +195,25 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
                         setupActionBarFragment(episode!!)
                     }
                     is Resource.Error -> {
+                        toggleProgressBar(false)
+
                         displayMessageToast("Error getting episode. ${episodeResource.error?.localizedMessage}", Toast.LENGTH_LONG)
 
                         // Try to display cached episode if available
                         if(episodeResource.data != null) {
+                            errorWidgets.visibility = View.GONE
+                            mainGroup.visibility = View.VISIBLE
+
                             displayEpisode(episode)
 
+                            setupActionBarFragment(episode!!)
+
+                        } else {
+                            // No cached episode, need to show error message
+                            errorWidgets.visibility = View.VISIBLE
+                            mainGroup.visibility = View.GONE
+
+                            handleError(episodeResource.error)
                         }
 
                         episodeResource.error?.printStackTrace()
@@ -197,13 +223,35 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
         }
     }
 
+    private fun handleError(t: Throwable?) {
+        val errorText = bindings.episodedetailsactivityInner.episodedetailsactivityError
+        val retryButton = bindings.episodedetailsactivityInner.episodedetailsactivityRetryButton
+
+        if(t != null) {
+            if(t is HttpException) {
+                errorText.text = "There was an error loading the Episode details. Please check your internet connection. Error code: (HTTP Status: ${t.code()}) "
+            } else {
+                errorText.text = "There was an error loading the Episode details. Please check your internet connection. Error: (${t.localizedMessage}) "
+            }
+        }
+
+        retryButton.setOnClickListener {
+            viewModel.onStart()
+        }
+    }
+
+    private fun toggleProgressBar(isVisible: Boolean) {
+            if(swipeRefreshLayout.isRefreshing) {
+                swipeRefreshLayout.isRefreshing = false
+            }
+
+            if(isVisible) progressBar.visibility = View.VISIBLE else progressBar.visibility = View.GONE
+    }
+
     private fun getWatchedEpisodes() {
         lifecycleScope.launchWhenStarted {
             viewModel.watchedEpisodes.collectLatest { watchedEpisodes ->
-
                         displayWatchedEpisodes(watchedEpisodes ?: emptyList())
-
-
             }
         }
     }
@@ -234,19 +282,91 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
         }
     }
 
+    private fun getCast() {
+       setupCastSwitcher()
+
+        lifecycleScope.launchWhenStarted {
+            viewModel.cast.collectLatest { castResource ->
+                when (castResource) {
+                    is Resource.Loading -> {
+                        Log.d(TAG, "getCast: Loading Cast People")
+                    }
+                    is Resource.Success -> {
+                        displayCast(castResource.data ?: emptyList())
+                    }
+                    is Resource.Error -> {
+                        bindings.episodedetailsactivityInner.showdetailsactivityCastGroup.visibility = View.GONE
+                        Log.e(
+                            TAG,
+                            "getCast: Error getting Cast People. ${castResource.error?.localizedMessage}",
+                        )
+                        castResource.error?.printStackTrace()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun initCastRecycler() {
+        castRecyclerView = bindings.episodedetailsactivityInner.episodedetailsactivityCastRecycler
+
+        val layoutManager = FlexboxLayoutManager(this)
+        layoutManager.flexDirection = FlexDirection.ROW
+        layoutManager.flexWrap = FlexWrap.NOWRAP
+
+        showCastAdapter = ShowCastCreditsAdapter(glide)
+
+        castRecyclerView.layoutManager = layoutManager
+        castRecyclerView.adapter = showCastAdapter
+    }
+
+    private fun setupCastSwitcher() {
+
+        bindings.episodedetailsactivityInner.apply {
+            val regularCastButton = episodedetailsactivityCastRegularButton
+            val guestStarsButton = episodedetailsactivityCastGuestButton
+
+            regularCastButton.text = "Season Regulars"
+            guestStarsButton.text = "Guest Stars"
+
+            regularCastButton.setOnClickListener {
+                regularCastButton.setTypeface(null, Typeface.BOLD)
+                guestStarsButton.setTypeface(null, Typeface.NORMAL)
+
+                viewModel.filterCast(false)
+            }
+
+            guestStarsButton.setOnClickListener {
+                regularCastButton.setTypeface(null, Typeface.NORMAL)
+                guestStarsButton.setTypeface(null, Typeface.BOLD)
+
+                viewModel.filterCast(true)
+            }
+        }
+    }
+
+    private fun displayCast(castPersons: List<ShowCastPerson>) {
+
+        if (castPersons.isNotEmpty()) {
+            bindings.episodedetailsactivityInner.showdetailsactivityCastGroup.visibility = View.VISIBLE
+
+            showCastAdapter.updateCredits(castPersons)
+        } else {
+            showCastAdapter.updateCredits(emptyList())
+        }
+    }
+
     private fun displayWatchedEpisodes(episodes: List<WatchedEpisode>) {
         if(episodes.isNotEmpty()) {
-            // Total plays badge
-            bindings.episodedetailsactivityInner.episodedetailsactivityTotalPlays.visibility = View.VISIBLE
+            bindings.episodedetailsactivityInner.showdetailsactivityWatchedEpisodesGroup.visibility = View.VISIBLE
+
             bindings.episodedetailsactivityInner.episodedetailsactivityTotalPlays.text = "Total plays: ${episodes.size} (Last play: ${
                     episodes.first().watched_at?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)))
             })"
 
-            // All plays list
-            bindings.episodedetailsactivityInner.episodedetailsactivityWatchedTitle.visibility = View.VISIBLE
-            bindings.episodedetailsactivityInner.episodedetailsactivityWatchedRecyclerview.visibility = View.VISIBLE
-
             watchedEpisodesAdapter.submitList(episodes)
+        } else {
+            bindings.episodedetailsactivityInner.showdetailsactivityWatchedEpisodesGroup.visibility = View.GONE
         }
     }
 
@@ -310,24 +430,7 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
                 )
             }
         }
-
-        if (episode?.guest_stars?.isNotEmpty() == true) {
-            displayCast(episode.guest_stars)
-        }
     }
-
-    private fun displayCast(guestStars: List<CastMember>) {
-        bindings.episodedetailsactivityInner.episodedetailsactivityCastTitle.visibility =
-            View.VISIBLE
-        bindings.episodedetailsactivityInner.episodedetailsactivityCastRecycler.visibility =
-            View.VISIBLE
-
-        if (guestStars.isNotEmpty()) {
-            //castAdapter.updateCredits(guestStars)
-
-        }
-    }
-
 
     override fun navigateToShow(traktId: Int, tmdbId: Int, showTitle: String?, language: String?) {
         if(tmdbId == 0) {
@@ -343,8 +446,6 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
 
         startActivity(intent)
     }
-
-
 
     private fun handleWatchedEpisodeDelete(watchedEpisode: WatchedEpisode, showConfirmation: Boolean) {
         val syncItem = SyncItems().ids(watchedEpisode.id)
@@ -494,32 +595,6 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
 
     private fun displayMessageToast(message: String, length: Int) {
         Toast.makeText(this, message, length).show()
-    }
-
-    private fun displayAlertDialog(
-        title: String,
-        message: String,
-        okCallback: DialogInterface.OnClickListener,
-        cancelCallback: DialogInterface.OnClickListener
-    ) {
-        AlertDialog.Builder(this)
-            .setTitle(title)
-            .setMessage(message)
-            .setPositiveButton("Yes", okCallback)
-            .setNegativeButton("No", cancelCallback)
-            .show()
-    }
-
-    private fun initCastRecycler() {
-        castRecyclerView = bindings.episodedetailsactivityInner.episodedetailsactivityCastRecycler
-
-        val castLayoutManager = LinearLayoutManager(this)
-        castLayoutManager.orientation = LinearLayoutManager.HORIZONTAL
-
-        showCastAdapter = ShowCastCreditsAdapter(glide)
-
-        castRecyclerView.layoutManager = castLayoutManager
-        castRecyclerView.adapter = showCastAdapter
     }
 
 

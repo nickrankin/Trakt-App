@@ -76,8 +76,9 @@ class ShowsRecommendedFragment : Fragment(), OnNavigateToShow {
 
         initRecycler()
 
-        collectShows()
-        collectEvents()
+
+        getShows()
+        getEvents()
     }
 
     override fun onResume() {
@@ -105,7 +106,7 @@ class ShowsRecommendedFragment : Fragment(), OnNavigateToShow {
         setupViewSwipeBehaviour()
     }
 
-    private fun collectShows() {
+    private fun getShows() {
         lifecycleScope.launchWhenStarted {
             viewModel.suggestedShows.collectLatest { data ->
                 when (data) {
@@ -129,7 +130,7 @@ class ShowsRecommendedFragment : Fragment(), OnNavigateToShow {
         }
     }
 
-    private fun collectEvents() {
+    private fun getEvents() {
         lifecycleScope.launchWhenStarted {
             viewModel.events.collectLatest { event ->
                 when(event) {

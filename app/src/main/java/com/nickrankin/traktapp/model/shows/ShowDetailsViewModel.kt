@@ -24,47 +24,46 @@ private const val TAG = "ShowDetailsViewModel"
 @HiltViewModel
 class ShowDetailsViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
-    private val repository: ShowDetailsRepository,
-    private val collectedShowsRepository: CollectedShowsRepository,
-    private val episodesRepository: EpisodeDetailsRepository,
-    private val episodeTrackingRepository: TrackedEpisodesRepository,
-    private val sharedPreferences: SharedPreferences,
-    private val gson: Gson
+    private val repository: ShowDetailsRepository
 ) : ViewModel() {
 
-    private val isLoggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
+    private var ratingsInitialRefresh = true
 
     private val refreshEventChannel = Channel<Boolean>()
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
         .shareIn(viewModelScope, replay = 1, started = SharingStarted.WhileSubscribed())
 
-
     val state = savedStateHandle
 
     val traktId: Int = savedStateHandle.get(ShowDetailsRepository.SHOW_TRAKT_ID_KEY) ?: 0
     val tmdbId: Int = savedStateHandle.get(ShowDetailsRepository.SHOW_TMDB_ID_KEY) ?: -1
-
-    init {
-            getAllUserRatings()
-    }
-
+    
     val show = refreshEvent.flatMapLatest { shouldRefresh ->
         repository.getShowSummary(traktId, shouldRefresh)
     }
 
-    fun getAllUserRatings() = viewModelScope.launch {
-        val ratings = repository.getAllUserRatings(traktId)
+    fun getAllUserRatings(shouldRefresh: Boolean) = viewModelScope.launch {
 
-        if(ratings is Resource.Success) {
-            if(ratings.data != null) {
-                savedStateHandle.set("trakt_ratings", ratings.data!!.rating)
+        if(ratingsInitialRefresh || shouldRefresh) {
+
+            Log.d(TAG, "getAllUserRatings: Getting Trakt User Ratings")
+            val ratings = repository.getAllUserRatings(traktId)
+
+            if(ratings is Resource.Success) {
+                ratingsInitialRefresh = false
+
+                if(ratings.data != null) {
+                    savedStateHandle.set("trakt_ratings", ratings.data!!.rating)
+                }
+            } else {
+                Log.e(TAG, "Error getting Trakt Ratings ${ratings.error?.localizedMessage}: ", )
             }
-        } else {
-            Log.e(TAG, "Error getting Trakt Ratings ${ratings.error?.localizedMessage}: ", )
         }
     }
 
     fun onStart() {
+        getAllUserRatings(false)
+
         viewModelScope.launch {
             refreshEventChannel.send(false)
         }
@@ -73,7 +72,7 @@ class ShowDetailsViewModel @Inject constructor(
     fun onRefresh() {
         viewModelScope.launch {
             refreshEventChannel.send(true)
-            getAllUserRatings()
+            getAllUserRatings(true)
         }
     }
 }

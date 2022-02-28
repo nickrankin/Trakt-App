@@ -28,6 +28,7 @@ import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import org.apache.commons.lang3.time.DateFormatUtils
+import retrofit2.HttpException
 import java.math.RoundingMode
 import javax.inject.Inject
 import kotlin.ClassCastException
@@ -132,21 +133,36 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
     private fun getShow() {
         lifecycleScope.launchWhenStarted {
             viewModel.show.collectLatest { showResource ->
+                val show = showResource.data
                 when (showResource) {
                     is Resource.Loading -> {
+                        bindings.showdetailsactivityInner.showdetailsactivityMainGroup.visibility = View.GONE
+                        bindings.showdetailsactivityInner.showdetailsactivityErrorGroup.visibility = View.GONE
+
+                        toggleProgressBar(true)
                         Log.d(TAG, "collectShow: Show loading")
                     }
                     is Resource.Success -> {
-                        if (swipeRefeshLayout.isRefreshing) {
-                            swipeRefeshLayout.isRefreshing = false
-                        }
+                        bindings.showdetailsactivityInner.showdetailsactivityMainGroup.visibility = View.VISIBLE
+                        bindings.showdetailsactivityInner.showdetailsactivityErrorGroup.visibility = View.GONE
 
-                        displayShowInformation(showResource.data)
+                        toggleProgressBar(false)
+                        displayShowInformation(show)
 
                     }
                     is Resource.Error -> {
-                        if (swipeRefeshLayout.isRefreshing) {
-                            swipeRefeshLayout.isRefreshing = false
+                        toggleProgressBar(false)
+
+                        // If show in cache, display it cache
+                        if(show != null) {
+                            bindings.showdetailsactivityInner.showdetailsactivityMainGroup.visibility = View.VISIBLE
+
+                            displayShowInformation(show)
+                        } else {
+                            bindings.showdetailsactivityInner.showdetailsactivityErrorGroup.visibility = View.VISIBLE
+
+                           handleError(showResource.error)
+
                         }
 
                         displayToastMessage(
@@ -161,6 +177,35 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
                     }
                 }
             }
+        }
+    }
+
+    private fun toggleProgressBar(isRefreshing: Boolean) {
+        val progressBar = bindings.showdetailsactivityInner.showdetailsactivityProgressbar
+
+        if (swipeRefeshLayout.isRefreshing) {
+            swipeRefeshLayout.isRefreshing = false
+        }
+
+        if(isRefreshing) progressBar.visibility = View.VISIBLE else progressBar.visibility = View.GONE
+
+    }
+
+    private fun handleError(exception: Throwable?) {
+        val errorTextView = bindings.showdetailsactivityInner.showdetailsactivityErrorText
+        val retryButton = bindings.showdetailsactivityInner.showdetailsactivityRetryButton
+
+        if(exception is HttpException) {
+            errorTextView.text = "A HTTP Error has occurred getting the show. (Error code: HTTP: ${exception.code()}). ${exception.localizedMessage}. Please check your internet connection"
+        } else {
+            errorTextView.text = "A Error has occurred getting the show. ${exception?.localizedMessage}. Please check your internet connection"
+        }
+
+        retryButton.setOnClickListener {
+            onStart()
+
+            // Refresh the current tab. Selecting current tab will reselect and trigger refresh
+            refreshCurrentTab()
         }
     }
 
@@ -313,7 +358,7 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
         shouldRefreshSeasonData = currentTab != 1
 
         // Refresh the current tab. Selecting current tab will reselect and trigger refresh
-        tabLayout.selectTab(tabLayout.getTabAt(currentTab))
+        refreshCurrentTab()
         Log.d(TAG, "onRefresh: Selected tab: currentTab")
     }
 
@@ -344,6 +389,12 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
         }
 
         return false
+    }
+
+    private fun refreshCurrentTab() {
+            // Refresh the current tab. Selecting current tab will reselect and trigger refresh
+            val currentTab = tabLayout.selectedTabPosition
+            tabLayout.selectTab(tabLayout.getTabAt(currentTab))
     }
 
     override fun onTabSelected(tab: TabLayout.Tab?) {

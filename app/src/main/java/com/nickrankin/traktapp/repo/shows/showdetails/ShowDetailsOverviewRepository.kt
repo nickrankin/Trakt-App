@@ -10,41 +10,14 @@ import com.nickrankin.traktapp.dao.watched.WatchedHistoryDatabase
 import com.nickrankin.traktapp.helper.ShowCreditsHelper
 import com.nickrankin.traktapp.helper.ShowDataHelper
 import com.nickrankin.traktapp.helper.networkBoundResource
+import com.nickrankin.traktapp.repo.shows.CreditsRepository
 import javax.inject.Inject
 
 class ShowDetailsOverviewRepository @Inject constructor(
     private val creditsHelper: ShowCreditsHelper,
     private val showsDatabase: ShowsDatabase,
     private val creditsDatabase: CreditsDatabase,
-) {
+): CreditsRepository(creditsHelper, showsDatabase, creditsDatabase) {
 
-    val tmShowDao = showsDatabase.tmShowDao()
 
-    private val showCastPeopleDao = creditsDatabase.showCastPeopleDao()
-    private val castPersonDao = creditsDatabase.castPersonDao()
-
-    suspend fun getCredits(traktId: Int, tmdbId: Int?, showGuestStars: Boolean, shouldRefresh: Boolean) = networkBoundResource(
-        query = {
-            showCastPeopleDao.getShowCast(traktId, showGuestStars)
-        },
-        fetch = {
-            creditsHelper.getShowCredits(traktId, tmdbId)
-        },
-        shouldFetch = { showCastPersonList ->
-            showCastPersonList.isEmpty() || shouldRefresh
-        },
-        saveFetchResult = { castPersons ->
-            creditsDatabase.withTransaction {
-                showCastPeopleDao.deleteShowCast(traktId)
-            }
-
-            showsDatabase.withTransaction {
-                castPersons.map { castPersonPair ->
-                    castPersonDao.insert(castPersonPair.second)
-                    showCastPeopleDao.insert(castPersonPair.first)
-                }
-
-            }
-        }
-    )
 }

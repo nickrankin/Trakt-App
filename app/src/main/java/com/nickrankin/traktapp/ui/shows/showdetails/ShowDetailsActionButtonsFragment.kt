@@ -1,6 +1,7 @@
 package com.nickrankin.traktapp.ui.shows.showdetails
 
 import android.content.DialogInterface
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -16,17 +17,25 @@ import com.nickrankin.traktapp.databinding.ActionButtonsFragmentBinding
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.shows.showdetails.ShowDetailsActionButtonsViewModel
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
+import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.dialog.RatingPickerFragment
 import com.uwetrottmann.trakt5.enums.Rating
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
+import javax.inject.Inject
 
 private const val TAG = "ShowDetailsActionButton"
 @AndroidEntryPoint
 class ShowDetailsActionButtonsFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
 
     private val viewModel: ShowDetailsActionButtonsViewModel by activityViewModels()
+
+    @Inject
+    lateinit var shedPreferences: SharedPreferences
+
     private lateinit var bindings: ActionButtonsFragmentBinding
+
+    private var isLoggedIn = false
 
     private lateinit var showTitle: String
 
@@ -47,20 +56,24 @@ class ShowDetailsActionButtonsFragment : Fragment(), SwipeRefreshLayout.OnRefres
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        isLoggedIn = shedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
+
         showTitle = activity?.intent?.getStringExtra(ShowDetailsRepository.SHOW_TITLE_KEY) ?: "Unknown"
 
-        // Dialogs
-        initAddToCollectionDialogs()
-        initRatingsDialog()
+        if(isLoggedIn) {
+            // Dialogs
+            initAddToCollectionDialogs()
+            initRatingsDialog()
 
-        // Buttons
-        setupRatingButton()
-        setupCollectionButton()
+            // Buttons
+            setupRatingButton()
+            setupCollectionButton()
 
-        // Get Data
-        getRatings()
-        getCollectedShowStatus()
-        getEvents()
+            // Get Data
+            getRatings()
+            getCollectedShowStatus()
+            getEvents()
+        }
     }
 
     private fun setupRatingButton() {

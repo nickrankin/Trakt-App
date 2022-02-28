@@ -71,5 +71,12 @@
         app:layout_constraintEnd_toEndOf="@id/showdetailsoverview_overview"
         app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_cast_regular_button" />
 
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/showdetailsoverview_main_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:constraint_referenced_ids="showdetailsoverview_overview,showdetailsactivity_cast_guest_button,showdetailsoverview_cast_title,showdetailsoverview_cast_recycler,showdetailsactivity_crew_toggle,showdetailsactivity_cast_regular_button" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -11,12 +11,20 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center" />
 
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/showdetailsseasons_main_group"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/showdetailsseasons_recyclerview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
-        android:visibility="gone" />
+        android:visibility="gone" >
+
+    </androidx.recyclerview.widget.RecyclerView>
 
 </FrameLayout>

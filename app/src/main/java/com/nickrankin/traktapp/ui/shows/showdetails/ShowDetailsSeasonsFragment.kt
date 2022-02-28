@@ -85,6 +85,7 @@ class ShowDetailsSeasonsFragment() : Fragment(), SwipeRefreshLayout.OnRefreshLis
                     }
                     is Resource.Success -> {
                         bindings.apply {
+                            showdetailsseasonsMainGroup.visibility = View.VISIBLE
                             showdetailsseasonsProgressbar.visibility = View.GONE
                             showdetailsseasonsRecyclerview.visibility = View.VISIBLE
                         }
@@ -93,6 +94,8 @@ class ShowDetailsSeasonsFragment() : Fragment(), SwipeRefreshLayout.OnRefreshLis
                     }
                     is Resource.Error -> {
                         bindings.apply {
+                            showdetailsseasonsMainGroup.visibility = View.GONE
+
                             showdetailsseasonsProgressbar.visibility = View.GONE
                             showdetailsseasonsRecyclerview.visibility = View.GONE
                         }

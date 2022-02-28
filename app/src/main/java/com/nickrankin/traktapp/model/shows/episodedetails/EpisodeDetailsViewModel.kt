@@ -27,6 +27,14 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
     private val afterEpisodeLoadRefreshEvent = afterEpisodeLoadRefreshEventChannel.receiveAsFlow()
         .shareIn(viewModelScope, replay = 1, started = SharingStarted.WhileSubscribed())
 
+    /**
+     *
+     * First: showGuestStars
+     * Second: shouldRefresh
+     * */
+    private val castRefreshEventChannel = Channel<Pair<Boolean, Boolean>>()
+    private val castRefreshEvent = castRefreshEventChannel.receiveAsFlow()
+
     private val eventChannel = Channel<Event>()
     val events = eventChannel.receiveAsFlow()
 
@@ -71,12 +79,24 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
         }
     }
 
+    val cast = castRefreshEvent.flatMapLatest { updateCast ->
+        repository.getCredits(showTraktId, showTmdbId, updateCast.first, updateCast.second)
+    }
+
+    fun filterCast(showGuestStars: Boolean) = viewModelScope.launch {
+
+        castRefreshEventChannel.send(Pair(showGuestStars, false))
+    }
+
     fun removeWatchedHistoryItem(syncItems: SyncItems) = viewModelScope.launch { eventChannel.send(Event.DeleteWatchedHistoryItem(repository.removeWatchedEpisode(syncItems))) }
 
     fun onStart() {
         viewModelScope.launch {
             launch {
                 initialRefreshEventChannel.send(false)
+            }
+            launch {
+                castRefreshEventChannel.send(Pair(false, false))
             }
         }
     }
@@ -85,6 +105,10 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
         viewModelScope.launch {
             launch {
                 initialRefreshEventChannel.send(true)
+            }
+            launch {
+                castRefreshEventChannel.send(Pair(false, true))
+
             }
         }
     }
