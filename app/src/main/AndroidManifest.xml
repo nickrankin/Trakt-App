@@ -82,5 +82,8 @@
             android:authorities="${applicationId}.androidx-startup"
             tools:node="remove" />
     </application>
-
+<queries>
+    <package android:name="com.google.android.youtube" />
+    <package android:name="com.imdb.mobile" />
+</queries>
 </manifest>

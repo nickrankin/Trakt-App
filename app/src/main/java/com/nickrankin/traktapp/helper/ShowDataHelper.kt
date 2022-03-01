@@ -51,8 +51,6 @@ class ShowDataHelper @Inject constructor(
                     showTmdbId,
                     null,
                     AppendToResponse(
-                        AppendToResponseItem.CREDITS,
-                        AppendToResponseItem.TV_CREDITS,
                         AppendToResponseItem.EXTERNAL_IDS,
                         AppendToResponseItem.VIDEOS
                     )
@@ -89,8 +87,6 @@ class ShowDataHelper @Inject constructor(
             val tvShow = tmdbApi.tmTvService().tv(
                 foundShow?.id ?: -1, getTmdbLanguage(foundShow.original_language),
                 AppendToResponse(
-                    AppendToResponseItem.CREDITS,
-                    AppendToResponseItem.TV_CREDITS,
                     AppendToResponseItem.EXTERNAL_IDS,
                     AppendToResponseItem.VIDEOS
                 )

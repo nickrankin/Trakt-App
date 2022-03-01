@@ -18,13 +18,17 @@ import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.dao.show.model.TmShow
 import com.nickrankin.traktapp.databinding.ActivityShowDetailsBinding
 import com.nickrankin.traktapp.helper.AppConstants
+import com.nickrankin.traktapp.helper.ImdbNavigationHelper
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.helper.VideoTrailerHelper
 import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
 import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.shows.OnNavigateToEpisode
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
+import com.uwetrottmann.tmdb2.entities.TvExternalIds
+import com.uwetrottmann.tmdb2.entities.Videos
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import org.apache.commons.lang3.time.DateFormatUtils
@@ -149,6 +153,9 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
                         toggleProgressBar(false)
                         displayShowInformation(show)
 
+                        handleExternalLinks(show?.external_ids!!)
+                        handleTrailer(show?.videos)
+
                     }
                     is Resource.Error -> {
                         toggleProgressBar(false)
@@ -158,6 +165,8 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
                             bindings.showdetailsactivityInner.showdetailsactivityMainGroup.visibility = View.VISIBLE
 
                             displayShowInformation(show)
+                            handleExternalLinks(show.external_ids!!)
+                            handleTrailer(show.videos)
                         } else {
                             bindings.showdetailsactivityInner.showdetailsactivityErrorGroup.visibility = View.VISIBLE
 
@@ -377,6 +386,33 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
             e.printStackTrace()
         } catch(e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    private fun handleTrailer(videos: Videos?) {
+        if(videos != null && videos.results?.isNotEmpty() == true) {
+            val trailerButton = bindings.showdetailsactivityInner.showdetailsactivityTrailer
+            trailerButton.visibility = View.VISIBLE
+
+            trailerButton.setOnClickListener {
+                VideoTrailerHelper.watchVideoTrailer(this, videos)
+            }
+        }
+    }
+
+    private fun handleExternalLinks(externalIds: TvExternalIds) {
+        val imdbExternalId = externalIds.imdb_id
+
+        if(imdbExternalId != null) {
+            val imdbButton = bindings.showdetailsactivityInner.showdetailsactivityImdbButton
+            imdbButton.visibility = View.VISIBLE
+
+            imdbButton.setOnClickListener {
+                ImdbNavigationHelper.navigateToImdb(this, imdbExternalId)
+            }
+
+        } else {
+            bindings.showdetailsactivityInner.showdetailsactivityImdbButton.visibility = View.GONE
         }
     }
 

@@ -12,7 +12,11 @@
         <entry key="app/src/main/res/drawable/ic_add_to_collection.xml" value="0.499" />
         <entry key="app/src/main/res/drawable/ic_baseline_calendar_month_24.xml" value="0.5515" />
         <entry key="app/src/main/res/drawable/ic_baseline_expand_circle_down_24.xml" value="0.5205" />
+        <entry key="app/src/main/res/drawable/ic_baseline_filter_list_24.xml" value="0.4995" />
         <entry key="app/src/main/res/drawable/ic_baseline_star_rate_24.xml" value="0.5515" />
+        <entry key="app/src/main/res/drawable/ic_baseline_visibility_off_24.xml" value="0.4995" />
+        <entry key="app/src/main/res/drawable/ic_home_black_24dp.xml" value="0.4995" />
+        <entry key="app/src/main/res/drawable/ic_imdb_logo_2016.xml" value="0.4995" />
         <entry key="app/src/main/res/drawable/ic_trakt_svgrepo_com.xml" value="0.5472222222222223" />
         <entry key="app/src/main/res/drawable/ic_trakt_white_svgrepo_com.xml" value="0.5375" />
         <entry key="app/src/main/res/drawable/rounded_corners_background.xml" value="0.5942708333333333" />
