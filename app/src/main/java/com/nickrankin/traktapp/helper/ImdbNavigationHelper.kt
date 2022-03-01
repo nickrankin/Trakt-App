@@ -9,7 +9,7 @@ import android.util.Log
 private const val TAG = "ImdbNavigationHelper"
 object ImdbNavigationHelper {
     private const val IMDB_APP_ID = "com.imdb.mobile"
-    private const val IMDB_APP_URI = "imdb:///"
+    private const val IMDB_APP_URI = "imdb:///title/"
     private const val IMDB_URL_PATH = "https://www.imdb.com/title/"
 
     fun navigateToImdb(context: Context, imdbId: String) {
@@ -18,7 +18,7 @@ object ImdbNavigationHelper {
             context.packageManager.getApplicationInfo(IMDB_APP_ID, 0)
 
             // If we get this far without any Exception thrown, assume user has IMDB App installed
-            navigateToImdb(context, IMDB_APP_URI + imdbId)
+            navigateToUri(context, IMDB_APP_URI + imdbId)
         } catch(e: PackageManager.NameNotFoundException) {
             Log.d(TAG, "navigateToImdb: IMDB App Not Installed, Fallback to using browser")
             navigateToUri(context, IMDB_URL_PATH + imdbId)
