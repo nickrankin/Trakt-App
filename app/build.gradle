@@ -100,6 +100,7 @@ dependencies {
     // optional - Test helpers
     androidTestImplementation("androidx.work:work-testing:$work_version")
 
+    implementation 'at.blogc:expandabletextview:1.0.5'
 }
 kapt {
     correctErrorTypes = true

@@ -36,7 +36,7 @@ class ShowDetailsActionButtonsRepository @Inject constructor(
 
     suspend fun getRatings(): Resource<List<RatedShow>> {
         return try {
-            val ratingsResponse = traktApi.tmUsers().ratingsEpisodes(
+            val ratingsResponse = traktApi.tmUsers().ratingsShows(
                 UserSlug(
                     sharedPreferences.getString(
                         AuthActivity.USER_SLUG_KEY,
@@ -122,6 +122,8 @@ class ShowDetailsActionButtonsRepository @Inject constructor(
                     baseShow.seasons?.size ?: 0,
                     baseShow.plays ?: 0,
                     baseShow.show?.overview,
+                    baseShow.show?.first_aired,
+                    baseShow.show?.runtime,
                     baseShow.show?.status ?: Status.CANCELED,
                     baseShow.show?.title ?: "",
                     false

@@ -45,7 +45,7 @@ class ShowDetailsActionButtonsViewModel @Inject constructor(
                 if (currentShowRating != null) {
                     Log.d(TAG, "getRatings: Found rating for show $traktId")
                     // This show is rated
-                    updateRatingDisplay(currentShowRating.rating?.value?.inc())
+                    updateRatingDisplay(currentShowRating.rating?.value)
                 } else {
                     Log.d(TAG, "getRatings: Show $traktId not rated yet")
                 }

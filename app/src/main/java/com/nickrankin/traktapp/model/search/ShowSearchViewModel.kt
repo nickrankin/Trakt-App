@@ -14,7 +14,7 @@ import javax.inject.Inject
 
 private const val TAG = "ShowSearchViewModel"
 @HiltViewModel
-class ShowSearchViewModel @Inject constructor(val traktApi: TraktApi): ViewModel() {
+open class ShowSearchViewModel @Inject constructor(open val traktApi: TraktApi): ViewModel() {
 
     fun doSearch(query: String) = run {
         Pager(

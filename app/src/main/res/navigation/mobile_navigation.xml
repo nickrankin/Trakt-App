@@ -12,6 +12,12 @@
         tools:layout="@layout/fragment_home" />
 
     <fragment
+        android:id="@+id/navigation_tracking_shows"
+        android:name="com.nickrankin.traktapp.ui.shows.ShowsTrackingFragment"
+        android:label="Shows to Track"
+        tools:layout="@layout/shows_tracking_fragment" />
+
+    <fragment
         android:id="@+id/navigation_watching_shows"
         android:name="com.nickrankin.traktapp.ui.shows.WatchingFragment"
         android:label="Last Watched"

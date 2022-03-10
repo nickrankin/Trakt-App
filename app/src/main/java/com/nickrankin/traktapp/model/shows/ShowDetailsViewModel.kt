@@ -1,18 +1,11 @@
 package com.nickrankin.traktapp.model.shows
 
-import android.content.SharedPreferences
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.gson.Gson
 import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.repo.TrackedEpisodesRepository
-import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
-import com.nickrankin.traktapp.repo.shows.collected.CollectedShowsRepository
-import com.nickrankin.traktapp.ui.auth.AuthActivity
-import com.uwetrottmann.trakt5.entities.SyncResponse
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*

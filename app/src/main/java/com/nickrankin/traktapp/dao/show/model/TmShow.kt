@@ -8,8 +8,7 @@ import java.util.*
 
 @Entity(tableName = "shows")
 data class TmShow(
-    @PrimaryKey val id: Int,
-    val trakt_id: Int?,
+    @PrimaryKey val trakt_id: Int,
     val tmdb_id: Int?,
     val name: String,
     val overview: String,
@@ -34,11 +33,4 @@ data class TmShow(
     val backdrop_path: String?,
     val type: String?,
     val videos: Videos?,
-    var user_tracking: Boolean,
-    var source: String
-) {
-    companion object {
-        const val SOURCE_TRAKT = "trakt"
-        const val SOURCE_TMDB = "tmdb"
-    }
-}
+    var user_tracking: Boolean)

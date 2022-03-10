@@ -17,6 +17,8 @@ data class CollectedShow(@PrimaryKey
                          val num_seasons: Int,
                          val plays: Int,
                          val show_overview: String?,
+                         val airedDate: OffsetDateTime?,
+                         val runtime: Int?,
                          val status: Status,
                          val show_title: String,
                          var user_tracking: Boolean)

@@ -58,6 +58,8 @@ class CollectedShowsRepository @Inject constructor(private val traktApi: TraktAp
                     baseShow.seasons?.size ?: 0,
                     baseShow.plays ?: 0,
                     baseShow.show?.overview,
+                    baseShow.show?.first_aired,
+                    baseShow.show?.runtime,
                     baseShow.show?.status ?: Status.CANCELED,
                     baseShow.show?.title ?: "",
                     false

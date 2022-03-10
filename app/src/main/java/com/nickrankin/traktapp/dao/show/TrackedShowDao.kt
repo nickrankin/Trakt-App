@@ -2,6 +2,7 @@ package com.nickrankin.traktapp.dao.show
 
 import androidx.room.*
 import com.nickrankin.traktapp.dao.show.model.TrackedShow
+import com.nickrankin.traktapp.dao.show.model.TrackedShowWithEpisodes
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -13,6 +14,11 @@ interface TrackedShowDao {
     @Transaction
     @Query("SELECT * FROM tracked_shows")
     fun getTrackedShows(): Flow<List<TrackedShow>>
+
+    @Transaction
+    @Query("SELECT * FROM tracked_shows")
+    fun getTrackedShowsWithShow(): Flow<List<TrackedShowWithEpisodes>>
+
 
     @Transaction
     @Query("SELECT * FROM tracked_shows WHERE trakt_id = :traktId")

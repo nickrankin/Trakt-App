@@ -23,13 +23,16 @@ interface TrackedEpisodeDao {
     fun setNotificationStatus(episodeTraktId: Int, status: Int)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun insert(trackedEpisode: TrackedEpisode)
+    fun insert(trackedEpisodes: List<TrackedEpisode>)
 
     @Update
     fun update(trackedEpisode: TrackedEpisode)
 
     @Delete
     fun delete(trackedEpisode: TrackedEpisode)
+
+    @Query("DELETE FROM notifications_episode WHERE show_trakt_id = :episodeTraktId")
+    fun deleteAllPerShow(episodeTraktId: Int)
 
     @Transaction
     @Query("DELETE FROM notifications_episode")

@@ -1,26 +1,15 @@
 package com.nickrankin.traktapp.repo.shows.showdetails
 
-import android.content.SharedPreferences
 import android.util.Log
 import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TmdbApi
 import com.nickrankin.traktapp.api.TraktApi
-import com.nickrankin.traktapp.dao.credits.CreditsDatabase
-import com.nickrankin.traktapp.dao.credits.model.ShowCastPersonData
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.show.model.*
-import com.nickrankin.traktapp.dao.watched.WatchedHistoryDatabase
 import com.nickrankin.traktapp.helper.*
-import com.nickrankin.traktapp.repo.TrackedEpisodesRepository
-import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.trakt5.entities.*
-import com.uwetrottmann.trakt5.enums.HistoryType
-import com.uwetrottmann.trakt5.enums.ProgressLastActivity
-import com.uwetrottmann.trakt5.enums.RatingsFilter
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.first
 import org.threeten.bp.OffsetDateTime
-import java.lang.Exception
 import javax.inject.Inject
 
 private const val REFRESH_INTERVAL_HOURS = 48L
@@ -31,7 +20,7 @@ class ShowDetailsRepository @Inject constructor(
     private val tmdbApi: TmdbApi,
     private val showDataHelper: ShowDataHelper,
     private val showsDatabase: ShowsDatabase,
-) : TrackedEpisodesRepository(traktApi, tmdbApi, showsDatabase) {
+) {
     private val tmShowDao = showsDatabase.tmShowDao()
     private val lastRefreshedShowDao = showsDatabase.lastRefreshedShowDao()
 

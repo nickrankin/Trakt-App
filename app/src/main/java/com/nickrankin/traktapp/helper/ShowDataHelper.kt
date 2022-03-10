@@ -366,7 +366,6 @@ class ShowDataHelper @Inject constructor(
 
         return TmShow(
             traktId,
-            traktId,
             tmdbShow.id ?: 0,
             tmdbShow.name ?: "",
             tmdbShow.overview ?: "",
@@ -391,9 +390,7 @@ class ShowDataHelper @Inject constructor(
             tmdbShow.backdrop_path,
             tmdbShow.type,
             tmdbShow.videos,
-            false,
-            TmShow.SOURCE_TMDB
-        )
+            false)
     }
 
     /**
@@ -411,7 +408,6 @@ class ShowDataHelper @Inject constructor(
         }
 
         return TmShow(
-            show.ids?.trakt ?: -1,
             show.ids?.trakt ?: -1,
             null,
             show.title ?: "Unknown",
@@ -437,8 +433,6 @@ class ShowDataHelper @Inject constructor(
             null,
             null,
             null,
-            false,
-            TmShow.SOURCE_TRAKT
-        )
+            false)
     }
 }

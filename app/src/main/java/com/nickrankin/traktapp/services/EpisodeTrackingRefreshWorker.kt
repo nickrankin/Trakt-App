@@ -5,7 +5,7 @@ import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.nickrankin.traktapp.repo.TrackedEpisodesRepository
+import com.nickrankin.traktapp.helper.EpisodeTrackingDataHelper
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import org.threeten.bp.OffsetDateTime
@@ -13,12 +13,12 @@ import javax.inject.Inject
 
 private const val TAG = "EpisodeTrackingRefreshW"
 @HiltWorker
-class EpisodeTrackingRefreshWorker @AssistedInject constructor(@Assisted val context: Context, @Assisted params: WorkerParameters, val trackedEpisodesRepository: TrackedEpisodesRepository): CoroutineWorker(context, params) {
+class EpisodeTrackingRefreshWorker @AssistedInject constructor(@Assisted val context: Context, @Assisted params: WorkerParameters, val episodeTrackingDataHelper: EpisodeTrackingDataHelper): CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         Log.d(TAG, "doWork: Refreshing Tracked Episodes now. Date ${OffsetDateTime.now().toString()}")
         return try {
             // Refreshes all Episodes and schedule their alarms
-            trackedEpisodesRepository.refreshTrackedShows()
+            episodeTrackingDataHelper.refreshUpComingEpisodesForAllShows()
 
             Result.success()
         } catch(e: Exception) {

@@ -12,6 +12,11 @@
         android:title="Watching" />
 
     <item
+        android:id="@+id/navigation_tracking_shows"
+        android:icon="@drawable/ic_baseline_radar_24"
+        android:title="Tracking" />
+
+    <item
         android:id="@+id/navigation_collected_shows"
         android:icon="@drawable/ic_notifications_black_24dp"
         android:title="Collected" />

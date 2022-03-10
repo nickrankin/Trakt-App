@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface TmShowsDao {
     @Transaction
-    @Query("SELECT * FROM shows WHERE id = :id")
+    @Query("SELECT * FROM shows WHERE trakt_id = :id")
     fun getShow(id: Int): Flow<TmShow?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

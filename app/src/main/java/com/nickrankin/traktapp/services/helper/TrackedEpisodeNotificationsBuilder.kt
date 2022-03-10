@@ -51,13 +51,13 @@ class TrackedEpisodeNotificationsBuilder(private val context: Context) {
             return
         }
 
-        var builder = NotificationCompat.Builder(context, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_trakt_white_svgrepo_com)
             .setContentTitle("${trackedEpisode.show_title}")
             .setContentText("Airing ${trackedEpisode.show_title} - Upcoming episode: ${trackedEpisode.title}")
             .setContentIntent(getPendingIntent(trackedEpisode))
             .setStyle(NotificationCompat.BigTextStyle()
-                .bigText("Airing ${trackedEpisode.show_title} - ${trackedEpisode.title} - ${convertToHumanReadableTime(trackedEpisode.airs_date)}"))
+                .bigText("Airing ${trackedEpisode.show_title} - ${trackedEpisode.title} - ${convertToHumanReadableTime(trackedEpisode.airs_date!!)}"))
             .setGroup(GROUP_KEY)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -116,10 +116,10 @@ class TrackedEpisodeNotificationsBuilder(private val context: Context) {
 
     private fun getPendingIntent(trackedEpisode: TrackedEpisode): PendingIntent {
         val intent = Intent(context, EpisodeDetailsActivity::class.java)
+        intent.putExtra(EpisodeDetailsRepository.SHOW_TRAKT_ID_KEY, trackedEpisode.show_trakt_id)
         intent.putExtra(EpisodeDetailsRepository.SHOW_TMDB_ID_KEY, trackedEpisode.show_tmdb_id)
         intent.putExtra(EpisodeDetailsRepository.SEASON_NUMBER_KEY, trackedEpisode.season)
         intent.putExtra(EpisodeDetailsRepository.EPISODE_NUMBER_KEY, trackedEpisode.episode)
-        intent.putExtra(EpisodeDetailsRepository.LANGUAGE_KEY, trackedEpisode.language)
 
         // Extra params to handle Notification dismissal in EpisodeDetailsActivity
         intent.putExtra(FROM_NOTIFICATION_TAP, true)

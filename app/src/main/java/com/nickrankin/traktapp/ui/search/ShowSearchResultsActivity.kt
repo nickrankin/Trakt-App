@@ -11,6 +11,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.paging.LoadState
 import androidx.paging.map
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -25,7 +26,10 @@ import com.nickrankin.traktapp.ui.shows.OnNavigateToShow
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.uwetrottmann.trakt5.entities.Show
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChangedBy
+import kotlinx.coroutines.flow.filter
 import javax.inject.Inject
 
 private const val TAG = "ShowSearchResultsActivi"
@@ -115,12 +119,25 @@ class ShowSearchResultsActivity : AppCompatActivity(), OnNavigateToShow {
             }
         })
 
-        adapter.withLoadStateHeaderAndFooter(
+        recyclerView.adapter =adapter.withLoadStateHeaderAndFooter(
             header = ShowSearchLoadStateAdapter(adapter),
             footer = ShowSearchLoadStateAdapter(adapter)
         )
 
-        recyclerView.adapter = adapter
+        lifecycleScope.launchWhenCreated {
+            adapter.loadStateFlow.collectLatest { loadStates ->
+                bindings.showsearchresultsactivityProgressbar.visibility = if(loadStates.refresh is LoadState.Loading) View.VISIBLE else View.GONE
+            }
+        }
+
+        lifecycleScope.launchWhenCreated {
+            adapter.loadStateFlow
+                // Only emit when REFRESH LoadState for RemoteMediator changes.
+                .distinctUntilChangedBy { it.refresh }
+                // Only react to cases where Remote REFRESH completes i.e., NotLoading.
+                .filter { it.refresh is LoadState.NotLoading }
+                .collect { recyclerView.scrollToPosition(0) }
+        }
     }
 
     override fun navigateToShow(traktId: Int, tmdbId: Int, showTitle: String?, language: String?) {

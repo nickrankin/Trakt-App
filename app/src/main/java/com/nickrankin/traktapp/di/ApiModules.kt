@@ -13,7 +13,6 @@ import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.images.ImagesDatabase
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.helper.PosterImageLoader
-import com.nickrankin.traktapp.repo.TrackedEpisodesRepository
 import com.nickrankin.traktapp.services.helper.TrackedEpisodeAlarmScheduler
 import com.nickrankin.traktapp.services.helper.TrackedEpisodeNotificationsBuilder
 import com.uwetrottmann.trakt5.TraktV2

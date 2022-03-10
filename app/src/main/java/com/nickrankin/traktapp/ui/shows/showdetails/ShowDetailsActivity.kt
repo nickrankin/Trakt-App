@@ -153,7 +153,7 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
                         toggleProgressBar(false)
                         displayShowInformation(show)
 
-                        handleExternalLinks(show?.external_ids!!)
+                        handleExternalLinks(show?.external_ids)
                         handleTrailer(show?.videos)
 
                     }
@@ -400,8 +400,8 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
         }
     }
 
-    private fun handleExternalLinks(externalIds: TvExternalIds) {
-        val imdbExternalId = externalIds.imdb_id
+    private fun handleExternalLinks(externalIds: TvExternalIds?) {
+        val imdbExternalId = externalIds?.imdb_id
 
         if(imdbExternalId != null) {
             val imdbButton = bindings.showdetailsactivityInner.showdetailsactivityImdbButton
