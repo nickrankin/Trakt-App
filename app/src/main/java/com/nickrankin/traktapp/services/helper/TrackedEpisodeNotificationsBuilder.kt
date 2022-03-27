@@ -13,6 +13,7 @@ import androidx.preference.PreferenceManager
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.dao.show.model.TrackedEpisode
 import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
+import com.nickrankin.traktapp.services.CancelShowTrackingNotificationReceiver
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
 import org.threeten.bp.OffsetDateTime
 import org.threeten.bp.format.DateTimeFormatter
@@ -54,8 +55,9 @@ class TrackedEpisodeNotificationsBuilder(private val context: Context) {
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_trakt_white_svgrepo_com)
             .setContentTitle("${trackedEpisode.show_title}")
-            .setContentText("Airing ${trackedEpisode.show_title} - Upcoming episode: ${trackedEpisode.title}")
+            .setContentText("Airing ${trackedEpisode.show_title} - Upcoming episode: ${trackedEpisode.title} (${convertToHumanReadableTime(trackedEpisode.airs_date!!)})")
             .setContentIntent(getPendingIntent(trackedEpisode))
+            .setDeleteIntent(getCancelPendingIntent(trackedEpisode))
             .setStyle(NotificationCompat.BigTextStyle()
                 .bigText("Airing ${trackedEpisode.show_title} - ${trackedEpisode.title} - ${convertToHumanReadableTime(trackedEpisode.airs_date!!)}"))
             .setGroup(GROUP_KEY)
@@ -131,10 +133,20 @@ class TrackedEpisodeNotificationsBuilder(private val context: Context) {
         }
     }
 
+    private fun getCancelPendingIntent(trackedEpisode: TrackedEpisode): PendingIntent {
+        Log.d(TAG, "getCancelPendingIntent: Notification dismissed")
+
+        val intent = Intent(context, CancelShowTrackingNotificationReceiver::class.java)
+        intent.putExtra(DISMISSED_TRAKT_EPISODE_NOTIFICATION_ID, trackedEpisode.trakt_id)
+
+        return PendingIntent.getBroadcast(context, trackedEpisode.trakt_id, intent, 0)
+    }
+
 
     companion object {
         const val CHANNEL_ID = "episodes_notifications_channel"
         const val FROM_NOTIFICATION_TAP = "notification_tapped_episode"
+        const val DISMISSED_TRAKT_EPISODE_NOTIFICATION_ID = "dismissed_trakt_episode_id"
         const val EPISODE_TRAKT_ID = "notification_trakt_episode_id"
         const val CHANNEL_NAME = "Upcoming Episodes Notifications"
         const val CHANNEL_DESCRIPTION = "Upcoming Episodes Notifications"

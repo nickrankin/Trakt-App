@@ -20,8 +20,8 @@ import javax.inject.Inject
 
 private const val TAG = "ShowsOverviewRepository"
 private const val DEFAULT_TRAKT_DATE_FORMAT = "yyyy-MM-dd"
-private const val REFRESH_INTERVAL = 24L
-private const val NUM_DAYS = 14
+private const val REFRESH_INTERVAL = 48L
+private const val NUM_DAYS = 8
 class ShowsOverviewRepository @Inject constructor(private val traktApi: TraktApi, private val tmdbApi: TmdbApi, private val sharedPreferences: SharedPreferences, private val showsDatabase: ShowsDatabase) {
     private val showCalendarEntryDao = showsDatabase.showCalendarentriesDao()
 

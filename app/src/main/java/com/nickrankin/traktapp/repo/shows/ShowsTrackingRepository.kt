@@ -21,6 +21,8 @@ class ShowsTrackingRepository @Inject constructor(
 
     fun getTrackedShows() = trackedShowDao.getTrackedShowsWithShow()
 
+    suspend fun refreshAllShowsTrackingData() = episodeTrackingDataHelper.refreshUpComingEpisodesForAllShows()
+
     suspend fun refreshUpcomingEpisodes(showTraktId: Int) = episodeTrackingDataHelper.refreshUpcomingEpisodesforShow(showTraktId)
 
     suspend fun insertTrackedShow(trackedShow: TrackedShow) {
@@ -28,6 +30,8 @@ class ShowsTrackingRepository @Inject constructor(
             trackedShowDao.insertTrackedShow(trackedShow)
         }
     }
+
+    suspend fun removeExpiredTrackedShows(showTraktId: Int) = episodeTrackingDataHelper.removeExpiredTrackedEpisodesPerShow(showTraktId)
 
     suspend fun deleteTrackedShow(trackedShow: TrackedShow) {
         Log.d(TAG, "deleteTrackedShow: Stop tracking Show ${trackedShow.title} // Trakt Id ${trackedShow.trakt_id}")

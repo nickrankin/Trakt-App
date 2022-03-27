@@ -1,5 +1,6 @@
 package com.nickrankin.traktapp.adapter.shows
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,6 +18,7 @@ import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.PosterImageLoader
 import org.threeten.bp.format.DateTimeFormatter
 
+private const val TAG = "TrackedShowsAdapter"
 class TrackedShowsAdapter(private val glide: RequestManager, private val imageLoader: PosterImageLoader, private val callback: (trackedShow: TrackedShowWithEpisodes) -> Unit, private val upcomingEpisodesCallback: (showTitle: String?, episodes: List<TrackedEpisode?>) -> Unit): ListAdapter<TrackedShowWithEpisodes, TrackedShowsAdapter.TrackedShowsViewHolder>(
     COMPARATOR) {
 

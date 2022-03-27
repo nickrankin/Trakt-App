@@ -27,28 +27,20 @@ class EpisodeTrackingDataHelper @Inject constructor(
     private val trackedShowDao = showsDatabase.trackedShowDao()
     private val trackedEpisodeDao = showsDatabase.trackedEpisodeDao()
 
-    suspend fun refreshUpComingEpisodesForAllShows() {
+    suspend fun refreshUpComingEpisodesForAllShows(): Resource<Boolean> {
         Log.d(TAG, "refreshUpComingEpisodesForAllShows: Refreshing all shows")
         val trackedShows = trackedShowDao.getTrackedShows().first()
 
         trackedShows.map { trackedShow ->
             Log.d(TAG, "refreshUpComingEpisodesForAllShows: Refresh called for Show ${trackedShow.title}")
                 Log.d(TAG, "refreshUpComingEpisodesForAllShows: Refreshing Show episodes ${trackedShow.title}")
-                val response = refreshUpcomingEpisodesforShow(trackedShow.trakt_id)
-
-                if(response is Resource.Success) {
-                    Log.d(TAG, "refreshUpComingEpisodesForAllShows: Successfully refreshed episodes for Show ${trackedShow.title}")
-                } else if(response is Resource.Error) {
-                    Log.e(TAG, "refreshUpComingEpisodesForAllShows: Error refreshing episodes for Show ${trackedShow.title}. Error code ${response.error?.message}", )
-                    response.error?.printStackTrace()
-                } else {
-
-                }
-
+                refreshUpcomingEpisodesforShow(trackedShow.trakt_id)
         }
+
+        return Resource.Success(true)
     }
 
-    suspend fun refreshUpcomingEpisodesforShow(showTraktId: Int): Resource<List<TrackedEpisode?>> {
+    suspend fun refreshUpcomingEpisodesforShow(showTraktId: Int): Resource<Map<TmShow?, List<TrackedEpisode?>>> {
         return try {
             // Get show info
             val show = showDataHelper.getShow(showTraktId)
@@ -80,7 +72,7 @@ class EpisodeTrackingDataHelper @Inject constructor(
             // Schedule alarms for these episodes
             scheduleAlarms(trackedEpisodes)
 
-            Resource.Success(trackedEpisodes)
+            Resource.Success(mapOf(Pair(show, trackedEpisodes)))
         } catch (e: Throwable) {
             Resource.Error(e, null)
         }
@@ -102,7 +94,7 @@ class EpisodeTrackingDataHelper @Inject constructor(
         }
     }
 
-    suspend fun cancelTrackingForAllShows(keepShows: Boolean) {
+    suspend fun cancelTrackingForAllShows(keepShows: Boolean, keepEpisodes: Boolean) {
         Log.d(TAG, "cancelTrackingForAllShows: Turning off Show Tracking")
 
         //Get all the TrackedEpisodes
@@ -115,12 +107,31 @@ class EpisodeTrackingDataHelper @Inject constructor(
 
         // Clean up
         showsDatabase.withTransaction {
+            // If user switches off Tracking (e.g: in settings) keep Tracked Shows so if enabled again tracked show data will be present
             if(!keepShows) {
                 trackedShowDao.deleteAllTrackedShows()
             }
-            trackedEpisodeDao.deleteAllEpisodesForNotification()
+            // In situation we refresh TrackedShows, don't delete already tracked to avoid nuisance alerts (ones already dismissed)
+            if(!keepEpisodes) {
+                trackedEpisodeDao.deleteAllEpisodesForNotification()
+            }
         }
 
+    }
+
+    suspend fun removeExpiredTrackedEpisodesPerShow(showTraktId: Int) {
+        val trackedEpisodes = trackedEpisodeDao.getAllEpisodesForShow(showTraktId).first()
+        val expiredTrackedEpisodes = trackedEpisodes.filter { it?.airs_date?.isBefore(OffsetDateTime.now()) ?: false}
+
+        // Cancel any remaining alarms
+        expiredTrackedEpisodes.map { trackedEpisode ->
+            trackedEpisodeAlarmScheduler.cancelAlarm(trackedEpisode.trakt_id)
+        }
+
+        // Remove the tracked episodes
+        showsDatabase.withTransaction {
+            trackedEpisodeDao.deleteAll(expiredTrackedEpisodes)
+        }
     }
 
     private fun buildTrackedEpisodes(show: TmShow?, episodes: List<Episode>): List<TrackedEpisode> {
@@ -140,6 +151,7 @@ class EpisodeTrackingDataHelper @Inject constructor(
                     episode.season ?: 0,
                     episode.number ?: 0,
                     OffsetDateTime.now(),
+                    0,
                 false)
             )
         }

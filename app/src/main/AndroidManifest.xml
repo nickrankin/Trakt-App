@@ -7,6 +7,11 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <queries>
+        <package android:name="com.google.android.youtube" />
+        <package android:name="com.imdb.mobile" />
+    </queries>
+
     <application xmlns:tools="http://schemas.android.com/tools"
         android:name=".TmApplication"
         android:allowBackup="true"
@@ -15,6 +20,15 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.TraktApp">
+        <receiver
+            android:name=".services.CancelShowTrackingNotificationReceiver"
+            android:enabled="true"
+            android:exported="true"></receiver>
+
+        <service
+            android:name=".services.DismissTrackingNotificationService"
+            android:enabled="true"
+            android:exported="true" />
 
         <receiver
             android:name=".services.ScheduleTrackedEpisodesBootReceiver"
@@ -38,7 +52,8 @@
             android:exported="true" />
         <activity
             android:name=".ui.shows.episodedetails.EpisodeDetailsActivity"
-            android:exported="true" />
+            android:exported="true"
+            android:parentActivityName=".MainActivity" />
         <activity
             android:name=".ui.auth.AuthActivity"
             android:exported="true"
@@ -55,8 +70,6 @@
         <activity
             android:name=".ui.settings.SettingsActivity"
             android:exported="true" />
-
-
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -66,24 +79,15 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
-
         <activity
             android:name=".ui.search.ShowSearchResultsActivity"
-            android:launchMode="singleTop"
-            android:exported="true">
-
-        </activity>
-
-        <!-- If you want to disable android.startup completely. -->
+            android:exported="true"
+            android:launchMode="singleTop" /> <!-- If you want to disable android.startup completely. -->
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
             tools:node="remove" />
     </application>
-<queries>
-    <package android:name="com.google.android.youtube" />
-    <package android:name="com.imdb.mobile" />
-</queries>
+
 </manifest>

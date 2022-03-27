@@ -24,13 +24,17 @@ import androidx.paging.LoadState
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.room.withTransaction
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.search.ShowSearchLoadStateAdapter
 import com.nickrankin.traktapp.adapter.shows.*
+import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.show.model.CollectedShow
+import com.nickrankin.traktapp.dao.show.model.TrackedEpisode
 import com.nickrankin.traktapp.dao.show.model.TrackedShow
 import com.nickrankin.traktapp.dao.show.model.TrackedShowWithEpisodes
 import com.nickrankin.traktapp.databinding.ShowsTrackingFragmentBinding
@@ -41,6 +45,7 @@ import com.nickrankin.traktapp.helper.Sorting
 import com.nickrankin.traktapp.model.shows.ShowsTrackingViewModel
 import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
+import com.nickrankin.traktapp.services.helper.TrackedEpisodeAlarmScheduler
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.settings.SettingsFragment
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
@@ -52,17 +57,19 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.runBlocking
 import org.threeten.bp.OffsetDateTime
 import javax.inject.Inject
 
 private const val TAG = "ShowsTrackingFragment"
 
 @AndroidEntryPoint
-class ShowsTrackingFragment : Fragment(), OnNavigateToShow, OnNavigateToEpisode {
+class ShowsTrackingFragment : Fragment(), OnNavigateToShow, OnNavigateToEpisode, SwipeRefreshLayout.OnRefreshListener {
 
     private val viewModel: ShowsTrackingViewModel by activityViewModels()
     private lateinit var bindings: ShowsTrackingFragmentBinding
     private lateinit var fab: FloatingActionButton
+    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
     private lateinit var trackedShowsRecyclerView: RecyclerView
     private lateinit var trackedShowsAdapter: TrackedShowsAdapter
@@ -83,6 +90,13 @@ class ShowsTrackingFragment : Fragment(), OnNavigateToShow, OnNavigateToEpisode 
     private lateinit var upcomingEpisodesAdapter: TrackedEpisodesAdapter
 
     private lateinit var sorting: Sorting
+
+//    // for testing
+    @Inject
+    lateinit var tracktAlarmScheduler: TrackedEpisodeAlarmScheduler
+
+    @Inject
+    lateinit var showsDatabase: ShowsDatabase
 
 
     @Inject
@@ -112,6 +126,9 @@ class ShowsTrackingFragment : Fragment(), OnNavigateToShow, OnNavigateToEpisode 
 
         isloggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
 
+        swipeRefreshLayout = bindings.showstrackingfragmentSwipeRefreshLayout
+        swipeRefreshLayout.setOnRefreshListener(this)
+
         if (isloggedIn) {
             fab = bindings.showstrackingfragmentFab
             fab.visibility = View.VISIBLE
@@ -129,6 +146,7 @@ class ShowsTrackingFragment : Fragment(), OnNavigateToShow, OnNavigateToEpisode 
             getTrackedShows()
             getCollectedShows()
             getSearchResults()
+            getEvents()
         } else {
             // TODO Show error
         }
@@ -149,10 +167,14 @@ class ShowsTrackingFragment : Fragment(), OnNavigateToShow, OnNavigateToEpisode 
     private fun getTrackedShows() {
         lifecycleScope.launchWhenStarted {
             viewModel.trackedShows.collectLatest { trackedShows ->
+                if(swipeRefreshLayout.isRefreshing) {
+                    swipeRefreshLayout.isRefreshing = false
+                }
+
                 if (trackedShows.isNotEmpty()) {
-                    Log.d(TAG, "getTrackedShows: Received shows $trackedShows")
                     bindings.showstrackingfragmentErrorText.visibility = View.GONE
                     trackedShowsRecyclerView.visibility = View.VISIBLE
+
                     trackedShowsAdapter.submitList(trackedShows) {
                         trackedShowsRecyclerView.scrollToPosition(0)
                     }
@@ -171,6 +193,65 @@ class ShowsTrackingFragment : Fragment(), OnNavigateToShow, OnNavigateToEpisode 
         lifecycleScope.launchWhenStarted {
             viewModel.searchResults.collectLatest { searchResults ->
                 searchShowsPickerAdapter.submitData(searchResults)
+            }
+        }
+    }
+
+    private fun getEvents() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.events.collectLatest { event ->
+
+                when(event) {
+                    is ShowsTrackingViewModel.Event.UpdateTrackedEpisodeDataEvent -> {
+                        val show = event.episodesResource.data?.keys?.first()
+
+                        if(event.episodesResource is Resource.Success) {
+                            Log.d(TAG, "getEvents: Tracking was successful")
+                        } else if(event.episodesResource is Resource.Error) {
+                            val traktId = show?.trakt_id
+                            val exception = event.episodesResource.error
+
+                            Log.d(TAG, "getEvents: An error occurred ${exception?.message}")
+                            exception?.printStackTrace()
+
+                            // Notify the user
+                            displayMessageToast("An error occurred refreshing tracked show ${show?.name ?: "Unknown"} Episodes. ${exception?.localizedMessage} Please try again later.", Toast.LENGTH_LONG)
+
+                        }
+                    }
+                    is ShowsTrackingViewModel.Event.RefreshTrackedEpisodeDataEvent -> {
+                        if(swipeRefreshLayout.isRefreshing) {
+                            swipeRefreshLayout.isRefreshing = false
+                        }
+
+                        if(event.trackedEpisodes is Resource.Success) {
+                            Log.d(TAG, "getEvents: Successfully refreshed Tracked Episodes")
+                        } else if(event.trackedEpisodes is Resource.Error) {
+                            val exception = event.trackedEpisodes.error
+                            displayMessageToast("Error refreshing tracked eposides ${exception?.localizedMessage}", Toast.LENGTH_LONG)
+
+                            Log.e(TAG, "getEvents: Error refreshing tracked eposides ${exception?.localizedMessage} ", )
+
+                            exception?.printStackTrace()
+                        }
+                    }
+                    is ShowsTrackingViewModel.Event.RefreshAllTrackedShowsDataEvent -> {
+                        if(swipeRefreshLayout.isRefreshing) {
+                            swipeRefreshLayout.isRefreshing = false
+                        }
+
+                        if(event.successResource is Resource.Success) {
+                            Log.d(TAG, "getEvents: Successfully refreshed Tracked Episodes")
+                        } else if(event.successResource is Resource.Error) {
+                            val exception = event.successResource.error
+                            displayMessageToast("Error refreshing tracked eposides ${exception?.localizedMessage}", Toast.LENGTH_LONG)
+
+                            Log.e(TAG, "getEvents: Error refreshing tracked eposides ${exception?.localizedMessage} ", )
+
+                            exception?.printStackTrace()
+                        }
+                    }
+                }
             }
         }
     }
@@ -227,7 +308,10 @@ class ShowsTrackingFragment : Fragment(), OnNavigateToShow, OnNavigateToEpisode 
         }) { showTitle, upcomingEpisodes ->
             upcomingEpisodesDialog.setTitle("Upcoming episodes for $showTitle")
             upcomingEpisodesAdapter.submitList(emptyList())
-            upcomingEpisodesAdapter.submitList(upcomingEpisodes)
+            upcomingEpisodesAdapter.submitList(upcomingEpisodes.filter {
+                // Only show episodes which are airing after current time
+                it?.airs_date?.isAfter(OffsetDateTime.now()) ?: false
+            })
             upcomingEpisodesDialog.show()
         }
 
@@ -657,6 +741,37 @@ class ShowsTrackingFragment : Fragment(), OnNavigateToShow, OnNavigateToEpisode 
         //Initialize default sorting
         sorting = Sorting(Sorting.SORT_BY_NEXT_AIRING, Sorting.SORT_ORDER_DESC)
         viewModel.applySorting(sorting)
+    }
+
+    override fun onRefresh() {
+        viewModel.onRefresh()
+
+        generateTestNotifications()
+    }
+
+    private fun generateTestNotifications() {
+        val testTrackingEpisodes = listOf(
+            TrackedEpisode(
+                5907165,3501517,42221,42445, OffsetDateTime.now().plusSeconds(6L),
+                emptyList(),"Episode 6","Borgen",4,6,OffsetDateTime.now(),0,false
+            ),
+            TrackedEpisode(
+                5907167,3501519,42221,42445,OffsetDateTime.now().plusSeconds(12L),emptyList(),"Episode 7","Borgen",4,7,OffsetDateTime.now(),0,false
+            ),
+            TrackedEpisode(
+                5907169,3501520,42221,42445,OffsetDateTime.now().plusSeconds(24L),emptyList(),"Episode 8","Borgen",4,8,OffsetDateTime.now(),0,false
+            )
+        )
+
+        lifecycleScope.launchWhenStarted {
+            showsDatabase.withTransaction {
+                showsDatabase.trackedEpisodeDao().insert(testTrackingEpisodes)
+            }
+        }
+
+        testTrackingEpisodes.map { ep ->
+            tracktAlarmScheduler.scheduleTrackedEpisodeAlarm(ep)
+        }
     }
 
     companion object {

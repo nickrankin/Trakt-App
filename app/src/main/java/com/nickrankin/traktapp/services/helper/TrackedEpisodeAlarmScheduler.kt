@@ -71,15 +71,21 @@ class TrackedEpisodeAlarmScheduler(private val context: Context, private val ala
         alarmManager.cancel(getPendingIntent(episodeTraktId))
     }
     
-    suspend fun dismissNotification(episodeTraktId: Int) {
+    suspend fun dismissNotification(episodeTraktId: Int, notificationTapped: Boolean) {
         Log.d(TAG, "dismissNotification: Dismissed alarm for $episodeTraktId")
         // Cancel any potential remaining alarms
         alarmManager.cancel(getPendingIntent(episodeTraktId))
         
-        // Set Trakt Episode status in Database to 1 to prevent further notifications
-        showsDatabase.withTransaction { 
-            trackedEpisodeDao.setNotificationStatus(episodeTraktId, 1)
+        if(notificationTapped) {
+            showsDatabase.withTransaction {
+                trackedEpisodeDao.setNotificationStatus(episodeTraktId, true)
+            }
+        } else {
+            showsDatabase.withTransaction {
+                trackedEpisodeDao.setDismissCount(episodeTraktId)
+            }
         }
+
     }
 
     private fun getPendingIntent(episodeTraktId: Int): PendingIntent {

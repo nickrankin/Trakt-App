@@ -22,15 +22,16 @@ class TrackedEpisodesAdapter(private val sharedPreferences: SharedPreferences, p
     override fun onBindViewHolder(holder: TrackedEpisodesViewHolder, position: Int) {
         val currentEpisode = getItem(position)
 
-        holder.bindings.apply {
-            collectedshowlayoutTitle.text = currentEpisode.title + " (S${currentEpisode.season}E${currentEpisode.episode})"
-            collectedshowlayoutCollectedAy.text = "Airs: ${currentEpisode.airs_date?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)))} on ${currentEpisode.networks.first()}"
+            holder.bindings.apply {
+                collectedshowlayoutTitle.text = currentEpisode.title + " (S${currentEpisode.season}E${currentEpisode.episode})"
+                collectedshowlayoutCollectedAy.text = "Airs: ${currentEpisode.airs_date?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)))} on ${ currentEpisode?.networks?.firstOrNull() ?: "Unknown" }"
 
-            root.setOnClickListener {
-                callback(currentEpisode)
+                root.setOnClickListener {
+                    callback(currentEpisode)
+                }
+
             }
 
-        }
     }
 
     inner class TrackedEpisodesViewHolder(val bindings: ShowLayoutItemCondensedBinding): RecyclerView.ViewHolder(bindings.root)

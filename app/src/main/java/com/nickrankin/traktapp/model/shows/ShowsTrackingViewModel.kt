@@ -6,9 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.map
 import com.nickrankin.traktapp.api.TraktApi
-import com.nickrankin.traktapp.dao.show.model.CollectedShow
-import com.nickrankin.traktapp.dao.show.model.TrackedShow
-import com.nickrankin.traktapp.dao.show.model.TrackedShowWithEpisodes
+import com.nickrankin.traktapp.dao.show.model.*
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.Sorting
 import com.nickrankin.traktapp.model.search.ShowSearchViewModel
@@ -35,6 +33,7 @@ class ShowsTrackingViewModel @Inject constructor(
 
     private val refreshEventChannel = Channel<Boolean>()
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
+        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
     private val filterTextChannel = Channel<String>()
     private val filterText = filterTextChannel.receiveAsFlow()
@@ -44,6 +43,9 @@ class ShowsTrackingViewModel @Inject constructor(
 
     private val sortingChannel = Channel<Sorting>()
     private val sorting = sortingChannel.receiveAsFlow()
+
+    private val eventsChannel = Channel<Event>()
+    val events = eventsChannel.receiveAsFlow()
 
     val trackedShows = sorting.combine(showsTrackingRepository.getTrackedShows()) { sorting, trackedShows ->
             Log.d(TAG, "Triggered (getTrackedShows): $sorting ")
@@ -62,6 +64,9 @@ class ShowsTrackingViewModel @Inject constructor(
             }
 
     }.shareIn(viewModelScope, SharingStarted.Lazily, 1)
+
+    private fun refreshTrackedShows() = viewModelScope.launch { eventsChannel.send(Event.RefreshAllTrackedShowsDataEvent(showsTrackingRepository.refreshAllShowsTrackingData())) }
+
 
     val collectedShows = refreshEvent.flatMapLatest { shouldRefresh ->
         combine(
@@ -93,18 +98,14 @@ class ShowsTrackingViewModel @Inject constructor(
     }
 
     private fun sortList(trackedShows: List<TrackedShowWithEpisodes>, sortedBy: String, sortHow: String): List<TrackedShowWithEpisodes> {
-        Log.d(TAG, "sortList: Sorting $sortedBy , $sortHow")
 
         return when(sortedBy) {
             Sorting.SORT_BY_TITLE -> {
                 val sortedShows =trackedShows.sortedBy { it.trackedShow.title }
 
                 if(sortHow == Sorting.SORT_ORDER_DESC) {
-                    Log.d(TAG, "sortList: Returning ${sortedShows.reversed()}")
                     sortedShows.reversed()
                 } else {
-                    Log.d(TAG, "sortList: Returning ${sortedShows}")
-
                     sortedShows
                 }
             }
@@ -113,11 +114,8 @@ class ShowsTrackingViewModel @Inject constructor(
 
 
                 if(sortHow == Sorting.SORT_ORDER_DESC) {
-                    Log.d(TAG, "sortList: Returning ${sortedShows.reversed()}")
                     sortedShows.reversed()
                 } else {
-                    Log.d(TAG, "sortList: Returning ${sortedShows}")
-
                     sortedShows
                 }
             }
@@ -126,11 +124,8 @@ class ShowsTrackingViewModel @Inject constructor(
 
 
                 if(sortHow == Sorting.SORT_ORDER_DESC) {
-                    Log.d(TAG, "sortList: Returning ${sortedShows.reversed()}")
                     sortedShows.reversed()
                 } else {
-                    Log.d(TAG, "sortList: Returning ${sortedShows}")
-
                     sortedShows
                 }
             }
@@ -139,24 +134,18 @@ class ShowsTrackingViewModel @Inject constructor(
 
 
                 if(sortHow == Sorting.SORT_ORDER_DESC) {
-                    Log.d(TAG, "sortList: Returning ${sortedShows.reversed()}")
                     sortedShows.reversed()
                 } else {
-                    Log.d(TAG, "sortList: Returning ${sortedShows}")
-
                     sortedShows
                 }
             }
             else -> {
-                Log.e(TAG, "sortList: getTrackedShows HERER", )
                 trackedShows.sortedBy {  it.trackedShow.title  }
             }
         }
     }
 
-
     fun applySorting(sorting: Sorting) {
-        Log.d(TAG, "applySorting: Sorting by ${sorting.sortBy} // ${sorting.sortHow}")
         viewModelScope.launch {
             sortingChannel.send(sorting)
         }
@@ -174,7 +163,7 @@ class ShowsTrackingViewModel @Inject constructor(
         }
     }
 
-    fun getUpcomingEpisodes(showTraktId: Int) = viewModelScope.launch { showsTrackingRepository.refreshUpcomingEpisodes(showTraktId) }
+    fun getUpcomingEpisodes(showTraktId: Int) = viewModelScope.launch { eventsChannel.send(Event.UpdateTrackedEpisodeDataEvent(showsTrackingRepository.refreshUpcomingEpisodes(showTraktId))) }
 
     fun addTrackedShow(trackedShow: TrackedShow) =
         viewModelScope.launch { showsTrackingRepository.insertTrackedShow(trackedShow) }
@@ -182,10 +171,26 @@ class ShowsTrackingViewModel @Inject constructor(
     fun stopTracking(trackedShow: TrackedShow) =
         viewModelScope.launch { showsTrackingRepository.deleteTrackedShow(trackedShow) }
 
+    suspend fun removeExpiredTrackedEpisodes(showTraktId: Int) = showsTrackingRepository.removeExpiredTrackedShows(showTraktId)
+
     fun onStart() {
         viewModelScope.launch {
             refreshEventChannel.send(false)
         }
+    }
+
+    fun onRefresh() {
+        viewModelScope.launch {
+            refreshEventChannel.send(true)
+        }
+        refreshTrackedShows()
+    }
+
+    sealed class Event {
+        data class UpdateTrackedEpisodeDataEvent(val episodesResource: Resource<Map<TmShow?, List<TrackedEpisode?>>>): Event()
+        data class RefreshTrackedEpisodeDataEvent(val trackedEpisodes: Resource<Map<TmShow?, List<TrackedEpisode?>>>?): Event()
+        data class RefreshAllTrackedShowsDataEvent(val successResource: Resource<Boolean>): Event()
+
     }
 
 }

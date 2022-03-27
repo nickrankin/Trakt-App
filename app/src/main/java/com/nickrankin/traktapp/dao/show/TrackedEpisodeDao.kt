@@ -20,9 +20,13 @@ interface TrackedEpisodeDao {
 
     @Transaction
     @Query("UPDATE notifications_episode SET alreadyNotified = :status WHERE trakt_id = :episodeTraktId")
-    fun setNotificationStatus(episodeTraktId: Int, status: Int)
+    fun setNotificationStatus(episodeTraktId: Int, status: Boolean)
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Transaction
+    @Query("UPDATE notifications_episode SET dismiss_count = dismiss_count + 1 WHERE trakt_id = :episodeTraktId")
+    fun setDismissCount(episodeTraktId: Int)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(trackedEpisodes: List<TrackedEpisode>)
 
     @Update
@@ -30,6 +34,9 @@ interface TrackedEpisodeDao {
 
     @Delete
     fun delete(trackedEpisode: TrackedEpisode)
+
+    @Delete
+    fun deleteAll(trackedEpisodes: List<TrackedEpisode>)
 
     @Query("DELETE FROM notifications_episode WHERE show_trakt_id = :episodeTraktId")
     fun deleteAllPerShow(episodeTraktId: Int)

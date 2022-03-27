@@ -20,6 +20,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.LoadState
 import androidx.paging.PagingSource
+import androidx.paging.RemoteMediator
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -128,6 +129,8 @@ class WatchingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNav
     
     private suspend fun collectEpisodes() {
         viewModel.watchedEpisodes.collectLatest { latestData ->
+
+
             progressBar.visibility = View.GONE
 
             if(swipeLayout.isRefreshing) {

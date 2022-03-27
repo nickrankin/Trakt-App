@@ -33,7 +33,7 @@ object ApiModules {
     @Singleton
     @Provides
     fun providesTraktApi(@ApplicationContext context: Context): TraktApi {
-        return TraktApi(context, true, false)
+        return TraktApi(context, false, false)
     }
 
     @Singleton

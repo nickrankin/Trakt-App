@@ -126,7 +126,7 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
         Log.d(TAG, "dismissEipsodeNotifications: Dismissing notifications for episode ${episodeTraktId}", )
 
         lifecycleScope.launchWhenStarted {
-            trackedEpisodesAlarmScheduler.dismissNotification(episodeTraktId ?: 0)
+            trackedEpisodesAlarmScheduler.dismissNotification(episodeTraktId ?: 0, true)
         }
     }
 

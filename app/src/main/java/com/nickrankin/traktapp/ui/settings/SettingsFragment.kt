@@ -52,7 +52,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 if(!(preference as CheckBoxPreference).isChecked) {
                     lifecycleScope.launchWhenStarted {
                         Log.d(TAG, "onPreferenceTreeClick: Cancelling Show Tracking and cleaning up")
-                        episodeTrackingDataHelper.cancelTrackingForAllShows(true)
+                        episodeTrackingDataHelper.cancelTrackingForAllShows(true, false)
                     }
                 } else {
                     // Re-enable tracking for shows which were tracked before

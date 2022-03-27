@@ -135,8 +135,12 @@ class WatchedEpisodesRemoteMediator(
 
             return MediatorResult.Success(endOfPaginationReached = endOfPaginationReached)
         } catch (e: IOException) {
+            Log.e(TAG, "load: IO Exception ${e.message}", )
+            e.printStackTrace()
             return MediatorResult.Error(e)
         } catch (e: HttpException) {
+            Log.e(TAG, "load: HTTPException (code ${e.code()}). ${e.message()}", )
+            e.printStackTrace()
             return MediatorResult.Error(e)
         }
 
