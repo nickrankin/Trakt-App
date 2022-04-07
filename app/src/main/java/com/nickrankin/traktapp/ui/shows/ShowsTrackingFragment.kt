@@ -746,7 +746,7 @@ class ShowsTrackingFragment : Fragment(), OnNavigateToShow, OnNavigateToEpisode,
     override fun onRefresh() {
         viewModel.onRefresh()
 
-        generateTestNotifications()
+        //generateTestNotifications()
     }
 
     private fun generateTestNotifications() {
