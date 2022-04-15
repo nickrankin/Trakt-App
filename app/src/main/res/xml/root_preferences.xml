@@ -4,7 +4,7 @@
             app:key="date_format"
             app:title="Default Date Format"
             app:useSimpleSummaryProvider="true"
-            app:defaultValue="dd-MM-YYYY HH:MM"
+            app:defaultValue="dd-MM-YYYY H:m"
             app:entries="@array/date_format_label"
             app:entryValues="@array/date_format_values" />
 

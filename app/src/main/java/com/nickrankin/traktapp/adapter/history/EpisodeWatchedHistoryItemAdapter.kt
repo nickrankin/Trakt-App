@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
 import com.nickrankin.traktapp.databinding.WatchedHistoryItemLayoutBinding
 import com.nickrankin.traktapp.helper.AppConstants
+import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 
 class EpisodeWatchedHistoryItemAdapter(private val callback: (WatchedEpisode) -> Unit): ListAdapter<WatchedEpisode, EpisodeWatchedHistoryItemAdapter.WatchedHistoryItemViewHolder>(
@@ -26,7 +27,8 @@ class EpisodeWatchedHistoryItemAdapter(private val callback: (WatchedEpisode) ->
 
         holder.bindings.apply {
             watchedHistoryItemTitle.text = currentItem.episode_title + "(S${currentItem?.episode_season}E${currentItem?.episode_number})"
-            watchedHistoryItemWatchedAt.text = "Last Watched at: " + currentItem.watched_at?.format(
+            watchedHistoryItemWatchedAt.text = "Last Watched at: " + currentItem.watched_at?.atZoneSameInstant(
+                ZoneId.systemDefault())?.format(
                 DateTimeFormatter.ofPattern(AppConstants.DEFAULT_DATE_TIME_FORMAT))
             root.setOnClickListener { callback(currentItem) }
         }

@@ -16,7 +16,7 @@ import android.view.View
 import android.webkit.*
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
-import com.nickrankin.traktapp.MainActivity
+import com.nickrankin.traktapp.BaseActivity
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.TitleHelper
 import com.nickrankin.traktapp.model.auth.AuthViewModel
@@ -160,7 +160,7 @@ class AuthActivity : AppCompatActivity(), TitleHelper {
             .putBoolean(IS_LOGGED_IN, true)
             .apply()
 
-        val i = Intent(this, MainActivity::class.java)
+        val i = Intent(this, BaseActivity::class.java)
         i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(i)

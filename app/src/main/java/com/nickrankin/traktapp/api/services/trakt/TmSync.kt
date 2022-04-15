@@ -170,8 +170,8 @@ interface TmSync {
     suspend fun ratingsMovies(
         @Path(value = "rating", encoded = true) filter: RatingsFilter,
         @Query(value = "extended", encoded = true) extended: Extended,
-        @Query("page") page: Int,
-        @Query("limit") limit: Int
+        @Query("page") page: Int?,
+        @Query("limit") limit: Int?
     ): List<RatedMovie>
 
     /**

@@ -268,7 +268,7 @@ class ShowsTrackingFragment : Fragment(), OnNavigateToShow, OnNavigateToEpisode,
                 Snackbar.LENGTH_INDEFINITE
             ) {
                 requireActivity().supportFragmentManager.beginTransaction()
-                    .add(R.id.nav_host_fragment_activity_main, SettingsFragment())
+                    .add(R.id.showsmainactivity_container, SettingsFragment())
                     .commit()
             }.show()
         }

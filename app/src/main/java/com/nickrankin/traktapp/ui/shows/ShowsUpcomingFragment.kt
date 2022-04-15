@@ -25,6 +25,8 @@ import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -57,6 +59,7 @@ class ShowsUpcomingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, 
     private val viewModel by activityViewModels<ShowsOverviewViewModel>()
     
     override fun onCreate(savedInstanceState: Bundle?) {
+        Log.e(TAG, "onCreate: $this", )
         super.onCreate(savedInstanceState)
 
         setHasOptionsMenu(true)
@@ -83,10 +86,11 @@ class ShowsUpcomingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, 
         progressBar = bindings.showsoverviewfragmentProgressbar
         if(isLoggedIn) {
             setupRecyclerView()
-
+            
             lifecycleScope.launch {
                 getMyShows()
             }
+            
         } else {
             handleLoggedOutState()
         }
@@ -122,7 +126,6 @@ class ShowsUpcomingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, 
                     progressBar.visibility = View.VISIBLE
                 }
                 is Resource.Success -> {
-
                     progressBar.visibility = View.GONE
                     messageContainer.visibility = View.GONE
 
@@ -143,6 +146,7 @@ class ShowsUpcomingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, 
                     } else {
                         messageContainer.visibility = View.GONE
                     }
+
                     adapter.submitList(data?.sortedBy {
                         it.first_aired
                     })
@@ -238,6 +242,7 @@ class ShowsUpcomingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, 
 
 
     override fun onResume() {
+        Log.e(TAG, "onResume: $this", )
         super.onResume()
 
         if(isLoggedIn) {
@@ -252,7 +257,7 @@ class ShowsUpcomingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, 
             viewModel.onRefresh()
         }
     }
-
+        
     companion object {
         @JvmStatic
         fun newInstance() =

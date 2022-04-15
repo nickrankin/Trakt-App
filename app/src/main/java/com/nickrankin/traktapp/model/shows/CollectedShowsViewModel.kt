@@ -11,10 +11,7 @@ import com.uwetrottmann.trakt5.enums.SortHow
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -23,6 +20,7 @@ class CollectedShowsViewModel @Inject constructor(val repository: CollectedShows
 
     private val showRefreshEventChannel = Channel<Boolean>()
     private val showRefreshEvent = showRefreshEventChannel.receiveAsFlow()
+        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
     private val eventChannel = Channel<Event>()
     val events = eventChannel.receiveAsFlow()

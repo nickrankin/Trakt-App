@@ -46,6 +46,7 @@ import com.uwetrottmann.trakt5.entities.SyncItems
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 import javax.inject.Inject
 
@@ -250,7 +251,8 @@ class WatchingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNav
 
         AlertDialog.Builder(requireContext())
             .setTitle("Are you sure?")
-            .setMessage("Are you sure you want to remove ${watcedEpisode?.episode_title} (${watcedEpisode?.show_title}) play ${watcedEpisode?.watched_at?.format(
+            .setMessage("Are you sure you want to remove ${watcedEpisode?.episode_title} (${watcedEpisode?.show_title}) play ${watcedEpisode?.watched_at?.atZoneSameInstant(
+                ZoneId.systemDefault())?.format(
                 DateTimeFormatter.ofPattern(AppConstants.DEFAULT_DATE_TIME_FORMAT))}?")
             .setPositiveButton("Ok", DialogInterface.OnClickListener { dialogInterface, i ->
                 viewModel.removeFromWatchedHistory(syncItems)
@@ -270,6 +272,8 @@ class WatchingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNav
 
     override fun onRefresh() {
         if(isLoggedIn) {
+            Log.e(TAG, "onRefresh: CALLED", )
+
             //https://developer.android.com/reference/kotlin/androidx/paging/PagingDataAdapter#refresh()
             adapter.refresh()
         }

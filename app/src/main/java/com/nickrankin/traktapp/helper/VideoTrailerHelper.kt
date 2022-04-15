@@ -52,10 +52,15 @@ object VideoTrailerHelper {
                 Log.d(TAG, "navigateToVideo: Youtube App Not installed, fall back to browser. ${e.message}")
                 navigateToUri(context, YOUTUBE_URL_PATH + youtubeVideoId)
             } catch(e: Exception) {
-                Log.e(TAG, "navigateToYoutubeVideo: ${e.message} occurred. Fallback to browser", )
+                Log.e(TAG, "navigateToYoutubeVideo: ${e.message} occurred. Fallback to browser")
                 e.printStackTrace()
                 navigateToUri(context, YOUTUBE_URL_PATH + youtubeVideoId)
             }
+    }
+
+    fun navigateToVideoUrl(context: Context, videoUrl: String) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(videoUrl))
+        context.startActivity(intent)
     }
 
     private fun navigateToVimeoVideo(context: Context, vimeoVideoId: String) {
@@ -69,8 +74,8 @@ object VideoTrailerHelper {
 
             context.startActivity(videoUrlIntent)
         } catch(e: Exception) {
-            Log.e(TAG, "navigateToVideoUrl: Error navigating to video. $uri. ", )
-            Log.e(TAG, "navigateToVideoUrl: Error ${e.message}", )
+            Log.e(TAG, "navigateToVideoUrl: Error navigating to video. $uri. ")
+            Log.e(TAG, "navigateToVideoUrl: Error ${e.message}")
             e.printStackTrace()
         }
     }

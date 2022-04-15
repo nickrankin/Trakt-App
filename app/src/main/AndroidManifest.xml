@@ -20,16 +20,22 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.TraktApp">
+        <activity
+            android:name=".ui.movies.MovieDetailsActivity"
+            android:exported="false"
+            android:label="@string/title_activity_movie_details"
+            android:theme="@style/Theme.TraktApp.NoActionBar" />
+        <activity
+            android:name=".ui.movies.MoviesMainActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.shows.ShowsMainActivity"
+            android:exported="false" />
+
         <receiver
             android:name=".services.CancelShowTrackingNotificationReceiver"
             android:enabled="true"
-            android:exported="true"></receiver>
-
-        <service
-            android:name=".services.DismissTrackingNotificationService"
-            android:enabled="true"
             android:exported="true" />
-
         <receiver
             android:name=".services.ScheduleTrackedEpisodesBootReceiver"
             android:enabled="true"
@@ -53,7 +59,7 @@
         <activity
             android:name=".ui.shows.episodedetails.EpisodeDetailsActivity"
             android:exported="true"
-            android:parentActivityName=".MainActivity" />
+            android:parentActivityName=".BaseActivity" />
         <activity
             android:name=".ui.auth.AuthActivity"
             android:exported="true"
@@ -71,7 +77,7 @@
             android:name=".ui.settings.SettingsActivity"
             android:exported="true" />
         <activity
-            android:name=".MainActivity"
+            android:name=".BaseActivity"
             android:exported="true"
             android:label="@string/app_name">
             <intent-filter>

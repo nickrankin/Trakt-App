@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.nickrankin.traktapp.dao.show.model.CollectedShow
 import com.nickrankin.traktapp.databinding.ShowLayoutItemCondensedBinding
 import com.nickrankin.traktapp.helper.AppConstants
+import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 
 class CollectedShowsPickerAdapter(private val sharedPreferences: SharedPreferences, private val callback: (collectedShow: CollectedShow) -> Unit): ListAdapter<CollectedShow, CollectedShowsPickerAdapter.CollectedShowVH>(COMPARATOR) {
@@ -21,7 +22,8 @@ class CollectedShowsPickerAdapter(private val sharedPreferences: SharedPreferenc
 
         holder.bindings.apply {
             collectedshowlayoutTitle.text = selectedShow.show_title
-            collectedshowlayoutCollectedAy.text = "Collected At: " + selectedShow.collected_at?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)))
+            collectedshowlayoutCollectedAy.text = "Collected At: " + selectedShow.collected_at?.atZoneSameInstant(
+                ZoneId.systemDefault())?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)))
 
             root.setOnClickListener {
                callback(selectedShow)

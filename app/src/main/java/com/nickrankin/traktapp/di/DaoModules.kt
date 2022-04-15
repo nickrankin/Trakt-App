@@ -5,6 +5,8 @@ import com.nickrankin.traktapp.dao.auth.AuthDatabase
 import com.nickrankin.traktapp.dao.credits.CreditsDatabase
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.images.ImagesDatabase
+import com.nickrankin.traktapp.dao.movies.MoviesDatabase
+import com.nickrankin.traktapp.dao.movies.WatchedMoviesMediatorDatabase
 import com.nickrankin.traktapp.dao.show.WatchedShowsMediatorDatabase
 import com.nickrankin.traktapp.dao.watched.WatchedHistoryDatabase
 import dagger.Module
@@ -33,8 +35,18 @@ object DaoModules {
     }
 
     @Provides
+    fun provideMoviesDatabase(@ApplicationContext context: Context): MoviesDatabase {
+        return MoviesDatabase.getDatabase(context)
+    }
+
+    @Provides
     fun provideWatchedShowMediatorDatabase(@ApplicationContext context: Context): WatchedShowsMediatorDatabase {
         return WatchedShowsMediatorDatabase.getDatabase(context)
+    }
+
+    @Provides
+    fun provideWatchedMoviesMediatorDatabase(@ApplicationContext context: Context): WatchedMoviesMediatorDatabase {
+        return WatchedMoviesMediatorDatabase.getDatabase(context)
     }
 
     @Provides

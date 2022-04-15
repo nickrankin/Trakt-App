@@ -50,4 +50,8 @@ class TmdbApi(private val enableLogging: Boolean): Tmdb(ApiKeys.TMDB_API_KEY) {
     fun tmSearchService(): SearchService {
         return retrofit.create(SearchService::class.java)
     }
+
+    fun tmMovieService(): TmMoviesService {
+        return retrofit.create(TmMoviesService::class.java)
+    }
 }

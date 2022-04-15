@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.SharedPreferences
 import android.graphics.drawable.InsetDrawable
 import android.os.Build
-import android.util.Log
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.MenuItem
@@ -44,7 +43,7 @@ class ShowCalendarEntriesAdapter @Inject constructor(private val sharedPreferenc
             showentryitemAirDate.text = "Airing: " + currentItem.first_aired?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)))
             showentryitemOverview.text = currentItem.episode_overview
 
-            posterImageLoader.loadImage(currentItem.show_trakt_id, currentItem.show_tmdb_id, currentItem?.language, currentItem?.show_title ?: "", currentItem.first_aired?.year, true, callback = { posterImage ->
+            posterImageLoader.loadShowPosterImage(currentItem.show_trakt_id, currentItem.show_tmdb_id, currentItem?.language, currentItem?.show_title ?: "", currentItem.first_aired?.year, true, callback = { posterImage ->
                 if(posterImage.poster_path != null) {
                     glide
                         .load(AppConstants.TMDB_POSTER_URL + posterImage.poster_path)

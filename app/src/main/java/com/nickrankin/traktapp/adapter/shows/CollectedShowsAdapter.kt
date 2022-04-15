@@ -1,7 +1,6 @@
 package com.nickrankin.traktapp.adapter.shows
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.drawable.InsetDrawable
 import android.os.Build
@@ -22,6 +21,7 @@ import com.nickrankin.traktapp.dao.show.model.CollectedShow
 import com.nickrankin.traktapp.databinding.CollectedShowEntryListItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.PosterImageLoader
+import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 
 private const val TAG = "CollectedShowsAdapter"
@@ -55,7 +55,8 @@ class CollectedShowsAdapter(
             collectedentryitemPoster.setImageResource(R.drawable.ic_trakt_svgrepo_com)
 
             collectedentryitemTitle.text = currentItem.show_title
-            collectedentryitemCollectedDate.text = "Collected: " + currentItem.collected_at?.format(
+            collectedentryitemCollectedDate.text = "Collected: " + currentItem.collected_at?.atZoneSameInstant(
+                ZoneId.systemDefault())?.format(
                 DateTimeFormatter.ofPattern(
                     sharedPreferences.getString(
                         "date_format",
@@ -65,7 +66,7 @@ class CollectedShowsAdapter(
             )
             collectedentryitemOverview.text = currentItem.show_overview
 
-            imageLoader.loadImage(
+            imageLoader.loadShowPosterImage(
                 currentItem.show_trakt_id,
                 currentItem.show_tmdb_id,
                 currentItem?.language,

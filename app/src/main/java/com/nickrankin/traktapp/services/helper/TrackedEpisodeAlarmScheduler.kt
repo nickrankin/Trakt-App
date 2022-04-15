@@ -6,13 +6,9 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.room.withTransaction
-import com.nickrankin.traktapp.MainActivity
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.show.model.TrackedEpisode
-import com.uwetrottmann.trakt5.entities.CalendarShowEntry
 import kotlinx.coroutines.flow.first
-import org.threeten.bp.OffsetDateTime
-import javax.inject.Inject
 
 private const val NOTIFICATION_HOURS_BEFORE = 24L
 private const val TAG = "TrackedEpisodeAlarmSche"

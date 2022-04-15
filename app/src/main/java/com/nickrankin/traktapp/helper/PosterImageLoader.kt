@@ -5,6 +5,7 @@ import android.os.Looper
 import android.util.Log
 import com.nickrankin.traktapp.api.TmdbApi
 import com.nickrankin.traktapp.dao.images.ImagesDatabase
+import com.nickrankin.traktapp.dao.images.model.MoviePosterImage
 import com.nickrankin.traktapp.dao.images.model.ShowPosterImage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,9 +22,11 @@ class PosterImageLoader @Inject constructor(
     private val imagesDatabase: ImagesDatabase
 ) {
     private val showPosterImagesDao = imagesDatabase.showPosterImagesDao()
+    private val moviePosterImagesDao = imagesDatabase.moviePosterImagesDao()
+
     val scope = CoroutineScope(Dispatchers.IO)
     val mainThreadLopper = Handler(Looper.getMainLooper())
-    fun loadImage(
+    fun loadShowPosterImage(
         traktId: Int,
         tmbId: Int?,
         language: String?,
@@ -53,7 +56,7 @@ class PosterImageLoader @Inject constructor(
                 }
 
                 if (currentTmdbId != null) {
-                    val imagePath = getTmdbImage(currentTmdbId, language)
+                    val imagePath = getTmdbShowImage(currentTmdbId, language)
 
                     val posterImages = ShowPosterImage(
                         traktId,
@@ -121,6 +124,74 @@ class PosterImageLoader @Inject constructor(
         }
     }
 
+    fun loadMoviePosterImage(
+        traktId: Int,
+        tmbId: Int?,
+        language: String?,
+        shouldCache: Boolean,
+        callback: (image: MoviePosterImage) -> Unit
+    ) {
+        scope.launch {
+            val cachedPosters = moviePosterImagesDao.getPoster(traktId)
+            var currentTmdbId: Int?
+
+            if (cachedPosters != null) {
+                //Log.d(TAG, "loadImage: Found cached posters for $traktId. $title")
+                mainThreadLopper.post {
+                    callback(cachedPosters)
+                }
+            } else {
+                if (tmbId != null) {
+                    val imagePath = getTmdbMovieImage(tmbId, language ?: "en")
+
+                    val posterImages = MoviePosterImage(
+                        traktId,
+                        imagePath,
+                        OffsetDateTime.now()
+                    )
+
+                    if (imagePath != null) {
+                        // if (shouldCache) {
+                        Log.d(
+                            TAG,
+                            "loadImage: Saving poster for TraktId: $traktId. "
+                        )
+                        moviePosterImagesDao.insert(
+                            posterImages
+                        )
+                        //    }
+
+                        mainThreadLopper.post {
+                            callback(posterImages)
+                        }
+                    } else {
+                        // If there is no poster on the TMDB set a blank Poster Image to prevent constant hammering the API
+                        Log.d(TAG, "loadImage: Setting empty poster image for $traktId")
+                        val emptyPosterImage =
+                            MoviePosterImage(
+                                traktId,
+                                null,
+                                OffsetDateTime.now()
+                            )
+                        if (shouldCache) {
+                            moviePosterImagesDao.insert(
+                                emptyPosterImage
+                            )
+                        }
+
+                        mainThreadLopper.post {
+                            callback(
+                                emptyPosterImage
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+
+            }
+
     private suspend fun findTmdbId(traktId: Int, title: String, year: Int?): Int? {
         try {
             val foundShow = tmdbApi.tmSearchService().tv(
@@ -155,9 +226,24 @@ class PosterImageLoader @Inject constructor(
         return null
     }
 
-    private suspend fun getTmdbImage(tmbId: Int, language: String?): String? {
+    private suspend fun getTmdbShowImage(tmbId: Int, language: String?): String? {
         try {
             val images = tmdbApi.tmTvService()
+                .images(tmbId, getTmdbLanguage(language))
+
+            if (images.posters?.isNotEmpty() == true) {
+                return images.posters?.first()?.file_path
+            }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return null
+    }
+
+    private suspend fun getTmdbMovieImage(tmbId: Int, language: String?): String? {
+        try {
+            val images = tmdbApi.tmMovieService()
                 .images(tmbId, getTmdbLanguage(language))
 
             if (images.posters?.isNotEmpty() == true) {

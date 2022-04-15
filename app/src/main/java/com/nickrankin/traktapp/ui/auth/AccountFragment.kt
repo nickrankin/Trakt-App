@@ -17,10 +17,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.room.withTransaction
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
-import com.nickrankin.traktapp.MainActivity
+import com.nickrankin.traktapp.BaseActivity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.TmApplication
-import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.auth.AuthDatabase
 import com.nickrankin.traktapp.dao.auth.AuthUserDao
 import com.nickrankin.traktapp.dao.auth.model.AuthUser
@@ -179,7 +178,7 @@ class AccountFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
                         }
                     }
 
-                    val intent = Intent(context, MainActivity::class.java)
+                    val intent = Intent(context, BaseActivity::class.java)
                     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
                     startActivity(intent)
                 }

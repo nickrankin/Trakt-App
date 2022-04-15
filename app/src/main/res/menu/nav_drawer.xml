@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group
+        android:id="@+id/navdrawer_group"
+        android:checkableBehavior="single">
+    <item
+        android:id="@+id/navdrawer_home"
+        android:icon="@drawable/ic_baseline_home_24"
+        android:title="Overview" />
+
+    <item
+        android:id="@+id/navdrawer_movies"
+        android:icon="@drawable/ic_baseline_local_movies_24"
+        android:title="Movies" />
+
+    <item
+        android:id="@+id/navdrawer_shows"
+        android:icon="@drawable/ic_baseline_tv_24"
+        android:title="Shows" />
+
+    <item
+        android:id="@+id/navdrawer_lists"
+        android:icon="@drawable/ic_baseline_list_24"
+        android:title="Lists" />
+    </group>
+</menu>

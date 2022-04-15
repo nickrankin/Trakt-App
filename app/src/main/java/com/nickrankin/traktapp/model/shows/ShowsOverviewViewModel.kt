@@ -7,9 +7,7 @@ import com.nickrankin.traktapp.repo.auth.shows.ShowsOverviewRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -17,6 +15,7 @@ import javax.inject.Inject
 class ShowsOverviewViewModel @Inject constructor(private val repository: ShowsOverviewRepository): ViewModel() {
     private val myShowsRefreshEventChannel = Channel<Boolean>()
     private val myShowsRefreshEvent = myShowsRefreshEventChannel.receiveAsFlow()
+        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
     private var showHiddenEntries = false
 

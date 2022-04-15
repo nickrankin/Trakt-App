@@ -38,6 +38,7 @@ import com.nickrankin.traktapp.ui.shows.OnNavigateToEpisode
 import com.uwetrottmann.trakt5.entities.*
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
+import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 import javax.inject.Inject
 
@@ -277,7 +278,8 @@ class ShowDetailsProgressFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
             if (lastWatched?.watched_at != null) {
                 episodeitemAirDate.visibility = View.VISIBLE
 
-                episodeitemAirDate.text = "Last watched: " + lastWatched.watched_at?.format(
+                episodeitemAirDate.text = "Last watched: " + lastWatched.watched_at?.atZoneSameInstant(
+                    ZoneId.systemDefault())?.format(
                     DateTimeFormatter.ofPattern(
                         sharedPreferences.getString(
                             "date_format",

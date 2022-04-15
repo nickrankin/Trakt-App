@@ -1,10 +1,8 @@
 package com.nickrankin.traktapp.adapter.shows
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -16,6 +14,7 @@ import com.nickrankin.traktapp.dao.show.model.TrackedShowWithEpisodes
 import com.nickrankin.traktapp.databinding.TrackedShowListItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.PosterImageLoader
+import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 
 private const val TAG = "TrackedShowsAdapter"
@@ -31,12 +30,13 @@ class TrackedShowsAdapter(private val glide: RequestManager, private val imageLo
 
         holder.binding.apply {
             trackedshowitemShowTitle.text = "${selectedShow.trackedShow.title} (${selectedShow?.trackedShow?.releaseDate?.year})"
-            trackedshowitemShowCollectedAt.text = "Tracked on: " + selectedShow.trackedShow.tracked_on.format(
+            trackedshowitemShowCollectedAt.text = "Tracked on: " + selectedShow.trackedShow.tracked_on.atZoneSameInstant(
+                ZoneId.systemDefault())?.format(
                 DateTimeFormatter.ofPattern("dd/MM/YYYY"))
 
             trackedshowitemShowOverview.text = selectedShow.trackedShow.overview
 
-            imageLoader.loadImage(selectedShow.trackedShow.trakt_id, selectedShow.trackedShow.tmdb_id, null, selectedShow.trackedShow.title ?: "", null, true) { posterRes ->
+            imageLoader.loadShowPosterImage(selectedShow.trackedShow.trakt_id, selectedShow.trackedShow.tmdb_id, null, selectedShow.trackedShow.title ?: "", null, true) { posterRes ->
                 if(posterRes.poster_path != null) {
                     glide
                         .load(AppConstants.TMDB_POSTER_URL + posterRes.poster_path)

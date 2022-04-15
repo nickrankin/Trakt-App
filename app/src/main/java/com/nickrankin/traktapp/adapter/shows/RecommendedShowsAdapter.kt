@@ -3,12 +3,10 @@ package com.nickrankin.traktapp.adapter.shows
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
-import com.nickrankin.traktapp.databinding.CollectedShowEntryListItemBinding
 import com.nickrankin.traktapp.databinding.ReccomendedShowEntryListItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.PosterImageLoader
@@ -31,7 +29,7 @@ class RecommendedShowsAdapter(private val glide: RequestManager, private val ima
             collectedentryitemCollectedDate.visibility = View.GONE
             collectedentryitemOverview.text = currentItem?.overview
 
-            imageLoader.loadImage(currentItem?.ids?.trakt ?: 0, currentItem?.ids?.tmdb ?: 0, currentItem?.language,currentItem?.title ?: "", currentItem?.year, false, callback = {posterImage ->
+            imageLoader.loadShowPosterImage(currentItem?.ids?.trakt ?: 0, currentItem?.ids?.tmdb ?: 0, currentItem?.language,currentItem?.title ?: "", currentItem?.year, false, callback = { posterImage ->
                 if(posterImage.poster_path != null) {
                     glide
                         .load(AppConstants.TMDB_POSTER_URL + posterImage.poster_path)

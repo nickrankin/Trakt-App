@@ -1,34 +1,30 @@
 package com.nickrankin.traktapp
 
 import android.app.SearchManager
-import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.RelativeLayout
 import android.widget.SearchView
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
-import androidx.navigation.findNavController
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.setupActionBarWithNavController
-import androidx.navigation.ui.setupWithNavController
+import androidx.appcompat.widget.Toolbar
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.preference.PreferenceManager
-import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.navigation.NavigationView
 import com.nickrankin.traktapp.databinding.ActivityMainBinding
-import com.nickrankin.traktapp.services.helper.TrackedEpisodeAlarmScheduler
-import com.nickrankin.traktapp.ui.auth.AuthActivity
+import com.nickrankin.traktapp.ui.movies.MoviesMainActivity
 import com.nickrankin.traktapp.ui.search.ShowSearchResultsActivity
 import com.nickrankin.traktapp.ui.settings.SettingsActivity
+import com.nickrankin.traktapp.ui.shows.ShowsMainActivity
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity() {
+open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
-    lateinit var bindings: ActivityMainBinding
+    private lateinit var bindings: ActivityMainBinding
+    private lateinit var toolbar: Toolbar
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var navView: NavigationView
 
 //    @Inject
 //    lateinit var trackedEpisodeAlarmScheduler: TrackedEpisodeAlarmScheduler
@@ -44,24 +40,15 @@ class MainActivity : AppCompatActivity() {
 //
 //        }
 
-
         bindings = ActivityMainBinding.inflate(layoutInflater)
+
+        toolbar = bindings.toolbarLayout.toolbar
+
+        setSupportActionBar(toolbar)
+
+        setupDrawerLayout()
+
         setContentView(bindings.root)
-
-        setSupportActionBar(bindings.toolbarLayout.toolbar)
-
-        val navView: BottomNavigationView = bindings.navView
-
-        val navController = findNavController(R.id.nav_host_fragment_activity_main)
-        // Passing each menu ID as a set of Ids because each
-        // menu should be considered as top level destinations.
-        val appBarConfiguration = AppBarConfiguration(
-            setOf(
-                R.id.navigation_home, R.id.navigation_watching_shows, R.id.navigation_tracking_shows, R.id.navigation_collected_shows, R.id.navigation_show_reccomendations
-            )
-        )
-        setupActionBarWithNavController(navController, appBarConfiguration)
-        navView.setupWithNavController(navController)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -75,6 +62,21 @@ class MainActivity : AppCompatActivity() {
 
 
         return true
+    }
+
+    private fun setupDrawerLayout() {
+        setSupportActionBar(toolbar)
+
+        navView = bindings.mainDrawer
+        drawerLayout = bindings.drawerLayout
+
+        toolbar.setNavigationIcon(R.drawable.ic_baseline_menu_24)
+
+        toolbar.setNavigationOnClickListener {
+            drawerLayout.open()
+        }
+
+        navView.setNavigationItemSelectedListener(this)
     }
 
     private fun startSearch(searchView: SearchView) {
@@ -110,4 +112,27 @@ class MainActivity : AppCompatActivity() {
         return false
     }
 
+    override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        when(item.itemId) {
+            R.id.navdrawer_home -> {
+                startActivity(Intent(this, BaseActivity::class.java))
+                return true
+            }
+            R.id.navdrawer_shows -> {
+                startActivity(Intent(this, ShowsMainActivity::class.java))
+                return true
+            }
+
+            R.id.navdrawer_movies -> {
+                startActivity(Intent(this, MoviesMainActivity::class.java))
+                return true
+            }
+
+            R.id.navdrawer_lists -> {
+
+            }
+        }
+
+        return false
+    }
 }
