@@ -10,13 +10,14 @@ import com.bumptech.glide.RequestManager
 import com.google.android.flexbox.AlignItems
 import com.google.android.flexbox.FlexboxLayoutManager
 import com.nickrankin.traktapp.R
-import com.nickrankin.traktapp.dao.credits.ShowCastPerson
+import com.nickrankin.traktapp.dao.credits.MovieCastPerson
 import com.nickrankin.traktapp.databinding.CreditItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
 
 
-class ShowCastCreditsAdapter(private val glide: RequestManager): ListAdapter<ShowCastPerson, ShowCastCreditsAdapter.CreditsViewHolder>(
+class MovieCastCreditsAdapter(private val glide: RequestManager): ListAdapter<MovieCastPerson, MovieCastCreditsAdapter.CreditsViewHolder>(
     COMPARATOR) {
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CreditsViewHolder {
         return CreditsViewHolder(CreditItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
     }
@@ -34,9 +35,11 @@ class ShowCastCreditsAdapter(private val glide: RequestManager): ListAdapter<Sho
             }
 
             credititemPersonName.text = currentItem.castPerson.name
-            credititemPersonRole.text = currentItem.showCastPersonData.character
+            credititemPersonRole.text = currentItem.movieCastPersonData.character
         }
     }
+
+
 
     inner class CreditsViewHolder(val bindings: CreditItemBinding): BaseViewHolder(bindings.root)
 
@@ -54,19 +57,19 @@ class ShowCastCreditsAdapter(private val glide: RequestManager): ListAdapter<Sho
     }
 
     companion object {
-        val COMPARATOR = object: DiffUtil.ItemCallback<ShowCastPerson>() {
+        val COMPARATOR = object: DiffUtil.ItemCallback<MovieCastPerson>() {
             override fun areItemsTheSame(
-                oldItem: ShowCastPerson,
-                newItem: ShowCastPerson
+                oldItem: MovieCastPerson,
+                newItem: MovieCastPerson
             ): Boolean {
                 return oldItem == newItem
             }
 
             override fun areContentsTheSame(
-                oldItem: ShowCastPerson,
-                newItem: ShowCastPerson
+                oldItem: MovieCastPerson,
+                newItem: MovieCastPerson
             ): Boolean {
-                return oldItem.showCastPersonData.castPersonTraktId == newItem.showCastPersonData.castPersonTraktId
+                return oldItem.movieCastPersonData.castPersonTraktId == newItem.movieCastPersonData.castPersonTraktId
             }
         }
     }

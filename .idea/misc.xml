@@ -52,6 +52,7 @@
         <entry key="app/src/main/res/layout/fragment_collected_movies.xml" value="0.5588541666666667" />
         <entry key="app/src/main/res/layout/fragment_collected_shows.xml" value="0.4121376811594203" />
         <entry key="app/src/main/res/layout/fragment_home.xml" value="0.578125" />
+        <entry key="app/src/main/res/layout/fragment_movie_details_overview.xml" value="0.5927083333333333" />
         <entry key="app/src/main/res/layout/fragment_notifications.xml" value="0.578125" />
         <entry key="app/src/main/res/layout/fragment_overview.xml" value="0.58125" />
         <entry key="app/src/main/res/layout/fragment_recommended_movies.xml" value="0.5588541666666667" />

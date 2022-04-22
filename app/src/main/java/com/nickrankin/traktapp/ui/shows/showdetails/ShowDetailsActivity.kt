@@ -63,8 +63,10 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
     private var shouldRefreshOverviewData = false
     private var shouldRefreshSeasonData = false
     private var shouldRefreshProgressData = false
-    
+
     private val viewModel: ShowDetailsViewModel by viewModels()
+
+    private lateinit var showDetailsOverviewFragment: ShowDetailsOverviewFragment
 
     @Inject
     lateinit var sharedPreferences: SharedPreferences
@@ -75,19 +77,17 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
     @Inject
     lateinit var gson: Gson
 
+    private var selectedTab: Int? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         bindings = ActivityShowDetailsBinding.inflate(layoutInflater)
 
+
         // Add Overview and Button fragments on first load
         if (null == savedInstanceState) {
             supportFragmentManager.beginTransaction()
-                .add(
-                    bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer.id,
-                    ShowDetailsOverviewFragment.newInstance(),
-                    FRAGMENT_OVERVIEW_TAG
-                )
                 .add(
                     bindings.showdetailsactivityInner.showdetailsactivityButtonsFragmentContainer.id,
                     ShowDetailsActionButtonsFragment.newInstance(),
@@ -106,9 +106,9 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
         tabLayout = bindings.showdetailsactivityInner.showdetailsactivityTablayout
         tabLayout.addOnTabSelectedListener(this)
 
-        // If activity is destroyed, restore selected tab
+        // If activity is destroyed, restore selected tab.
         if (savedInstanceState?.containsKey(SELECT_TAB_POS) == true) {
-            tabLayout.selectTab(tabLayout.getTabAt(savedInstanceState.getInt(SELECT_TAB_POS)))
+            selectedTab = savedInstanceState.getInt(SELECT_TAB_POS)
         }
 
         // Action bar setup
@@ -140,15 +140,19 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
                 val show = showResource.data
                 when (showResource) {
                     is Resource.Loading -> {
-                        bindings.showdetailsactivityInner.showdetailsactivityMainGroup.visibility = View.GONE
-                        bindings.showdetailsactivityInner.showdetailsactivityErrorGroup.visibility = View.GONE
+                        bindings.showdetailsactivityInner.showdetailsactivityMainGroup.visibility =
+                            View.GONE
+                        bindings.showdetailsactivityInner.showdetailsactivityErrorGroup.visibility =
+                            View.GONE
 
                         toggleProgressBar(true)
                         Log.d(TAG, "collectShow: Show loading")
                     }
                     is Resource.Success -> {
-                        bindings.showdetailsactivityInner.showdetailsactivityMainGroup.visibility = View.VISIBLE
-                        bindings.showdetailsactivityInner.showdetailsactivityErrorGroup.visibility = View.GONE
+                        bindings.showdetailsactivityInner.showdetailsactivityMainGroup.visibility =
+                            View.VISIBLE
+                        bindings.showdetailsactivityInner.showdetailsactivityErrorGroup.visibility =
+                            View.GONE
 
                         toggleProgressBar(false)
                         displayShowInformation(show)
@@ -156,21 +160,26 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
                         handleExternalLinks(show?.external_ids)
                         handleTrailer(show?.videos)
 
+                        createOverviewFragment(show)
+
                     }
                     is Resource.Error -> {
                         toggleProgressBar(false)
 
                         // If show in cache, display it cache
-                        if(show != null) {
-                            bindings.showdetailsactivityInner.showdetailsactivityMainGroup.visibility = View.VISIBLE
+                        if (show != null) {
+                            bindings.showdetailsactivityInner.showdetailsactivityMainGroup.visibility =
+                                View.VISIBLE
 
                             displayShowInformation(show)
                             handleExternalLinks(show.external_ids!!)
                             handleTrailer(show.videos)
-                        } else {
-                            bindings.showdetailsactivityInner.showdetailsactivityErrorGroup.visibility = View.VISIBLE
 
-                           handleError(showResource.error)
+                        } else {
+                            bindings.showdetailsactivityInner.showdetailsactivityErrorGroup.visibility =
+                                View.VISIBLE
+
+                            handleError(showResource.error)
 
                         }
 
@@ -189,6 +198,39 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
         }
     }
 
+    private fun createOverviewFragment(tmShow: TmShow?) {
+        Log.d(TAG, "createOverviewFragment: Called")
+        showDetailsOverviewFragment = ShowDetailsOverviewFragment.newInstance()
+
+        val bundle = Bundle()
+        bundle.putString(ShowDetailsOverviewFragment.OVERVIEW_KEY, tmShow?.overview)
+        Log.d(TAG, "getShow: OVERV ${bundle}")
+        showDetailsOverviewFragment.arguments = bundle
+
+        // If device is rotated, user will see the tab that was selected, otherwise show Overview tab.
+        if (selectedTab != null) {
+            tabLayout.selectTab(tabLayout.getTabAt(selectedTab!!))
+        } else if(supportFragmentManager.findFragmentByTag(FRAGMENT_OVERVIEW_TAG) == null) {
+            // Fragment not added yet, so add it
+            supportFragmentManager.beginTransaction()
+                .add(
+                    bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer.id,
+                    showDetailsOverviewFragment,
+                    FRAGMENT_OVERVIEW_TAG
+                )
+                .commit()
+        } else {
+            // Replace Fragment with Overview Fragment
+            supportFragmentManager.beginTransaction()
+                .replace(
+                    bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer.id,
+                    showDetailsOverviewFragment,
+                    FRAGMENT_OVERVIEW_TAG
+                )
+                .commit()
+        }
+    }
+
     private fun toggleProgressBar(isRefreshing: Boolean) {
         val progressBar = bindings.showdetailsactivityInner.showdetailsactivityProgressbar
 
@@ -196,7 +238,8 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
             swipeRefeshLayout.isRefreshing = false
         }
 
-        if(isRefreshing) progressBar.visibility = View.VISIBLE else progressBar.visibility = View.GONE
+        if (isRefreshing) progressBar.visibility = View.VISIBLE else progressBar.visibility =
+            View.GONE
 
     }
 
@@ -204,10 +247,12 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
         val errorTextView = bindings.showdetailsactivityInner.showdetailsactivityErrorText
         val retryButton = bindings.showdetailsactivityInner.showdetailsactivityRetryButton
 
-        if(exception is HttpException) {
-            errorTextView.text = "A HTTP Error has occurred getting the show. (Error code: HTTP: ${exception.code()}). ${exception.localizedMessage}. Please check your internet connection"
+        if (exception is HttpException) {
+            errorTextView.text =
+                "A HTTP Error has occurred getting the show. (Error code: HTTP: ${exception.code()}). ${exception.localizedMessage}. Please check your internet connection"
         } else {
-            errorTextView.text = "A Error has occurred getting the show. ${exception?.localizedMessage}. Please check your internet connection"
+            errorTextView.text =
+                "A Error has occurred getting the show. ${exception?.localizedMessage}. Please check your internet connection"
         }
 
         retryButton.setOnClickListener {
@@ -376,21 +421,28 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
         try {
 
             val actionButtonSwipeLayout = supportFragmentManager.findFragmentByTag(
-                FRAGMENT_ACTION_BUTTONS) as SwipeRefreshLayout.OnRefreshListener
+                FRAGMENT_ACTION_BUTTONS
+            ) as SwipeRefreshLayout.OnRefreshListener
 
             actionButtonSwipeLayout.onRefresh()
 
-        } catch(e: ClassCastException) {
-            Log.e(TAG, "refreshActionButtons: Couldn't Cast ${supportFragmentManager.findFragmentByTag(
-                FRAGMENT_ACTION_BUTTONS)} to SwipeRefreshLayout.OnRefreshListener", )
+        } catch (e: ClassCastException) {
+            Log.e(
+                TAG,
+                "refreshActionButtons: Couldn't Cast ${
+                    supportFragmentManager.findFragmentByTag(
+                        FRAGMENT_ACTION_BUTTONS
+                    )
+                } to SwipeRefreshLayout.OnRefreshListener",
+            )
             e.printStackTrace()
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
     private fun handleTrailer(videos: Videos?) {
-        if(videos != null && videos.results?.isNotEmpty() == true) {
+        if (videos != null && videos.results?.isNotEmpty() == true) {
             val trailerButton = bindings.showdetailsactivityInner.showdetailsactivityTrailer
             trailerButton.visibility = View.VISIBLE
 
@@ -403,7 +455,7 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
     private fun handleExternalLinks(externalIds: TvExternalIds?) {
         val imdbExternalId = externalIds?.imdb_id
 
-        if(imdbExternalId != null) {
+        if (imdbExternalId != null) {
             val imdbButton = bindings.showdetailsactivityInner.showdetailsactivityImdbButton
             imdbButton.visibility = View.VISIBLE
 
@@ -428,15 +480,14 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
     }
 
     private fun refreshCurrentTab() {
-            // Refresh the current tab. Selecting current tab will reselect and trigger refresh
-            val currentTab = tabLayout.selectedTabPosition
-            tabLayout.selectTab(tabLayout.getTabAt(currentTab))
+        // Refresh the current tab. Selecting current tab will reselect and trigger refresh
+        val currentTab = tabLayout.selectedTabPosition
+        tabLayout.selectTab(tabLayout.getTabAt(currentTab))
     }
 
     override fun onTabSelected(tab: TabLayout.Tab?) {
         when (tab?.position) {
             0 -> {
-                val showDetailsOverviewFragment = ShowDetailsOverviewFragment.newInstance()
                 supportFragmentManager.beginTransaction()
                     .replace(
                         bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer.id,
@@ -444,18 +495,6 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
                         FRAGMENT_OVERVIEW_TAG
                     )
                     .commit()
-
-                if (shouldRefreshOverviewData) {
-                    Log.d(TAG, "onTabSelected: Forcing Refresh of Overview tab")
-
-                    // without this, Dagger will fail. Make sure Fragment is fully attached before executing onRefresh()
-                    supportFragmentManager.executePendingTransactions()
-
-
-                    showDetailsOverviewFragment.onRefresh()
-
-                    shouldRefreshOverviewData = false
-                }
 
                 Log.d(TAG, "onTabSelected: Tab Overview selected")
             }
@@ -507,14 +546,6 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
                 Log.d(TAG, "onTabSelected: Tab Progress selected")
             }
             else -> {
-                supportFragmentManager.beginTransaction()
-                    .replace(
-                        bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer.id,
-                        ShowDetailsOverviewFragment.newInstance(
-                        ),
-                        FRAGMENT_OVERVIEW_TAG
-                    )
-                    .commit()
 
                 Log.d(TAG, "onTabSelected: Tab Unknown (${tab?.position}) selected")
             }
@@ -524,7 +555,6 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
     override fun onTabUnselected(tab: TabLayout.Tab?) {
         when (tab?.position) {
             0 -> {
-
                 Log.d(TAG, "onTabSelected: Tab Overview unselected")
             }
             1 -> {
@@ -542,9 +572,13 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
     override fun onTabReselected(tab: TabLayout.Tab?) {
         when (tab?.position) {
             0 -> {
-                refreshFragment(FRAGMENT_OVERVIEW_TAG)
-
                 Log.d(TAG, "onTabSelected: Tab Overview reselected")
+
+                // We need to check Fragment is Attached to Activity to prevent crash situation
+                if (showDetailsOverviewFragment.isAdded) {
+                    Log.d(TAG, "onTabReselected: Refreshing Overview")
+                    (showDetailsOverviewFragment as SwipeRefreshLayout.OnRefreshListener).onRefresh()
+                }
             }
             1 -> {
                 refreshFragment(FRAGMENT_SEASONS_TAG)

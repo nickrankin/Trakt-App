@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <TextView
+        android:id="@+id/moviedetailsoverview_overview"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/moviedetailsoverview_cast_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:text="Cast"
+        app:layout_constraintStart_toStartOf="@id/moviedetailsoverview_overview"
+        app:layout_constraintTop_toBottomOf="@id/moviedetailsoverview_overview" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/showdetailsactivity_crew_toggle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        tools:visibility="visible"
+        app:constraint_referenced_ids="showdetailsactivity_cast_regular_button,showdetailsactivity_cast_guest_button" />
+
+    <TextView
+        android:id="@+id/showdetailsactivity_cast_regular_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        tools:visibility="visible"
+        android:textColor="?colorPrimaryDark"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:padding="6dp"
+        tools:text="Season Regulars (15)"
+        app:layout_constraintTop_toBottomOf="@id/moviedetailsoverview_cast_title"
+        app:layout_constraintStart_toStartOf="@id/moviedetailsoverview_cast_title" />
+    <TextView
+        android:id="@+id/showdetailsactivity_cast_guest_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:textColor="?colorPrimaryDark"
+        android:textSize="16sp"
+        android:padding="6dp"
+        tools:visibility="visible"
+        tools:text="Guest Stars (15)"
+        app:layout_constraintTop_toBottomOf="@id/moviedetailsoverview_cast_title"
+        app:layout_constraintStart_toEndOf="@id/showdetailsactivity_cast_regular_button" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/moviedetailsoverview_cast_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:nestedScrollingEnabled="false"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintStart_toStartOf="@id/moviedetailsoverview_overview"
+        app:layout_constraintEnd_toEndOf="@id/moviedetailsoverview_overview"
+        app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_cast_regular_button" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/moviedetailsoverview_main_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:constraint_referenced_ids="moviedetailsoverview_overview,showdetailsactivity_cast_guest_button,moviedetailsoverview_cast_title,moviedetailsoverview_cast_recycler,showdetailsactivity_crew_toggle,showdetailsactivity_cast_regular_button" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

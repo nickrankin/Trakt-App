@@ -28,7 +28,7 @@ import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.movies.watched.WatchedMoviesViewModel
 import com.nickrankin.traktapp.model.shows.WatchedEpisodesViewModel
 import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
-import com.nickrankin.traktapp.ui.movies.MovieDetailsActivity
+import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest

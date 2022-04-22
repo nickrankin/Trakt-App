@@ -58,30 +58,6 @@ class MovieDataHelper @Inject constructor(
         return foundTmdbMovie.results?.first()
     }
 
-    /**
-     *     @PrimaryKey val trakt_id: Int,
-    val tmdb_id: Int?,
-    val title: String,
-    val overview: String?,
-    val original_language: String,
-    val original_title: String?,
-    val external_ids: MovieExternalIds,
-    val homepage: String?,
-    val poster_path: String?,
-    val backdrop_path: String?,
-    val imdb_id: String?,
-    val production_companies: List<BaseCompany?>
-    val production_countries: List<Country?>,
-    val release_date: Date?,
-    val revenue: Int?,
-    val runtime: Int?,
-    val status: Status?,
-    val tagline: String?,
-    val videos: Videos?
-     *
-     *
-     * */
-
     private fun getMovieDataTmdb(traktMovie: com.uwetrottmann.trakt5.entities.Movie, tmdbMovie: Movie): TmMovie? {
         return TmMovie(
             traktMovie.ids?.trakt ?: 0,

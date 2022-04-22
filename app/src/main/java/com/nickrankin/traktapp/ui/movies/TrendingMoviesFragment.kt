@@ -22,6 +22,7 @@ import com.nickrankin.traktapp.helper.PosterImageLoader
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.movies.TrendingMoviesViewModel
 import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
+import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject

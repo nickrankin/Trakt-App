@@ -1,4 +1,4 @@
-package com.nickrankin.traktapp.ui.movies
+package com.nickrankin.traktapp.ui.movies.moviedetails
 
 import android.content.DialogInterface
 import android.content.SharedPreferences

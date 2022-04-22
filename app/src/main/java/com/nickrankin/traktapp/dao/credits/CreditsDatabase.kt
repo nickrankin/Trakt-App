@@ -5,18 +5,20 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.nickrankin.traktapp.dao.credits.model.CastPerson
+import com.nickrankin.traktapp.dao.credits.model.MovieCastPersonData
 import com.nickrankin.traktapp.dao.credits.model.ShowCastPersonData
 
 @Database(
     entities = [CastPerson::class,
-               ShowCastPersonData::class],
+               ShowCastPersonData::class,
+               MovieCastPersonData::class],
     version = 1,
     exportSchema = false
 )
 abstract class CreditsDatabase : RoomDatabase() {
     abstract fun castPersonDao(): CastPersonDao
     abstract fun showCastPeopleDao(): ShowCastPeopleDao
-
+    abstract fun movieCastPeopleDao(): MovieCastPeopleDao
     companion object {
         @Volatile
         private var INSTANCE: CreditsDatabase? = null

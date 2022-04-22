@@ -1,13 +1,13 @@
 package com.nickrankin.traktapp.ui.shows.showdetails
 
+import android.content.Context
 import android.graphics.Typeface
-import androidx.lifecycle.ViewModelProvider
 import android.os.Bundle
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
@@ -16,8 +16,6 @@ import com.bumptech.glide.RequestManager
 import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexWrap
 import com.google.android.flexbox.FlexboxLayoutManager
-import com.nickrankin.traktapp.R
-import com.nickrankin.traktapp.adapter.credits.CrewCreditsAdapter
 import com.nickrankin.traktapp.adapter.credits.ShowCastCreditsAdapter
 import com.nickrankin.traktapp.dao.credits.ShowCastPerson
 import com.nickrankin.traktapp.dao.show.model.TmShow
@@ -31,7 +29,7 @@ import javax.inject.Inject
 private const val TAG = "ShowDetailsOverviewFrag"
 
 @AndroidEntryPoint
-class ShowDetailsOverviewFragment() : Fragment(), SwipeRefreshLayout.OnRefreshListener {
+class ShowDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
 
     private lateinit var bindings: ShowDetailsOverviewFragmentBinding
     private val viewModel: ShowDetailsOverviewViewModel by activityViewModels()
@@ -39,13 +37,16 @@ class ShowDetailsOverviewFragment() : Fragment(), SwipeRefreshLayout.OnRefreshLi
     private lateinit var castRecyclerView: RecyclerView
     private lateinit var showCastCreditsAdapter: ShowCastCreditsAdapter
 
+    private lateinit var overview: String
+
+
     @Inject
     lateinit var glide: RequestManager
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         bindings = ShowDetailsOverviewFragmentBinding.inflate(inflater)
         return bindings.root
     }
@@ -53,24 +54,15 @@ class ShowDetailsOverviewFragment() : Fragment(), SwipeRefreshLayout.OnRefreshLi
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        getShow()
-        getCast()
-    }
+        initCastRecycler()
+        setupCastSwitcher()
 
-    fun getShow() {
+        overview = arguments?.getString(OVERVIEW_KEY, "") ?: ""
 
-        lifecycleScope.launchWhenStarted {
-            viewModel.tmShow.collectLatest { show ->
-                bindings.apply {
-                    showdetailsoverviewOverview.text = show?.overview
-                }
-            }
-        }
-
+        bindShowData()
     }
 
     private fun getCast() {
-        setupCastSwitcher()
 
         lifecycleScope.launchWhenStarted {
             viewModel.cast.collectLatest { castResource ->
@@ -131,26 +123,32 @@ class ShowDetailsOverviewFragment() : Fragment(), SwipeRefreshLayout.OnRefreshLi
             val castToggeButton = bindings.showdetailsactivityCrewToggle
             castToggeButton.visibility = View.VISIBLE
 
-            castRecyclerView = bindings.showdetailsoverviewCastRecycler
-            castRecyclerView.visibility = View.VISIBLE
-
-            val layoutManager = FlexboxLayoutManager(requireContext())
-            layoutManager.flexDirection = FlexDirection.ROW
-            layoutManager.flexWrap = FlexWrap.NOWRAP
-
-            showCastCreditsAdapter = ShowCastCreditsAdapter(glide)
-
-            castRecyclerView.layoutManager = layoutManager
-            castRecyclerView.adapter = showCastCreditsAdapter
-
-            showCastCreditsAdapter.updateCredits(castPersons)
+            showCastCreditsAdapter.submitList(castPersons)
         }
     }
 
+    private fun initCastRecycler() {
+        castRecyclerView = bindings.showdetailsoverviewCastRecycler
+        castRecyclerView.visibility = View.VISIBLE
 
-    override fun onStart() {
-        super.onStart()
+        val layoutManager = FlexboxLayoutManager(requireContext())
+        layoutManager.flexDirection = FlexDirection.ROW
+        layoutManager.flexWrap = FlexWrap.NOWRAP
+
+        showCastCreditsAdapter = ShowCastCreditsAdapter(glide)
+
+        castRecyclerView.layoutManager = layoutManager
+        castRecyclerView.adapter = showCastCreditsAdapter
+    }
+
+    private fun bindShowData() {
         viewModel.onStart()
+        getCast()
+        bindings.showdetailsoverviewMainGroup.visibility = View.VISIBLE
+
+        bindings.apply {
+            showdetailsoverviewOverview.text = overview
+        }
     }
 
     override fun onRefresh() {
@@ -159,6 +157,7 @@ class ShowDetailsOverviewFragment() : Fragment(), SwipeRefreshLayout.OnRefreshLi
     }
 
     companion object {
+        const val OVERVIEW_KEY = "overview_key"
         fun newInstance() = ShowDetailsOverviewFragment()
     }
 }

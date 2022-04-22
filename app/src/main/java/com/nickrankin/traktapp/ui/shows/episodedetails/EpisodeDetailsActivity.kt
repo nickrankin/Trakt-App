@@ -350,9 +350,9 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
         if (castPersons.isNotEmpty()) {
             bindings.episodedetailsactivityInner.showdetailsactivityCastGroup.visibility = View.VISIBLE
 
-            showCastAdapter.updateCredits(castPersons)
+            showCastAdapter.submitList(castPersons)
         } else {
-            showCastAdapter.updateCredits(emptyList())
+            showCastAdapter.submitList(emptyList())
         }
     }
 

@@ -21,7 +21,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TraktApp">
         <activity
-            android:name=".ui.movies.MovieDetailsActivity"
+            android:name=".ui.movies.moviedetails.MovieDetailsActivity"
             android:exported="false"
             android:label="@string/title_activity_movie_details"
             android:theme="@style/Theme.TraktApp.NoActionBar" />

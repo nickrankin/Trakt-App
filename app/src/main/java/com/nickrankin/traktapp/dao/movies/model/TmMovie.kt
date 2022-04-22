@@ -6,6 +6,7 @@ import com.uwetrottmann.tmdb2.entities.*
 import com.uwetrottmann.tmdb2.enumerations.Status
 import java.util.*
 
+
 @Entity(tableName = "movies")
 data class TmMovie(
     @PrimaryKey val trakt_id: Int,

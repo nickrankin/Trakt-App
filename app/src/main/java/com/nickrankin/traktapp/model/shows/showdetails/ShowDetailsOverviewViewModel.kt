@@ -9,8 +9,10 @@ import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsSeasonsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -22,8 +24,6 @@ class ShowDetailsOverviewViewModel @Inject constructor(private val savedStateHan
     val traktId: Int = savedStateHandle.get(ShowDetailsRepository.SHOW_TRAKT_ID_KEY) ?: 0
     val tmdbId: Int = savedStateHandle.get(ShowDetailsRepository.SHOW_TMDB_ID_KEY) ?: -1
 
-    val tmShow = repository.tmShowDao.getShow(traktId)
-
     /**
      *
      * First: showGuestStars
@@ -31,6 +31,7 @@ class ShowDetailsOverviewViewModel @Inject constructor(private val savedStateHan
      * */
     private val castRefreshEventChannel = Channel<Pair<Boolean, Boolean>>()
     private val castRefreshEvent = castRefreshEventChannel.receiveAsFlow()
+        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
     val cast = castRefreshEvent.flatMapLatest { updateCast ->
         repository.getCredits(traktId, tmdbId, updateCast.first, updateCast.second)
