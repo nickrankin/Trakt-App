@@ -36,6 +36,8 @@
         <entry key="app/src/main/res/layout/activity_show_details_inner.xml" value="0.4382849718492854" />
         <entry key="app/src/main/res/layout/activity_show_search_results.xml" value="0.5442708333333334" />
         <entry key="app/src/main/res/layout/activity_shows_main.xml" value="0.5927083333333333" />
+        <entry key="app/src/main/res/layout/activity_trakt_lists.xml" value="0.5921875" />
+        <entry key="app/src/main/res/layout/add_list_layout.xml" value="0.5921875" />
         <entry key="app/src/main/res/layout/card_episode_layout_item.xml" value="0.8411458333333334" />
         <entry key="app/src/main/res/layout/collected_button_layout.xml" value="0.6906702898550725" />
         <entry key="app/src/main/res/layout/collected_movie_poster_item.xml" value="0.5911458333333334" />
@@ -80,6 +82,7 @@
         <entry key="app/src/main/res/layout/shows_tracking_fragment.xml" value="0.5927083333333333" />
         <entry key="app/src/main/res/layout/toolbar_layout.xml" value="0.5421875" />
         <entry key="app/src/main/res/layout/tracked_show_list_item.xml" value="0.5927083333333333" />
+        <entry key="app/src/main/res/layout/trakt_list_item.xml" value="0.590625" />
         <entry key="app/src/main/res/layout/trending_movie_entry_list_item.xml" value="0.5911458333333334" />
         <entry key="app/src/main/res/layout/watched_button_layout.xml" value="0.5234375" />
         <entry key="app/src/main/res/layout/watched_episode_entry_list_item.xml" value="0.4365942028985507" />

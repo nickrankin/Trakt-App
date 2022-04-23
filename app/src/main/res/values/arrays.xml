@@ -19,4 +19,33 @@
         <item>dd-MM-YYYY HH:mm</item>
         <item>MM-dd-YYYY HH:mm</item>
     </string-array>
+
+    <string-array name="privacy_array">
+        <item>List Privacy</item>
+        <item>FRIENDS</item>
+        <item>PRIVATE</item>
+        <item>PUBLIC</item>
+    </string-array>
+
+    <string-array name="sort_by">
+        <item>Sort By</item>
+        <item>ADDED</item>
+        <item>MY_RATING</item>
+        <item>PERCENTAGE</item>
+        <item>POPULARITY</item>
+        <item>RANDOM</item>
+        <item>RANK</item>
+        <item>RELEASED</item>
+        <item>RUNTIME</item>
+        <item>TITLE</item>
+        <item>VOTES</item>
+    </string-array>
+
+    <string-array name="sort_how">
+        <item>Sort How</item>
+        <item>ASC</item>
+        <item>DESC</item>
+    </string-array>
+
+
 </resources>

@@ -3,6 +3,7 @@ package com.nickrankin.traktapp
 import android.app.SearchManager
 import android.content.Intent
 import android.os.Bundle
+import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.SearchView
@@ -12,6 +13,7 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.preference.PreferenceManager
 import com.google.android.material.navigation.NavigationView
 import com.nickrankin.traktapp.databinding.ActivityMainBinding
+import com.nickrankin.traktapp.ui.lists.TraktListsActivity
 import com.nickrankin.traktapp.ui.movies.MoviesMainActivity
 import com.nickrankin.traktapp.ui.search.ShowSearchResultsActivity
 import com.nickrankin.traktapp.ui.settings.SettingsActivity
@@ -116,22 +118,21 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
         when(item.itemId) {
             R.id.navdrawer_home -> {
                 startActivity(Intent(this, BaseActivity::class.java))
-                return true
             }
             R.id.navdrawer_shows -> {
                 startActivity(Intent(this, ShowsMainActivity::class.java))
-                return true
             }
 
             R.id.navdrawer_movies -> {
                 startActivity(Intent(this, MoviesMainActivity::class.java))
-                return true
             }
 
             R.id.navdrawer_lists -> {
-
+                startActivity(Intent(this, TraktListsActivity::class.java))
             }
         }
+
+        drawerLayout.closeDrawer(Gravity.LEFT)
 
         return false
     }

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <EditText
+        android:id="@+id/newlist_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="List Name"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="8dp" />
+
+
+    <EditText
+        android:id="@+id/newlist_desc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="List Description"
+        app:layout_constraintTop_toBottomOf="@id/newlist_name"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="8dp" />
+
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/newlist_allow_comments"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Allow Comments"
+        android:layout_marginStart="8dp"
+        app:layout_constraintTop_toBottomOf="@id/newlist_desc"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/newlist_display_numbers"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Display Numbers"
+        android:layout_marginStart="8dp"
+        app:layout_constraintTop_toBottomOf="@id/newlist_desc"
+        app:layout_constraintStart_toEndOf="@id/newlist_allow_comments" />
+
+    <Spinner
+        android:id="@+id/newlist_privacy"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        app:layout_constraintTop_toBottomOf="@id/newlist_display_numbers"
+        app:layout_constraintStart_toStartOf="@id/newlist_allow_comments"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <Spinner
+        android:id="@+id/newlist_sort_by"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:padding="8dp"
+
+        app:layout_constraintTop_toBottomOf="@id/newlist_privacy"
+        app:layout_constraintStart_toStartOf="@id/newlist_allow_comments" />
+
+    <Spinner
+        android:id="@+id/newlist_sort_how"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:padding="8dp"
+        app:layout_constraintTop_toBottomOf="@id/newlist_privacy"
+        app:layout_constraintStart_toEndOf="@id/newlist_sort_by" />
+
+    <Button
+        android:id="@+id/newlist_save"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        android:text="Save List"
+
+        app:layout_constraintTop_toBottomOf="@id/newlist_sort_by"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

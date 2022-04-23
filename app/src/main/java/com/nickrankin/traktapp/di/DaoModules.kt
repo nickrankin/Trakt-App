@@ -5,6 +5,7 @@ import com.nickrankin.traktapp.dao.auth.AuthDatabase
 import com.nickrankin.traktapp.dao.credits.CreditsDatabase
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.images.ImagesDatabase
+import com.nickrankin.traktapp.dao.lists.TraktListsDatabase
 import com.nickrankin.traktapp.dao.movies.MoviesDatabase
 import com.nickrankin.traktapp.dao.movies.WatchedMoviesMediatorDatabase
 import com.nickrankin.traktapp.dao.show.WatchedShowsMediatorDatabase
@@ -58,5 +59,11 @@ object DaoModules {
     @Provides
     fun provideImagesDatabase(@ApplicationContext context: Context): ImagesDatabase {
         return ImagesDatabase.getDatabase(context)
+    }
+
+    @Singleton
+    @Provides
+    fun provideTraktListsDatabase(@ApplicationContext context: Context): TraktListsDatabase {
+        return TraktListsDatabase.getDatabase(context)
     }
 }
