@@ -9,10 +9,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.databinding.ReccomendedShowEntryListItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
-import com.nickrankin.traktapp.helper.PosterImageLoader
+import com.nickrankin.traktapp.helper.ImageItemType
+import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.uwetrottmann.trakt5.entities.Show
 
-class RecommendedShowsAdapter(private val glide: RequestManager, private val imageLoader: PosterImageLoader, private val callback: (results: Show?) -> Unit): ListAdapter<Show, RecommendedShowsAdapter.ViewHolder>(
+class RecommendedShowsAdapter(private val glide: RequestManager, private val tmdbImageLoader: TmdbImageLoader, private val callback: (results: Show?) -> Unit): ListAdapter<Show, RecommendedShowsAdapter.ViewHolder>(
     COMPARATOR) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -29,13 +30,7 @@ class RecommendedShowsAdapter(private val glide: RequestManager, private val ima
             collectedentryitemCollectedDate.visibility = View.GONE
             collectedentryitemOverview.text = currentItem?.overview
 
-            imageLoader.loadShowPosterImage(currentItem?.ids?.trakt ?: 0, currentItem?.ids?.tmdb ?: 0, currentItem?.language,currentItem?.title ?: "", currentItem?.year, false, callback = { posterImage ->
-                if(posterImage.poster_path != null) {
-                    glide
-                        .load(AppConstants.TMDB_POSTER_URL + posterImage.poster_path)
-                        .into(collectedentryitemPoster)
-                }
-            })
+            tmdbImageLoader.loadImages(currentItem?.ids?.trakt ?: 0, ImageItemType.SHOW,currentItem?.ids?.tmdb ?: 0,currentItem?.title ?: "", currentItem?.year, false, collectedentryitemPoster, collectedentryitemBackdrop)
 
             root.setOnClickListener {
                 callback(currentItem)

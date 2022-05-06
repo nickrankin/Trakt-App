@@ -19,7 +19,7 @@ import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.adapter.search.ShowSearchLoadStateAdapter
 import com.nickrankin.traktapp.adapter.search.ShowSearchResultsAdapter
 import com.nickrankin.traktapp.databinding.ActivityShowSearchResultsBinding
-import com.nickrankin.traktapp.helper.PosterImageLoader
+import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.model.search.ShowSearchViewModel
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.shows.OnNavigateToShow
@@ -48,7 +48,7 @@ class ShowSearchResultsActivity : AppCompatActivity(), OnNavigateToShow {
     lateinit var glide: RequestManager
 
     @Inject
-    lateinit var posterImageLoader: PosterImageLoader
+    lateinit var tmdbImageLoader: TmdbImageLoader
 
     private val viewModel: ShowSearchViewModel by viewModels()
 
@@ -105,7 +105,7 @@ class ShowSearchResultsActivity : AppCompatActivity(), OnNavigateToShow {
         recyclerView = bindings.showsearchresultsactivityRecyclerview
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        adapter = ShowSearchResultsAdapter(glide, posterImageLoader, callback = { result ->
+        adapter = ShowSearchResultsAdapter(glide, tmdbImageLoader, callback = { result ->
             if(result != null) {
                 val show = result.show
                 navigateToShow(
@@ -149,9 +149,6 @@ class ShowSearchResultsActivity : AppCompatActivity(), OnNavigateToShow {
 
         val intent = Intent(this, ShowDetailsActivity::class.java)
         intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
-        intent.putExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, tmdbId)
-        intent.putExtra(ShowDetailsRepository.SHOW_TITLE_KEY, showTitle)
-        intent.putExtra(ShowDetailsRepository.SHOW_LANGUAGE_KEY, language)
 
         startActivity(intent)
     }

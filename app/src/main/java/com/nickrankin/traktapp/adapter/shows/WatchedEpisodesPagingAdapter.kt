@@ -15,18 +15,19 @@ import androidx.appcompat.widget.PopupMenu
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import at.blogc.android.views.ExpandableTextView
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
 import com.nickrankin.traktapp.databinding.WatchedEpisodeEntryListItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
-import com.nickrankin.traktapp.helper.PosterImageLoader
+import com.nickrankin.traktapp.helper.ImageItemType
+import com.nickrankin.traktapp.helper.TmdbImageLoader
 import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
-import java.time.ZoneOffset
 
 private const val TAG = "WatchedEpisodesPagingAd"
-class WatchedEpisodesPagingAdapter(private val sharedPreferences: SharedPreferences, private val imageLoader: PosterImageLoader, private val glide: RequestManager, private val callback: (selectedShow: WatchedEpisode?, action: Int) -> Unit): PagingDataAdapter<WatchedEpisode, WatchedEpisodesPagingAdapter.WatchedEpisodeViewHolder>(COMPARATOR) {
+class WatchedEpisodesPagingAdapter(private val sharedPreferences: SharedPreferences, private val tmdbImageLoader: TmdbImageLoader, private val glide: RequestManager, private val callback: (selectedShow: WatchedEpisode?, action: Int) -> Unit): PagingDataAdapter<WatchedEpisode, WatchedEpisodesPagingAdapter.WatchedEpisodeViewHolder>(COMPARATOR) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): WatchedEpisodeViewHolder {
         return WatchedEpisodeViewHolder(WatchedEpisodeEntryListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
@@ -38,24 +39,20 @@ class WatchedEpisodesPagingAdapter(private val sharedPreferences: SharedPreferen
         holder.bindings.apply {
             // clear poster value to prevent flickering overlapping
             watchedentryitemPoster.setImageDrawable(null)
+            watchedentryitemBackdrop.setImageDrawable(null)
 
             watchedentryitemTitle.text = currentItem?.episode_title
             watchedentryitemShowTitle.text = currentItem?.show_title
-            watchedentryitemSeasonEpisodeNumber.text = "Season ${currentItem?.episode_season} Episode ${currentItem?.episode_number}"
+            watchedentryitemSeasonEpisodeNumber.text = "Season ${currentItem?.episode_season}, Episode ${currentItem?.episode_number}"
             watchedentryitemWatchedDate.text = "Watched: " + currentItem?.watched_at?.atZoneSameInstant(
                 ZoneId.systemDefault())?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)))
 
-            imageLoader.loadShowPosterImage(currentItem?.show_trakt_id ?: 0, currentItem?.show_tmdb_id ?: 0, currentItem?.language, currentItem?.show_title ?: "", null, true, callback = { posterImage ->
-                if(posterImage.poster_path != null) {
-                    glide
-                        .load(AppConstants.TMDB_POSTER_URL + posterImage.poster_path)
-                        .into(watchedentryitemPoster)
-                }
-            })
+            tmdbImageLoader.loadEpisodeImages(currentItem?.episode_trakt_id ?: 0, currentItem?.show_tmdb_id ?: 0, currentItem?.show_trakt_id ?: 0, currentItem?.episode_season, currentItem?.episode_number, currentItem?.show_title ?: "", true, watchedentryitemPoster, watchedentryitemBackdrop)
 
-            watchedentryitemMenu.setOnClickListener {
-                showPopupMenu(holder.itemView, currentItem)
+            watchedentryitemOverview.setOnClickListener { v ->
+                val expandableTextView = v as ExpandableTextView
 
+                expandableTextView.toggle()
             }
 
             root.setOnClickListener { callback(currentItem, ACTION_NAVIGATE_EPISODE) }

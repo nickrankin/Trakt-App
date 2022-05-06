@@ -35,11 +35,10 @@ open class CreditsRepository @Inject constructor(
             }
 
             showsDatabase.withTransaction {
-                castPersons.map { castPersonPair ->
-                    castPersonDao.insert(castPersonPair.second)
-                    showCastPeopleDao.insert(castPersonPair.first)
+                castPersons.map { castData ->
+                    castPersonDao.insert(castData.castPerson)
+                    showCastPeopleDao.insert(castData.castPersonData)
                 }
-
             }
         }
     )

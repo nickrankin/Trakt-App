@@ -6,9 +6,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CastPersonDao {
-    @Transaction
-    @Query("SELECT * FROM cast_persons WHERE traktId = :traktId")
-    fun getCastPerson(traktId: Int): Flow<CastPerson>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(castPerson: CastPerson)

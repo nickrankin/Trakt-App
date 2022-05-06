@@ -27,15 +27,13 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.google.android.material.snackbar.Snackbar
+import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.shows.WatchedEpisodesLoadStateAdapter
 import com.nickrankin.traktapp.adapter.shows.WatchedEpisodesPagingAdapter
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
 import com.nickrankin.traktapp.databinding.FragmentWatchingBinding
-import com.nickrankin.traktapp.helper.AppConstants
-import com.nickrankin.traktapp.helper.ItemDecorator
-import com.nickrankin.traktapp.helper.PosterImageLoader
-import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.shows.WatchedEpisodesViewModel
 import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
@@ -52,7 +50,7 @@ import javax.inject.Inject
 
 private const val TAG = "WatchingFragment"
 @AndroidEntryPoint
-class WatchingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNavigateToShow, OnNavigateToEpisode {
+class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, OnNavigateToShow, OnNavigateToEpisode {
     
     private val viewModel by activityViewModels<WatchedEpisodesViewModel>()
 
@@ -67,24 +65,18 @@ class WatchingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNav
     lateinit var sharedPreferences: SharedPreferences
     
     @Inject
-    lateinit var imageLoader: PosterImageLoader
+    lateinit var tmdbImageLoader: TmdbImageLoader
 
     @Inject
     lateinit var glide: RequestManager
 
     private var isLoggedIn = false
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-    }
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         bindings = FragmentWatchingBinding.inflate(inflater)
-        // Inflate the layout for this fragment
 
         isLoggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
 
@@ -97,19 +89,16 @@ class WatchingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNav
 
         progressBar = bindings.showwatchingfragmentProgressbar
 
-        initRecycler()
+        updateTitle("Watched Episodes")
 
+        initRecycler()
         collectEvents()
-        
+
         if(isLoggedIn) {
-            lifecycleScope.launch {
                 collectEpisodes()
-            }
         } else {
             handleLoggedOutState()
         }
-        
-
     }
 
     private fun handleLoggedOutState() {
@@ -128,18 +117,20 @@ class WatchingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNav
         }
     }
     
-    private suspend fun collectEpisodes() {
-        viewModel.watchedEpisodes.collectLatest { latestData ->
+    private fun collectEpisodes() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.watchedEpisodes.collectLatest { latestData ->
 
 
-            progressBar.visibility = View.GONE
+                progressBar.visibility = View.GONE
 
-            if(swipeLayout.isRefreshing) {
-                swipeLayout.isRefreshing = false
+                if(swipeLayout.isRefreshing) {
+                    swipeLayout.isRefreshing = false
+                }
+
+                adapter.submitData(latestData)
+
             }
-
-            adapter.submitData(latestData)
-
         }
     }
 
@@ -176,7 +167,7 @@ class WatchingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNav
     private fun initRecycler() {
         recyclerView = bindings.showwatchingfragmentRecyclerview
         layoutManager = LinearLayoutManager(context)
-        adapter = WatchedEpisodesPagingAdapter(sharedPreferences, imageLoader, glide, callback = {selectedEpisode, action ->
+        adapter = WatchedEpisodesPagingAdapter(sharedPreferences, tmdbImageLoader, glide, callback = {selectedEpisode, action ->
             when(action) {
                 WatchedEpisodesPagingAdapter.ACTION_NAVIGATE_EPISODE -> {
                     navigateToEpisode(selectedEpisode?.show_trakt_id ?: 0,selectedEpisode?.show_tmdb_id, selectedEpisode?.episode_season ?: 0, selectedEpisode?.episode_number ?: 0, selectedEpisode?.language ?: "en")
@@ -223,9 +214,6 @@ class WatchingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNav
     override fun navigateToShow(traktId: Int, tmdbId: Int, showTitle: String?, language: String?) {
         val intent = Intent(context, ShowDetailsActivity::class.java)
         intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
-        intent.putExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, tmdbId)
-        intent.putExtra(ShowDetailsRepository.SHOW_TITLE_KEY, showTitle)
-        intent.putExtra(ShowDetailsRepository.SHOW_LANGUAGE_KEY, language)
 
         startActivity(intent)
     }

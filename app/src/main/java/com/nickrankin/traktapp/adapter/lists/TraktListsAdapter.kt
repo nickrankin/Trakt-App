@@ -10,7 +10,7 @@ import com.nickrankin.traktapp.dao.lists.model.TraktList
 import com.nickrankin.traktapp.databinding.TraktListItemBinding
 import org.threeten.bp.format.DateTimeFormatter
 
-class TraktListsAdapter(private val sharedPreferences: SharedPreferences): ListAdapter<TraktList, TraktListsAdapter.ViewHolder>(COMPARATOR) {
+class TraktListsAdapter(private val sharedPreferences: SharedPreferences, private val callback: (action: String, traktList: TraktList) -> Unit): ListAdapter<TraktList, TraktListsAdapter.ViewHolder>(COMPARATOR) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return ViewHolder(TraktListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
@@ -21,8 +21,12 @@ class TraktListsAdapter(private val sharedPreferences: SharedPreferences): ListA
 
         holder.bindings.apply {
             listitemName.text = currentItem.name
-            listitemCreated.text = currentItem.created_at.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", "dd/MM/yyyy")))
+            listitemCreated.text = "Created: " + currentItem.created_at.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", "dd/MM/yyyy")))
             listitemCount.text = "In list ${currentItem.item_count} items"
+
+            root.setOnClickListener { callback(OPEN_LIST, currentItem) }
+            listitemEdit.setOnClickListener { callback(EDIT_LIST, currentItem) }
+            listitemDelete.setOnClickListener { callback(DELETE_LIST, currentItem) }
         }
     }
 
@@ -30,6 +34,10 @@ class TraktListsAdapter(private val sharedPreferences: SharedPreferences): ListA
 
 
     companion object {
+        const val OPEN_LIST = "open_list"
+        const val EDIT_LIST = "edit_list"
+        const val DELETE_LIST = "delete_list"
+
         private val COMPARATOR = object: DiffUtil.ItemCallback<TraktList>() {
             override fun areItemsTheSame(oldItem: TraktList, newItem: TraktList): Boolean {
                 return oldItem == newItem

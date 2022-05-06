@@ -1,5 +1,7 @@
 package com.nickrankin.traktapp.adapter.movies
 
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -13,12 +15,13 @@ import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.dao.movies.model.CollectedMovie
 import com.nickrankin.traktapp.databinding.MoviePosterItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
-import com.nickrankin.traktapp.helper.PosterImageLoader
+import com.nickrankin.traktapp.helper.ImageItemType
+import com.nickrankin.traktapp.helper.TmdbImageLoader
 
 
 private const val TAG = "CollectedMoviesAdapter"
 class CollectedMoviesAdapter(private val glide: RequestManager,
-                             private val imageLoader: PosterImageLoader,
+                             private val tmdbImageLoader: TmdbImageLoader,
                              private val callback: (selectedShow: CollectedMovie, action: Int) -> Unit
 ) : ListAdapter<CollectedMovie, CollectedMoviesAdapter.ViewHolder>(
     COMPARATOR
@@ -45,21 +48,15 @@ class CollectedMoviesAdapter(private val glide: RequestManager,
             movieitemTitle.text = currentItem.title
 
 //
-                imageLoader.loadMoviePosterImage(
+                tmdbImageLoader.loadImages(
                     currentItem.trakt_id,
+                    ImageItemType.MOVIE,
                     currentItem.tmdb_id,
-                    currentItem?.language,
+                    currentItem.title,
+                    null,
                     true,
-                    callback = { posterImage ->
-                        if (posterImage.poster_path != null && posterImage.trakt_id == currentItem.trakt_id) {
-                            glide
-                                .load(AppConstants.TMDB_POSTER_URL + posterImage.poster_path)
-                                .placeholder(R.drawable.ic_trakt_svgrepo_com)
-//                                .diskCacheStrategy(DiskCacheStrategy.NONE)
-//                                .skipMemoryCache(true)
-                                .into(movieitemPoster)
-                        }
-                    })
+                    movieitemPoster,
+                null)
 
 
 

@@ -13,11 +13,12 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
+import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.shows.ShowCalendarEntriesAdapter
 import com.nickrankin.traktapp.databinding.FragmentShowsOverviewBinding
-import com.nickrankin.traktapp.helper.PosterImageLoader
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.model.auth.shows.ShowsOverviewViewModel
 import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
@@ -33,7 +34,7 @@ import javax.inject.Inject
 
 private const val TAG = "OverviewFragment"
 @AndroidEntryPoint
-class ShowsUpcomingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNavigateToShow, OnNavigateToEpisode {
+class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, OnNavigateToShow, OnNavigateToEpisode {
     
     @Inject
     lateinit var sharedPreferences: SharedPreferences
@@ -42,7 +43,7 @@ class ShowsUpcomingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, 
     lateinit var glide: RequestManager
 
     @Inject
-    lateinit var posterImageLoader: PosterImageLoader
+    lateinit var tmdbImageLoader: TmdbImageLoader
     
     private lateinit var bindings: FragmentShowsOverviewBinding
     private lateinit var progressBar: ProgressBar
@@ -83,14 +84,13 @@ class ShowsUpcomingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, 
 
         refreshLayout.setOnRefreshListener(this)
 
+        updateTitle("Upcoming Shows")
+
         progressBar = bindings.showsoverviewfragmentProgressbar
         if(isLoggedIn) {
             setupRecyclerView()
-            
-            lifecycleScope.launch {
-                getMyShows()
-            }
-            
+            getMyShows()
+
         } else {
             handleLoggedOutState()
         }
@@ -118,66 +118,69 @@ class ShowsUpcomingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, 
         }
     }
     
-    private suspend fun getMyShows() {
-        viewModel.myShows.collectLatest { myShowsResource ->
-            when(myShowsResource) {
-                is Resource.Loading -> {
-                    Log.d(TAG, "getMyShows: Loading shows")
-                    progressBar.visibility = View.VISIBLE
-                }
-                is Resource.Success -> {
-                    progressBar.visibility = View.GONE
-                    messageContainer.visibility = View.GONE
-
-                    if(refreshLayout.isRefreshing) {
-                        refreshLayout.isRefreshing = false
+    private fun getMyShows() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.myShows.collectLatest { myShowsResource ->
+                when(myShowsResource) {
+                    is Resource.Loading -> {
+                        Log.d(TAG, "getMyShows: Loading shows")
+                        progressBar.visibility = View.VISIBLE
                     }
-                    val data = myShowsResource.data
+                    is Resource.Success -> {
+                        progressBar.visibility = View.GONE
+                        messageContainer.visibility = View.GONE
 
-                    Log.d(TAG, "getMyShows: Got ${data?.size} SHOWS")
+                        if(refreshLayout.isRefreshing) {
+                            refreshLayout.isRefreshing = false
+                        }
+                        val data = myShowsResource.data
+
+                        Log.d(TAG, "getMyShows: Got ${data?.size} SHOWS")
 
 //                    data?.map {
 //                        Log.d(TAG, "getMyShows: Got show ${it.show_title} airing episode ${it.episode_title} S${it.episode_season} // E${it.episode_number} on ${it.first_aired.toString()}")
 //                    }
 
-                    if(data?.isEmpty() == true) {
-                        messageContainer.visibility = View.VISIBLE
-                        messageContainer.text = "No upcoming shows!"
-                    } else {
+                        if(data?.isEmpty() == true) {
+                            messageContainer.visibility = View.VISIBLE
+                            messageContainer.text = "No upcoming shows!"
+                        } else {
+                            messageContainer.visibility = View.GONE
+                        }
+
+                        adapter.submitList(data?.sortedBy {
+                            it.first_aired
+                        })
+                    }
+                    is Resource.Error -> {
                         messageContainer.visibility = View.GONE
-                    }
+                        progressBar.visibility = View.GONE
 
-                    adapter.submitList(data?.sortedBy {
-                        it.first_aired
-                    })
+                        if(refreshLayout.isRefreshing) {
+                            refreshLayout.isRefreshing = false
+                        }
+
+                        if(myShowsResource.data != null) {
+                            adapter.submitList(myShowsResource.data ?: emptyList())
+                        }else {
+                            messageContainer.visibility = View.VISIBLE
+                            messageContainer.text = "An error occurred loading your shows. ${myShowsResource.error?.localizedMessage}"
+                        }
+
+
+                        Log.e(TAG, "getMyShows: Error getting my shows.. ${myShowsResource.error?.localizedMessage}", )
+                    }
                 }
-                is Resource.Error -> {
-                    messageContainer.visibility = View.GONE
-                    progressBar.visibility = View.GONE
-
-                    if(refreshLayout.isRefreshing) {
-                        refreshLayout.isRefreshing = false
-                    }
-
-                    if(myShowsResource.data != null) {
-                        adapter.submitList(myShowsResource.data ?: emptyList())
-                    }else {
-                        messageContainer.visibility = View.VISIBLE
-                        messageContainer.text = "An error occurred loading your shows. ${myShowsResource.error?.localizedMessage}"
-                    }
-
-
-                    Log.e(TAG, "getMyShows: Error getting my shows.. ${myShowsResource.error?.localizedMessage}", )
-                }
-            }            
+            }
         }
+
     }
 
     private fun setupRecyclerView() {
         recyclerView = bindings.showsoverviewfragmentRecyclerview
         layoutManager = LinearLayoutManager(context)
 
-        adapter = ShowCalendarEntriesAdapter(sharedPreferences, posterImageLoader, glide, callback = { calendarEntry, action ->
+        adapter = ShowCalendarEntriesAdapter(sharedPreferences, tmdbImageLoader, glide, callback = { calendarEntry, action ->
             when(action) {
                 ShowCalendarEntriesAdapter.ACTION_NAVIGATE_EPISODE -> {
                     navigateToEpisode(calendarEntry.show_trakt_id, calendarEntry.show_tmdb_id, calendarEntry.episode_season, calendarEntry.episode_number, calendarEntry.language ?: "en")
@@ -208,9 +211,6 @@ class ShowsUpcomingFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, 
 
         val intent = Intent(context, ShowDetailsActivity::class.java)
         intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
-        intent.putExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, tmdbId)
-        intent.putExtra(ShowDetailsRepository.SHOW_TITLE_KEY, showTitle)
-        intent.putExtra(ShowDetailsRepository.SHOW_LANGUAGE_KEY, language)
 
         startActivity(intent)
     }

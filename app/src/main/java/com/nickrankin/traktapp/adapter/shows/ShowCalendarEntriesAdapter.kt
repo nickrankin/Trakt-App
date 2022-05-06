@@ -14,17 +14,19 @@ import androidx.appcompat.widget.PopupMenu
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import at.blogc.android.views.ExpandableTextView
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.dao.calendars.model.ShowCalendarEntry
 import com.nickrankin.traktapp.databinding.ShowCalendarEntryListItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
-import com.nickrankin.traktapp.helper.PosterImageLoader
+import com.nickrankin.traktapp.helper.ImageItemType
+import com.nickrankin.traktapp.helper.TmdbImageLoader
 import org.threeten.bp.format.DateTimeFormatter
 import javax.inject.Inject
 
 private const val TAG = "ShowCalendarEntriesAdap"
-class ShowCalendarEntriesAdapter @Inject constructor(private val sharedPreferences: SharedPreferences, private val posterImageLoader: PosterImageLoader, private val glide: RequestManager, private val callback: (selectedShow: ShowCalendarEntry, action: Int) -> Unit): ListAdapter<ShowCalendarEntry, ShowCalendarEntriesAdapter.CalendarEntryViewHolder>(
+class ShowCalendarEntriesAdapter @Inject constructor(private val sharedPreferences: SharedPreferences, private val tmdbImageLoader: TmdbImageLoader, private val glide: RequestManager, private val callback: (selectedShow: ShowCalendarEntry, action: Int) -> Unit): ListAdapter<ShowCalendarEntry, ShowCalendarEntriesAdapter.CalendarEntryViewHolder>(
     COMPARATOR) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CalendarEntryViewHolder {
@@ -43,19 +45,24 @@ class ShowCalendarEntriesAdapter @Inject constructor(private val sharedPreferenc
             showentryitemAirDate.text = "Airing: " + currentItem.first_aired?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)))
             showentryitemOverview.text = currentItem.episode_overview
 
-            posterImageLoader.loadShowPosterImage(currentItem.show_trakt_id, currentItem.show_tmdb_id, currentItem?.language, currentItem?.show_title ?: "", currentItem.first_aired?.year, true, callback = { posterImage ->
-                if(posterImage.poster_path != null) {
-                    glide
-                        .load(AppConstants.TMDB_POSTER_URL + posterImage.poster_path)
-                        .into(showentryitemPoster)
-                }
-            })
+            tmdbImageLoader.loadEpisodeImages(currentItem.episode_trakt_id, currentItem.show_tmdb_id, currentItem.show_trakt_id, currentItem.episode_season,currentItem.episode_number, currentItem?.show_title ?: "",true, showentryitemPoster, showentryitemBackdrop)
+
+            showentryitemOverview.setOnClickListener { v ->
+                val expandableTextView = v as ExpandableTextView
+
+                expandableTextView.toggle()
+            }
 
             root.setOnClickListener { callback(currentItem, ACTION_NAVIGATE_EPISODE) }
 
-            showentryitemMenu.setOnClickListener {
-                showPopupMenu(holder.itemView, currentItem)
+            howentryitemNavShowBtn.setOnClickListener {  callback(currentItem, ACTION_NAVIGATE_SHOW)  }
+            howentryitemNavEpisodeBtn.setOnClickListener { callback(currentItem, ACTION_NAVIGATE_EPISODE) }
+
+            if(currentItem.hidden) {
+                howentryitemHideShowBtn.text = "Unhide Show"
             }
+
+            howentryitemHideShowBtn.setOnClickListener {  callback(currentItem, ACTION_REMOVE_COLLECTION)  }
         }
     }
 

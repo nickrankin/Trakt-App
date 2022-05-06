@@ -1,5 +1,6 @@
 package com.nickrankin.traktapp.ui.movies
 
+import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.Typeface
@@ -12,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
@@ -21,11 +23,13 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.google.android.material.snackbar.Snackbar
+import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.movies.ReccomendedMoviesAdaptor
 import com.nickrankin.traktapp.databinding.FragmentRecommendedMoviesBinding
 import com.nickrankin.traktapp.helper.ItemDecorator
-import com.nickrankin.traktapp.helper.PosterImageLoader
+import com.nickrankin.traktapp.helper.OnTitleChangeListener
+import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.movies.RecommendedMoviesViewModel
 import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
@@ -37,8 +41,9 @@ import retrofit2.HttpException
 import javax.inject.Inject
 
 private const val TAG = "RecommendedMoviesFragme"
+
 @AndroidEntryPoint
-class RecommendedMoviesFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
+class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
     private lateinit var bindings: FragmentRecommendedMoviesBinding
 
@@ -51,10 +56,7 @@ class RecommendedMoviesFragment : Fragment(), SwipeRefreshLayout.OnRefreshListen
     private val viewModel: RecommendedMoviesViewModel by activityViewModels()
 
     @Inject
-    lateinit var glide: RequestManager
-
-    @Inject
-    lateinit var posterLoader: PosterImageLoader
+    lateinit var tmdbPosterImageLoader: TmdbImageLoader
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -72,17 +74,19 @@ class RecommendedMoviesFragment : Fragment(), SwipeRefreshLayout.OnRefreshListen
 
         progressBar = bindings.recommendedmoviesfragmentProgressbar
 
+        updateTitle("Suggested Movies")
+
         initRecyclerView()
 
         getRecommendedMovies()
 
         getEvents()
     }
-    
+
     private fun getRecommendedMovies() {
-        lifecycleScope.launchWhenStarted { 
+        lifecycleScope.launchWhenStarted {
             viewModel.recommendedMovies.collectLatest { recommendedMoviesResource ->
-                when(recommendedMoviesResource) {
+                when (recommendedMoviesResource) {
                     is Resource.Loading -> {
                         progressBar.visibility = View.VISIBLE
 
@@ -94,22 +98,22 @@ class RecommendedMoviesFragment : Fragment(), SwipeRefreshLayout.OnRefreshListen
 
                         Log.d(TAG, "getRecommendedMovies: Loading recommendations")
                     }
-                    
+
                     is Resource.Success -> {
                         progressBar.visibility = View.GONE
 
-                        if(swipeLayout.isRefreshing) {
+                        if (swipeLayout.isRefreshing) {
                             swipeLayout.isRefreshing = false
                         }
                         Log.d(TAG, "getRecommendedMovies: Got recommendations successfully")
 
                         adapter.submitList(recommendedMoviesResource.data)
                     }
-                    
+
                     is Resource.Error -> {
                         progressBar.visibility = View.GONE
 
-                        if(swipeLayout.isRefreshing) {
+                        if (swipeLayout.isRefreshing) {
                             swipeLayout.isRefreshing = false
                         }
 
@@ -118,11 +122,15 @@ class RecommendedMoviesFragment : Fragment(), SwipeRefreshLayout.OnRefreshListen
 
                         recyclerView.visibility = View.GONE
 
-                        bindings.recommendedmoviesfragmentErrorText.text = "Error loading recommended Movies. ${recommendedMoviesResource.error?.message}"
+                        bindings.recommendedmoviesfragmentErrorText.text =
+                            "Error loading recommended Movies. ${recommendedMoviesResource.error?.message}"
 
                         bindings.recommendedmoviesfragmentRetryButton.setOnClickListener { onRefresh() }
 
-                        Log.e(TAG, "getRecommendedMovies: Error loading recommendations. ${recommendedMoviesResource.error?.message}", )
+                        Log.e(
+                            TAG,
+                            "getRecommendedMovies: Error loading recommendations. ${recommendedMoviesResource.error?.message}",
+                        )
                     }
                 }
             }
@@ -132,26 +140,35 @@ class RecommendedMoviesFragment : Fragment(), SwipeRefreshLayout.OnRefreshListen
     private fun getEvents() {
         lifecycleScope.launchWhenStarted {
             viewModel.event.collectLatest { event ->
-                when(event) {
+                when (event) {
                     is RecommendedMoviesViewModel.Event.RemoveRecommendationEvent -> {
                         val response = event.response
 
-                        when(response) {
+                        when (response) {
                             is Resource.Loading -> {
 
                             }
                             is Resource.Success -> {
-                                displayToast("Successfully removed recommended movie", Toast.LENGTH_SHORT)
+                                displayToast(
+                                    "Successfully removed recommended movie",
+                                    Toast.LENGTH_SHORT
+                                )
                             }
                             is Resource.Error -> {
                                 val throwable = response.error
 
                                 throwable?.printStackTrace()
 
-                                if(throwable is HttpException) {
-                                    displayToast("HTTP Error occurred removing recommendation (HTTP Code (${throwable.code()})", Toast.LENGTH_LONG)
+                                if (throwable is HttpException) {
+                                    displayToast(
+                                        "HTTP Error occurred removing recommendation (HTTP Code (${throwable.code()})",
+                                        Toast.LENGTH_LONG
+                                    )
                                 } else {
-                                    displayToast("An exception was raised trying to remove recommendation, ${throwable?.message}", Toast.LENGTH_LONG)
+                                    displayToast(
+                                        "An exception was raised trying to remove recommendation, ${throwable?.message}",
+                                        Toast.LENGTH_LONG
+                                    )
                                 }
                             }
                         }
@@ -166,170 +183,68 @@ class RecommendedMoviesFragment : Fragment(), SwipeRefreshLayout.OnRefreshListen
 
         val lm = LinearLayoutManager(requireContext())
 
-        adapter = ReccomendedMoviesAdaptor(glide, posterLoader, callback = {movie ->
-            val intent = Intent(requireContext(), MovieDetailsActivity::class.java)
-            intent.putExtra(MovieDetailsRepository.MOVIE_TRAKT_ID_KEY, movie?.ids?.trakt)
-            intent.putExtra(MovieDetailsRepository.MOVIE_TITLE_KEY, movie?.title)
+        adapter = ReccomendedMoviesAdaptor(tmdbPosterImageLoader, callback = { pos, action, movie ->
 
-            startActivity(intent)
+            when (action) {
+                ReccomendedMoviesAdaptor.ACTION_VIEW -> {
+                    navigateToMovie(movie)
+                }
+                ReccomendedMoviesAdaptor.ACTION_REMOVE -> {
+                    deleteSuggestion(pos, movie)
+                }
+                else -> {
+                    navigateToMovie(movie)
+                }
+            }
         })
 
         recyclerView.layoutManager = lm
         recyclerView.adapter = adapter
 
-        setupViewSwipeBehaviour()
-
     }
 
-    private fun setupViewSwipeBehaviour() {
-
-        var itemTouchHelper: ItemTouchHelper? = null
-
-        itemTouchHelper = ItemTouchHelper(
-            object :
-                ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
-                override fun onMove(
-                    recyclerView: RecyclerView,
-                    viewHolder: RecyclerView.ViewHolder,
-                    target: RecyclerView.ViewHolder
-                ): Boolean {
-                    viewHolder.itemView.background = null
-
-                    return true
-                }
-
-                override fun onChildDraw(
-                    c: Canvas,
-                    recyclerView: RecyclerView,
-                    viewHolder: RecyclerView.ViewHolder,
-                    dX: Float,
-                    dY: Float,
-                    actionState: Int,
-                    isCurrentlyActive: Boolean
-                ) {
-                    val colorAlert = ContextCompat.getColor(requireContext(), R.color.red)
-                    val teal200 = ContextCompat.getColor(requireContext(), R.color.teal_200)
-                    val defaultWhiteColor = ContextCompat.getColor(requireContext(), R.color.white)
-
-                    ItemDecorator.Builder(c, recyclerView, viewHolder, dX, actionState).set(
-                        iconHorizontalMargin = 23f,
-                        backgroundColorFromStartToEnd = teal200,
-                        backgroundColorFromEndToStart = colorAlert,
-                        textFromStartToEnd = "Add to Collection",
-                        textFromEndToStart = "Remove from Suggested",
-                        textColorFromStartToEnd = defaultWhiteColor,
-                        textColorFromEndToStart = defaultWhiteColor,
-                        iconTintColorFromStartToEnd = defaultWhiteColor,
-                        iconTintColorFromEndToStart = defaultWhiteColor,
-                        textSizeFromStartToEnd = 16f,
-                        textSizeFromEndToStart = 16f,
-                        typeFaceFromStartToEnd = Typeface.DEFAULT_BOLD,
-                        typeFaceFromEndToStart = Typeface.SANS_SERIF,
-                        iconResIdFromStartToEnd = R.drawable.ic_baseline_delete_forever_24,
-                        iconResIdFromEndToStart = R.drawable.ic_trakt_svgrepo_com
-                    )
-
-                    super.onChildDraw(
-                        c,
-                        recyclerView,
-                        viewHolder,
-                        dX,
-                        dY,
-                        actionState,
-                        isCurrentlyActive
-                    )
-
-                }
-
-                override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                    val movieList: MutableList<Movie> = mutableListOf()
-                    movieList.addAll(adapter.currentList)
-
-                    val showPosition = viewHolder.layoutPosition
-                    val movie = movieList[showPosition]
-
-                    when (direction) {
-                        ItemTouchHelper.LEFT -> {
-                            val updatedList: MutableList<Movie> = mutableListOf()
-                            updatedList.addAll(movieList)
-                            updatedList.remove(movie)
-
-                            adapter.submitList(updatedList)
-
-                            val timer = getTimer() {
-                                Log.e(TAG, "onFinish: Timer ended for remove show ${movie.title}!")
-                                viewModel.removeRecommendedMovie(movie.ids?.trakt ?: -1)
-
-                            }.start()
-
-                            getSnackbar(
-                                recyclerView,
-                                "You have removed suggestion: ${movie.title}"
-                            ) {
-                                timer.cancel()
-                                adapter.submitList(movieList) {
-                                    // For first and last element, always scroll to the position to bring the element to focus
-                                    if (showPosition == 0) {
-                                        recyclerView.scrollToPosition(0)
-                                    } else if (showPosition == movieList.size - 1) {
-                                        recyclerView.scrollToPosition(movieList.size - 1)
-                                    }
-                                }
-                            }.show()
-                        }
-
-                        ItemTouchHelper.RIGHT -> {
-                            val timer = getTimer() {
-                                Log.e(TAG, "onFinish: Timer ended for Collect Show ${movie.title}!")
-                                val syncItems = SyncItems()
-                                syncItems.apply {
-                                    shows = listOf(
-                                        SyncShow()
-                                            .id(ShowIds.trakt(movie.ids?.trakt ?: 0))
-                                    )
-                                }
-                                //viewModel.addToCollection(syncItems)
-                            }.start()
-
-                            getSnackbar(
-                                recyclerView,
-                                "You have added ${movie.title} to your collection."
-                            ) {
-                                timer.cancel()
-                            }.show()
-
-                            // Force the current show to "bounce back" into view
-                            adapter.notifyItemChanged(showPosition)
-                        }
-
-                    }
-                }
-            }
-        )
-
-        itemTouchHelper.attachToRecyclerView(recyclerView)
-    }
-
-    private fun getTimer(doAction: () -> Unit): CountDownTimer {
-        return object : CountDownTimer(5000, 1000) {
-            override fun onTick(p0: Long) {
-            }
-
-            override fun onFinish() {
-                doAction()
-            }
+    private fun navigateToMovie(movie: Movie?) {
+        if (movie == null) {
+            return
         }
+
+        val intent = Intent(requireContext(), MovieDetailsActivity::class.java)
+        intent.putExtra(MovieDetailsRepository.MOVIE_TRAKT_ID_KEY, movie.ids?.trakt)
+
+        startActivity(intent)
     }
 
-    private fun getSnackbar(v: View, message: String, listener: View.OnClickListener): Snackbar {
-        return Snackbar.make(
-            v,
-            message,
-            Snackbar.LENGTH_LONG
-        )
-            .setAction("Cancel", listener)
+    private fun deleteSuggestion(position: Int, movie: Movie?) {
+        if (movie == null) {
+            return
+        }
+
+        val alertDialog = AlertDialog.Builder(requireContext())
+            .setTitle("Delete suggestion ${movie.title}")
+            .setMessage("Would you like to remove suggestion of ${movie.title}?")
+            .setPositiveButton("Yes", DialogInterface.OnClickListener { dialogInterface, i ->
+                viewModel.removeRecommendedMovie(movie.ids?.trakt ?: 0)
+
+                // Should really be called after success remove event
+                removeAdapterItemAtPosition(position)
+
+                dialogInterface.dismiss()
+            })
+            .setNegativeButton("No", DialogInterface.OnClickListener { dialogInterface, i ->
+                dialogInterface.dismiss()
+            })
+            .create()
+
+        alertDialog.show()
     }
 
+    private fun removeAdapterItemAtPosition(pos: Int) {
+        val listCopy: MutableList<Movie> = mutableListOf()
+        listCopy.addAll(adapter.currentList)
+        listCopy.removeAt(pos)
+
+        adapter.submitList(listCopy)
+    }
 
     override fun onStart() {
         super.onStart()

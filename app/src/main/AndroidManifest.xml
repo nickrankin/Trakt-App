@@ -21,6 +21,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TraktApp">
         <activity
+            android:name=".ui.lists.ListItemsActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.lists.TraktListsActivity"
             android:exported="false" />
         <activity

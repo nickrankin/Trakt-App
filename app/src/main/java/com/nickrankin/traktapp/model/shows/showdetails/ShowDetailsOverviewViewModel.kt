@@ -22,7 +22,7 @@ class ShowDetailsOverviewViewModel @Inject constructor(private val savedStateHan
                                                        private val repository: ShowDetailsOverviewRepository) : ViewModel() {
 
     val traktId: Int = savedStateHandle.get(ShowDetailsRepository.SHOW_TRAKT_ID_KEY) ?: 0
-    val tmdbId: Int = savedStateHandle.get(ShowDetailsRepository.SHOW_TMDB_ID_KEY) ?: -1
+    private var tmdbId: Int = 0
 
     /**
      *
@@ -40,6 +40,10 @@ class ShowDetailsOverviewViewModel @Inject constructor(private val savedStateHan
     fun filterCast(showGuestStars: Boolean) = viewModelScope.launch {
 
         castRefreshEventChannel.send(Pair(showGuestStars, false))
+    }
+
+    fun setTmdbId(tmdbId: Int) {
+        this.tmdbId = tmdbId
     }
 
     fun onStart() {

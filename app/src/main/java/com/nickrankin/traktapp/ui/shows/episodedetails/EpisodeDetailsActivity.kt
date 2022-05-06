@@ -440,9 +440,6 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
 
         val intent = Intent(this, ShowDetailsActivity::class.java)
         intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
-        intent.putExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, tmdbId)
-        intent.putExtra(ShowDetailsRepository.SHOW_TITLE_KEY, showTitle)
-        intent.putExtra(ShowDetailsRepository.SHOW_LANGUAGE_KEY, language)
 
         startActivity(intent)
     }

@@ -27,6 +27,10 @@ interface TraktListDao {
     fun delete(traktList: TraktList)
 
     @Transaction
+    @Query("DELETE FROM lists where trakt_id = :traktId")
+    fun deleteListById(traktId: String)
+
+    @Transaction
     @Query("DELETE FROM lists")
     fun deleteTraktListsFromCache()
 }

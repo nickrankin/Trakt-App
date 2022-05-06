@@ -20,7 +20,8 @@ import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.dao.show.model.CollectedShow
 import com.nickrankin.traktapp.databinding.CollectedShowEntryListItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
-import com.nickrankin.traktapp.helper.PosterImageLoader
+import com.nickrankin.traktapp.helper.ImageItemType
+import com.nickrankin.traktapp.helper.TmdbImageLoader
 import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 
@@ -30,7 +31,7 @@ const val ICON_MARGIN = 2
 class CollectedShowsAdapter(
     private val sharedPreferences: SharedPreferences,
     private val glide: RequestManager,
-    private val imageLoader: PosterImageLoader,
+    private val tmdbImageLoader: TmdbImageLoader,
     private val callback: (selectedShow: CollectedShow, action: Int) -> Unit
 ) : ListAdapter<CollectedShow, CollectedShowsAdapter.CollectedShowsViewHolder>(
     COMPARATOR
@@ -66,20 +67,15 @@ class CollectedShowsAdapter(
             )
             collectedentryitemOverview.text = currentItem.show_overview
 
-            imageLoader.loadShowPosterImage(
+            tmdbImageLoader.loadImages(
                 currentItem.show_trakt_id,
+                ImageItemType.SHOW,
                 currentItem.show_tmdb_id,
-                currentItem?.language,
                 currentItem.show_title,
                 null,
                 true,
-                callback = { posterImage ->
-                    if (posterImage.poster_path != null) {
-                        glide
-                            .load(AppConstants.TMDB_POSTER_URL + posterImage.poster_path)
-                            .into(collectedentryitemPoster)
-                    }
-                })
+                collectedentryitemPoster,
+            null)
 
             root.setOnClickListener {
                 callback(currentItem, ACTION_NAVIGATE_SHOW)

@@ -20,16 +20,15 @@ import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.shows.ICON_MARGIN
 import com.nickrankin.traktapp.dao.movies.model.WatchedMovie
-import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
 import com.nickrankin.traktapp.databinding.WatchedMovieEntryListItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
-import com.nickrankin.traktapp.helper.PosterImageLoader
+import com.nickrankin.traktapp.helper.ImageItemType
+import com.nickrankin.traktapp.helper.TmdbImageLoader
 import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
-import java.time.ZoneOffset
 
 private const val TAG = "WatchedEpisodesPagingAd"
-class WatchedMoviesPagingAdapter(private val sharedPreferences: SharedPreferences, private val imageLoader: PosterImageLoader, private val glide: RequestManager, private val callback: (selectedMovie: WatchedMovie?, action: Int) -> Unit): PagingDataAdapter<WatchedMovie, WatchedMoviesPagingAdapter.WatchedMovieViewHolder>(COMPARATOR) {
+class WatchedMoviesPagingAdapter(private val sharedPreferences: SharedPreferences, private val tmdbImageLoader: TmdbImageLoader, private val glide: RequestManager, private val callback: (selectedMovie: WatchedMovie?, action: Int) -> Unit): PagingDataAdapter<WatchedMovie, WatchedMoviesPagingAdapter.WatchedMovieViewHolder>(COMPARATOR) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): WatchedMovieViewHolder {
         return WatchedMovieViewHolder(WatchedMovieEntryListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
@@ -50,13 +49,7 @@ class WatchedMoviesPagingAdapter(private val sharedPreferences: SharedPreference
             watchedentryitemWatchedDate.text = "Watched: " + currentItem?.watched_at?.atZoneSameInstant(
                 ZoneId.systemDefault())?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)))
 
-            imageLoader.loadMoviePosterImage(currentItem?.trakt_id ?: 0, currentItem?.tmdb_id ?: 0, currentItem?.language, true, callback = { posterImage ->
-                if(posterImage.poster_path != null && posterImage.trakt_id == currentItem?.trakt_id) {
-                    glide
-                        .load(AppConstants.TMDB_POSTER_URL + posterImage.poster_path)
-                        .into(watchedentryitemPoster)
-                }
-            })
+            tmdbImageLoader.loadImages(currentItem?.trakt_id ?: 0, ImageItemType.MOVIE,currentItem?.tmdb_id ?: 0,  currentItem?.title, null, true, watchedentryitemPoster, watchedentryitemBackdropImageview)
 
             watchedentryitemOverview.setOnClickListener {
                 (it as ExpandableTextView).apply {
@@ -64,66 +57,12 @@ class WatchedMoviesPagingAdapter(private val sharedPreferences: SharedPreference
                 }
             }
 
-            watchedentryitemMenu.setOnClickListener {
-                showPopupMenu(holder.itemView, currentItem)
-
-            }
-
             root.setOnClickListener { callback(currentItem, ACTION_NAVIGATE_MOVIE) }
+
+            watchedentryitemRemovePlayBtn.setOnClickListener { callback(currentItem, ACTION_REMOVE_HISTORY) }
         }
 
     }
-
-    private fun showPopupMenu(view: View, selectedItem: WatchedMovie?) {
-        val context = view.context
-        val popup = PopupMenu(context, view)
-
-        popup.menuInflater.inflate(R.menu.watched_movies_popup_menu, popup.menu)
-
-        popup.setOnMenuItemClickListener { item: MenuItem ->
-            when (item.itemId) {
-                R.id.watchedmoviepopupmenu_nav_movie -> {
-                    callback(selectedItem, ACTION_NAVIGATE_MOVIE)
-                }
-                R.id.watchedmoviepopupmenu_remove_show -> {
-                    callback(selectedItem, ACTION_REMOVE_HISTORY)
-                }
-            }
-            Log.e(TAG, "showPopupMenu: Clicked ${item.title} for ${selectedItem?.title}")
-            true
-        }
-
-        // Workaround to add menu icons to dropdown list
-        // https://www.material.io/components/menus/android#dropdown-menus
-        @SuppressLint("RestrictedApi")
-        if (popup.menu is MenuBuilder) {
-            val menuBuilder = popup.menu as MenuBuilder
-            menuBuilder.setOptionalIconsVisible(true)
-            for (item in menuBuilder.visibleItems) {
-                val iconMarginPx =
-                    TypedValue.applyDimension(
-                        TypedValue.COMPLEX_UNIT_DIP,
-                        ICON_MARGIN.toFloat(),
-                        context.resources.displayMetrics
-                    ).toInt()
-                if (item.icon != null) {
-                    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
-                        item.icon = InsetDrawable(item.icon, iconMarginPx, 0, iconMarginPx, 0)
-                    } else {
-                        item.icon =
-                            object : InsetDrawable(item.icon, iconMarginPx, 0, iconMarginPx, 0) {
-                                override fun getIntrinsicWidth(): Int {
-                                    return intrinsicHeight + iconMarginPx + iconMarginPx
-                                }
-                            }
-                    }
-                }
-            }
-        }
-
-        popup.show()
-    }
-
 
     inner class WatchedMovieViewHolder(val bindings: WatchedMovieEntryListItemBinding): RecyclerView.ViewHolder(bindings.root)
 

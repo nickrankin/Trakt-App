@@ -76,4 +76,37 @@ class TraktListsRepository @Inject constructor(private val traktApi: TraktApi, p
             Resource.Error(t, null)
         }
     }
+
+    suspend fun editTraktList(traktList: com.uwetrottmann.trakt5.entities.TraktList, listSlug: String): Resource<TraktList> {
+        return try {
+            val response = traktApi.tmUsers().updateList(UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "NULL")), listSlug, traktList)
+
+            // Need to convert the list to our dao model so we can cache it
+            val convertedList = convertLists(listOf(response)).first()
+
+            listsDatabase.withTransaction {
+                traktListsDao.insertSingle(convertedList)
+            }
+
+            Resource.Success(convertedList)
+
+        } catch(t: Throwable) {
+            Resource.Error(t, null)
+        }
+    }
+
+    suspend fun deleteTraktList(listTraktId: String): Resource<Boolean> {
+        return try {
+            val response = traktApi.tmUsers().deleteList(UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "NULL")), listTraktId)
+
+            listsDatabase.withTransaction {
+                traktListsDao.deleteListById(listTraktId)
+            }
+
+            Resource.Success(true)
+
+        } catch(t: Throwable) {
+            Resource.Error(t, null)
+        }
+    }
 }

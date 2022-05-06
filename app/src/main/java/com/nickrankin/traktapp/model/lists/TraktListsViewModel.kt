@@ -31,6 +31,9 @@ class TraktListsViewModel @Inject constructor(private val repository: TraktLists
     }
 
     fun addList(traktList: TraktList) = viewModelScope.launch { eventChannel.send(Event.AddListEvent(repository.addTraktList(traktList))) }
+    fun editList(traktList: TraktList, listSlug: String) = viewModelScope.launch { eventChannel.send(Event.EditListEvent(repository.editTraktList(traktList, listSlug))) }
+    fun deleteList(listTraktId: String) = viewModelScope.launch { eventChannel.send(Event.DeleteListEvent(repository.deleteTraktList(listTraktId))) }
+
 
     fun onStart() {
         viewModelScope.launch {
@@ -46,5 +49,7 @@ class TraktListsViewModel @Inject constructor(private val repository: TraktLists
 
     sealed class Event {
         data class AddListEvent(val addedListResource: Resource<com.nickrankin.traktapp.dao.lists.model.TraktList>): Event()
+        data class EditListEvent(val editListResource: Resource<com.nickrankin.traktapp.dao.lists.model.TraktList>): Event()
+        data class DeleteListEvent(val deleteListResource: Resource<Boolean>): Event()
     }
 }

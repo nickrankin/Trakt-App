@@ -66,7 +66,7 @@ class ShowCastCreditsAdapter(private val glide: RequestManager): ListAdapter<Sho
                 oldItem: ShowCastPerson,
                 newItem: ShowCastPerson
             ): Boolean {
-                return oldItem.showCastPersonData.castPersonTraktId == newItem.showCastPersonData.castPersonTraktId
+                return oldItem.showCastPersonData.id == newItem.showCastPersonData.id
             }
         }
     }

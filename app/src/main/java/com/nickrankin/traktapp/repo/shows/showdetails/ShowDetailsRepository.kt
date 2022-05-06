@@ -67,7 +67,7 @@ class ShowDetailsRepository @Inject constructor(
     companion object {
         const val SHOW_TRAKT_ID_KEY = "show_trakt_id"
         const val SHOW_TMDB_ID_KEY = "show_tmdb_id"
-        const val SHOW_TITLE_KEY = "show_title"
-        const val SHOW_LANGUAGE_KEY = "show_language"
+        const val SHOW_TITLE_KEY = "show_title_id"
+
     }
 }

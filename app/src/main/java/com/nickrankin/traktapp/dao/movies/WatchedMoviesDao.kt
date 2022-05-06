@@ -26,8 +26,8 @@ interface WatchedMoviesDao {
     @Delete
     fun delete(watchedMovie: WatchedMovie)
 
-    @Query("DELETE FROM watched_movies WHERE trakt_id = :traktId")
-    fun deleteMovieById(traktId: Long)
+    @Query("DELETE FROM watched_movies WHERE id = :id")
+    fun deleteMovieById(id: Long)
 
     @Transaction
     @Query("DELETE FROM watched_movies")

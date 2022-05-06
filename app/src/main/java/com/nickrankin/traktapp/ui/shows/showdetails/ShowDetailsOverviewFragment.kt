@@ -39,6 +39,8 @@ class ShowDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
 
     private lateinit var overview: String
 
+    private var tmdbId = 0
+
 
     @Inject
     lateinit var glide: RequestManager
@@ -57,6 +59,7 @@ class ShowDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
         initCastRecycler()
         setupCastSwitcher()
 
+        tmdbId = arguments?.getInt(TMDB_ID_KEY, 0) ?: 0
         overview = arguments?.getString(OVERVIEW_KEY, "") ?: ""
 
         bindShowData()
@@ -142,6 +145,8 @@ class ShowDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
     }
 
     private fun bindShowData() {
+        viewModel.setTmdbId(tmdbId)
+
         viewModel.onStart()
         getCast()
         bindings.showdetailsoverviewMainGroup.visibility = View.VISIBLE
@@ -152,12 +157,16 @@ class ShowDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
     }
 
     override fun onRefresh() {
+        viewModel.setTmdbId(tmdbId)
+
         Log.d(TAG, "onRefresh: Refreshing Show Overview")
         viewModel.onRefresh()
     }
 
     companion object {
         const val OVERVIEW_KEY = "overview_key"
+        const val TMDB_ID_KEY = "tmdb_id_key"
+
         fun newInstance() = ShowDetailsOverviewFragment()
     }
 }

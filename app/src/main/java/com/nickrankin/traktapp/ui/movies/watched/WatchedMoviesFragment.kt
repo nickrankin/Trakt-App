@@ -1,14 +1,17 @@
 package com.nickrankin.traktapp.ui.movies.watched
 
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.LoadState
@@ -16,28 +19,30 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
-import com.nickrankin.traktapp.R
+import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.adapter.movies.WatchedMoviesLoadStateAdapter
 import com.nickrankin.traktapp.adapter.movies.WatchedMoviesPagingAdapter
-import com.nickrankin.traktapp.adapter.shows.WatchedEpisodesLoadStateAdapter
-import com.nickrankin.traktapp.adapter.shows.WatchedEpisodesPagingAdapter
+import com.nickrankin.traktapp.dao.movies.model.WatchedMovie
 import com.nickrankin.traktapp.databinding.FragmentWatchedMoviesBinding
-import com.nickrankin.traktapp.databinding.FragmentWatchingBinding
-import com.nickrankin.traktapp.helper.PosterImageLoader
+import com.nickrankin.traktapp.helper.AppConstants
+import com.nickrankin.traktapp.helper.OnTitleChangeListener
+import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.movies.watched.WatchedMoviesViewModel
-import com.nickrankin.traktapp.model.shows.WatchedEpisodesViewModel
 import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
 import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
+import com.uwetrottmann.trakt5.entities.SyncItems
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.filter
+import org.threeten.bp.format.DateTimeFormatter
 import javax.inject.Inject
 
+private const val TAG = "WatchedMoviesFragment"
 @AndroidEntryPoint
-class WatchedMoviesFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
+class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
     private lateinit var bindings: FragmentWatchedMoviesBinding
     private val viewModel: WatchedMoviesViewModel by activityViewModels()
@@ -52,7 +57,7 @@ class WatchedMoviesFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
     lateinit var sharedPreferences: SharedPreferences
 
     @Inject
-    lateinit var imageLoader: PosterImageLoader
+    lateinit var tmdbPosterImageLoader: TmdbImageLoader
 
     @Inject
     lateinit var glide: RequestManager
@@ -74,6 +79,8 @@ class WatchedMoviesFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
         progressBar = bindings.moviewatchingfragmentProgressbar
 
         swipeLayout.setOnRefreshListener(this)
+
+        updateTitle("Watched Movies")
 
         initRecycler()
 
@@ -110,7 +117,7 @@ class WatchedMoviesFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
 
                         when(syncResponseResource) {
                             is Resource.Success -> {
-                                if(syncResponseResource.data?.deleted?.episodes ?: 0 > 0) {
+                                if(syncResponseResource.data?.deleted?.movies ?: 0 > 0) {
                                     displayMessageToast("Succesfully removed play!", Toast.LENGTH_LONG)
                                 } else {
                                     displayMessageToast("Error removing play", Toast.LENGTH_LONG)
@@ -133,33 +140,21 @@ class WatchedMoviesFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
     private fun initRecycler() {
         recyclerView = bindings.moviewatchingfragmentRecyclerview
         layoutManager = LinearLayoutManager(context)
-        adapter = WatchedMoviesPagingAdapter(sharedPreferences, imageLoader, glide, callback = {selectedMovie, action ->
+        adapter = WatchedMoviesPagingAdapter(sharedPreferences, tmdbPosterImageLoader, glide, callback = {selectedMovie, action ->
 
-            val intent = Intent(requireContext(), MovieDetailsActivity::class.java)
-            intent.putExtra(MovieDetailsRepository.MOVIE_TRAKT_ID_KEY, selectedMovie?.trakt_id)
-            intent.putExtra(MovieDetailsRepository.MOVIE_TITLE_KEY, selectedMovie?.title)
-
-            startActivity(intent)
-
-//            when(action) {
-//                WatchedEpisodesPagingAdapter.ACTION_NAVIGATE_EPISODE -> {
-//                    navigateToEpisode(selectedEpisode?.show_trakt_id ?: 0,selectedEpisode?.show_tmdb_id, selectedEpisode?.episode_season ?: 0, selectedEpisode?.episode_number ?: 0, selectedEpisode?.language ?: "en")
-//
-//                }
-//
-//                WatchedEpisodesPagingAdapter.ACTION_NAVIGATE_SHOW -> {
-//                    navigateToShow(selectedEpisode?.show_trakt_id ?: 0, selectedEpisode?.show_tmdb_id ?: 0, selectedEpisode?.show_title, selectedEpisode?.language)
-//                }
-//
-//                WatchedEpisodesPagingAdapter.ACTION_REMOVE_HISTORY -> {
-//                    removeFromWatchedHistory(selectedEpisode)
-//                }
-//
-//                else -> {
-//                    navigateToEpisode(selectedEpisode?.show_trakt_id ?: 0,selectedEpisode?.show_tmdb_id, selectedEpisode?.episode_season ?: 0, selectedEpisode?.episode_number ?: 0, selectedEpisode?.language ?: "en")
-//                }
-//            }
+            when(action) {
+                WatchedMoviesPagingAdapter.ACTION_NAVIGATE_MOVIE -> {
+                    navigateToMovie(selectedMovie)
+                }
+                WatchedMoviesPagingAdapter.ACTION_REMOVE_HISTORY -> {
+                    handleWatchedHistoryDeletion(selectedMovie)
+                }
+                else -> {
+                    navigateToMovie(selectedMovie)
+                }
+            }
         })
+
         recyclerView.layoutManager = layoutManager
 
         recyclerView.adapter = adapter.withLoadStateHeaderAndFooter(
@@ -182,6 +177,39 @@ class WatchedMoviesFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
                 .collect { bindings.moviewatchingfragmentRecyclerview.scrollToPosition(0) }
         }
 
+    }
+
+    private fun navigateToMovie(watchedMovie: WatchedMovie?) {
+        if(watchedMovie == null) {
+            return
+        }
+        val intent = Intent(requireContext(), MovieDetailsActivity::class.java)
+        intent.putExtra(MovieDetailsRepository.MOVIE_TRAKT_ID_KEY, watchedMovie.trakt_id)
+
+        startActivity(intent)
+    }
+
+    private fun handleWatchedHistoryDeletion(watchedMovie: WatchedMovie?) {
+        if(watchedMovie == null) {
+            return
+        }
+
+        val syncItems = SyncItems().ids(watchedMovie.id)
+
+        val alertDialog = AlertDialog.Builder(requireContext())
+            .setTitle("Remove play for ${watchedMovie.title}")
+            .setMessage("Do you want to remove play for ${watchedMovie.title} at ${watchedMovie.watched_at?.atZoneSameInstant(
+                org.threeten.bp.ZoneId.systemDefault())?.format(
+                DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)))}?")
+            .setPositiveButton("Remove", DialogInterface.OnClickListener { dialogInterface, i ->
+                viewModel.removeFromWatchedHistory(syncItems)
+                dialogInterface.dismiss()
+            })
+            .setNegativeButton("Cancel", DialogInterface.OnClickListener { dialogInterface, i ->
+                dialogInterface.dismiss()
+            }).create()
+
+        alertDialog.show()
     }
 
     private fun displayMessageToast(message: String, duration: Int) {

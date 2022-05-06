@@ -6,6 +6,7 @@ import com.uwetrottmann.trakt5.enums.HistoryType
 import com.uwetrottmann.trakt5.enums.RatingsFilter
 import org.threeten.bp.OffsetDateTime
 import retrofit2.Call
+import retrofit2.Response
 import retrofit2.http.*
 
 interface TmUsers {
@@ -112,7 +113,7 @@ interface TmUsers {
     suspend fun deleteList(
         @Path("username") userSlug: UserSlug,
         @Path("id") id: String
-    ): Void
+    ): Response<Unit>
 
     /**
      * **OAuth Optional**

@@ -9,10 +9,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.databinding.CollectedShowEntryListItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
-import com.nickrankin.traktapp.helper.PosterImageLoader
+import com.nickrankin.traktapp.helper.ImageItemType
+import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.uwetrottmann.trakt5.entities.SearchResult
 
-class ShowSearchResultsAdapter(private val glide: RequestManager, private val imageLoader: PosterImageLoader, private val callback: (results: SearchResult?) -> Unit): PagingDataAdapter<SearchResult, ShowSearchResultsAdapter.ViewHolder>(
+class ShowSearchResultsAdapter(private val glide: RequestManager, private val tmdbImageLoader: TmdbImageLoader, private val callback: (results: SearchResult?) -> Unit): PagingDataAdapter<SearchResult, ShowSearchResultsAdapter.ViewHolder>(
     COMPARATOR) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -29,13 +30,7 @@ class ShowSearchResultsAdapter(private val glide: RequestManager, private val im
             collectedentryitemCollectedDate.visibility = View.GONE
             collectedentryitemOverview.text = currentSearchItem?.show?.overview
 
-            imageLoader.loadShowPosterImage(currentSearchItem?.show?.ids?.trakt ?: 0, currentSearchItem?.show?.ids?.tmdb ?: 0, currentSearchItem?.show?.language,currentSearchItem?.show?.title ?: "", currentSearchItem?.show?.year, false, callback = { posterResponse ->
-                if(posterResponse.poster_path != null) {
-                    glide
-                        .load(AppConstants.TMDB_POSTER_URL + posterResponse.poster_path)
-                        .into(collectedentryitemPoster)
-                }
-            })
+            tmdbImageLoader.loadImages(currentSearchItem?.show?.ids?.trakt ?: 0, ImageItemType.SHOW, currentSearchItem?.show?.ids?.tmdb ?: 0, currentSearchItem?.show?.title ?: "", currentSearchItem?.show?.year, false, collectedentryitemPoster, null)
 
             root.setOnClickListener {
                 callback(currentSearchItem)

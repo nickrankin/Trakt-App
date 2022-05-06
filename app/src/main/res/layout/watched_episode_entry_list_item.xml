@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -11,27 +11,49 @@
         android:layout_height="wrap_content">
 
         <ImageView
-            android:id="@+id/watchedentryitem_poster"
-            android:layout_width="75dp"
-            android:layout_height="105dp"
-            android:layout_margin="8dp"
-            android:src="@drawable/ic_trakt_svgrepo_com"
-            app:layout_constraintBottom_toBottomOf="parent"
+            android:id="@+id/watchedentryitem_backdrop"
+            android:layout_width="match_parent"
+            android:layout_height="194dp"
+            android:src="@drawable/ic_baseline_live_tv_24"
+            android:scaleType="centerCrop"
+            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/watchedentryitem_title"
+            />
+
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/watchedentryitem_poster_cardview"
+            android:layout_width="95dp"
+            android:layout_height="135dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="16dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageView
+                android:id="@+id/watchedentryitem_poster"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitXY"
+                android:src="@drawable/ic_trakt_svgrepo_com" />
+        </com.google.android.material.card.MaterialCardView>
+
+
 
         <TextView
             android:id="@+id/watchedentryitem_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="8dp"
+            android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
             android:textAllCaps="true"
-            android:textSize="16sp"
+            android:textAppearance="?attr/textAppearanceHeadline6"
             android:textStyle="bold"
-            app:layout_constraintStart_toEndOf="@id/watchedentryitem_poster"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/watchedentryitem_backdrop"
             tools:text="Season 1 Episode 1" />
 
         <TextView
@@ -39,7 +61,8 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:textSize="12sp"
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:textAllCaps="true"
             android:layout_marginEnd="8dp"
             app:layout_constraintStart_toStartOf="@id/watchedentryitem_title"
             app:layout_constraintTop_toBottomOf="@id/watchedentryitem_title"
@@ -51,10 +74,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:textSize="12sp"
+            android:textAppearance="?attr/textAppearanceBody2"
             android:textStyle="bold"
             app:layout_constraintBaseline_toBaselineOf="@id/watchedentryitem_watched_date"
-            app:layout_constraintStart_toEndOf="@id/watchedentryitem_poster"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/watchedentryitem_show_title"
             tools:text="Season 1 Episode 1" />
 
@@ -77,30 +100,23 @@
             app:layout_constraintTop_toBottomOf="@id/watchedentryitem_show_title"
             tools:text="Watched: 21/01/2021" />
 
-        <TextView
+        <at.blogc.android.views.ExpandableTextView
             android:id="@+id/watchedentryitem_overview"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:maxLines="3"
+            android:ellipsize="end"
+            android:textAppearance="?attr/textAppearanceBody2"
             android:layout_marginStart="8dp"
             android:layout_marginTop="4dp"
             android:layout_marginEnd="8dp"
             android:paddingBottom="8dp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/watchedentryitem_poster"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/watchedentryitem_season_episode_number"
             tools:text=" Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam dignissim finibus mi, et rhoncus neque rutrum posuere. Pellentesque et luctus odio. Ut ac purus eu urna pellentesque ultrices. Proin vehicula lobortis urna id suscipit. Nullam sed erat commodo, pretium sapien eget, maximus ex. Donec ullamcorper, nunc vel aliquam semper, mauris sapien consectetur orci, porttitor viverra eros massa sit amet neque. Nullam at dolor nec lorem consectetur condimentum. Nunc laoreet vehicula est, a finibus nisl scelerisque sed. Vestibulum sit amet euismod nunc. Curabitur sed velit semper, luctus dolor id, porta elit. Fusce rhoncus aliquet blandit. Curabitur non nisl aliquet, egestas eros nec, suscipit mi. Integer iaculis imperdiet efficitur.
 Fusce laoreet ut quam nec sodales. Donec in vulputate neque, id commodo sem. Mauris varius mollis erat, nec aliquam ipsum. Sed sollicitudin laoreet ipsum id tempus. Morbi condimentum nisl augue, at dignissim felis rutrum id. Morbi finibus leo vel molestie euismod. Quisque fringilla elit ultrices felis molestie, eu fringilla leo viverra. Morbi dolor est, aliquet et mauris ut, hendrerit condimentum elit. Nullam placerat rhoncus ex, ut ullamcorper felis blandit nec. Praesent interdum sed justo sit a" />
 
-        <Button
-            android:id="@+id/watchedentryitem_menu"
-            android:layout_width="26dp"
-            android:layout_height="26dp"
-            android:layout_margin="4dp"
-            android:background="@drawable/ic_baseline_menu_open_24"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/watchedentryitem_overview" />
-
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>

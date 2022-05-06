@@ -27,6 +27,7 @@
         <entry key="app/src/main/res/layout/activity_base.xml" value="0.3917572463768116" />
         <entry key="app/src/main/res/layout/activity_episode_details.xml" value="0.5552083333333333" />
         <entry key="app/src/main/res/layout/activity_episode_details_inner.xml" value="0.5552083333333333" />
+        <entry key="app/src/main/res/layout/activity_list_items.xml" value="0.3523550724637681" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.4248878923766816" />
         <entry key="app/src/main/res/layout/activity_movie_details.xml" value="0.5588541666666667" />
         <entry key="app/src/main/res/layout/activity_movies_main.xml" value="0.5927083333333333" />
@@ -66,6 +67,10 @@
         <entry key="app/src/main/res/layout/fragment_watching_shows.xml" value="0.5515625" />
         <entry key="app/src/main/res/layout/item_progress_layout_item.xml" value="0.5270833333333333" />
         <entry key="app/src/main/res/layout/layout_appbar.xml" value="0.42436594202898553" />
+        <entry key="app/src/main/res/layout/list_entry_episode_item.xml" value="0.6904660111158615" />
+        <entry key="app/src/main/res/layout/list_entry_movie_item.xml" value="0.6904660111158615" />
+        <entry key="app/src/main/res/layout/list_entry_person_item.xml" value="0.4878153056861907" />
+        <entry key="app/src/main/res/layout/list_entry_show_item.xml" value="0.6940389294403893" />
         <entry key="app/src/main/res/layout/movie_poster_item.xml" value="0.5927083333333333" />
         <entry key="app/src/main/res/layout/network_state_item.xml" value="0.4365942028985507" />
         <entry key="app/src/main/res/layout/next_episode_layout_item.xml" value="0.5588541666666667" />
@@ -87,7 +92,7 @@
         <entry key="app/src/main/res/layout/watched_button_layout.xml" value="0.5234375" />
         <entry key="app/src/main/res/layout/watched_episode_entry_list_item.xml" value="0.4365942028985507" />
         <entry key="app/src/main/res/layout/watched_history_item_layout.xml" value="0.5645833333333333" />
-        <entry key="app/src/main/res/layout/watched_movie_entry_list_item.xml" value="0.8411458333333334" />
+        <entry key="app/src/main/res/layout/watched_movie_entry_list_item.xml" value="0.75" />
         <entry key="app/src/main/res/menu/bottom_nav_menu.xml" value="0.58125" />
         <entry key="app/src/main/res/menu/calendar_shows_filter_menu.xml" value="0.48489583333333336" />
         <entry key="app/src/main/res/menu/collected_filter_menu.xml" value="0.5786458333333333" />

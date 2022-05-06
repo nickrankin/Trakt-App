@@ -8,8 +8,8 @@ import com.nickrankin.traktapp.dao.credits.model.ShowCastPersonData
 data class ShowCastPerson(
     @Embedded val showCastPersonData: ShowCastPersonData,
     @Relation(
-        parentColumn = "castPersonTraktId",
-        entityColumn = "traktId"
+        parentColumn = "personId",
+        entityColumn = "personId"
     )
     val castPerson: CastPerson
 )

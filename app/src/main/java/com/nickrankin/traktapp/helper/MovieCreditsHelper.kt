@@ -67,14 +67,15 @@ class MovieCreditsHelper @Inject constructor(
             castPeople.add(
                 Pair(
                     MovieCastPersonData(
-                        traktCastMember.person?.ids?.trakt ?: 0,
+                        "trakt_$movieTraktId-${traktCastMember.person?.ids?.trakt ?: 0}",
+                        "trakt_${traktCastMember.person?.ids?.trakt ?: 0}",
                         movieTraktId,
                         index,
                         traktCastMember.character
                     ),
                     CastPerson(
-                        traktCastMember.person?.ids?.trakt ?: 0,
-                        traktCastMember.person?.ids?.tmdb,
+                        "trakt_${traktCastMember.person?.ids?.trakt ?: 0}",
+                        "trakt_${traktCastMember.person?.ids?.trakt ?: 0}",
                         traktCastMember.person?.ids?.imdb,
                         traktCastMember.person?.biography,
                         traktCastMember.person?.birthplace,

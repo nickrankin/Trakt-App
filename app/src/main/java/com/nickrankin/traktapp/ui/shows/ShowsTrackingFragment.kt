@@ -29,6 +29,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
+import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.search.ShowSearchLoadStateAdapter
 import com.nickrankin.traktapp.adapter.shows.*
@@ -38,10 +39,7 @@ import com.nickrankin.traktapp.dao.show.model.TrackedEpisode
 import com.nickrankin.traktapp.dao.show.model.TrackedShow
 import com.nickrankin.traktapp.dao.show.model.TrackedShowWithEpisodes
 import com.nickrankin.traktapp.databinding.ShowsTrackingFragmentBinding
-import com.nickrankin.traktapp.helper.ItemDecorator
-import com.nickrankin.traktapp.helper.PosterImageLoader
-import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.helper.Sorting
+import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.shows.ShowsTrackingViewModel
 import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
@@ -64,7 +62,7 @@ import javax.inject.Inject
 private const val TAG = "ShowsTrackingFragment"
 
 @AndroidEntryPoint
-class ShowsTrackingFragment : Fragment(), OnNavigateToShow, OnNavigateToEpisode, SwipeRefreshLayout.OnRefreshListener {
+class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpisode, SwipeRefreshLayout.OnRefreshListener {
 
     private val viewModel: ShowsTrackingViewModel by activityViewModels()
     private lateinit var bindings: ShowsTrackingFragmentBinding
@@ -98,7 +96,6 @@ class ShowsTrackingFragment : Fragment(), OnNavigateToShow, OnNavigateToEpisode,
     @Inject
     lateinit var showsDatabase: ShowsDatabase
 
-
     @Inject
     lateinit var sharedPreferences: SharedPreferences
 
@@ -106,7 +103,7 @@ class ShowsTrackingFragment : Fragment(), OnNavigateToShow, OnNavigateToEpisode,
     lateinit var glide: RequestManager
 
     @Inject
-    lateinit var posterImageLoader: PosterImageLoader
+    lateinit var tmdbImageLoader: TmdbImageLoader
 
     private var isloggedIn = false
 
@@ -123,6 +120,8 @@ class ShowsTrackingFragment : Fragment(), OnNavigateToShow, OnNavigateToEpisode,
         super.onViewCreated(view, savedInstanceState)
 
         setHasOptionsMenu(true)
+
+        updateTitle("Tracked Shows")
 
         isloggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
 
@@ -302,7 +301,7 @@ class ShowsTrackingFragment : Fragment(), OnNavigateToShow, OnNavigateToEpisode,
     private fun initRecycler() {
         trackedShowsRecyclerView = bindings.showstrackingfragmentRecyclerview
         val layoutManager = LinearLayoutManager(requireContext())
-        trackedShowsAdapter = TrackedShowsAdapter(glide, posterImageLoader, callback = { trackedShowWithEpisodes ->
+        trackedShowsAdapter = TrackedShowsAdapter(glide, tmdbImageLoader, callback = { trackedShowWithEpisodes ->
             val trackedShow = trackedShowWithEpisodes.trackedShow
             navigateToShow(trackedShow.trakt_id, trackedShow.tmdb_id ?: -1, trackedShow.title, null)
         }) { showTitle, upcomingEpisodes ->
@@ -376,7 +375,7 @@ class ShowsTrackingFragment : Fragment(), OnNavigateToShow, OnNavigateToEpisode,
     private fun createUpcomingEpisodesDialog() {
         val layoutManager = LinearLayoutManager(requireContext())
         upcomingEpisodesRecyclerView = RecyclerView(requireContext())
-        upcomingEpisodesAdapter = TrackedEpisodesAdapter(sharedPreferences, glide, posterImageLoader, callback = { trackedEpisode ->
+        upcomingEpisodesAdapter = TrackedEpisodesAdapter(sharedPreferences, glide, tmdbImageLoader, callback = { trackedEpisode ->
             navigateToEpisode(trackedEpisode.show_trakt_id, trackedEpisode.show_tmdb_id, trackedEpisode.season, trackedEpisode.episode, null)
         })
 
@@ -633,9 +632,6 @@ class ShowsTrackingFragment : Fragment(), OnNavigateToShow, OnNavigateToEpisode,
     override fun navigateToShow(traktId: Int, tmdbId: Int, title: String?, language: String?) {
         val intent = Intent(requireActivity(), ShowDetailsActivity::class.java)
         intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
-        intent.putExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, tmdbId)
-        intent.putExtra(ShowDetailsRepository.SHOW_TITLE_KEY, title)
-        intent.putExtra(ShowDetailsRepository.SHOW_LANGUAGE_KEY, language)
 
         startActivity(intent)
     }

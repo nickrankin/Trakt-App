@@ -14,11 +14,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
-import com.nickrankin.traktapp.R
-import com.nickrankin.traktapp.adapter.movies.ReccomendedMoviesAdaptor
+import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.adapter.movies.TrendingMoviesAdaptor
 import com.nickrankin.traktapp.databinding.FragmentTrendingMoviesBinding
-import com.nickrankin.traktapp.helper.PosterImageLoader
+import com.nickrankin.traktapp.helper.OnTitleChangeListener
+import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.movies.TrendingMoviesViewModel
 import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
@@ -29,7 +29,7 @@ import javax.inject.Inject
 
 private const val TAG = "TrendingMoviesFragment"
 @AndroidEntryPoint
-class TrendingMoviesFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
+class TrendingMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
     private lateinit var bindings: FragmentTrendingMoviesBinding
     private val viewModel: TrendingMoviesViewModel by activityViewModels()
@@ -41,10 +41,7 @@ class TrendingMoviesFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener 
     private lateinit var adapter: TrendingMoviesAdaptor
 
     @Inject
-    lateinit var posterImageLoader: PosterImageLoader
-
-    @Inject
-    lateinit var glide: RequestManager
+    lateinit var tmdbPosterImageLoader: TmdbImageLoader
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -63,8 +60,9 @@ class TrendingMoviesFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener 
 
         progressBar = bindings.trendingmoviesfragmentProgressbar
 
-        initRecycler()
+        updateTitle("Trending Movies")
 
+        initRecycler()
         getTrendingMovies()
     }
 
@@ -92,12 +90,6 @@ class TrendingMoviesFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener 
                         }
 
                         adapter.submitList(trendingMoviesResource.data)
-//
-//                        trendingMoviesResource.data?.map { trending ->
-//
-//                            Log.d(TAG, "getTrendingMovies: Got Trending ${trending.movie.title} . Watching now: ${trending.watchers}")
-//
-//                        }
                     }
 
                     is Resource.Error -> {
@@ -130,10 +122,9 @@ class TrendingMoviesFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener 
 
         val lm = LinearLayoutManager(requireContext())
 
-        adapter = TrendingMoviesAdaptor(glide, posterImageLoader, callback = {trendingMovie ->
+        adapter = TrendingMoviesAdaptor(tmdbPosterImageLoader, callback = { trendingMovie ->
             val intent = Intent(requireContext(), MovieDetailsActivity::class.java)
             intent.putExtra(MovieDetailsRepository.MOVIE_TRAKT_ID_KEY, trendingMovie?.movie?.ids?.trakt ?: -1)
-            intent.putExtra(MovieDetailsRepository.MOVIE_TITLE_KEY, trendingMovie?.movie?.title)
 
             startActivity(intent)
 

@@ -11,6 +11,7 @@ import com.google.android.material.tabs.TabLayout
 import com.nickrankin.traktapp.BaseActivity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.databinding.ActivityMoviesMainBinding
+import com.nickrankin.traktapp.helper.OnTitleChangeListener
 import com.nickrankin.traktapp.ui.movies.collected.CollectedMoviesFragment
 import com.nickrankin.traktapp.ui.movies.watched.WatchedMoviesFragment
 import dagger.hilt.android.AndroidEntryPoint
@@ -18,7 +19,7 @@ import dagger.hilt.android.AndroidEntryPoint
 private const val TAG = "MoviesMainActivity"
 private const val CURRENT_TAB = "key_current_tab"
 @AndroidEntryPoint
-class MoviesMainActivity : BaseActivity(), TabLayout.OnTabSelectedListener {
+class MoviesMainActivity : BaseActivity(), OnTitleChangeListener, TabLayout.OnTabSelectedListener {
     private lateinit var bindings: ActivityMoviesMainBinding
     private lateinit var fragmentContainer: LinearLayout
 
@@ -57,9 +58,10 @@ class MoviesMainActivity : BaseActivity(), TabLayout.OnTabSelectedListener {
         } else {
             selectCurrentTab()
         }
+    }
 
-
-
+    override fun onTitleChanged(newTitle: String) {
+        supportActionBar?.title = newTitle
     }
 
     private fun selectCurrentTab() {

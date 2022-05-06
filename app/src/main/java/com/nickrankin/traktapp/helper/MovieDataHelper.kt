@@ -19,14 +19,13 @@ class MovieDataHelper @Inject constructor(
     suspend fun getMovieSummary(movieTraktId: Int): TmMovie? {
             val traktMovie = traktApi.tmMovies().summary(movieTraktId.toString(), Extended.FULL)
 
-            val tmMovie = getTmdbData(traktMovie.ids?.tmdb, traktMovie.language)
+            val tmMovie = getTmdbData(traktMovie.ids?.tmdb)
 
         return if (tmMovie != null) {
                 getMovieDataTmdb(traktMovie, tmMovie)
             } else {
                 // Try to find the movie
                 val foundMovie = findTmdbMovie(
-                    getTmdbLanguage(traktMovie.language),
                     traktMovie.title,
                     traktMovie.year
                 )
@@ -35,7 +34,7 @@ class MovieDataHelper @Inject constructor(
                 if (foundMovie != null) {
                     // We have a basemovie including TMDB ID, lets get the info
                     tmdbFoundMovie =
-                        getTmdbData(foundMovie.id, getTmdbLanguage(foundMovie.original_language))
+                        getTmdbData(foundMovie.id)
                 }
 
                 // If we have a valid TMDB Movie, use this source otherwise need to fallback to Trakt
@@ -47,13 +46,13 @@ class MovieDataHelper @Inject constructor(
             }
     }
 
-    private suspend fun getTmdbData(tmdbId: Int?, language: String?): Movie? {
-        return tmdbApi.tmMovieService().summary(tmdbId ?: -1, getTmdbLanguage(language), AppendToResponse(AppendToResponseItem.VIDEOS))
+    private suspend fun getTmdbData(tmdbId: Int?): Movie? {
+        return tmdbApi.tmMovieService().summary(tmdbId ?: -1, getTmdbLanguage(), AppendToResponse(AppendToResponseItem.VIDEOS))
     }
 
-    private suspend fun findTmdbMovie(language: String?, title: String?, year: Int?): BaseMovie? {
+    private suspend fun findTmdbMovie(title: String?, year: Int?): BaseMovie? {
         val foundTmdbMovie = tmdbApi.tmSearchService()
-            .movie(title, 1, getTmdbLanguage(language), null, true, year, null)
+            .movie(title, 1, getTmdbLanguage(), null, true, year, null)
 
         return foundTmdbMovie.results?.first()
     }

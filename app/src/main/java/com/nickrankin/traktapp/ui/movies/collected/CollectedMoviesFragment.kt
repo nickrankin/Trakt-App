@@ -5,20 +5,20 @@ import android.os.Bundle
 import android.util.Log
 import android.view.*
 import androidx.fragment.app.Fragment
-import android.widget.Toast
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexboxLayoutManager
 import com.google.android.flexbox.JustifyContent
+import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.movies.CollectedMoviesAdapter
 import com.nickrankin.traktapp.databinding.FragmentCollectedMoviesBinding
-import com.nickrankin.traktapp.helper.PosterImageLoader
+import com.nickrankin.traktapp.helper.OnTitleChangeListener
+import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.movies.CollectedMoviesViewModel
 import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
@@ -29,7 +29,7 @@ import javax.inject.Inject
 
 private const val TAG = "CollectedMoviesFragment"
 @AndroidEntryPoint
-class CollectedMoviesFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
+class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
     private lateinit var bindings: FragmentCollectedMoviesBinding
 
@@ -42,7 +42,7 @@ class CollectedMoviesFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener
     lateinit var glide: RequestManager
 
     @Inject
-    lateinit var posterImageLoader: PosterImageLoader
+    lateinit var tmdbImageLoader: TmdbImageLoader
 
     private val viewModel: CollectedMoviesViewModel by activityViewModels()
 
@@ -63,8 +63,11 @@ class CollectedMoviesFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener
 
         setHasOptionsMenu(true)
 
+        updateTitle("Collected Movies")
+
         initRecycler()
         getCollectedMovies()
+
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -115,10 +118,9 @@ class CollectedMoviesFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener
         lm.justifyContent = JustifyContent.SPACE_EVENLY
 
 
-        adapter = CollectedMoviesAdapter(glide, posterImageLoader, callback = { movie, type ->
+        adapter = CollectedMoviesAdapter(glide, tmdbImageLoader, callback = { movie, type ->
             val intent = Intent(requireContext(), MovieDetailsActivity::class.java)
             intent.putExtra(MovieDetailsRepository.MOVIE_TRAKT_ID_KEY, movie.trakt_id)
-            intent.putExtra(MovieDetailsRepository.MOVIE_TITLE_KEY, movie.title)
 
             startActivity(intent)
         })

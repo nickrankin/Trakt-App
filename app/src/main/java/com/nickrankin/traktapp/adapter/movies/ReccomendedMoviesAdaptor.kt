@@ -6,14 +6,14 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import at.blogc.android.views.ExpandableTextView
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.databinding.ReccomendedShowEntryListItemBinding
-import com.nickrankin.traktapp.helper.AppConstants
-import com.nickrankin.traktapp.helper.PosterImageLoader
+import com.nickrankin.traktapp.helper.ImageItemType
+import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.uwetrottmann.trakt5.entities.Movie
-import com.uwetrottmann.trakt5.entities.Show
 
-class ReccomendedMoviesAdaptor(private val glide: RequestManager, private val imageLoader: PosterImageLoader, private val callback: (results: Movie?) -> Unit): ListAdapter<Movie, ReccomendedMoviesAdaptor.ViewHolder>(
+class ReccomendedMoviesAdaptor(private val tmdbImageLoader: TmdbImageLoader, private val callback: (pos: Int, action: Int, results: Movie?) -> Unit): ListAdapter<Movie, ReccomendedMoviesAdaptor.ViewHolder>(
     COMPARATOR) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -30,25 +30,30 @@ class ReccomendedMoviesAdaptor(private val glide: RequestManager, private val im
             collectedentryitemCollectedDate.visibility = View.GONE
             collectedentryitemOverview.text = currentItem?.overview
 
-            imageLoader.loadMoviePosterImage(currentItem?.ids?.trakt ?: 0, currentItem?.ids?.tmdb ?: 0, currentItem?.language, true, callback = { posterImage ->
-                if(posterImage.poster_path != null && posterImage.trakt_id == currentItem.ids?.trakt) {
-                    glide
-                        .load(AppConstants.TMDB_POSTER_URL + posterImage.poster_path)
-                        .into(collectedentryitemPoster)
-                }
-            })
+            tmdbImageLoader.loadImages(currentItem?.ids?.trakt ?: 0, ImageItemType.MOVIE,currentItem?.ids?.tmdb ?: 0,  currentItem.title, null, true, collectedentryitemPoster, collectedentryitemBackdrop)
+
+            collectedentryitemOverview.setOnClickListener { v ->
+                val expandingTextView = v as ExpandableTextView
+
+                expandingTextView.toggle()
+            }
+
 
             root.setOnClickListener {
-                callback(currentItem)
+                callback(position, ACTION_VIEW, currentItem)
+            }
+
+            collectedentryitemRemovePlayBtn.setOnClickListener {
+                callback(position, ACTION_REMOVE, currentItem)
             }
         }
     }
 
-
-
     inner class ViewHolder(val bindings: ReccomendedShowEntryListItemBinding): RecyclerView.ViewHolder(bindings.root)
 
     companion object {
+        const val ACTION_VIEW = 0
+        const val ACTION_REMOVE = 1
         val COMPARATOR = object: DiffUtil.ItemCallback<Movie>() {
             override fun areItemsTheSame(oldItem: Movie, newItem: Movie): Boolean {
                 return oldItem == newItem

@@ -6,14 +6,12 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.nickrankin.traktapp.dao.images.model.ImagesTypeConverter
-import com.nickrankin.traktapp.dao.images.model.MoviePosterImage
-import com.nickrankin.traktapp.dao.images.model.ShowPosterImage
+import com.nickrankin.traktapp.dao.images.model.Image
 
-@Database(entities = [ShowPosterImage::class, MoviePosterImage::class], version=1, exportSchema = false)
+@Database(entities = [Image::class], version=1, exportSchema = false)
 @TypeConverters(ImagesTypeConverter::class)
 abstract class ImagesDatabase: RoomDatabase() {
-    abstract fun showPosterImagesDao(): ShowPosterImagesDao
-    abstract fun moviePosterImagesDao(): MoviePosterImagesDao
+    abstract fun imeagesDao(): ImagesDao
 
 
     companion object {

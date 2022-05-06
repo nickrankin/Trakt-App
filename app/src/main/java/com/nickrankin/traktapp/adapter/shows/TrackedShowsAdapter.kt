@@ -13,12 +13,13 @@ import com.nickrankin.traktapp.dao.show.model.TrackedEpisode
 import com.nickrankin.traktapp.dao.show.model.TrackedShowWithEpisodes
 import com.nickrankin.traktapp.databinding.TrackedShowListItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
-import com.nickrankin.traktapp.helper.PosterImageLoader
+import com.nickrankin.traktapp.helper.ImageItemType
+import com.nickrankin.traktapp.helper.TmdbImageLoader
 import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 
 private const val TAG = "TrackedShowsAdapter"
-class TrackedShowsAdapter(private val glide: RequestManager, private val imageLoader: PosterImageLoader, private val callback: (trackedShow: TrackedShowWithEpisodes) -> Unit, private val upcomingEpisodesCallback: (showTitle: String?, episodes: List<TrackedEpisode?>) -> Unit): ListAdapter<TrackedShowWithEpisodes, TrackedShowsAdapter.TrackedShowsViewHolder>(
+class TrackedShowsAdapter(private val glide: RequestManager, private val tmdbImageLoader: TmdbImageLoader, private val callback: (trackedShow: TrackedShowWithEpisodes) -> Unit, private val upcomingEpisodesCallback: (showTitle: String?, episodes: List<TrackedEpisode?>) -> Unit): ListAdapter<TrackedShowWithEpisodes, TrackedShowsAdapter.TrackedShowsViewHolder>(
     COMPARATOR) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrackedShowsViewHolder {
@@ -36,16 +37,7 @@ class TrackedShowsAdapter(private val glide: RequestManager, private val imageLo
 
             trackedshowitemShowOverview.text = selectedShow.trackedShow.overview
 
-            imageLoader.loadShowPosterImage(selectedShow.trackedShow.trakt_id, selectedShow.trackedShow.tmdb_id, null, selectedShow.trackedShow.title ?: "", null, true) { posterRes ->
-                if(posterRes.poster_path != null) {
-                    glide
-                        .load(AppConstants.TMDB_POSTER_URL + posterRes.poster_path)
-                        .into(trackedshowitemShowPoster)
-                } else {
-                    trackedshowitemShowPoster.setImageResource(R.drawable.ic_trakt_svgrepo_com)
-                }
-
-            }
+            tmdbImageLoader.loadImages(selectedShow.trackedShow.trakt_id, ImageItemType.SHOW, selectedShow.trackedShow.tmdb_id, selectedShow.trackedShow.title ?: "", null, true, trackedshowitemShowPoster, null)
 
             trackedshowitemShowOverview.setOnClickListener {
                 val expandableTextView = it as ExpandableTextView

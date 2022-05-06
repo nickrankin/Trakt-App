@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface MovieCastPeopleDao {
     @Transaction
-    @Query("SELECT * FROM movie_cast WHERE showTraktId = :traktId ORDER BY ordering ASC")
+    @Query("SELECT * FROM movie_cast WHERE movieTraktId = :traktId ORDER BY ordering ASC")
     fun getMovieCast(traktId: Int): Flow<List<MovieCastPerson>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -21,6 +21,6 @@ interface MovieCastPeopleDao {
     fun delete(movieCastPersonData: MovieCastPersonData)
 
     @Transaction
-    @Query("DELETE FROM movie_cast WHERE showTraktId = :traktId")
+    @Query("DELETE FROM movie_cast WHERE movieTraktId = :traktId")
     fun deleteMovieCast(traktId: Int)
 }

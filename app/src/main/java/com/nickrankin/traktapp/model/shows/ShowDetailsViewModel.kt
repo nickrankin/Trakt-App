@@ -29,8 +29,7 @@ class ShowDetailsViewModel @Inject constructor(
     val state = savedStateHandle
 
     val traktId: Int = savedStateHandle.get(ShowDetailsRepository.SHOW_TRAKT_ID_KEY) ?: 0
-    val tmdbId: Int = savedStateHandle.get(ShowDetailsRepository.SHOW_TMDB_ID_KEY) ?: -1
-    
+
     val show = refreshEvent.flatMapLatest { shouldRefresh ->
         repository.getShowSummary(traktId, shouldRefresh)
     }

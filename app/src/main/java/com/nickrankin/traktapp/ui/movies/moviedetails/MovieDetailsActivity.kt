@@ -60,18 +60,23 @@ class MovieDetailsActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLi
 
         movieTraktId = intent.getIntExtra(MovieDetailsRepository.MOVIE_TRAKT_ID_KEY, -1)
 
-        initActionButtons()
-
         getMovie()
         getUserRatings()
 
     }
 
-    private fun initActionButtons() {
+    private fun initActionButtons(movie: TmMovie?) {
+        val actionButtonFragment = MovieDetailsActionButtonsFragment.newInstance()
+
+        val bundle = Bundle()
+        bundle.putString(MovieDetailsRepository.MOVIE_TITLE_KEY, movie?.title ?: "Unknown")
+
+        actionButtonFragment.arguments = bundle
+
         supportFragmentManager.beginTransaction()
             .add(
                 binding.moviedetailsactivityInner.moviedetailsactivityButtonsFragmentContainer.id,
-                MovieDetailsActionButtonsFragment.newInstance()
+                actionButtonFragment
             )
             .commit()
     }
@@ -103,7 +108,12 @@ class MovieDetailsActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLi
                         if (movie != null) {
                             displayMovie(movie)
                         }
+
+
+                        initActionButtons(movie)
+
                         initOverviewFragment(movie)
+
                     }
 
                     is Resource.Error -> {

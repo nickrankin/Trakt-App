@@ -23,7 +23,6 @@ import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.shows.RecommendedShowsAdapter
 import com.nickrankin.traktapp.databinding.FragmentShowsRecommendedBinding
 import com.nickrankin.traktapp.helper.ItemDecorator
-import com.nickrankin.traktapp.helper.PosterImageLoader
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.shows.RecommendedShowsViewModel
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
@@ -31,6 +30,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
 import com.google.android.material.snackbar.Snackbar
+import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.uwetrottmann.trakt5.entities.Show
@@ -41,7 +42,7 @@ import com.uwetrottmann.trakt5.entities.SyncShow
 private const val TAG = "ShowsRecommendedFragmen"
 
 @AndroidEntryPoint
-class ShowsRecommendedFragment : Fragment(), OnNavigateToShow {
+class ShowsRecommendedFragment : BaseFragment(), OnNavigateToShow {
     private lateinit var bindings: FragmentShowsRecommendedBinding
 
     private val viewModel: RecommendedShowsViewModel by activityViewModels()
@@ -55,7 +56,7 @@ class ShowsRecommendedFragment : Fragment(), OnNavigateToShow {
     lateinit var glide: RequestManager
 
     @Inject
-    lateinit var imageLoader: PosterImageLoader
+    lateinit var tmdbImageLoader: TmdbImageLoader
 
     @Inject
     lateinit var sharedPreferences: SharedPreferences
@@ -68,6 +69,8 @@ class ShowsRecommendedFragment : Fragment(), OnNavigateToShow {
 
         val isLoggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
 
+        updateTitle("Suggested Shows")
+
         if(!isLoggedIn) {
             // TODO display relevant message to UI
             Log.e(TAG, "onViewCreated: Need login for this action", )
@@ -75,8 +78,6 @@ class ShowsRecommendedFragment : Fragment(), OnNavigateToShow {
         }
 
         initRecycler()
-
-
         getShows()
         getEvents()
     }
@@ -91,7 +92,7 @@ class ShowsRecommendedFragment : Fragment(), OnNavigateToShow {
 
         layoutManager = LinearLayoutManager(requireContext())
 
-        adapter = RecommendedShowsAdapter(glide, imageLoader, callback = { selectedShow ->
+        adapter = RecommendedShowsAdapter(glide, tmdbImageLoader, callback = { selectedShow ->
             navigateToShow(
                 selectedShow?.ids?.trakt ?: 0,
                 selectedShow?.ids?.tmdb ?: 0,
@@ -170,9 +171,6 @@ class ShowsRecommendedFragment : Fragment(), OnNavigateToShow {
 
         val intent = Intent(context, ShowDetailsActivity::class.java)
         intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
-        intent.putExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, tmdbId)
-        intent.putExtra(ShowDetailsRepository.SHOW_TITLE_KEY, showTitle)
-        intent.putExtra(ShowDetailsRepository.SHOW_LANGUAGE_KEY, language)
 
         startActivity(intent)
     }

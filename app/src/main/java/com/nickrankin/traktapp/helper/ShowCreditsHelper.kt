@@ -3,8 +3,11 @@ package com.nickrankin.traktapp.helper
 import android.util.Log
 import com.nickrankin.traktapp.api.TmdbApi
 import com.nickrankin.traktapp.api.TraktApi
+import com.nickrankin.traktapp.api.services.trakt.model.TmCredits
 import com.nickrankin.traktapp.dao.credits.model.CastPerson
+import com.nickrankin.traktapp.dao.credits.model.CastPersonWithData
 import com.nickrankin.traktapp.dao.credits.model.ShowCastPersonData
+import com.uwetrottmann.tmdb2.entities.Credits
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -15,107 +18,138 @@ class ShowCreditsHelper @Inject constructor(
     private val traktApi: TraktApi,
     private val tmdbApi: TmdbApi
 ) {
-
     suspend fun getShowCredits(
         showTraktId: Int,
         showTmdbId: Int?
-    ): List<Pair<ShowCastPersonData, CastPerson>> {
+    ): List<CastPersonWithData> {
         Log.d(TAG, "getCredits: Getting cast credits")
-        val castPeople: MutableList<Pair<ShowCastPersonData, CastPerson>> = mutableListOf()
+        val castPeople: MutableList<CastPersonWithData> = mutableListOf()
 
-        // Store TMDB response data as K: TMDBID, V: Image path
-        val castImagesMap: MutableMap<Int, String?> = mutableMapOf()
-
-        val traktCastMembers = traktApi.tmShows().people(showTraktId.toString(), "full,guest_stars")
-        Log.d(TAG, "getCredits: Got ${traktCastMembers.cast?.size} from Trakt API")
 
         if (showTmdbId != null && showTmdbId != 0 && showTmdbId != -1) {
-            Log.d(TAG, "getCredits: Getting cast data from TMDB")
-            // Try to get Credit data from TMDB
-            try {
-                val tmdbResponse = tmdbApi.tmTvService().credits(showTmdbId, null)
-                Log.d(TAG, "getCredits: Got ${tmdbResponse.cast?.size} from TMDB API")
+            Log.d(TAG, "getShowCredits: Getting credits for TMDB id $showTmdbId")
+            // we get the cast data from TMDB
+            castPeople.addAll(getCastDataFromTmdbCredits(showTraktId, getCastMembersFromTmdb(showTmdbId)))
+        }
 
-                if (tmdbResponse.cast?.isNotEmpty() == true) {
-                    tmdbResponse.cast?.map { tmdbCastMember ->
-                        castImagesMap.put(tmdbCastMember?.id ?: 0, tmdbCastMember.profile_path)
-                    }
-                }
-
-                // TODO Get Guest Star photos. Tmdb only supports Guest stars from Episode endpoint :(
-//                if(tmdbResponse.guest_stars?.isNotEmpty() == true) {
-//                    tmdbResponse.guest_stars?.map { tmdbCastMember ->
-//                        castImagesMap.put(tmdbCastMember?.id ?: 0, tmdbCastMember.profile_path)
-//                    }
-//                }
-            } catch (e: Exception) {
-                Log.e(TAG, "getCredits: Failed to get credits from TMDB ${e.localizedMessage}")
-                e.printStackTrace()
-            }
+        if(castPeople.isEmpty()) {
+            Log.d(TAG, "getShowCredits: No data from TMDB, fallback to Trakt")
+            // No data from TMDB, so fall back to trakt
+            castPeople.addAll(getCastDataFromTraktCredits(showTraktId, getCastMembersDataFromTrakt(showTraktId.toString()), false))
         } else {
-            Log.d(TAG, "getCredits: Unable to get data for TMDB (TMDB ID: $showTmdbId)")
+            Log.d(TAG, "getShowCredits: Getting guest stars from Trakt")
+            // Only get the Guest Stars data from Trakt (TMDB API only provides Guest Star data from Season endpoints)
+            castPeople.addAll(getCastDataFromTraktCredits(showTraktId, getCastMembersDataFromTrakt(showTraktId.toString()), true))
         }
 
-        traktCastMembers.cast?.mapIndexed { index, traktCastMember ->
-            val posterPath = castImagesMap[traktCastMember.person?.ids?.tmdb]
-            Log.d(
-                TAG,
-                "getCredits: Got poster path for member ${traktCastMember.person?.name} // $posterPath"
-            )
-
-            castPeople.add(
-                Pair(
-                    ShowCastPersonData(
-                        traktCastMember.person?.ids?.trakt ?: 0,
-                        showTraktId,
-                        index,
-                        false,
-                        traktCastMember.character
-                    ),
-                    CastPerson(
-                        traktCastMember.person?.ids?.trakt ?: 0,
-                        traktCastMember.person?.ids?.tmdb,
-                        traktCastMember.person?.ids?.imdb,
-                        traktCastMember.person?.biography,
-                        traktCastMember.person?.birthplace,
-                        traktCastMember.person?.name ?: "",
-                        posterPath
-                    )
-                )
-
-            )
-        }
-
-        traktCastMembers.guest_stars?.mapIndexed { index, traktCastMember ->
-            val posterPath = castImagesMap[traktCastMember.person?.ids?.tmdb]
-            Log.d(
-                TAG,
-                "getCredits: Got poster path for member ${traktCastMember.person?.name} // $posterPath"
-            )
-
-            castPeople.add(
-                Pair(
-                    ShowCastPersonData(
-                        traktCastMember.person?.ids?.trakt ?: 0,
-                        showTraktId,
-                        index,
-                        true,
-                        traktCastMember.character
-                    ),
-                    CastPerson(
-                        traktCastMember.person?.ids?.trakt ?: 0,
-                        traktCastMember.person?.ids?.tmdb,
-                        traktCastMember.person?.ids?.imdb,
-                        traktCastMember.person?.biography,
-                        traktCastMember.person?.birthplace,
-                        traktCastMember.person?.name ?: "",
-                        posterPath
-                    )
-                )
-
-            )
-        }
+        Log.d(TAG, "getShowCredits: Returning ${castPeople.size} cast members")
 
         return castPeople
+    }
+
+    private suspend fun getCastMembersDataFromTrakt(showTraktId: String): TmCredits? {
+        return try {
+            traktApi.tmShows().people(showTraktId, "full,guest_stars")
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private suspend fun getCastMembersFromTmdb(showTmdbId: Int): Credits? {
+        return try {
+            tmdbApi.tmTvService().credits(showTmdbId, getTmdbLanguage())
+        } catch (e: Exception) {
+            Log.e(TAG, "getCredits: Failed to get credits from TMDB ${e.localizedMessage}")
+            e.printStackTrace()
+            null
+        }
+    }
+
+    private fun getCastDataFromTmdbCredits(
+        showTraktId: Int,
+        credits: Credits?
+    ): List<CastPersonWithData> {
+        val castPersonList: MutableList<CastPersonWithData> = mutableListOf()
+
+        credits?.cast?.map { castMember ->
+            castPersonList.add(
+                CastPersonWithData(
+                    ShowCastPersonData(
+                        "tmdb_$showTraktId-${castMember.id}",
+                        "tmdb_${castMember.id}",
+                        showTraktId,
+                        0,
+                        false,
+                        castMember.character
+                    ),
+                    CastPerson(
+                        "tmdb_${castMember.id}",
+                        "tmdb_${castMember.id}",
+                        null,
+                        null,
+                        null,
+                        castMember.name,
+                        castMember.profile_path
+                    )
+                )
+            )
+        }
+        return castPersonList
+    }
+
+    private fun getCastDataFromTraktCredits(showTraktId: Int, credits: TmCredits?, onlyGuest: Boolean): List<CastPersonWithData> {
+        val castPersonList: MutableList<CastPersonWithData> = mutableListOf()
+
+        if(!onlyGuest) {
+            credits?.cast?.map { castMember ->
+                castPersonList.add(
+                    CastPersonWithData(
+                        ShowCastPersonData(
+                            "trakt_$showTraktId-${castMember.person?.ids?.trakt}",
+                            "trakt_${castMember.person?.ids?.trakt}",
+                            showTraktId,
+                            0,
+                            false,
+                            castMember.character
+                        ),
+                        CastPerson(
+                            "trakt_${castMember.person?.ids?.trakt}",
+                            "trakt_${castMember.person?.ids?.trakt}",
+                            null,
+                            castMember.person?.ids?.imdb,
+                            null,
+                            castMember.person.name,
+                            null
+                        )
+                    )
+                )
+            }
+        }
+
+        credits?.guest_stars?.map { guestStar ->
+            castPersonList.add(
+                CastPersonWithData(
+                    ShowCastPersonData(
+                        "trakt_$showTraktId-${guestStar.person?.ids?.trakt}",
+                        "trakt_${guestStar.person?.ids?.trakt}",
+                        showTraktId,
+                        0,
+                        true,
+                        guestStar.character
+                    ),
+                    CastPerson(
+                        "trakt_${guestStar.person?.ids?.trakt}",
+                        "trakt_${guestStar.person?.ids?.trakt}",
+                        null,
+                        guestStar.person?.ids?.imdb,
+                        null,
+                        guestStar.person.name,
+                        null
+                    )
+                )
+            )
+        }
+
+        return castPersonList
     }
 }

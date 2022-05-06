@@ -7,22 +7,17 @@ import androidx.preference.PreferenceManager
 import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestManager
 import com.google.gson.Gson
-import com.nickrankin.traktapp.ApiKeys
 import com.nickrankin.traktapp.api.TmdbApi
 import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.images.ImagesDatabase
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
-import com.nickrankin.traktapp.helper.PosterImageLoader
+import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.services.helper.TrackedEpisodeAlarmScheduler
 import com.nickrankin.traktapp.services.helper.TrackedEpisodeNotificationsBuilder
-import com.uwetrottmann.trakt5.TraktV2
 import com.uwetrottmann.trakt5.entities.UserSlug
 import dagger.Module
 import dagger.Provides
-import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ActivityComponent
-import dagger.hilt.android.components.FragmentComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
@@ -68,8 +63,8 @@ object ApiModules {
 
     @Singleton
     @Provides
-    fun providePosterImageLoader(tmdbApi: TmdbApi, imagesDatabase: ImagesDatabase): PosterImageLoader {
-        return PosterImageLoader(tmdbApi, imagesDatabase)
+    fun provideImagesLoader(tmdbApi: TmdbApi, imagesDatabase: ImagesDatabase, glide: RequestManager): TmdbImageLoader {
+        return TmdbImageLoader(tmdbApi, imagesDatabase, glide)
     }
 
     @Singleton

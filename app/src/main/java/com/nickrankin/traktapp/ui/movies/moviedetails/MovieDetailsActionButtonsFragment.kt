@@ -53,6 +53,7 @@ class MovieDetailsActionButtonsFragment : Fragment(), SwipeRefreshLayout.OnRefre
     ): View? {
         bindings = ActionButtonsFragmentBinding.inflate(inflater)
 
+
         return bindings.root
     }
 
@@ -61,8 +62,7 @@ class MovieDetailsActionButtonsFragment : Fragment(), SwipeRefreshLayout.OnRefre
 
         isLoggedIn = shedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
 
-        movieTitle =
-            activity?.intent?.getStringExtra(MovieDetailsRepository.MOVIE_TITLE_KEY) ?: "Unknown"
+        movieTitle = arguments?.getString(MovieDetailsRepository.MOVIE_TITLE_KEY, "Unknown") ?: "Unknown"
 
         if (isLoggedIn) {
             // Dialogs

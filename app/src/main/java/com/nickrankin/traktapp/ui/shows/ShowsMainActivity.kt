@@ -16,13 +16,14 @@ import com.google.android.material.tabs.TabLayout
 import com.nickrankin.traktapp.BaseActivity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.databinding.ActivityShowsMainBinding
+import com.nickrankin.traktapp.helper.OnTitleChangeListener
 import dagger.hilt.android.AndroidEntryPoint
 import java.lang.ClassCastException
 
 private const val TAG = "ShowsMainActivity"
 
 @AndroidEntryPoint
-class ShowsMainActivity : BaseActivity(), TabLayout.OnTabSelectedListener {
+class ShowsMainActivity : BaseActivity(), OnTitleChangeListener, TabLayout.OnTabSelectedListener {
     private lateinit var bindings: ActivityShowsMainBinding
     private lateinit var fragmentContainer: LinearLayout
 
@@ -57,6 +58,10 @@ class ShowsMainActivity : BaseActivity(), TabLayout.OnTabSelectedListener {
             .commit()
 
         currentFragmentTag = "upcoming"
+    }
+
+    override fun onTitleChanged(newTitle: String) {
+        supportActionBar?.title = newTitle
     }
 
     private fun setupDrawerLayout() {

@@ -1,21 +1,18 @@
 package com.nickrankin.traktapp.adapter.movies
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import at.blogc.android.views.ExpandableTextView
 import com.bumptech.glide.RequestManager
-import com.nickrankin.traktapp.databinding.ReccomendedShowEntryListItemBinding
 import com.nickrankin.traktapp.databinding.TrendingMovieEntryListItemBinding
-import com.nickrankin.traktapp.helper.AppConstants
-import com.nickrankin.traktapp.helper.PosterImageLoader
-import com.uwetrottmann.trakt5.entities.Movie
-import com.uwetrottmann.trakt5.entities.Show
+import com.nickrankin.traktapp.helper.ImageItemType
+import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.uwetrottmann.trakt5.entities.TrendingMovie
 
-class TrendingMoviesAdaptor(private val glide: RequestManager, private val imageLoader: PosterImageLoader, private val callback: (results: TrendingMovie?) -> Unit): ListAdapter<TrendingMovie, TrendingMoviesAdaptor.ViewHolder>(
+class TrendingMoviesAdaptor(private val tmdbImageLoader: TmdbImageLoader, private val callback: (results: TrendingMovie?) -> Unit): ListAdapter<TrendingMovie, TrendingMoviesAdaptor.ViewHolder>(
     COMPARATOR) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -32,16 +29,16 @@ class TrendingMoviesAdaptor(private val glide: RequestManager, private val image
             trendingitemWatchingTotal.text = "${currentItem?.watchers ?: 0} watching this right now"
             trendingitemOverview.text = currentItem.movie?.overview
 
-            imageLoader.loadMoviePosterImage(currentItem.movie?.ids?.trakt ?: 0, currentItem.movie?.ids?.tmdb ?: 0, currentItem.movie?.language, true, callback = { posterImage ->
-                if(posterImage.poster_path != null && posterImage.trakt_id == currentItem.movie.ids?.trakt) {
-                    glide
-                        .load(AppConstants.TMDB_POSTER_URL + posterImage.poster_path)
-                        .into(trendingitemPoster)
-                }
-            })
+            tmdbImageLoader.loadImages(currentItem.movie?.ids?.trakt ?: 0, ImageItemType.MOVIE, currentItem.movie?.ids?.tmdb ?: 0,  currentItem.movie?.title, null, true, trendingitemPoster, trendingitemBackdrop)
 
             root.setOnClickListener {
                 callback(currentItem)
+            }
+
+            trendingitemOverview.setOnClickListener { v ->
+                val expandableTextView = v as ExpandableTextView
+
+                expandableTextView.toggle()
             }
         }
     }

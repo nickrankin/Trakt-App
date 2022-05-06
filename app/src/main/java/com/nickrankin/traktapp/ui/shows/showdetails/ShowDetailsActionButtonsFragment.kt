@@ -56,9 +56,9 @@ class ShowDetailsActionButtonsFragment : Fragment(), SwipeRefreshLayout.OnRefres
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        isLoggedIn = shedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
+        showTitle = arguments?.getString(ShowDetailsRepository.SHOW_TITLE_KEY, "Unknoen") ?: "Unknown"
 
-        showTitle = activity?.intent?.getStringExtra(ShowDetailsRepository.SHOW_TITLE_KEY) ?: "Unknown"
+        isLoggedIn = shedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
 
         if(isLoggedIn) {
             // Dialogs

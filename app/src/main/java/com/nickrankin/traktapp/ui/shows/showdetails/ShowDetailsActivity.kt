@@ -84,18 +84,6 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
 
         bindings = ActivityShowDetailsBinding.inflate(layoutInflater)
 
-
-        // Add Overview and Button fragments on first load
-        if (null == savedInstanceState) {
-            supportFragmentManager.beginTransaction()
-                .add(
-                    bindings.showdetailsactivityInner.showdetailsactivityButtonsFragmentContainer.id,
-                    ShowDetailsActionButtonsFragment.newInstance(),
-                    FRAGMENT_ACTION_BUTTONS
-                )
-                .commit()
-        }
-
         setContentView(bindings.root)
 
         // Init SwipeRefreshLayout
@@ -117,8 +105,7 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
 
         // Init variable
         showTraktId = intent.getIntExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, 0)
-        showTmdbId = intent.getIntExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, 0)
-        showTitle = intent.getStringExtra(ShowDetailsRepository.SHOW_TITLE_KEY)
+
         isLoggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
 
         Log.d(TAG, "onCreate: Got show $showTitle with TraktId $showTraktId TmdbId $showTmdbId")
@@ -160,6 +147,8 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
                         handleExternalLinks(show?.external_ids)
                         handleTrailer(show?.videos)
 
+                        initActionButtons(show)
+
                         createOverviewFragment(show)
 
                     }
@@ -198,13 +187,31 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
         }
     }
 
+    private fun initActionButtons(show: TmShow?) {
+        val showActionButtonsFragment = ShowDetailsActionButtonsFragment.newInstance()
+
+        val bundle = Bundle()
+        bundle.putString(ShowDetailsRepository.SHOW_TITLE_KEY, show?.name)
+
+        showActionButtonsFragment.arguments = bundle
+
+        supportFragmentManager.beginTransaction()
+            .add(
+                bindings.showdetailsactivityInner.showdetailsactivityButtonsFragmentContainer.id,
+                showActionButtonsFragment,
+                FRAGMENT_ACTION_BUTTONS
+            )
+            .commit()
+    }
+
     private fun createOverviewFragment(tmShow: TmShow?) {
+
         Log.d(TAG, "createOverviewFragment: Called")
         showDetailsOverviewFragment = ShowDetailsOverviewFragment.newInstance()
 
         val bundle = Bundle()
         bundle.putString(ShowDetailsOverviewFragment.OVERVIEW_KEY, tmShow?.overview)
-        Log.d(TAG, "getShow: OVERV ${bundle}")
+        bundle.putInt(ShowDetailsOverviewFragment.TMDB_ID_KEY, tmShow?.tmdb_id ?: 0)
         showDetailsOverviewFragment.arguments = bundle
 
         // If device is rotated, user will see the tab that was selected, otherwise show Overview tab.

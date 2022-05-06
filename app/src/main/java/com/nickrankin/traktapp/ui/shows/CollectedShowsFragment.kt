@@ -21,13 +21,15 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.google.android.material.snackbar.Snackbar
+import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.shows.CollectedShowsAdapter
 import com.nickrankin.traktapp.dao.show.model.CollectedShow
 import com.nickrankin.traktapp.databinding.FragmentCollectedShowsBinding
 import com.nickrankin.traktapp.helper.ItemDecorator
-import com.nickrankin.traktapp.helper.PosterImageLoader
+import com.nickrankin.traktapp.helper.OnTitleChangeListener
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.model.auth.shows.CollectedShowsViewModel
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
@@ -41,7 +43,7 @@ import javax.inject.Inject
 private const val TAG = "CollectedShowsFragment"
 
 @AndroidEntryPoint
-class CollectedShowsFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, OnNavigateToShow {
+class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, OnNavigateToShow {
     private lateinit var bindings: FragmentCollectedShowsBinding
     private lateinit var swipeLayout: SwipeRefreshLayout
     private lateinit var progressBar: ProgressBar
@@ -59,7 +61,7 @@ class CollectedShowsFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener,
     lateinit var sharedPreferences: SharedPreferences
 
     @Inject
-    lateinit var imageLoader: PosterImageLoader
+    lateinit var tmdbImageLoader: TmdbImageLoader
 
     @Inject
     lateinit var glide: RequestManager
@@ -83,11 +85,10 @@ class CollectedShowsFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener,
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        initRecycler()
-
-        handleEvents()
 
         progressBar = bindings.collectedshowsfragmentProgressbar
+
+        updateTitle("Collected Shows")
 
         if (isLoggedIn) {
             lifecycleScope.launch {
@@ -102,6 +103,8 @@ class CollectedShowsFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener,
 
             handleLoggedOutState()
         }
+        initRecycler()
+        handleEvents()
 
     }
 
@@ -214,7 +217,7 @@ class CollectedShowsFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener,
         adapter = CollectedShowsAdapter(
             sharedPreferences,
             glide,
-            imageLoader,
+            tmdbImageLoader,
             callback = { show, action ->
 
                 when (action) {
@@ -236,8 +239,6 @@ class CollectedShowsFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener,
     override fun navigateToShow(traktId: Int, tmdbId: Int, showTitle: String?, language: String?) {
         val intent = Intent(context, ShowDetailsActivity::class.java)
         intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
-        intent.putExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, tmdbId)
-        intent.putExtra(ShowDetailsRepository.SHOW_TITLE_KEY, showTitle)
 
         startActivity(intent)
     }

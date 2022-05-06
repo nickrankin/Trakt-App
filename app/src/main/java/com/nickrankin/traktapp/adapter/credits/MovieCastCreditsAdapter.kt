@@ -69,7 +69,7 @@ class MovieCastCreditsAdapter(private val glide: RequestManager): ListAdapter<Mo
                 oldItem: MovieCastPerson,
                 newItem: MovieCastPerson
             ): Boolean {
-                return oldItem.movieCastPersonData.castPersonTraktId == newItem.movieCastPersonData.castPersonTraktId
+                return oldItem.movieCastPersonData.id == newItem.movieCastPersonData.id
             }
         }
     }

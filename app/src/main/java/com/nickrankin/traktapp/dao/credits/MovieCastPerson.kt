@@ -9,8 +9,8 @@ import com.nickrankin.traktapp.dao.credits.model.ShowCastPersonData
 data class MovieCastPerson(
     @Embedded val movieCastPersonData: MovieCastPersonData,
     @Relation(
-        parentColumn = "castPersonTraktId",
-        entityColumn = "traktId"
+        parentColumn = "personId",
+        entityColumn = "personId"
     )
     val castPerson: CastPerson
 )
