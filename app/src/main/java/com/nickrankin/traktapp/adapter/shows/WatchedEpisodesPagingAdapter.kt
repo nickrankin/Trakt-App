@@ -27,7 +27,7 @@ import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 
 private const val TAG = "WatchedEpisodesPagingAd"
-class WatchedEpisodesPagingAdapter(private val sharedPreferences: SharedPreferences, private val tmdbImageLoader: TmdbImageLoader, private val glide: RequestManager, private val callback: (selectedShow: WatchedEpisode?, action: Int) -> Unit): PagingDataAdapter<WatchedEpisode, WatchedEpisodesPagingAdapter.WatchedEpisodeViewHolder>(COMPARATOR) {
+class WatchedEpisodesPagingAdapter(private val sharedPreferences: SharedPreferences, private val tmdbImageLoader: TmdbImageLoader, private val callback: (selectedShow: WatchedEpisode?, action: Int) -> Unit): PagingDataAdapter<WatchedEpisode, WatchedEpisodesPagingAdapter.WatchedEpisodeViewHolder>(COMPARATOR) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): WatchedEpisodeViewHolder {
         return WatchedEpisodeViewHolder(WatchedEpisodeEntryListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
@@ -47,7 +47,7 @@ class WatchedEpisodesPagingAdapter(private val sharedPreferences: SharedPreferen
             watchedentryitemWatchedDate.text = "Watched: " + currentItem?.watched_at?.atZoneSameInstant(
                 ZoneId.systemDefault())?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)))
 
-            tmdbImageLoader.loadEpisodeImages(currentItem?.episode_trakt_id ?: 0, currentItem?.show_tmdb_id ?: 0, currentItem?.show_trakt_id ?: 0, currentItem?.episode_season, currentItem?.episode_number, currentItem?.show_title ?: "", true, watchedentryitemPoster, watchedentryitemBackdrop)
+            tmdbImageLoader.loadEpisodeImages(currentItem?.episode_trakt_id ?: 0, currentItem?.show_tmdb_id ?: 0, currentItem?.show_trakt_id ?: 0, currentItem?.episode_season, currentItem?.episode_number, currentItem?.show_title ?: "", currentItem?.language, true, watchedentryitemPoster, watchedentryitemBackdrop)
 
             watchedentryitemOverview.setOnClickListener { v ->
                 val expandableTextView = v as ExpandableTextView
@@ -59,60 +59,6 @@ class WatchedEpisodesPagingAdapter(private val sharedPreferences: SharedPreferen
         }
 
     }
-
-    private fun showPopupMenu(view: View, selectedItem: WatchedEpisode?) {
-        val context = view.context
-        val popup = PopupMenu(context, view)
-
-        popup.menuInflater.inflate(R.menu.watched_shows_popup_menu, popup.menu)
-
-        popup.setOnMenuItemClickListener { item: MenuItem ->
-            when (item.itemId) {
-                R.id.watchedshowspopup_nav_show -> {
-                    callback(selectedItem, ACTION_NAVIGATE_SHOW)
-                }
-                R.id.watchedshowspopup_nav_episode -> {
-                    callback(selectedItem, ACTION_NAVIGATE_EPISODE)
-                }
-                R.id.watchedshowspopup_remove_show -> {
-                    callback(selectedItem, ACTION_REMOVE_HISTORY)
-                }
-            }
-            Log.e(TAG, "showPopupMenu: Clicked ${item.title} for ${selectedItem?.show_title}")
-            true
-        }
-
-        // Workaround to add menu icons to dropdown list
-        // https://www.material.io/components/menus/android#dropdown-menus
-        @SuppressLint("RestrictedApi")
-        if (popup.menu is MenuBuilder) {
-            val menuBuilder = popup.menu as MenuBuilder
-            menuBuilder.setOptionalIconsVisible(true)
-            for (item in menuBuilder.visibleItems) {
-                val iconMarginPx =
-                    TypedValue.applyDimension(
-                        TypedValue.COMPLEX_UNIT_DIP,
-                        ICON_MARGIN.toFloat(),
-                        context.resources.displayMetrics
-                    ).toInt()
-                if (item.icon != null) {
-                    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
-                        item.icon = InsetDrawable(item.icon, iconMarginPx, 0, iconMarginPx, 0)
-                    } else {
-                        item.icon =
-                            object : InsetDrawable(item.icon, iconMarginPx, 0, iconMarginPx, 0) {
-                                override fun getIntrinsicWidth(): Int {
-                                    return intrinsicHeight + iconMarginPx + iconMarginPx
-                                }
-                            }
-                    }
-                }
-            }
-        }
-
-        popup.show()
-    }
-
 
     inner class WatchedEpisodeViewHolder(val bindings: WatchedEpisodeEntryListItemBinding): RecyclerView.ViewHolder(bindings.root)
 

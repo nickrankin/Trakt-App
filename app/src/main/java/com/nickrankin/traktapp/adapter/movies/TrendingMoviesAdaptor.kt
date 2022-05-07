@@ -29,7 +29,7 @@ class TrendingMoviesAdaptor(private val tmdbImageLoader: TmdbImageLoader, privat
             trendingitemWatchingTotal.text = "${currentItem?.watchers ?: 0} watching this right now"
             trendingitemOverview.text = currentItem.movie?.overview
 
-            tmdbImageLoader.loadImages(currentItem.movie?.ids?.trakt ?: 0, ImageItemType.MOVIE, currentItem.movie?.ids?.tmdb ?: 0,  currentItem.movie?.title, null, true, trendingitemPoster, trendingitemBackdrop)
+            tmdbImageLoader.loadImages(currentItem.movie?.ids?.trakt ?: 0, ImageItemType.MOVIE, currentItem.movie?.ids?.tmdb ?: 0,  currentItem.movie?.title, null, currentItem?.movie?.language, true, trendingitemPoster, trendingitemBackdrop)
 
             root.setOnClickListener {
                 callback(currentItem)

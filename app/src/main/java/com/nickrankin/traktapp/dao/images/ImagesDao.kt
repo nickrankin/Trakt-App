@@ -7,7 +7,7 @@ import com.nickrankin.traktapp.dao.images.model.Image
 interface ImagesDao {
     @Transaction
     @Query("SELECT * FROM image WHERE trakt_id = :traktId")
-    fun getImage(traktId: Int): Image?
+    fun getImage(traktId: String): Image?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(image: Image)

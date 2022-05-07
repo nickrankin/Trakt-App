@@ -9,8 +9,8 @@ import java.util.*
  * @param contentLanguage The contents original language
  *
  * **/
-fun getTmdbLanguage(): String {
+fun getTmdbLanguage(originalLanguage: String?): String {
     val systemLanguage = Locale.getDefault().language
 
-        return "$systemLanguage,null"
+        return "$systemLanguage${if(originalLanguage != null) ","+originalLanguage+',' else "" },null"
 }

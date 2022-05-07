@@ -211,21 +211,20 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
 
     private fun initRecycler() {
         recyclerView = bindings.collectedshowsfragmentRecyclerview
-        setupViewSwipeBehaviour()
 
         layoutManager = LinearLayoutManager(context)
         adapter = CollectedShowsAdapter(
             sharedPreferences,
             glide,
             tmdbImageLoader,
-            callback = { show, action ->
+            callback = { show, action, pos ->
 
                 when (action) {
                     CollectedShowsAdapter.ACTION_NAVIGATE_SHOW -> {
                         navigateToShow(show.show_trakt_id, show.show_tmdb_id, show.show_title, show.language)
                     }
                     CollectedShowsAdapter.ACTION_REMOVE_COLLECTION -> {
-                        removeFromCollection(show)
+                        removeFromCollection(show, pos)
                     }
                 }
 
@@ -235,7 +234,6 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
         recyclerView.adapter = adapter
     }
 
-
     override fun navigateToShow(traktId: Int, tmdbId: Int, showTitle: String?, language: String?) {
         val intent = Intent(context, ShowDetailsActivity::class.java)
         intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
@@ -243,13 +241,21 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
         startActivity(intent)
     }
 
-    private fun removeFromCollection(collectedShow: CollectedShow) {
+    private fun removeFromCollection(collectedShow: CollectedShow, position: Int) {
         val alertDialog = AlertDialog.Builder(requireContext())
             .setTitle("Delete ${collectedShow.show_title} from Collection?")
             .setMessage("Are you sure you want to delete ${collectedShow.show_title} from your Trakt Collection?")
-            .setPositiveButton("Yes", DialogInterface.OnClickListener { dialogInterface, i ->
+            .setPositiveButton("Yes") { dialogInterface, i ->
                 viewModel.deleteShowFromCollection(collectedShow)
-            })
+                val listCopy: MutableList<CollectedShow> = mutableListOf()
+                    listCopy.addAll(adapter.currentList)
+
+                listCopy.removeAt(position)
+
+                adapter.submitList(listCopy)
+
+                dialogInterface.dismiss()
+            }
             .setNegativeButton("No", DialogInterface.OnClickListener { dialogInterface, i ->
                 dialogInterface.dismiss()
             })
@@ -257,130 +263,6 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
 
         alertDialog.show()
 
-    }
-
-    private fun setupViewSwipeBehaviour() {
-
-        var itemTouchHelper: ItemTouchHelper? = null
-
-        itemTouchHelper = ItemTouchHelper(
-            object :
-                ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
-                override fun onMove(
-                    recyclerView: RecyclerView,
-                    viewHolder: RecyclerView.ViewHolder,
-                    target: RecyclerView.ViewHolder
-                ): Boolean {
-                    viewHolder.itemView.background = null
-
-                    return true
-                }
-
-                override fun onChildDraw(
-                    c: Canvas,
-                    recyclerView: RecyclerView,
-                    viewHolder: RecyclerView.ViewHolder,
-                    dX: Float,
-                    dY: Float,
-                    actionState: Int,
-                    isCurrentlyActive: Boolean
-                ) {
-                    val colorAlert = ContextCompat.getColor(requireContext(), R.color.red)
-                    val teal200 = ContextCompat.getColor(requireContext(), R.color.teal_200)
-                    val defaultWhiteColor = ContextCompat.getColor(requireContext(), R.color.white)
-
-                    ItemDecorator.Builder(c, recyclerView, viewHolder, dX, actionState).set(
-                        iconHorizontalMargin = 23f,
-                        backgroundColorFromStartToEnd = teal200,
-                        backgroundColorFromEndToStart = colorAlert,
-                        textFromStartToEnd = "",
-                        textFromEndToStart = "Remove from Collection",
-                        textColorFromStartToEnd = defaultWhiteColor,
-                        textColorFromEndToStart = defaultWhiteColor,
-                        iconTintColorFromStartToEnd = defaultWhiteColor,
-                        iconTintColorFromEndToStart = defaultWhiteColor,
-                        textSizeFromStartToEnd = 16f,
-                        textSizeFromEndToStart = 16f,
-                        typeFaceFromStartToEnd = Typeface.DEFAULT_BOLD,
-                        typeFaceFromEndToStart = Typeface.SANS_SERIF,
-                        iconResIdFromStartToEnd = R.drawable.ic_baseline_delete_forever_24,
-                        iconResIdFromEndToStart = R.drawable.ic_trakt_svgrepo_com
-                    )
-
-                    super.onChildDraw(
-                        c,
-                        recyclerView,
-                        viewHolder,
-                        dX,
-                        dY,
-                        actionState,
-                        isCurrentlyActive
-                    )
-
-                }
-
-                override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                    val showsList: MutableList<CollectedShow> = mutableListOf()
-                    showsList.addAll(adapter.currentList)
-
-                    val showPosition = viewHolder.layoutPosition
-                    val show = showsList[showPosition]
-
-                    when (direction) {
-                        ItemTouchHelper.LEFT -> {
-                            val updatedList: MutableList<CollectedShow> = mutableListOf()
-                            updatedList.addAll(showsList)
-                            updatedList.remove(show)
-
-                            adapter.submitList(updatedList)
-
-                            val timer = getTimer() {
-                                Log.e(TAG, "onFinish: Timer ended for remove show ${show.show_title}!")
-                                viewModel.deleteShowFromCollection(show)
-
-                            }.start()
-
-                            getSnackbar(
-                                bindings.collectedshowsfragmentRecyclerview,
-                                "You have removed collected Show: ${show.show_title}"
-                            ) {
-                                timer.cancel()
-                                adapter.submitList(showsList) {
-                                    // For first and last element, always scroll to the position to bring the element to focus
-                                    if (showPosition == 0) {
-                                        recyclerView.scrollToPosition(0)
-                                    } else if (showPosition == showsList.size - 1) {
-                                        recyclerView.scrollToPosition(showsList.size - 1)
-                                    }
-                                }
-                            }.show()
-                        }
-                    }
-                }
-            }
-        )
-
-        itemTouchHelper.attachToRecyclerView(recyclerView)
-    }
-
-    private fun getTimer(doAction: () -> Unit): CountDownTimer {
-        return object : CountDownTimer(5000, 1000) {
-            override fun onTick(p0: Long) {
-            }
-
-            override fun onFinish() {
-                doAction()
-            }
-        }
-    }
-
-    private fun getSnackbar(v: View, message: String, listener: View.OnClickListener): Snackbar {
-        return Snackbar.make(
-            v,
-            message,
-            Snackbar.LENGTH_LONG
-        )
-            .setAction("Cancel", listener)
     }
 
     private fun displayMessageToast(message: String, duration: Int) {

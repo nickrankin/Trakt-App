@@ -59,9 +59,6 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
     @Inject
     lateinit var tmdbPosterImageLoader: TmdbImageLoader
 
-    @Inject
-    lateinit var glide: RequestManager
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -140,7 +137,7 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
     private fun initRecycler() {
         recyclerView = bindings.moviewatchingfragmentRecyclerview
         layoutManager = LinearLayoutManager(context)
-        adapter = WatchedMoviesPagingAdapter(sharedPreferences, tmdbPosterImageLoader, glide, callback = {selectedMovie, action ->
+        adapter = WatchedMoviesPagingAdapter(sharedPreferences, tmdbPosterImageLoader, callback = {selectedMovie, action ->
 
             when(action) {
                 WatchedMoviesPagingAdapter.ACTION_NAVIGATE_MOVIE -> {

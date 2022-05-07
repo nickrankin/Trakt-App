@@ -30,7 +30,7 @@ class ReccomendedMoviesAdaptor(private val tmdbImageLoader: TmdbImageLoader, pri
             collectedentryitemCollectedDate.visibility = View.GONE
             collectedentryitemOverview.text = currentItem?.overview
 
-            tmdbImageLoader.loadImages(currentItem?.ids?.trakt ?: 0, ImageItemType.MOVIE,currentItem?.ids?.tmdb ?: 0,  currentItem.title, null, true, collectedentryitemPoster, collectedentryitemBackdrop)
+            tmdbImageLoader.loadImages(currentItem?.ids?.trakt ?: 0, ImageItemType.MOVIE,currentItem?.ids?.tmdb ?: 0,  currentItem.title, null, currentItem.language, true, collectedentryitemPoster, collectedentryitemBackdrop)
 
             collectedentryitemOverview.setOnClickListener { v ->
                 val expandingTextView = v as ExpandableTextView

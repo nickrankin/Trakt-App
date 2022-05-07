@@ -79,40 +79,18 @@
             android:id="@+id/collectedentryitem_overview"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:maxLines="3"
-            android:ellipsize="end"
-            android:textAppearance="?attr/textAppearanceBody2"
             android:layout_marginStart="8dp"
             android:layout_marginTop="4dp"
             android:layout_marginEnd="8dp"
+            android:ellipsize="end"
+            android:maxLines="3"
             android:paddingBottom="8dp"
+            android:textAppearance="?attr/textAppearanceBody2"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/collectedentryitem_collected_date"
-            app:layout_constraintBottom_toTopOf="@id/collectedentryitem_buttons"
             tools:text=" Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam dignissim finibus mi, et rhoncus neque rutrum posuere. Pellentesque et luctus odio. Ut ac purus eu urna pellentesque ultrices. Proin vehicula lobortis urna id suscipit. Nullam sed erat commodo, pretium sapien eget, maximus ex. Donec ullamcorper, nunc vel aliquam semper, mauris sapien consectetur orci, porttitor viverra eros massa sit amet neque. Nullam at dolor nec lorem consectetur condimentum. Nunc laoreet vehicula est, a finibus nisl scelerisque sed. Vestibulum sit amet euismod nunc. Curabitur sed velit semper, luctus dolor id, porta elit. Fusce rhoncus aliquet blandit. Curabitur non nisl aliquet, egestas eros nec, suscipit mi. Integer iaculis imperdiet efficitur.
 Fusce laoreet ut quam nec sodales. Donec in vulputate neque, id commodo sem. Mauris varius mollis erat, nec aliquam ipsum. Sed sollicitudin laoreet ipsum id tempus. Morbi condimentum nisl augue, at dignissim felis rutrum id. Morbi finibus leo vel molestie euismod. Quisque fringilla elit ultrices felis molestie, eu fringilla leo viverra. Morbi dolor est, aliquet et mauris ut, hendrerit condimentum elit. Nullam placerat rhoncus ex, ut ullamcorper felis blandit nec. Praesent interdum sed justo sit a" />
-
-        <LinearLayout
-            android:id="@+id/collectedentryitem_buttons"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_margin="8dp"
-            app:layout_constraintTop_toBottomOf="@id/collectedentryitem_overview"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent">
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/collectedentryitem_remove_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                app:icon="@drawable/ic_baseline_delete_forever_24"
-                android:text="Remove from Collection"
-                style="?attr/borderlessButtonStyle"
-                />
-        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

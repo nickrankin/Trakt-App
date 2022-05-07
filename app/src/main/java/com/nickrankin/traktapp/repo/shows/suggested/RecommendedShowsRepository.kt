@@ -21,21 +21,28 @@ const val LIMIT = 50
 private const val TAG = "RecommendedShowsPagingS"
 class RecommendedShowsRepository @Inject constructor(private val traktApi: TraktApi) {
 
-    val suggestedShowsChannel: Channel<Resource<List<Show>>> = Channel()
+    private var suggestedShows: List<Show> = listOf()
 
-    suspend fun getSuggestedShows() {
-        suggestedShowsChannel.send(Resource.Loading(null))
+    suspend fun getSuggestedShows(shouldRefresh: Boolean) = flow {
+        emit(Resource.Loading())
+        if(!shouldRefresh && suggestedShows.isNotEmpty()) {
+            Log.d(TAG, "getSuggestedShows: Returning cached shows")
+            emit(Resource.Success(suggestedShows))
+        } else {
+            Log.d(TAG, "getSuggestedShows: Getting shows from Trakt ShouldRefresh $shouldRefresh")
+            try {
+                val response = traktApi.tmRecommendations().shows(
+                    START_PAGE_INDEX, LIMIT, Extended.FULL)
 
-        try {
-            val response = traktApi.tmRecommendations().shows(
-                START_PAGE_INDEX, LIMIT, Extended.FULL)
+                suggestedShows = response
 
-            suggestedShowsChannel.send(Resource.Success(response))
-        } catch (t: Throwable) {
-            suggestedShowsChannel.send(Resource.Error(t, null))
+                emit(Resource.Success(response))
+            } catch (t: Throwable) {
+                emit(Resource.Error(t, null))
+            }
         }
-
     }
+
 
     suspend fun addToCollection(syncItems: SyncItems): Resource<SyncResponse> {
         return try {

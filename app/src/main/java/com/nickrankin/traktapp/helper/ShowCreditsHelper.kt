@@ -57,7 +57,7 @@ class ShowCreditsHelper @Inject constructor(
 
     private suspend fun getCastMembersFromTmdb(showTmdbId: Int): Credits? {
         return try {
-            tmdbApi.tmTvService().credits(showTmdbId, getTmdbLanguage())
+            tmdbApi.tmTvService().credits(showTmdbId, getTmdbLanguage(null))
         } catch (e: Exception) {
             Log.e(TAG, "getCredits: Failed to get credits from TMDB ${e.localizedMessage}")
             e.printStackTrace()

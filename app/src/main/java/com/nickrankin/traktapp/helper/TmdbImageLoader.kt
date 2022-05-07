@@ -19,6 +19,10 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 private const val TAG = "PosterImageLoader"
+private const val PREFIX_MOVIE = "mov_"
+private const val PREFIX_SHOW = "show_"
+private const val PREFIX_PERSON = "per_"
+private const val PREFIX_EPISODE = "eps_"
 
 enum class ImageItemType { MOVIE, SHOW, EPISODE, PERSON }
 
@@ -40,12 +44,13 @@ class TmdbImageLoader @Inject constructor(
         tmbId: Int?,
         title: String?,
         year: Int?,
+        originalLanguage: String?,
         shouldCache: Boolean,
         posterImageView: ImageView,
         backdropImageView: ImageView?
     ) {
         scope.launch {
-            val cachedPosters = imagesDao.getImage(traktId)
+            val cachedPosters = imagesDao.getImage(getPrefix(imageItemType)+traktId)
 
             if (cachedPosters != null) {
                 loadImagesOnMainThread(traktId, cachedPosters, posterImageView, backdropImageView)
@@ -55,7 +60,7 @@ class TmdbImageLoader @Inject constructor(
                     throw RuntimeException("For episodes, use loadEpisodeImages() method")
 
                 } else {
-                    val images = getTmdbImages(traktId, imageItemType, tmbId, null, null)
+                    val images = getTmdbImages(traktId, imageItemType, tmbId, null, null, originalLanguage)
 
                     if (shouldCache) {
                         Log.d(TAG, "loadImages: Caching images for TraktId $traktId // $title")
@@ -77,6 +82,7 @@ class TmdbImageLoader @Inject constructor(
         season: Int?,
         episode: Int?,
         showTitle: String?,
+        originalLanguage: String?,
         shouldCache: Boolean,
         posterImageView: ImageView,
         backdropImageView: ImageView?
@@ -85,21 +91,21 @@ class TmdbImageLoader @Inject constructor(
 
         scope.launch {
             // See if we have Episode images, if not get them:
-            val cachedEpisodeImages = imagesDao.getImage(traktId)
+            val cachedEpisodeImages = imagesDao.getImage(PREFIX_EPISODE+traktId)
 
             if(cachedEpisodeImages != null) {
                 loadImagesOnMainThread(traktId, cachedEpisodeImages, posterImageView, backdropImageView)
 
             } else {
                 // Check if the Show images are already cached:
-                val cachedShowImages = imagesDao.getImage(showTraktId)
+                val cachedShowImages = imagesDao.getImage(PREFIX_SHOW+showTraktId)
 
                 if(cachedShowImages != null) {
                     Log.d(TAG, "loadEpisodeImages: Show images for $tmbId located in cache successfully")
                     // Get the Episode Stills data
                     val stillsPath = getEpisodeStillImages( tmbId ?: 0, season, episode)
 
-                    val episodeImages = Image(traktId, tmbId, cachedShowImages.poster_path, stillsPath ?: cachedShowImages.backdrop_path, OffsetDateTime.now())
+                    val episodeImages = Image(PREFIX_EPISODE+traktId, tmbId, cachedShowImages.poster_path, stillsPath ?: cachedShowImages.backdrop_path, OffsetDateTime.now())
 
                     // Insert the Episode data record
                     imagesDatabase.withTransaction {
@@ -112,7 +118,7 @@ class TmdbImageLoader @Inject constructor(
 
                 } else {
                     Log.d(TAG, "loadEpisodeImages: Getting show images for TMDBID $tmbId")
-                    val showImages = getTmdbImages(showTraktId, ImageItemType.SHOW, tmbId, showTitle, null)
+                    val showImages = getTmdbImages(showTraktId, ImageItemType.SHOW, tmbId, showTitle, null, originalLanguage)
 
                     // Insert the Show images to cache
                     if(shouldCache) {
@@ -124,7 +130,7 @@ class TmdbImageLoader @Inject constructor(
                     // Get the Episode Stills data
                     val stillsPath = getEpisodeStillImages( tmbId ?: 0, season, episode)
 
-                    val episodeImages = Image(traktId, tmbId, showImages.poster_path, stillsPath ?: showImages.backdrop_path, OffsetDateTime.now())
+                    val episodeImages = Image(PREFIX_EPISODE+traktId, tmbId, showImages.poster_path, stillsPath ?: showImages.backdrop_path, OffsetDateTime.now())
 
 
                     // Insert the Episode data record
@@ -146,15 +152,29 @@ class TmdbImageLoader @Inject constructor(
 
     private suspend fun getTmdbImages(
         traktId: Int, imageItemType: ImageItemType,
-        tmbId: Int?, title: String?, year: Int?
+        tmbId: Int?, title: String?, year: Int?, originalLanguage: String?
     ): Image {
 
         if (imageItemType == ImageItemType.EPISODE) {
             throw RuntimeException("Not allowed use this method to get episode images")
         }
 
+        var traktIdString = ""
+
+        when(imageItemType) {
+            ImageItemType.MOVIE -> {
+                traktIdString = PREFIX_MOVIE+traktId
+            }
+            ImageItemType.SHOW -> {
+                traktIdString = PREFIX_SHOW+traktId
+            }
+            ImageItemType.PERSON -> {
+                traktIdString = PREFIX_PERSON+traktId
+            }
+        }
+
         val images = Image(
-            traktId, tmbId, null,
+            traktIdString, tmbId, null,
             null, OffsetDateTime.now()
         )
 
@@ -165,7 +185,7 @@ class TmdbImageLoader @Inject constructor(
                 TAG,
                 "getTmdbImages: TMDB ID null, searching for $title images (trakt id $traktId)"
             )
-            currentItemTmdbId = findTmdbId(traktId, imageItemType, title, year)
+            currentItemTmdbId = findTmdbId(traktId, imageItemType, title, year, originalLanguage)
 
             if (currentItemTmdbId == null) {
                 Log.e(TAG, "getTmdbImages: No images for trakt Id $traktId was found")
@@ -177,7 +197,7 @@ class TmdbImageLoader @Inject constructor(
             when (imageItemType) {
                 ImageItemType.MOVIE -> {
                     val response = tmdbApi.tmMovieService()
-                        .images(currentItemTmdbId!!, getTmdbLanguage())
+                        .images(currentItemTmdbId!!, getTmdbLanguage(originalLanguage))
 
 
                     if (response.posters?.isNotEmpty() == true) {
@@ -190,7 +210,7 @@ class TmdbImageLoader @Inject constructor(
                 }
                 ImageItemType.SHOW -> {
                     val response = tmdbApi.tmTvService()
-                        .images(currentItemTmdbId!!, getTmdbLanguage())
+                        .images(currentItemTmdbId!!, getTmdbLanguage(originalLanguage))
 
 
                     if (response.posters?.isNotEmpty() == true) {
@@ -243,7 +263,7 @@ class TmdbImageLoader @Inject constructor(
 
     private suspend fun findTmdbId(
         traktId: Int, imageItemType: ImageItemType,
-        title: String?, year: Int?
+        title: String?, year: Int?, originalLanguage: String?
     ): Int? {
         Log.d(
             TAG,
@@ -255,7 +275,7 @@ class TmdbImageLoader @Inject constructor(
                     val foundMovies = tmdbApi.tmSearchService().movie(
                         title,
                         1,
-                        getTmdbLanguage(),
+                        getTmdbLanguage(originalLanguage),
                         null,
                         false,
                         year,
@@ -279,7 +299,7 @@ class TmdbImageLoader @Inject constructor(
                     val foundShows = tmdbApi.tmSearchService().tv(
                         title,
                         1,
-                        getTmdbLanguage(),
+                        getTmdbLanguage(originalLanguage),
                         year,
                         false
                     )
@@ -323,16 +343,36 @@ class TmdbImageLoader @Inject constructor(
         backdropImageView: ImageView?
     ) {
         mainThreadLopper.post {
-            if (image.trakt_id == traktId && image.poster_path != null) {
+            if (image.poster_path != null) {
                 glide
                     .load(AppConstants.TMDB_POSTER_URL + image.poster_path)
                     .into(posterImageView)
             }
 
-            if (image.trakt_id == traktId && image.backdrop_path != null && backdropImageView != null) {
+            if (image.backdrop_path != null && backdropImageView != null) {
                 glide
                     .load(AppConstants.TMDB_POSTER_URL + image.backdrop_path)
                     .into(backdropImageView)
+            }
+        }
+    }
+
+    private fun getPrefix(imageItemType: ImageItemType): String {
+        return when(imageItemType) {
+            ImageItemType.MOVIE -> {
+                PREFIX_MOVIE
+            }
+            ImageItemType.SHOW -> {
+                PREFIX_SHOW
+            }
+            ImageItemType.EPISODE -> {
+                PREFIX_EPISODE
+            }
+            ImageItemType.PERSON -> {
+                PREFIX_PERSON
+            }
+            else -> {
+                ""
             }
         }
     }

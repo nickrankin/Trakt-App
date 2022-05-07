@@ -28,7 +28,7 @@ import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 
 private const val TAG = "WatchedEpisodesPagingAd"
-class WatchedMoviesPagingAdapter(private val sharedPreferences: SharedPreferences, private val tmdbImageLoader: TmdbImageLoader, private val glide: RequestManager, private val callback: (selectedMovie: WatchedMovie?, action: Int) -> Unit): PagingDataAdapter<WatchedMovie, WatchedMoviesPagingAdapter.WatchedMovieViewHolder>(COMPARATOR) {
+class WatchedMoviesPagingAdapter(private val sharedPreferences: SharedPreferences, private val tmdbImageLoader: TmdbImageLoader, private val callback: (selectedMovie: WatchedMovie?, action: Int) -> Unit): PagingDataAdapter<WatchedMovie, WatchedMoviesPagingAdapter.WatchedMovieViewHolder>(COMPARATOR) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): WatchedMovieViewHolder {
         return WatchedMovieViewHolder(WatchedMovieEntryListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
@@ -49,7 +49,7 @@ class WatchedMoviesPagingAdapter(private val sharedPreferences: SharedPreference
             watchedentryitemWatchedDate.text = "Watched: " + currentItem?.watched_at?.atZoneSameInstant(
                 ZoneId.systemDefault())?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)))
 
-            tmdbImageLoader.loadImages(currentItem?.trakt_id ?: 0, ImageItemType.MOVIE,currentItem?.tmdb_id ?: 0,  currentItem?.title, null, true, watchedentryitemPoster, watchedentryitemBackdropImageview)
+            tmdbImageLoader.loadImages(currentItem?.trakt_id ?: 0, ImageItemType.MOVIE,currentItem?.tmdb_id ?: 0,  currentItem?.title, null, currentItem?.language,true, watchedentryitemPoster, watchedentryitemBackdropImageview)
 
             watchedentryitemOverview.setOnClickListener {
                 (it as ExpandableTextView).apply {

@@ -1,7 +1,6 @@
 package com.nickrankin.traktapp.adapter.shows
 
 import android.content.SharedPreferences
-import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat

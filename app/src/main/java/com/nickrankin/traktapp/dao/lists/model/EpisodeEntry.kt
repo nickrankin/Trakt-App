@@ -15,5 +15,6 @@ data class EpisodeEntry(
     val first_aired: OffsetDateTime?,
     val runtime: Int?,
     val season: Int,
-    val episode: Int
+    val episode: Int,
+    val language: String?
 )

@@ -7,13 +7,14 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
+import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.databinding.ReccomendedShowEntryListItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.ImageItemType
 import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.uwetrottmann.trakt5.entities.Show
 
-class RecommendedShowsAdapter(private val glide: RequestManager, private val tmdbImageLoader: TmdbImageLoader, private val callback: (results: Show?) -> Unit): ListAdapter<Show, RecommendedShowsAdapter.ViewHolder>(
+class RecommendedShowsAdapter(private val tmdbImageLoader: TmdbImageLoader, private val callback: (results: Show?, action: Int, position: Int) -> Unit): ListAdapter<Show, RecommendedShowsAdapter.ViewHolder>(
     COMPARATOR) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -24,25 +25,38 @@ class RecommendedShowsAdapter(private val glide: RequestManager, private val tmd
         val currentItem = getItem(position)
 
         holder.bindings.apply {
-            collectedentryitemPoster.setImageDrawable(null)
+            val expandableTextView = collectedentryitemOverview
+            expandableTextView.collapse()
+
+            collectedentryitemPoster.setImageResource(R.drawable.ic_trakt_svgrepo_com)
+            collectedentryitemBackdrop.setImageResource(R.drawable.ic_baseline_tv_24)
 
             collectedentryitemTitle.text = currentItem?.title
             collectedentryitemCollectedDate.visibility = View.GONE
             collectedentryitemOverview.text = currentItem?.overview
 
-            tmdbImageLoader.loadImages(currentItem?.ids?.trakt ?: 0, ImageItemType.SHOW,currentItem?.ids?.tmdb ?: 0,currentItem?.title ?: "", currentItem?.year, false, collectedentryitemPoster, collectedentryitemBackdrop)
+            tmdbImageLoader.loadImages(currentItem?.ids?.trakt ?: 0, ImageItemType.SHOW,currentItem?.ids?.tmdb ?: 0,currentItem?.title ?: "", currentItem?.year, currentItem.language, false, collectedentryitemPoster, collectedentryitemBackdrop)
 
             root.setOnClickListener {
-                callback(currentItem)
+                callback(currentItem, ACTION_VIEW, position)
+            }
+
+            collectedentryitemRemovePlayBtn.setOnClickListener {
+                callback(currentItem, ACTION_REMOVE, position)
+            }
+
+            collectedentryitemOverview.setOnClickListener {
+                expandableTextView.toggle()
             }
         }
     }
 
-
-
     inner class ViewHolder(val bindings: ReccomendedShowEntryListItemBinding): RecyclerView.ViewHolder(bindings.root)
 
     companion object {
+        const val ACTION_VIEW = 0
+        const val ACTION_REMOVE = 1
+
         val COMPARATOR = object: DiffUtil.ItemCallback<Show>() {
             override fun areItemsTheSame(oldItem: Show, newItem: Show): Boolean {
                 return oldItem == newItem

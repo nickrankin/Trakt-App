@@ -112,6 +112,7 @@ class ListEntryAdapter constructor(
                         currentItem.movie?.tmdb_id,
                         currentItem.movie?.title,
                         null,
+                        currentItem.movie?.language,
                         true,
                         movieentryPoster,
                     movieentryBackdrop)
@@ -170,6 +171,7 @@ class ListEntryAdapter constructor(
                         currentItem.show?.tmdb_id,
                         currentItem.show?.title ?: "",
                         null,
+                        currentItem.show?.language,
                         true,
                         showentryPoster,
                     showentryBackdrop)
@@ -226,6 +228,7 @@ class ListEntryAdapter constructor(
                         currentItem.episode?.season,
                         currentItem.episode?.episode,
                         currentItem.episodeShow?.title ?: "",
+                        currentItem.episode?.language,
                         true,
                         episodeentryPoster,
                     episodeentryBackdrop)

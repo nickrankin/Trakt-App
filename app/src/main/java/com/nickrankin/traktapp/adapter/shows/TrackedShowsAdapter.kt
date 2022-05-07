@@ -19,7 +19,7 @@ import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 
 private const val TAG = "TrackedShowsAdapter"
-class TrackedShowsAdapter(private val glide: RequestManager, private val tmdbImageLoader: TmdbImageLoader, private val callback: (trackedShow: TrackedShowWithEpisodes) -> Unit, private val upcomingEpisodesCallback: (showTitle: String?, episodes: List<TrackedEpisode?>) -> Unit): ListAdapter<TrackedShowWithEpisodes, TrackedShowsAdapter.TrackedShowsViewHolder>(
+class TrackedShowsAdapter(private val tmdbImageLoader: TmdbImageLoader, private val callback: (trackedShow: TrackedShowWithEpisodes) -> Unit, private val upcomingEpisodesCallback: (showTitle: String?, episodes: List<TrackedEpisode?>) -> Unit): ListAdapter<TrackedShowWithEpisodes, TrackedShowsAdapter.TrackedShowsViewHolder>(
     COMPARATOR) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrackedShowsViewHolder {
@@ -30,6 +30,12 @@ class TrackedShowsAdapter(private val glide: RequestManager, private val tmdbIma
         val selectedShow = getItem(position)
 
         holder.binding.apply {
+            val expandableTextView = trackedshowitemShowOverview
+            expandableTextView.collapse()
+
+            trackedshowitemShowPoster.setImageResource(R.drawable.ic_trakt_svgrepo_com)
+            trackedshowitemBackdrop.setImageResource(R.drawable.ic_baseline_tv_24)
+
             trackedshowitemShowTitle.text = "${selectedShow.trackedShow.title} (${selectedShow?.trackedShow?.releaseDate?.year})"
             trackedshowitemShowCollectedAt.text = "Tracked on: " + selectedShow.trackedShow.tracked_on.atZoneSameInstant(
                 ZoneId.systemDefault())?.format(
@@ -37,11 +43,9 @@ class TrackedShowsAdapter(private val glide: RequestManager, private val tmdbIma
 
             trackedshowitemShowOverview.text = selectedShow.trackedShow.overview
 
-            tmdbImageLoader.loadImages(selectedShow.trackedShow.trakt_id, ImageItemType.SHOW, selectedShow.trackedShow.tmdb_id, selectedShow.trackedShow.title ?: "", null, true, trackedshowitemShowPoster, null)
+            tmdbImageLoader.loadImages(selectedShow.trackedShow.trakt_id, ImageItemType.SHOW, selectedShow.trackedShow.tmdb_id, selectedShow.trackedShow.title ?: "", null, selectedShow.trackedShow.language,true, trackedshowitemShowPoster, trackedshowitemBackdrop)
 
             trackedshowitemShowOverview.setOnClickListener {
-                val expandableTextView = it as ExpandableTextView
-
                 expandableTextView.toggle()
             }
 

@@ -139,7 +139,8 @@ class ListEntryRepository @Inject constructor(private val traktApi: TraktApi, pr
                     movie.overview,
                     movie.released,
                     movie.runtime,
-                    movie.tagline
+                    movie.tagline,
+                    movie.language
                 )
             )
         }
@@ -154,7 +155,8 @@ class ListEntryRepository @Inject constructor(private val traktApi: TraktApi, pr
                     show.title,
                     show.overview,
                     show.first_aired,
-                    show.runtime
+                    show.runtime,
+                    show.language
                 )
             )
         }
@@ -172,7 +174,8 @@ class ListEntryRepository @Inject constructor(private val traktApi: TraktApi, pr
                     episode.first_aired,
                     episode.runtime,
                     episode.season,
-                    episode.number
+                    episode.number,
+                    null
                 )
             )
         }

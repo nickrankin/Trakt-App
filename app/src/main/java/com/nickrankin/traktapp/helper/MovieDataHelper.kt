@@ -47,12 +47,12 @@ class MovieDataHelper @Inject constructor(
     }
 
     private suspend fun getTmdbData(tmdbId: Int?): Movie? {
-        return tmdbApi.tmMovieService().summary(tmdbId ?: -1, getTmdbLanguage(), AppendToResponse(AppendToResponseItem.VIDEOS))
+        return tmdbApi.tmMovieService().summary(tmdbId ?: -1, getTmdbLanguage(null), AppendToResponse(AppendToResponseItem.VIDEOS))
     }
 
     private suspend fun findTmdbMovie(title: String?, year: Int?): BaseMovie? {
         val foundTmdbMovie = tmdbApi.tmSearchService()
-            .movie(title, 1, getTmdbLanguage(), null, true, year, null)
+            .movie(title, 1, getTmdbLanguage(null), null, true, year, null)
 
         return foundTmdbMovie.results?.first()
     }

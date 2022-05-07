@@ -13,7 +13,7 @@ import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.TmdbImageLoader
 import org.threeten.bp.format.DateTimeFormatter
 
-class TrackedEpisodesAdapter(private val sharedPreferences: SharedPreferences, private val glide: RequestManager, private val tmdbImageLoader: TmdbImageLoader, private val callback: (trackedEpisode: TrackedEpisode) -> Unit): ListAdapter<TrackedEpisode, TrackedEpisodesAdapter.TrackedEpisodesViewHolder>(COMPARATOR) {
+class TrackedEpisodesAdapter(private val sharedPreferences: SharedPreferences, private val tmdbImageLoader: TmdbImageLoader, private val callback: (trackedEpisode: TrackedEpisode) -> Unit): ListAdapter<TrackedEpisode, TrackedEpisodesAdapter.TrackedEpisodesViewHolder>(COMPARATOR) {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrackedEpisodesViewHolder {
         return TrackedEpisodesViewHolder(ShowLayoutItemCondensedBinding.inflate(LayoutInflater.from(parent.context), parent, false))
     }

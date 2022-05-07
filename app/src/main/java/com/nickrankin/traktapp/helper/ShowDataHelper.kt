@@ -77,7 +77,7 @@ class ShowDataHelper @Inject constructor(
 
     suspend fun findTmdbShow(traktShow: Show): TmShow? {
         val findShowResponse =
-            tmdbApi.tmSearchService().tv(traktShow.title, 1, getTmdbLanguage(), traktShow.year, false)
+            tmdbApi.tmSearchService().tv(traktShow.title, 1, getTmdbLanguage(null), traktShow.year, false)
 
         if (findShowResponse.results?.isNotEmpty() == true) {
             // Base TV Show gets us Tmdb ID
@@ -85,7 +85,7 @@ class ShowDataHelper @Inject constructor(
 
             // Get full show Data
             val tvShow = tmdbApi.tmTvService().tv(
-                foundShow?.id ?: -1, getTmdbLanguage(),
+                foundShow?.id ?: -1, getTmdbLanguage(traktShow.language),
                 AppendToResponse(
                     AppendToResponseItem.EXTERNAL_IDS,
                     AppendToResponseItem.VIDEOS

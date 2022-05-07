@@ -32,7 +32,7 @@ class CollectedShowsAdapter(
     private val sharedPreferences: SharedPreferences,
     private val glide: RequestManager,
     private val tmdbImageLoader: TmdbImageLoader,
-    private val callback: (selectedShow: CollectedShow, action: Int) -> Unit
+    private val callback: (selectedShow: CollectedShow, action: Int, position: Int) -> Unit
 ) : ListAdapter<CollectedShow, CollectedShowsAdapter.CollectedShowsViewHolder>(
     COMPARATOR
 ) {
@@ -48,11 +48,16 @@ class CollectedShowsAdapter(
     }
 
     override fun onBindViewHolder(holder: CollectedShowsViewHolder, position: Int) {
-        //holder.setIsRecyclable(false)
-
         val currentItem = getItem(position)
 
         holder.bindings.apply {
+            val expandableTextView = collectedentryitemOverview
+            expandableTextView.collapse()
+
+            // Empty out the imageviews
+            collectedentryitemPoster.setImageResource(R.drawable.ic_trakt_svgrepo_com)
+            collectedentryitemBackdrop.setImageResource(R.drawable.ic_baseline_live_tv_24)
+
             collectedentryitemPoster.setImageResource(R.drawable.ic_trakt_svgrepo_com)
 
             collectedentryitemTitle.text = currentItem.show_title
@@ -73,69 +78,26 @@ class CollectedShowsAdapter(
                 currentItem.show_tmdb_id,
                 currentItem.show_title,
                 null,
+                currentItem.language,
                 true,
                 collectedentryitemPoster,
-            null)
+            collectedentryitemBackdrop)
 
             root.setOnClickListener {
-                callback(currentItem, ACTION_NAVIGATE_SHOW)
+                callback(currentItem, ACTION_NAVIGATE_SHOW, position)
             }
 
-            collectedentryitemMenu.setOnClickListener { v ->
-                showPopupMenu(v, currentItem)
+            collectedentryitemOverview.setOnClickListener {
+                expandableTextView.toggle()
             }
+
+            collectedentryitemRemoveButton.setOnClickListener {
+                callback(currentItem, ACTION_REMOVE_COLLECTION, position)
+
+            }
+
 
         }
-    }
-
-    private fun showPopupMenu(view: View, selectedItem: CollectedShow) {
-        val context = view.context
-        val popup = PopupMenu(context, view)
-
-        popup.menuInflater.inflate(R.menu.collected_shows_popup_menu, popup.menu)
-
-        popup.setOnMenuItemClickListener { item: MenuItem ->
-            when (item.itemId) {
-                R.id.collectedshowspopup_nav_show -> {
-                    callback(selectedItem, ACTION_NAVIGATE_SHOW)
-                }
-                R.id.collectedshowspopup_remove_show -> {
-                    callback(selectedItem, ACTION_REMOVE_COLLECTION)
-                }
-            }
-            Log.e(TAG, "showPopupMenu: Clicked ${item.title} for ${selectedItem.show_title}")
-            true
-        }
-
-        // Workaround to add menu icons to dropdown list
-        // https://www.material.io/components/menus/android#dropdown-menus
-        @SuppressLint("RestrictedApi")
-        if (popup.menu is MenuBuilder) {
-            val menuBuilder = popup.menu as MenuBuilder
-            menuBuilder.setOptionalIconsVisible(true)
-            for (item in menuBuilder.visibleItems) {
-                val iconMarginPx =
-                    TypedValue.applyDimension(
-                        TypedValue.COMPLEX_UNIT_DIP,
-                        ICON_MARGIN.toFloat(),
-                        context.resources.displayMetrics
-                    ).toInt()
-                if (item.icon != null) {
-                    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
-                        item.icon = InsetDrawable(item.icon, iconMarginPx, 0, iconMarginPx, 0)
-                    } else {
-                        item.icon =
-                            object : InsetDrawable(item.icon, iconMarginPx, 0, iconMarginPx, 0) {
-                                override fun getIntrinsicWidth(): Int {
-                                    return intrinsicHeight + iconMarginPx + iconMarginPx
-                                }
-                            }
-                    }
-                }
-            }
-        }
-
-        popup.show()
     }
 
     inner class CollectedShowsViewHolder(val bindings: CollectedShowEntryListItemBinding) :

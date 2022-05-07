@@ -105,7 +105,7 @@ class ShowSearchResultsActivity : AppCompatActivity(), OnNavigateToShow {
         recyclerView = bindings.showsearchresultsactivityRecyclerview
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        adapter = ShowSearchResultsAdapter(glide, tmdbImageLoader, callback = { result ->
+        adapter = ShowSearchResultsAdapter(tmdbImageLoader, callback = { result ->
             if(result != null) {
                 val show = result.show
                 navigateToShow(

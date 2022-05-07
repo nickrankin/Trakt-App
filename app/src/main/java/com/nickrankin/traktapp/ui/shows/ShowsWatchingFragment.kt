@@ -167,7 +167,7 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
     private fun initRecycler() {
         recyclerView = bindings.showwatchingfragmentRecyclerview
         layoutManager = LinearLayoutManager(context)
-        adapter = WatchedEpisodesPagingAdapter(sharedPreferences, tmdbImageLoader, glide, callback = {selectedEpisode, action ->
+        adapter = WatchedEpisodesPagingAdapter(sharedPreferences, tmdbImageLoader, callback = {selectedEpisode, action ->
             when(action) {
                 WatchedEpisodesPagingAdapter.ACTION_NAVIGATE_EPISODE -> {
                     navigateToEpisode(selectedEpisode?.show_trakt_id ?: 0,selectedEpisode?.show_tmdb_id, selectedEpisode?.episode_season ?: 0, selectedEpisode?.episode_number ?: 0, selectedEpisode?.language ?: "en")

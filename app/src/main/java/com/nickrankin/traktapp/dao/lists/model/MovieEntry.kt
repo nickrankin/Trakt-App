@@ -20,5 +20,6 @@ data class MovieEntry(
     val overview: String?,
     val release_date: LocalDate?,
     val runtime: Int?,
-    val tagline: String?
+    val tagline: String?,
+    val language: String?
 )

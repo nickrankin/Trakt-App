@@ -26,7 +26,7 @@ import org.threeten.bp.format.DateTimeFormatter
 import javax.inject.Inject
 
 private const val TAG = "ShowCalendarEntriesAdap"
-class ShowCalendarEntriesAdapter @Inject constructor(private val sharedPreferences: SharedPreferences, private val tmdbImageLoader: TmdbImageLoader, private val glide: RequestManager, private val callback: (selectedShow: ShowCalendarEntry, action: Int) -> Unit): ListAdapter<ShowCalendarEntry, ShowCalendarEntriesAdapter.CalendarEntryViewHolder>(
+class ShowCalendarEntriesAdapter @Inject constructor(private val sharedPreferences: SharedPreferences, private val tmdbImageLoader: TmdbImageLoader,private val callback: (selectedShow: ShowCalendarEntry, action: Int) -> Unit): ListAdapter<ShowCalendarEntry, ShowCalendarEntriesAdapter.CalendarEntryViewHolder>(
     COMPARATOR) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CalendarEntryViewHolder {
@@ -45,7 +45,7 @@ class ShowCalendarEntriesAdapter @Inject constructor(private val sharedPreferenc
             showentryitemAirDate.text = "Airing: " + currentItem.first_aired?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)))
             showentryitemOverview.text = currentItem.episode_overview
 
-            tmdbImageLoader.loadEpisodeImages(currentItem.episode_trakt_id, currentItem.show_tmdb_id, currentItem.show_trakt_id, currentItem.episode_season,currentItem.episode_number, currentItem?.show_title ?: "",true, showentryitemPoster, showentryitemBackdrop)
+            tmdbImageLoader.loadEpisodeImages(currentItem.episode_trakt_id, currentItem.show_tmdb_id, currentItem.show_trakt_id, currentItem.episode_season,currentItem.episode_number, currentItem?.show_title ?: "",currentItem.language,true, showentryitemPoster, showentryitemBackdrop)
 
             showentryitemOverview.setOnClickListener { v ->
                 val expandableTextView = v as ExpandableTextView

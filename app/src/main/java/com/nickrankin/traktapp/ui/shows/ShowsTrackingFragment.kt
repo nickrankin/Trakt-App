@@ -100,9 +100,6 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
     lateinit var sharedPreferences: SharedPreferences
 
     @Inject
-    lateinit var glide: RequestManager
-
-    @Inject
     lateinit var tmdbImageLoader: TmdbImageLoader
 
     private var isloggedIn = false
@@ -301,7 +298,7 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
     private fun initRecycler() {
         trackedShowsRecyclerView = bindings.showstrackingfragmentRecyclerview
         val layoutManager = LinearLayoutManager(requireContext())
-        trackedShowsAdapter = TrackedShowsAdapter(glide, tmdbImageLoader, callback = { trackedShowWithEpisodes ->
+        trackedShowsAdapter = TrackedShowsAdapter(tmdbImageLoader, callback = { trackedShowWithEpisodes ->
             val trackedShow = trackedShowWithEpisodes.trackedShow
             navigateToShow(trackedShow.trakt_id, trackedShow.tmdb_id ?: -1, trackedShow.title, null)
         }) { showTitle, upcomingEpisodes ->
@@ -375,7 +372,7 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
     private fun createUpcomingEpisodesDialog() {
         val layoutManager = LinearLayoutManager(requireContext())
         upcomingEpisodesRecyclerView = RecyclerView(requireContext())
-        upcomingEpisodesAdapter = TrackedEpisodesAdapter(sharedPreferences, glide, tmdbImageLoader, callback = { trackedEpisode ->
+        upcomingEpisodesAdapter = TrackedEpisodesAdapter(sharedPreferences, tmdbImageLoader, callback = { trackedEpisode ->
             navigateToEpisode(trackedEpisode.show_trakt_id, trackedEpisode.show_tmdb_id, trackedEpisode.season, trackedEpisode.episode, null)
         })
 
@@ -471,6 +468,7 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
                 collectedShow.show_tmdb_id,
                 collectedShow.show_title,
                 collectedShow.show_overview,
+                collectedShow.language,
                 collectedShow.airedDate,
                 collectedShow.runtime,
                 OffsetDateTime.now()
@@ -487,6 +485,7 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
                 searchResult?.show?.ids?.tmdb,
                 searchResult?.show?.title,
                 searchResult?.show?.overview,
+                searchResult?.show?.language,
                 searchResult?.show?.first_aired,
                 searchResult?.show?.runtime,
                 OffsetDateTime.now()

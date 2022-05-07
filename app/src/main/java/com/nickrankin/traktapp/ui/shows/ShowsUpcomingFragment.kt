@@ -180,7 +180,7 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
         recyclerView = bindings.showsoverviewfragmentRecyclerview
         layoutManager = LinearLayoutManager(context)
 
-        adapter = ShowCalendarEntriesAdapter(sharedPreferences, tmdbImageLoader, glide, callback = { calendarEntry, action ->
+        adapter = ShowCalendarEntriesAdapter(sharedPreferences, tmdbImageLoader, callback = { calendarEntry, action ->
             when(action) {
                 ShowCalendarEntriesAdapter.ACTION_NAVIGATE_EPISODE -> {
                     navigateToEpisode(calendarEntry.show_trakt_id, calendarEntry.show_tmdb_id, calendarEntry.episode_season, calendarEntry.episode_number, calendarEntry.language ?: "en")

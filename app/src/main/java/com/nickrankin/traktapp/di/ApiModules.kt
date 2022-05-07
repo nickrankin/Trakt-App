@@ -34,7 +34,7 @@ object ApiModules {
     @Singleton
     @Provides
     fun provideTmdbApi(): TmdbApi {
-        return TmdbApi(false)
+        return TmdbApi(true)
     }
 
     @Singleton

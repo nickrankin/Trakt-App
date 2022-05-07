@@ -54,6 +54,7 @@ class CollectedMoviesAdapter(private val glide: RequestManager,
                     currentItem.tmdb_id,
                     currentItem.title,
                     null,
+                    currentItem.language,
                     true,
                     movieitemPoster,
                 null)

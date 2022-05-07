@@ -1,52 +1,45 @@
 package com.nickrankin.traktapp.ui.shows
 
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
-import android.graphics.*
 import android.os.Bundle
-import android.os.CountDownTimer
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.Toast
-import androidx.core.content.ContextCompat
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
-import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.shows.RecommendedShowsAdapter
 import com.nickrankin.traktapp.databinding.FragmentShowsRecommendedBinding
-import com.nickrankin.traktapp.helper.ItemDecorator
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.shows.RecommendedShowsViewModel
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
-import com.google.android.material.snackbar.Snackbar
 import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.uwetrottmann.trakt5.entities.Show
-import com.uwetrottmann.trakt5.entities.ShowIds
-import com.uwetrottmann.trakt5.entities.SyncItems
-import com.uwetrottmann.trakt5.entities.SyncShow
 
 private const val TAG = "ShowsRecommendedFragmen"
 
 @AndroidEntryPoint
-class ShowsRecommendedFragment : BaseFragment(), OnNavigateToShow {
+class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, OnNavigateToShow {
     private lateinit var bindings: FragmentShowsRecommendedBinding
 
     private val viewModel: RecommendedShowsViewModel by activityViewModels()
 
+    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
     private lateinit var progressBar: ProgressBar
     private lateinit var layoutManager: LinearLayoutManager
     private lateinit var adapter: RecommendedShowsAdapter
@@ -65,6 +58,9 @@ class ShowsRecommendedFragment : BaseFragment(), OnNavigateToShow {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        swipeRefreshLayout = bindings.fragmentreccomendedshowsSwipeLayout
+        swipeRefreshLayout.setOnRefreshListener(this)
+
         progressBar = bindings.fragmentreccomendedshowsProgressbar
 
         val isLoggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
@@ -78,13 +74,8 @@ class ShowsRecommendedFragment : BaseFragment(), OnNavigateToShow {
         }
 
         initRecycler()
-        getShows()
+        getSuggestedShows()
         getEvents()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        viewModel.onInit()
     }
 
     private fun initRecycler() {
@@ -92,22 +83,62 @@ class ShowsRecommendedFragment : BaseFragment(), OnNavigateToShow {
 
         layoutManager = LinearLayoutManager(requireContext())
 
-        adapter = RecommendedShowsAdapter(glide, tmdbImageLoader, callback = { selectedShow ->
-            navigateToShow(
-                selectedShow?.ids?.trakt ?: 0,
-                selectedShow?.ids?.tmdb ?: 0,
-                selectedShow?.title,
-                selectedShow?.language
-            )
+        adapter = RecommendedShowsAdapter(tmdbImageLoader, callback = { selectedShow, action, pos ->
+
+            when(action) {
+                RecommendedShowsAdapter.ACTION_VIEW -> {
+                    navigateToShow(
+                        selectedShow?.ids?.trakt ?: 0,
+                        selectedShow?.ids?.tmdb ?: 0,
+                        selectedShow?.title,
+                        selectedShow?.language
+                    )
+                }
+                RecommendedShowsAdapter.ACTION_REMOVE -> {
+                    deleteRecommendation(selectedShow, pos)
+                }
+                else -> {
+                    navigateToShow(
+                        selectedShow?.ids?.trakt ?: 0,
+                        selectedShow?.ids?.tmdb ?: 0,
+                        selectedShow?.title,
+                        selectedShow?.language
+                    )
+                }
+            }
         })
 
         recyclerView.layoutManager = layoutManager
         recyclerView.adapter = adapter
-
-        setupViewSwipeBehaviour()
     }
 
-    private fun getShows() {
+    private fun deleteRecommendation(show: Show?, position: Int) {
+        if(show == null) {
+            return
+        }
+
+        val alertDialog = AlertDialog.Builder(requireContext())
+            .setTitle("Remove recommendation ${show.title}?")
+            .setMessage("Are you sure you want to remove recommendation ${show.title}?")
+            .setPositiveButton("Yes", DialogInterface.OnClickListener { dialogInterface, i ->
+                viewModel.removeFromSuggestions(show.ids?.trakt?.toString() ?: "")
+
+                val listCopy: MutableList<Show> = mutableListOf()
+                listCopy.addAll(adapter.currentList)
+                listCopy.removeAt(position)
+                adapter.submitList(listCopy)
+
+                dialogInterface.dismiss()
+            })
+            .setNegativeButton("No", DialogInterface.OnClickListener { dialogInterface, i ->
+                dialogInterface.dismiss()
+            })
+            .create()
+
+        alertDialog.show()
+    }
+
+    private fun getSuggestedShows() {
         lifecycleScope.launchWhenStarted {
             viewModel.suggestedShows.collectLatest { data ->
                 when (data) {
@@ -115,10 +146,18 @@ class ShowsRecommendedFragment : BaseFragment(), OnNavigateToShow {
                         progressBar.visibility = View.VISIBLE
                     }
                     is Resource.Success -> {
+                        if(swipeRefreshLayout.isRefreshing) {
+                            swipeRefreshLayout.isRefreshing = false
+                        }
+
                         progressBar.visibility = View.GONE
                         adapter.submitList(data.data)
                     }
                     is Resource.Error -> {
+                        if(swipeRefreshLayout.isRefreshing) {
+                            swipeRefreshLayout.isRefreshing = false
+                        }
+
                         progressBar.visibility = View.GONE
                         Toast.makeText(
                             requireContext(),
@@ -162,6 +201,15 @@ class ShowsRecommendedFragment : BaseFragment(), OnNavigateToShow {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        viewModel.onStart()
+    }
+
+    override fun onRefresh() {
+        viewModel.onRefresh()
+    }
+
     override fun navigateToShow(traktId: Int, tmdbId: Int, showTitle: String?, language: String?) {
         if (tmdbId == 0) {
             Toast.makeText(context, "Trakt does not have this show's TMDB", Toast.LENGTH_LONG)
@@ -175,154 +223,6 @@ class ShowsRecommendedFragment : BaseFragment(), OnNavigateToShow {
         startActivity(intent)
     }
 
-    private fun setupViewSwipeBehaviour() {
-
-        var itemTouchHelper: ItemTouchHelper? = null
-
-        itemTouchHelper = ItemTouchHelper(
-            object :
-                ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
-                override fun onMove(
-                    recyclerView: RecyclerView,
-                    viewHolder: RecyclerView.ViewHolder,
-                    target: RecyclerView.ViewHolder
-                ): Boolean {
-                    viewHolder.itemView.background = null
-
-                    return true
-                }
-
-                override fun onChildDraw(
-                    c: Canvas,
-                    recyclerView: RecyclerView,
-                    viewHolder: RecyclerView.ViewHolder,
-                    dX: Float,
-                    dY: Float,
-                    actionState: Int,
-                    isCurrentlyActive: Boolean
-                ) {
-                    val colorAlert = ContextCompat.getColor(requireContext(), R.color.red)
-                    val teal200 = ContextCompat.getColor(requireContext(), R.color.teal_200)
-                    val defaultWhiteColor = ContextCompat.getColor(requireContext(), R.color.white)
-
-                    ItemDecorator.Builder(c, recyclerView, viewHolder, dX, actionState).set(
-                        iconHorizontalMargin = 23f,
-                        backgroundColorFromStartToEnd = teal200,
-                        backgroundColorFromEndToStart = colorAlert,
-                        textFromStartToEnd = "Add to Collection",
-                        textFromEndToStart = "Remove from Suggested",
-                        textColorFromStartToEnd = defaultWhiteColor,
-                        textColorFromEndToStart = defaultWhiteColor,
-                        iconTintColorFromStartToEnd = defaultWhiteColor,
-                        iconTintColorFromEndToStart = defaultWhiteColor,
-                        textSizeFromStartToEnd = 16f,
-                        textSizeFromEndToStart = 16f,
-                        typeFaceFromStartToEnd = Typeface.DEFAULT_BOLD,
-                        typeFaceFromEndToStart = Typeface.SANS_SERIF,
-                        iconResIdFromStartToEnd = R.drawable.ic_baseline_delete_forever_24,
-                        iconResIdFromEndToStart = R.drawable.ic_trakt_svgrepo_com
-                    )
-
-                    super.onChildDraw(
-                        c,
-                        recyclerView,
-                        viewHolder,
-                        dX,
-                        dY,
-                        actionState,
-                        isCurrentlyActive
-                    )
-
-                }
-
-                override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                    val showsList: MutableList<Show> = mutableListOf()
-                    showsList.addAll(adapter.currentList)
-
-                    val showPosition = viewHolder.layoutPosition
-                    val show = showsList[showPosition]
-
-                    when (direction) {
-                        ItemTouchHelper.LEFT -> {
-                            val updatedList: MutableList<Show> = mutableListOf()
-                            updatedList.addAll(showsList)
-                            updatedList.remove(show)
-
-                            adapter.submitList(updatedList)
-
-                            val timer = getTimer() {
-                                Log.e(TAG, "onFinish: Timer ended for remove show ${show.title}!")
-                                viewModel.removeFromSuggestions(show.ids?.trakt?.toString() ?: "")
-
-                            }.start()
-
-                            getSnackbar(
-                                bindings.fragmentreccomendedshowsRecyclerview,
-                                "You have removed suggestion: ${show.title}"
-                            ) {
-                                timer.cancel()
-                                adapter.submitList(showsList) {
-                                    // For first and last element, always scroll to the position to bring the element to focus
-                                    if (showPosition == 0) {
-                                        recyclerView.scrollToPosition(0)
-                                    } else if (showPosition == showsList.size - 1) {
-                                        recyclerView.scrollToPosition(showsList.size - 1)
-                                    }
-                                }
-                            }.show()
-                        }
-
-                        ItemTouchHelper.RIGHT -> {
-                            val timer = getTimer() {
-                                Log.e(TAG, "onFinish: Timer ended for Collect Show ${show.title}!")
-                                val syncItems = SyncItems()
-                                syncItems.apply {
-                                    shows = listOf(
-                                        SyncShow()
-                                            .id(ShowIds.trakt(show.ids?.trakt ?: 0))
-                                    )
-                                }
-                                viewModel.addToCollection(syncItems)
-                            }.start()
-
-                            getSnackbar(
-                                bindings.fragmentreccomendedshowsRecyclerview,
-                                "You have added ${show.title} to your collection."
-                            ) {
-                                timer.cancel()
-                            }.show()
-
-                            // Force the current show to "bounce back" into view
-                            adapter.notifyItemChanged(showPosition)
-                        }
-
-                    }
-                }
-            }
-        )
-
-        itemTouchHelper.attachToRecyclerView(recyclerView)
-    }
-
-    private fun getTimer(doAction: () -> Unit): CountDownTimer {
-        return object : CountDownTimer(5000, 1000) {
-            override fun onTick(p0: Long) {
-            }
-
-            override fun onFinish() {
-                doAction()
-            }
-        }
-    }
-
-    private fun getSnackbar(v: View, message: String, listener: View.OnClickListener): Snackbar {
-        return Snackbar.make(
-            v,
-            message,
-            Snackbar.LENGTH_LONG
-        )
-            .setAction("Cancel", listener)
-    }
 
     private fun displayMessageToast(message: String, length: Int) {
         Toast.makeText(requireContext(), message, length).show()

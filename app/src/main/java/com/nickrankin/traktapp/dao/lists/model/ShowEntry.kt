@@ -13,4 +13,5 @@ data class ShowEntry(
     val title: String,
     val overview: String?,
     val first_aired: OffsetDateTime?,
-    val runtime: Int?)
+    val runtime: Int?,
+    val language: String?)

@@ -125,7 +125,7 @@ interface TmMoviesService {
     @GET("movie/{movie_id}/images")
     suspend fun images(
         @Path("movie_id") movieId: Int,
-        @Query("language") language: String
+        @Query("language", encoded = false) language: String
     ): Images
 
     /**
