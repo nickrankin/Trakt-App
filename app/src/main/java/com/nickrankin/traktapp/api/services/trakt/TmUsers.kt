@@ -8,6 +8,7 @@ import org.threeten.bp.OffsetDateTime
 import retrofit2.Call
 import retrofit2.Response
 import retrofit2.http.*
+import com.nickrankin.traktapp.api.services.trakt.model.stats.UserStats
 
 interface TmUsers {
 
@@ -445,4 +446,16 @@ interface TmUsers {
         @Path("username") userSlug: UserSlug,
         @Query(value = "extended", encoded = true) extended: Extended
     ): List<BaseShow>
+
+    /**
+     * **OAuth Optional**
+     *
+     *
+     *  Returns all movies or shows a user has watched sorted by most plays.
+     *
+     * @param userSlug Example: "sean".
+     */
+    @GET("users/{username}/stats")
+    suspend fun stats(
+        @Path("username") userSlug: UserSlug): UserStats
 }

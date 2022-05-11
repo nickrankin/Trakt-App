@@ -14,10 +14,7 @@ import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.networkBoundResource
 import com.nickrankin.traktapp.ui.auth.AuthActivity
-import com.uwetrottmann.trakt5.entities.HistoryEntry
-import com.uwetrottmann.trakt5.entities.SyncItems
-import com.uwetrottmann.trakt5.entities.SyncResponse
-import com.uwetrottmann.trakt5.entities.UserSlug
+import com.uwetrottmann.trakt5.entities.*
 import com.uwetrottmann.trakt5.enums.Extended
 import com.uwetrottmann.trakt5.enums.HistoryType
 import com.uwetrottmann.trakt5.enums.Status
@@ -30,6 +27,8 @@ class WatchedMoviesRepository @Inject constructor(private val traktApi: TraktApi
 
     private val watchedMoviesDao = moviesDatabase.watchedMoviesDao()
 
+    private var latestWatchedMovies: List<HistoryEntry> = listOf()
+
     @OptIn(ExperimentalPagingApi::class)
     fun watchedMovies(shouldRefresh: Boolean) = Pager(
         config = PagingConfig(8),
@@ -37,6 +36,35 @@ class WatchedMoviesRepository @Inject constructor(private val traktApi: TraktApi
     ) {
         watchedMoviesDao.getWatchedMovies()
     }.flow
+
+    fun getLatestWatchedMovies(shouldRefresh: Boolean) = flow {
+        emit(Resource.Loading())
+
+        if(!shouldRefresh && latestWatchedMovies.isNotEmpty()) {
+            Log.d(TAG, "getLatestWatchedMovies: Getting latest movies from cache")
+            emit(Resource.Success(latestWatchedMovies))
+        } else {
+            Log.d(TAG, "getLatestWatchedMovies: Refreshing latest movies (Should Refresh Value: $shouldRefresh)")
+            try {
+                val response = traktApi.tmUsers().history(
+                    UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "null")),
+                    HistoryType.MOVIES,
+                    1,
+                    5,
+                    Extended.FULL,
+                    OffsetDateTime.now().minusYears(99),
+                    OffsetDateTime.now()
+                )
+
+                latestWatchedMovies = response
+
+                emit(Resource.Success(latestWatchedMovies))
+
+            } catch(t: Throwable) {
+                emit(Resource.Error(t, null))
+            }
+        }
+    }
 
     suspend fun deleteFromWatchedHistory(syncItems: SyncItems): Resource<SyncResponse> {
         return try {

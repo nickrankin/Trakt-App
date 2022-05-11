@@ -1,6 +1,7 @@
 package com.nickrankin.traktapp.ui.shows
 
 import android.os.Bundle
+import android.os.PersistableBundle
 import android.util.Log
 import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
@@ -20,8 +21,8 @@ import com.nickrankin.traktapp.helper.OnTitleChangeListener
 import dagger.hilt.android.AndroidEntryPoint
 import java.lang.ClassCastException
 
-private const val TAG = "ShowsMainActivity"
 
+private const val TAG = "ShowsMainActivity"
 @AndroidEntryPoint
 class ShowsMainActivity : BaseActivity(), OnTitleChangeListener, TabLayout.OnTabSelectedListener {
     private lateinit var bindings: ActivityShowsMainBinding
@@ -53,11 +54,55 @@ class ShowsMainActivity : BaseActivity(), OnTitleChangeListener, TabLayout.OnTab
 
         navTabs.addOnTabSelectedListener(this)
 
-        supportFragmentManager.beginTransaction()
-            .add(fragmentContainer.id, ShowsUpcomingFragment.newInstance(), "upcoming")
-            .commit()
+        currentFragmentTag = savedInstanceState?.getString(SHOW_CURRENT_FRAGMENT_TAG) ?: ""
 
-        currentFragmentTag = "upcoming"
+        navigateToFragment()
+
+    }
+
+    private fun navigateToFragment() {
+
+        // Navigation triggered to a particular fragment/tab
+        if(intent.hasExtra(SHOW_CURRENT_FRAGMENT_TAG)) {
+            currentFragmentTag = intent.getStringExtra(SHOW_CURRENT_FRAGMENT_TAG) ?: ""
+        }
+
+        if(currentFragmentTag.isNotBlank()) {
+            navTabs.selectTab(navTabs.getTabAt(selectTabByTag(currentFragmentTag)))
+        } else {
+            supportFragmentManager.beginTransaction()
+                .add(fragmentContainer.id, ShowsUpcomingFragment.newInstance(), UPCOMING_SHOWS_TAG)
+                .commit()
+
+            currentFragmentTag = UPCOMING_SHOWS_TAG
+        }
+
+    }
+
+    private fun selectTabByTag(tag: String): Int {
+        var tabPos = -1
+        when(tag) {
+            UPCOMING_SHOWS_TAG -> {
+                tabPos = 0
+            }
+            WATCHED_SHOWS_TAG -> {
+                tabPos = 1
+            }
+            TRACKING_SHOWS_TAG -> {
+                tabPos = 2
+            }
+            COLLECTED_SHOWS_TAG -> {
+                tabPos = 3
+            }
+            SUGGESTED_SHOWS_TAG -> {
+                tabPos = 4
+            }
+            else -> {
+                tabPos = 0
+            }
+        }
+
+        return  tabPos
     }
 
     override fun onTitleChanged(newTitle: String) {
@@ -79,48 +124,47 @@ class ShowsMainActivity : BaseActivity(), OnTitleChangeListener, TabLayout.OnTab
         navView.setNavigationItemSelectedListener(this)
     }
 
-
     override fun onTabSelected(tab: TabLayout.Tab?) {
         when (tab?.position) {
             0 -> {
                 Log.d(TAG, "onTabSelected: Upcoming")
                 supportFragmentManager.beginTransaction()
-                    .replace(fragmentContainer.id, ShowsUpcomingFragment.newInstance(), "upcoming")
+                    .replace(fragmentContainer.id, ShowsUpcomingFragment.newInstance(), UPCOMING_SHOWS_TAG)
                     .commit()
 
-                currentFragmentTag = "upcoming"
+                currentFragmentTag = UPCOMING_SHOWS_TAG
             }
             1 -> {
                 Log.d(TAG, "onTabSelected: Watched")
                 supportFragmentManager.beginTransaction()
-                    .replace(fragmentContainer.id, WatchingFragment.newInstance(), "watched")
+                    .replace(fragmentContainer.id, WatchingFragment.newInstance(), WATCHED_SHOWS_TAG)
                     .commit()
 
-                currentFragmentTag = "watched"
+                currentFragmentTag = WATCHED_SHOWS_TAG
             }
             2 -> {
                 Log.d(TAG, "onTabSelected: Tracking")
                 supportFragmentManager.beginTransaction()
-                    .replace(fragmentContainer.id, ShowsTrackingFragment.newInstance(), "tracking")
+                    .replace(fragmentContainer.id, ShowsTrackingFragment.newInstance(), TRACKING_SHOWS_TAG)
                     .commit()
 
-                currentFragmentTag = "tracking"
+                currentFragmentTag = TRACKING_SHOWS_TAG
             }
             3 -> {
                 Log.d(TAG, "onTabSelected: Collected")
                 supportFragmentManager.beginTransaction()
-                    .replace(fragmentContainer.id, CollectedShowsFragment.newInstance(), "collected")
+                    .replace(fragmentContainer.id, CollectedShowsFragment.newInstance(), COLLECTED_SHOWS_TAG)
                     .commit()
 
-                currentFragmentTag = "collected"
+                currentFragmentTag = COLLECTED_SHOWS_TAG
             }
             4 -> {
                 Log.d(TAG, "onTabSelected: Recommended")
                 supportFragmentManager.beginTransaction()
-                    .replace(fragmentContainer.id, ShowsRecommendedFragment.newInstance(), "recommended")
+                    .replace(fragmentContainer.id, ShowsRecommendedFragment.newInstance(), SUGGESTED_SHOWS_TAG)
                     .commit()
 
-                currentFragmentTag = "recommended"
+                currentFragmentTag = SUGGESTED_SHOWS_TAG
             }
             else -> {
                 Log.e(TAG, "onTabSelected: ELSE")
@@ -160,5 +204,20 @@ class ShowsMainActivity : BaseActivity(), OnTitleChangeListener, TabLayout.OnTab
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString(SHOW_CURRENT_FRAGMENT_TAG, currentFragmentTag)
+
+        super.onSaveInstanceState(outState)
+    }
+
+    companion object {
+        const val SHOW_CURRENT_FRAGMENT_TAG = "current_fragment"
+        const val UPCOMING_SHOWS_TAG = "upcoming"
+        const val TRACKING_SHOWS_TAG = "tracking"
+        const val COLLECTED_SHOWS_TAG = "collected"
+        const val WATCHED_SHOWS_TAG = "watched"
+        const val SUGGESTED_SHOWS_TAG = "suggested"
     }
 }

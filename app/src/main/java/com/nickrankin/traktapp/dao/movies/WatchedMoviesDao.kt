@@ -13,6 +13,10 @@ interface WatchedMoviesDao {
     fun getWatchedMovies(): PagingSource<Int, WatchedMovie>
 
     @Transaction
+    @Query("SELECT * FROM watched_movies ORDER BY watched_at DESC LIMIT 5")
+    fun getLastWatchedMovies(): Flow<List<WatchedMovie>>
+
+    @Transaction
     @Query("SELECT * FROM watched_movies WHERE trakt_id = :traktId")
     fun getWatchedMovie(traktId: Int): Flow<WatchedMovie?>
 

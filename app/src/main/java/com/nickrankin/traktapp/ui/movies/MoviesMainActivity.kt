@@ -44,17 +44,27 @@ class MoviesMainActivity : BaseActivity(), OnTitleChangeListener, TabLayout.OnTa
         navTabs = bindings.moviesmainactivityNavigationTabs
         navTabs.addOnTabSelectedListener(this)
 
-
         setupDrawerLayout()
 
         currentFragmentTag = savedInstanceState?.getString(CURRENT_TAB, "") ?: ""
 
+
+        setupDisplay()
+
+    }
+
+    private fun setupDisplay() {
+        // If intent contains Fragment tag, we load that Fragment
+        if(intent.hasExtra(MOVIE_INITIAL_TAB)) {
+            currentFragmentTag = intent.getStringExtra(MOVIE_INITIAL_TAB) ?: ""
+        }
+
         if(currentFragmentTag.isBlank()) {
             supportFragmentManager.beginTransaction()
-                .add(bindings.moviesmainactivityContainer.id, CollectedMoviesFragment.newInstance(), "collected")
+                .add(bindings.moviesmainactivityContainer.id, CollectedMoviesFragment.newInstance(), "")
                 .commit()
 
-            currentFragmentTag = "collected"
+            currentFragmentTag = TAG_COLLECTED_MOVIES
         } else {
             selectCurrentTab()
         }
@@ -66,16 +76,16 @@ class MoviesMainActivity : BaseActivity(), OnTitleChangeListener, TabLayout.OnTa
 
     private fun selectCurrentTab() {
         when(currentFragmentTag) {
-            "collected" -> {
+            TAG_COLLECTED_MOVIES -> {
                 navTabs.selectTab(navTabs.getTabAt(0))
             }
-            "watched" -> {
+            TAG_WATCHED_MOVIES -> {
                 navTabs.selectTab(navTabs.getTabAt(1))
             }
-            "recommended" -> {
+            TAG_SUGGESTED_MOVIES -> {
                 navTabs.selectTab(navTabs.getTabAt(2))
             }
-            "trending" -> {
+            TAG_TRENDING_MOVIES -> {
                 navTabs.selectTab(navTabs.getTabAt(3))
 
             }
@@ -103,37 +113,37 @@ class MoviesMainActivity : BaseActivity(), OnTitleChangeListener, TabLayout.OnTa
                 Log.d(TAG, "onTabSelected: Collected")
 
                 supportFragmentManager.beginTransaction()
-                    .replace(bindings.moviesmainactivityContainer.id, CollectedMoviesFragment.newInstance())
+                    .replace(bindings.moviesmainactivityContainer.id, CollectedMoviesFragment.newInstance(), TAG_COLLECTED_MOVIES)
                     .commit()
 
-                currentFragmentTag = "collected"
+                currentFragmentTag = TAG_COLLECTED_MOVIES
             }
             1 -> {
                 Log.d(TAG, "onTabSelected: Watched")
 
                 supportFragmentManager.beginTransaction()
-                    .replace(bindings.moviesmainactivityContainer.id, WatchedMoviesFragment.newInstance())
+                    .replace(bindings.moviesmainactivityContainer.id, WatchedMoviesFragment.newInstance(), TAG_WATCHED_MOVIES)
                     .commit()
 
-                currentFragmentTag = "watched"
+                currentFragmentTag = TAG_WATCHED_MOVIES
             }
             2 -> {
                 Log.d(TAG, "onTabSelected: Recommended")
 
                 supportFragmentManager.beginTransaction()
-                    .replace(bindings.moviesmainactivityContainer.id, RecommendedMoviesFragment.newInstance())
+                    .replace(bindings.moviesmainactivityContainer.id, RecommendedMoviesFragment.newInstance(), TAG_SUGGESTED_MOVIES)
                     .commit()
 
-                currentFragmentTag = "recommended"
+                currentFragmentTag = TAG_SUGGESTED_MOVIES
             }
             3 -> {
                 Log.d(TAG, "onTabSelected: Trending")
 
                 supportFragmentManager.beginTransaction()
-                    .replace(bindings.moviesmainactivityContainer.id, TrendingMoviesFragment.newInstance())
+                    .replace(bindings.moviesmainactivityContainer.id, TrendingMoviesFragment.newInstance(), TAG_TRENDING_MOVIES)
                     .commit()
 
-                currentFragmentTag = "trending"
+                currentFragmentTag = TAG_TRENDING_MOVIES
             }
         }
     }
@@ -149,5 +159,14 @@ class MoviesMainActivity : BaseActivity(), OnTitleChangeListener, TabLayout.OnTa
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putString(CURRENT_TAB, currentFragmentTag)
         super.onSaveInstanceState(outState)
+    }
+
+    companion object {
+        const val MOVIE_INITIAL_TAB = "initial_tab"
+        const val TAG_COLLECTED_MOVIES = "collected"
+        const val TAG_WATCHED_MOVIES = "watched"
+        const val TAG_SUGGESTED_MOVIES = "suggested"
+        const val TAG_TRENDING_MOVIES = "trending_movies"
+
     }
 }

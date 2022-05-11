@@ -15,6 +15,7 @@ import com.uwetrottmann.trakt5.entities.CalendarShowEntry
 import com.uwetrottmann.trakt5.enums.Status
 import kotlinx.coroutines.flow.first
 import org.threeten.bp.OffsetDateTime
+import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 import javax.inject.Inject
 
@@ -55,10 +56,11 @@ class ShowsOverviewRepository @Inject constructor(private val traktApi: TraktApi
     }
 
     suspend fun removeAlreadyAiredEpisodes(shows: List<ShowCalendarEntry>) {
+        Log.e(TAG, "removeAlreadyAiredEpisodes: ${shows.size}", )
         val dateNow = OffsetDateTime.now()
         shows.map { calendarEntry ->
-            Log.d(TAG, "removeAlreadyAiredEpisodes: Entry ${calendarEntry.episode_title}. Aired ${calendarEntry.first_aired} Now $dateNow. Is before ${calendarEntry.first_aired?.isBefore(dateNow)}", )
-            if(calendarEntry.first_aired?.isBefore(dateNow) == true) {
+            Log.d(TAG, "removeAlreadyAiredEpisodes: Entry ${calendarEntry.episode_title}. Aired ${calendarEntry.first_aired?.atZoneSameInstant(ZoneId.systemDefault())} Now ${dateNow?.atZoneSameInstant(ZoneId.systemDefault())}. Is before ${calendarEntry.first_aired?.isBefore(dateNow)}", )
+            if(calendarEntry.first_aired?.atZoneSameInstant(ZoneId.systemDefault())?.isBefore(dateNow?.atZoneSameInstant(ZoneId.systemDefault())) == true) {
                 showsDatabase.withTransaction {
                     showCalendarEntryDao.delete(calendarEntry)
                 }

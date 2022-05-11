@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.room.withTransaction
 import com.nickrankin.traktapp.ApiKeys
 import com.nickrankin.traktapp.api.TraktApi
+import com.nickrankin.traktapp.api.services.trakt.model.stats.UserStats
 import com.nickrankin.traktapp.dao.auth.AuthDatabase
 import com.nickrankin.traktapp.dao.auth.model.AuthUser
 import com.nickrankin.traktapp.helper.Resource
@@ -13,6 +14,7 @@ import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.trakt5.entities.AccessToken
 import com.uwetrottmann.trakt5.entities.AccessTokenRequest
 import com.uwetrottmann.trakt5.entities.Settings
+import com.uwetrottmann.trakt5.entities.UserSlug
 import kotlinx.coroutines.flow.flow
 import org.threeten.bp.OffsetDateTime
 import javax.inject.Inject
@@ -25,6 +27,8 @@ class AuthRepository @Inject constructor(
     private val authDatabase: AuthDatabase
 ) {
     private val authUserDao = authDatabase.authUserDao()
+    private var userStats: UserStats? = null
+
     suspend fun exchangeCodeForAccessToken(code: String, isStaging: Boolean) = flow {
         emit(Resource.Loading())
         try {
@@ -106,5 +110,26 @@ class AuthRepository @Inject constructor(
             settings.user?.vip ?: false,
             settings.user?.vip_ep ?: false
         )
+    }
+
+    fun getUserStats(shouldRefresh: Boolean) = flow {
+        emit(Resource.Loading())
+
+        if(!shouldRefresh && userStats != null) {
+            Log.d(TAG, "getUserStats: Getting user stats from cache")
+            emit(Resource.Success(userStats))
+        } else {
+            Log.d(TAG, "getUserStats: Getting UserStats from API")
+            try {
+                val response = traktApi.tmUsers().stats(UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "null")))
+
+                emit(Resource.Success(response))
+
+            } catch(t: Throwable) {
+                emit(Resource.Error(t, null))
+            }
+        }
+
+
     }
 }

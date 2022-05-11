@@ -28,6 +28,8 @@ private const val TAG = "WatchedEpisodesReposito"
 class WatchedEpisodesRepository @Inject constructor(private val traktApi: TraktApi, private val sharedPreferences: SharedPreferences, private val showsDatabase: WatchedShowsMediatorDatabase) {
 
     private val watchedEpisodesDao = showsDatabase.watchedEpisodesDao()
+    private var latestWatchedEpisodes: List<HistoryEntry> = listOf()
+
 
     @OptIn(ExperimentalPagingApi::class)
     fun watchedEpisodes(shouldRefresh: Boolean) = Pager(
@@ -36,6 +38,35 @@ class WatchedEpisodesRepository @Inject constructor(private val traktApi: TraktA
     ) {
         showsDatabase.watchedEpisodesDao().getWatchedEpisodes()
     }.flow
+
+    fun getLatestWatchedEpisodes(shouldRefresh: Boolean) = flow {
+        emit(Resource.Loading())
+
+        if(!shouldRefresh && latestWatchedEpisodes.isNotEmpty()) {
+            Log.d(TAG, "getLatestWatchedEpisodes: Getting latest movies from cache")
+            emit(Resource.Success(latestWatchedEpisodes))
+        } else {
+            Log.d(TAG, "getLatestWatchedEpisodes: Refreshing latest movies (Should Refresh Value: $shouldRefresh)")
+            try {
+                val response = traktApi.tmUsers().history(
+                    UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "null")),
+                    HistoryType.EPISODES,
+                    1,
+                    5,
+                    Extended.FULL,
+                    OffsetDateTime.now().minusYears(99),
+                    OffsetDateTime.now()
+                )
+
+                latestWatchedEpisodes = response
+
+                emit(Resource.Success(latestWatchedEpisodes))
+
+            } catch(t: Throwable) {
+                emit(Resource.Error(t, null))
+            }
+        }
+    }
 
     suspend fun deleteFromWatchedHistory(syncItems: SyncItems): Resource<SyncResponse> {
         return try {

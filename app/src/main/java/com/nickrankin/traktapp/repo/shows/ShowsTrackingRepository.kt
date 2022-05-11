@@ -9,7 +9,7 @@ import com.nickrankin.traktapp.helper.EpisodeTrackingDataHelper
 import com.nickrankin.traktapp.services.helper.TrackedEpisodeAlarmScheduler
 import javax.inject.Inject
 
-private const val DAYS_TO_TRACK_UPCOMING = 3
+private const val DAYS_TO_TRACK_UPCOMING = 30
 private const val DEFAULT_TRAKT_DATE_FORMAT = "yyyy-MM-dd"
 
 private const val TAG = "ShowsTrackingRepository"

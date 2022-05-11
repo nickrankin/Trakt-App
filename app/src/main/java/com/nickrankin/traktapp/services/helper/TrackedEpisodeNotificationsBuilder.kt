@@ -12,6 +12,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.preference.PreferenceManager
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.dao.show.model.TrackedEpisode
+import com.nickrankin.traktapp.helper.convertToHumanReadableTime
 import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
 import com.nickrankin.traktapp.services.CancelShowTrackingNotificationReceiver
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
@@ -70,21 +71,6 @@ class TrackedEpisodeNotificationsBuilder(private val context: Context) {
             // notificationId is a unique int for each notification that you must define
             notify(trackedEpisode.trakt_id, builder.build())
         }
-    }
-
-    private fun convertToHumanReadableTime(dateTime: OffsetDateTime): String {
-        val calendar = Calendar.getInstance()
-        calendar.set(Calendar.YEAR, dateTime.year)
-        calendar.set(Calendar.MONTH, dateTime.month.value - 1)
-        calendar.set(Calendar.DAY_OF_MONTH, dateTime.dayOfMonth)
-        calendar.set(Calendar.HOUR_OF_DAY, dateTime.hour)
-        calendar.set(Calendar.MINUTE, dateTime.minute)
-
-        val calendarToday = Calendar.getInstance(Locale.getDefault())
-
-        Log.e(TAG, "convertToHumanReadableTime: $dateTime  // ${DateUtils.getRelativeTimeSpanString(calendar.timeInMillis, calendarToday.timeInMillis, DateUtils.DAY_IN_MILLIS, DateUtils.FORMAT_SHOW_WEEKDAY).toString()} " +
-                "${dateTime.format(DateTimeFormatter.ofPattern("HH:mm"))} ", )
-        return "${DateUtils.getRelativeTimeSpanString(calendar.timeInMillis, calendarToday.timeInMillis, DateUtils.DAY_IN_MILLIS, DateUtils.FORMAT_SHOW_WEEKDAY)} at ${dateTime.format(DateTimeFormatter.ofPattern("HH:mm"))}"
     }
 
     private fun displayAsSummaryGroup() {

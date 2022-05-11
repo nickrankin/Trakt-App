@@ -3,16 +3,12 @@ package com.nickrankin.traktapp
 import android.app.SearchManager
 import android.content.Intent
 import android.os.Bundle
-import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.SearchView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
-import androidx.drawerlayout.widget.DrawerLayout
 import androidx.preference.PreferenceManager
 import com.google.android.material.navigation.NavigationView
-import com.nickrankin.traktapp.databinding.ActivityMainBinding
 import com.nickrankin.traktapp.ui.lists.TraktListsActivity
 import com.nickrankin.traktapp.ui.movies.MoviesMainActivity
 import com.nickrankin.traktapp.ui.search.ShowSearchResultsActivity
@@ -20,13 +16,9 @@ import com.nickrankin.traktapp.ui.settings.SettingsActivity
 import com.nickrankin.traktapp.ui.shows.ShowsMainActivity
 import dagger.hilt.android.AndroidEntryPoint
 
+private const val TAG = "BaseActivity"
 @AndroidEntryPoint
-open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
-
-    private lateinit var bindings: ActivityMainBinding
-    private lateinit var toolbar: Toolbar
-    private lateinit var drawerLayout: DrawerLayout
-    private lateinit var navView: NavigationView
+abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
 //    @Inject
 //    lateinit var trackedEpisodeAlarmScheduler: TrackedEpisodeAlarmScheduler
@@ -42,15 +34,7 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
 //
 //        }
 
-        bindings = ActivityMainBinding.inflate(layoutInflater)
 
-        toolbar = bindings.toolbarLayout.toolbar
-
-        setSupportActionBar(toolbar)
-
-        setupDrawerLayout()
-
-        setContentView(bindings.root)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -66,20 +50,6 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
         return true
     }
 
-    private fun setupDrawerLayout() {
-        setSupportActionBar(toolbar)
-
-        navView = bindings.mainDrawer
-        drawerLayout = bindings.drawerLayout
-
-        toolbar.setNavigationIcon(R.drawable.ic_baseline_menu_24)
-
-        toolbar.setNavigationOnClickListener {
-            drawerLayout.open()
-        }
-
-        navView.setNavigationItemSelectedListener(this)
-    }
 
     private fun startSearch(searchView: SearchView) {
         val intent = Intent(this, ShowSearchResultsActivity::class.java)
@@ -117,7 +87,7 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
             R.id.navdrawer_home -> {
-                startActivity(Intent(this, BaseActivity::class.java))
+                    startActivity(Intent(this, MainActivity::class.java))
             }
             R.id.navdrawer_shows -> {
                 startActivity(Intent(this, ShowsMainActivity::class.java))
@@ -131,8 +101,6 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
                 startActivity(Intent(this, TraktListsActivity::class.java))
             }
         }
-
-        drawerLayout.closeDrawer(Gravity.LEFT)
 
         return false
     }

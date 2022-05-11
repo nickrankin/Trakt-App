@@ -99,11 +99,10 @@ class WatchedMoviesRemoteMediator(
             }
             
             if(loadType == LoadType.REFRESH) {
-                Log.d(TAG, "load: Refreshing Watched Shows. Deleting already cached")
-                watchedMoviesMediatorDatabase.withTransaction {
-                    remoteKeyDao.deleteAll()
-                    watchedMoviesDao.deleteAllMovies()
-                }
+//                watchedMoviesMediatorDatabase.withTransaction {
+//                    remoteKeyDao.deleteAll()
+//                    watchedMoviesDao.deleteAllMovies()
+//                }
 
                 // Save last refresh date
                 sharedPreferences.edit()
