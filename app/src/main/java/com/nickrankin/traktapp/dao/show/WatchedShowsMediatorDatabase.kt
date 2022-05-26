@@ -16,8 +16,7 @@ import com.nickrankin.traktapp.dao.show.model.*
 )
 @TypeConverters(ShowTypeConverter::class, TmdbShowTypeConverter::class)
 abstract class WatchedShowsMediatorDatabase : RoomDatabase() {
-    abstract fun watchedEpisodesDao(): WatchedEpisodesDao
-    abstract fun watchedEpisodePageKeyDao(): WatchedEpisodePageKeyDao
+
 
     companion object {
         @Volatile

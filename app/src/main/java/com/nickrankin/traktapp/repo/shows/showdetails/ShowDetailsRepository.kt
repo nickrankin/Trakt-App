@@ -54,16 +54,6 @@ class ShowDetailsRepository @Inject constructor(
         }
     )
 
-    suspend fun getAllUserRatings(traktId: Int): Resource<Ratings> {
-        return try {
-            val showRatingsResponse = traktApi.tmShows().ratings(traktId.toString())
-            Resource.Success(showRatingsResponse)
-
-        } catch (t: Throwable) {
-            Resource.Error(t, null)
-        }
-    }
-
     companion object {
         const val SHOW_TRAKT_ID_KEY = "show_trakt_id"
         const val SHOW_TMDB_ID_KEY = "show_tmdb_id"

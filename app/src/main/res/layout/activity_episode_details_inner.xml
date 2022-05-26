@@ -6,247 +6,243 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <ProgressBar
-        android:id="@+id/episodedetailsactivity_progressbar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        />
-
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:visibility="visible">
 
-        <TextView
-            android:id="@+id/episodedetailsactivity_error"
-            android:layout_width="0dp"
+        <ProgressBar
+            android:id="@+id/episodedetailsactivity_progressbar"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="@id/episodedetailsactivity_retry_button"
-            android:layout_margin="16dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            android:text="There was an error loading the Episode Details." />
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <TextView
+            android:id="@+id/episodedetailsactivity_error_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:text="Error getting Movie Details. Please check your internet connection"
+            android:visibility="gone"
+            tools:visibility="visible"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/episodedetailsactivity_retry_button" />
 
         <Button
             android:id="@+id/episodedetailsactivity_retry_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Retry"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_error"
+            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_error_text"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toBottomOf="parent" />
+
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/episodedetailsactivity_poster_cardview"
+            android:layout_width="95dp"
+            android:layout_height="135dp"
+            android:layout_margin="8dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+            <ImageView
+                android:id="@+id/episodedetailsactivity_poster"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitXY"
+                android:src="@drawable/ic_trakt_svgrepo_com"
+                />
+
+        </com.google.android.material.card.MaterialCardView>
+
 
         <TextView
             android:id="@+id/episodedetailsactivity_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
+            android:layout_margin="8dp"
             android:textAllCaps="true"
-            android:textSize="19sp"
-            android:textStyle="bold"
+            android:textAlignment="center"
+            android:textAppearance="?attr/textAppearanceHeadline4"
+            app:layout_constraintStart_toEndOf="@id/episodedetailsactivity_poster_cardview"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            tools:text="First Episode" />
+            tools:text="Episode 01" />
 
         <TextView
             android:id="@+id/episodedetailsactivity_show_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textAllCaps="true"
-            android:textSize="12sp"
+            android:textAppearance="?attr/textAppearanceHeadline5"
             android:textStyle="bold"
-            app:layout_constraintEnd_toStartOf="@id/episodedetailsactivity_show_poster"
-            app:layout_constraintStart_toStartOf="@id/episodedetailsactivity_title"
+            android:layout_margin="8dp"
+            android:textAlignment="viewStart"
             app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_title"
+            app:layout_constraintStart_toEndOf="@id/episodedetailsactivity_poster_cardview"
+            app:layout_constraintEnd_toEndOf="parent"
             tools:text="The Simpsons" />
 
-        <ImageView
-            android:id="@+id/episodedetailsactivity_show_poster"
-            android:layout_width="65dp"
-            android:layout_height="85dp"
-            android:layout_marginTop="8dp"
-            android:src="@drawable/ic_trakt_svgrepo_com"
-            app:barrierAllowsGoneWidgets="true"
-            app:layout_constraintEnd_toEndOf="@id/episodedetailsactivity_title"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_title" />
+        <TextView
+            android:id="@+id/episodedetailsactivity_show_season_episode"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:textAppearance="?attr/textAppearanceHeadline5"
+            android:textStyle="bold"
+            tools:text="S01E10"
+            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_show_title"
+            app:layout_constraintStart_toEndOf="@id/episodedetailsactivity_poster_cardview"
+            app:layout_constraintEnd_toEndOf="parent" />
 
         <TextView
             android:id="@+id/episodedetailsactivity_first_aired"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/rounded_corners_background"
-            android:paddingStart="8dp"
-            android:paddingTop="2dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="2dp"
-            android:textColor="@android:color/white"
-            android:textSize="13sp"
+            android:layout_margin="8dp"
+            android:textSize="16sp"
             android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="@id/episodedetailsactivity_title"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_show_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_top_banner"
             tools:text="Premiered: 01/01/1970" />
 
         <TextView
-            android:id="@+id/episodedetailsactivity_total_plays"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
-            android:background="@drawable/rounded_corners_background"
-            android:backgroundTint="@color/green"
-            android:textColor="@color/white"
-            android:paddingStart="8dp"
-            android:paddingTop="2dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="2dp"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_first_aired"
-            app:layout_constraintStart_toStartOf="@id/episodedetailsactivity_first_aired"
-            app:layout_constraintEnd_toStartOf="@id/episodedetailsactivity_show_poster"
-            tools:text="Plays: 1" />
-
-
-        <TextView
-            android:id="@+id/episodedetailsactivity_overview"
+            android:id="@+id/episodedetailsactivity_runtime"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
-            android:textSize="13sp"
-            app:layout_constraintEnd_toEndOf="@id/episodedetailsactivity_title"
+            android:layout_margin="8dp"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_show_poster"
-            tools:text="Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?" />
+            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_first_aired"
+            tools:text="Runtime: 60 Minutes" />
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/episodedetailsactivity_top_banner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="episodedetailsactivity_poster_cardview, episodedetailsactivity_show_season_episode,episodedetailsactivity_show_title,episodedetailsactivity_title" />
+
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/episodedetailsactivity_midsection_barrier"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="episodedetailsactivity_poster_cardview, episodedetailsactivity_show_title, episodedetailsactivity_first_aired,episodedetailsactivity_title, episodedetailsactivity_show_season_episode" />
+
+        <TextView
+            android:id="@+id/episodedetailsactivity_trakt_rating"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_runtime"
+            tools:text="Trakt Rating: 10 (XX Users)"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/episodedetailsactivity_total_plays"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_trakt_rating"
+            tools:text="Total Plays: 150"
+            tools:visibility="visible" />
+
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/episodedetailsactivity_rating_episode_count_labels"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="episodedetailsactivity_trakt_rating, episodedetailsactivity_total_plays" />
+
+        <LinearLayout
+            android:id="@+id/episodedetailsactivity_buttons"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:orientation="horizontal"
+            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_rating_episode_count_labels"
+            app:layout_constraintEnd_toEndOf="parent">
+            <Button
+                android:id="@+id/episodedetailsactivity_imdb_button"
+                style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:drawableLeft="@drawable/ic_imdb_logo_2016"
+                android:text="IMDB"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+        </LinearLayout>
+
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/episodedetailsactivity_main_fragment_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_buttons_fragment_container"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/episodedetailsactivity_video_buttons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="episodedetailsactivity_buttons"
+            tools:layout_editor_absoluteY="223dp" />
+
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/episodedetailsactivity_buttons_fragment_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_video_buttons"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
         <androidx.constraintlayout.widget.Barrier
             android:id="@+id/episodedetailsactivity_topbarrier"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:barrierDirection="bottom"
-            app:constraint_referenced_ids="episodedetailsactivity_title,episodedetailsactivity_first_aired,episodedetailsactivity_overview" />
-
-        <androidx.fragment.app.FragmentContainerView
-            android:id="@+id/episodedetailsactivity_action_buttons_fragment_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_topbarrier"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-
-
-        <TextView
-            android:id="@+id/episodedetailsactivity_cast_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
-            android:text="Cast"
-            android:textAllCaps="true"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            app:barrierAllowsGoneWidgets="true"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_action_buttons_fragment_container" />
-
-        <TextView
-            android:id="@+id/episodedetailsactivity_cast_regular_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            tools:visibility="visible"
-            android:textColor="?colorPrimaryDark"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:padding="6dp"
-            tools:text="Season Regulars (15)"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_cast_title"
-            app:layout_constraintStart_toStartOf="@id/episodedetailsactivity_cast_title" />
-        <TextView
-            android:id="@+id/episodedetailsactivity_cast_guest_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:textColor="?colorPrimaryDark"
-            android:textSize="16sp"
-            android:padding="6dp"
-            tools:visibility="visible"
-            tools:text="Guest Stars (15)"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_cast_title"
-            app:layout_constraintStart_toEndOf="@id/episodedetailsactivity_cast_regular_button" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/episodedetailsactivity_cast_recycler"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:layout_marginEnd="8dp"
-            android:nestedScrollingEnabled="false"
-            android:orientation="horizontal"
-            app:barrierAllowsGoneWidgets="true"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="@id/episodedetailsactivity_cast_title"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_cast_regular_button" />
-
-        <TextView
-            android:id="@+id/episodedetailsactivity_watched_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginTop="12dp"
-            android:layout_marginStart="8dp"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_cast_recycler"
-            app:layout_constraintStart_toStartOf="parent"
-            app:barrierAllowsGoneWidgets="true"
-            android:text="Plays" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/episodedetailsactivity_watched_recyclerview"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_watched_title"
-            app:layout_constraintStart_toStartOf="parent"
-            app:barrierAllowsGoneWidgets="true" />
+            app:constraint_referenced_ids="episodedetailsactivity_title,episodedetailsactivity_first_aired,episodedetailsactivity_poster_cardview, episodedetailsactivity_trakt_rating"
+            tools:layout_editor_absoluteY="566dp" />
 
         <androidx.constraintlayout.widget.Group
             android:id="@+id/episodedetailsactivity_main_group"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:visibility="gone"
-            tools:visibility="visible"
-            app:constraint_referenced_ids="episodedetailsactivity_action_buttons_fragment_container,episodedetailsactivity_show_poster,episodedetailsactivity_overview,episodedetailsactivity_title,episodedetailsactivity_show_title,episodedetailsactivity_first_aired" />
+            app:constraint_referenced_ids="episodedetailsactivity_show_title,episodedetailsactivity_midsection_barrier,
+            episodedetailsactivity_poster_cardview,episodedetailsactivity_trakt_rating,episodedetailsactivity_first_aired,episodedetailsactivity_topbarrier,
+            episodedetailsactivity_runtime,episodedetailsactivity_title,episodedetailsactivity_buttons_fragment_container, episodedetailsactivity_total_plays"
+            tools:visibility="visible" />
 
         <androidx.constraintlayout.widget.Group
-            android:id="@+id/showdetailsactivity_watched_episodes_group"
+            android:id="@+id/episodedetailsactivity_error_group"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:visibility="gone"
-            app:constraint_referenced_ids="episodedetailsactivity_watched_title,episodedetailsactivity_watched_recyclerview,episodedetailsactivity_total_plays" />
-
-        <androidx.constraintlayout.widget.Group
-            android:id="@+id/showdetailsactivity_cast_group"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            app:constraint_referenced_ids="episodedetailsactivity_cast_recycler,episodedetailsactivity_cast_title,episodedetailsactivity_cast_guest_button,episodedetailsactivity_cast_regular_button" />
-        <androidx.constraintlayout.widget.Group
-            android:id="@+id/episodedetailsactivity_error_widgets"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            app:constraint_referenced_ids="episodedetailsactivity_error, episodedetailsactivity_retry_button" />
+            app:constraint_referenced_ids="episodedetailsactivity_error_text, episodedetailsactivity_retry_button" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </FrameLayout>

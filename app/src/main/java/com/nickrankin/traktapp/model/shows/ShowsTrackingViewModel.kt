@@ -1,24 +1,18 @@
 package com.nickrankin.traktapp.model.shows
 
 import android.util.Log
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.paging.PagingData
-import androidx.paging.map
 import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.show.model.*
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.Sorting
-import com.nickrankin.traktapp.model.search.ShowSearchViewModel
+import com.nickrankin.traktapp.model.search.SearchViewModel
 import com.nickrankin.traktapp.repo.shows.ShowsTrackingRepository
 import com.nickrankin.traktapp.repo.shows.collected.CollectedShowsRepository
-import com.uwetrottmann.trakt5.entities.SearchResult
-import com.uwetrottmann.trakt5.enums.SortBy
-import com.uwetrottmann.trakt5.enums.SortHow
+import com.uwetrottmann.trakt5.enums.Type
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.flow.internal.ChannelFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -29,7 +23,7 @@ class ShowsTrackingViewModel @Inject constructor(
     private val showsTrackingRepository: ShowsTrackingRepository,
     private val collectedShowsRepository: CollectedShowsRepository,
     override val traktApi: TraktApi
-) : ShowSearchViewModel(traktApi) {
+) : SearchViewModel(traktApi) {
 
     private val refreshEventChannel = Channel<Boolean>()
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
@@ -152,7 +146,7 @@ class ShowsTrackingViewModel @Inject constructor(
     }
 
     val searchResults = searchQuery.flatMapLatest { query ->
-        doSearch(query)
+        doSearch(query, Type.SHOW)
     }
 
     fun newSearch(searchQuery: String) = viewModelScope.launch { if(searchQuery.isNotBlank()) searchQueryChannel.send(searchQuery) }

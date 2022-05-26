@@ -1,19 +1,29 @@
 package com.nickrankin.traktapp.repo.lists
 
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TraktApi
+import com.nickrankin.traktapp.dao.lists.ListWithEntries
 import com.nickrankin.traktapp.dao.lists.TraktListsDatabase
 import com.nickrankin.traktapp.dao.lists.model.TraktList
+import com.nickrankin.traktapp.dao.lists.model.TraktListEntry
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.networkBoundResource
 import com.nickrankin.traktapp.ui.auth.AuthActivity
+import com.uwetrottmann.trakt5.entities.ListEntry
 import com.uwetrottmann.trakt5.entities.SyncResponse
 import com.uwetrottmann.trakt5.entities.UserSlug
+import com.uwetrottmann.trakt5.enums.Extended
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-class TraktListsRepository @Inject constructor(private val traktApi: TraktApi, private val sharedPreferences: SharedPreferences, private val listsDatabase: TraktListsDatabase) {
+private const val TAG = "TraktListsRepository"
+class TraktListsRepository @Inject constructor(private val traktApi: TraktApi, private val sharedPreferences: SharedPreferences, private val listsDatabase: TraktListsDatabase, private val listEntryRepository: ListEntryRepository) {
     private val traktListsDao = listsDatabase.traktListDao()
+    private val traktListEntriesDao = listsDatabase.listEntryDao()
+
+    val listsWithEntries = traktListEntriesDao.getAllListEntries()
 
     fun getLists(shouldRefresh: Boolean) = networkBoundResource(
         query = {
@@ -57,6 +67,44 @@ class TraktListsRepository @Inject constructor(private val traktApi: TraktApi, p
             )
         }
         return convertedLists
+    }
+
+    suspend fun refreshAllListsAndListItems(shouldRefresh: Boolean) {
+        if(shouldRefresh) {
+            try {
+                Log.d(TAG, "refreshAllListsAndListItems: Refreshing lists and it's entries")
+                val lists = traktApi.tmUsers().lists(UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "NULL")))
+                Log.d(TAG, "refreshAllListsAndListItems: Got ${lists.size} lists")
+                val listItems: MutableMap<Int, List<ListEntry>> = mutableMapOf()
+
+
+                lists.forEach { list->
+                    listItems[list.ids?.trakt ?: 0] = traktApi.tmUsers().listItems(UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "NULL")), list.ids?.trakt?.toString() ?: "", Extended.FULL)
+                    Log.e(TAG, "refreshAllListsAndListItems: ${listItems.get(list.ids.trakt)}", )
+                }
+
+                Log.d(TAG, "refreshAllListsAndListItems: List items contains ${listItems.size}")
+
+                listsDatabase.withTransaction {
+                    traktListsDao.deleteTraktListsFromCache()
+                    traktListEntriesDao.deleteAllListEntriesFromCache()
+                    
+                    Log.d(TAG, "refreshAllListsAndListItems: Inserting ${lists.size} lists")
+                    traktListsDao.insert(convertLists(lists))
+
+                    lists.map { list ->
+                        val listId =  list.ids?.trakt ?: 0
+                        traktListEntriesDao.insertListEntries(listEntryRepository.getListEntries(listId, listItems.get(listId) ?: emptyList()))
+
+                        Log.d(TAG, "refreshAllListsAndListItems: Inserted ${listItems.size} list entries for list ${list.name} ${list.ids.trakt}")
+                    }
+                }
+
+            } catch(e: Exception) {
+                Log.e(TAG, "refreshListsAndListItems: Error Refreshing lists and list items ${e.message}", )
+                e.printStackTrace()
+            }
+        }
     }
 
     suspend fun addTraktList(traktList: com.uwetrottmann.trakt5.entities.TraktList): Resource<TraktList> {

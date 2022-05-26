@@ -20,6 +20,7 @@ import com.nickrankin.traktapp.databinding.FragmentTrendingMoviesBinding
 import com.nickrankin.traktapp.helper.OnTitleChangeListener
 import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.movies.TrendingMoviesViewModel
 import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
 import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
@@ -124,8 +125,13 @@ class TrendingMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
 
         adapter = TrendingMoviesAdaptor(tmdbPosterImageLoader, callback = { trendingMovie ->
             val intent = Intent(requireContext(), MovieDetailsActivity::class.java)
-            intent.putExtra(MovieDetailsRepository.MOVIE_TRAKT_ID_KEY, trendingMovie?.movie?.ids?.trakt ?: -1)
-
+            intent.putExtra(MovieDetailsActivity.MOVIE_DATA_KEY,
+                MovieDataModel(
+                    trendingMovie?.movie?.ids?.trakt ?: 0,
+                    trendingMovie?.movie?.ids?.tmdb,
+                    trendingMovie?.movie?.title
+                )
+            )
             startActivity(intent)
 
         })

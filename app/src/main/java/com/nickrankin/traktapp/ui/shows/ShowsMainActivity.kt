@@ -18,6 +18,7 @@ import com.nickrankin.traktapp.BaseActivity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.databinding.ActivityShowsMainBinding
 import com.nickrankin.traktapp.helper.OnTitleChangeListener
+import com.nickrankin.traktapp.ui.search.SearchResultsActivity
 import dagger.hilt.android.AndroidEntryPoint
 import java.lang.ClassCastException
 
@@ -49,6 +50,9 @@ class ShowsMainActivity : BaseActivity(), OnTitleChangeListener, TabLayout.OnTab
         toolbar = bindings.showsmainactivityToolbar.toolbar
 
         setSupportActionBar(toolbar)
+
+        // Search defaults to shows
+        setSearchType(SearchResultsActivity.TYPE_SHOW_KEY)
 
         setupDrawerLayout()
 

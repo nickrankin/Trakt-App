@@ -24,6 +24,7 @@
             <include
                 android:id="@+id/showdetailsprogressfragment_overallprogress"
                 layout="@layout/item_progress_layout_item"
+                android:layout_margin="8dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
 

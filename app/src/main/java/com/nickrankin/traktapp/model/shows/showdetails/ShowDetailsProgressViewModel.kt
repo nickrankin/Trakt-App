@@ -5,9 +5,13 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
+import com.nickrankin.traktapp.repo.shows.SeasonEpisodesRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsProgressRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
+import com.nickrankin.traktapp.repo.stats.StatsRepository
+import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.uwetrottmann.trakt5.entities.SyncItems
 import com.uwetrottmann.trakt5.entities.SyncResponse
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,13 +22,11 @@ import javax.inject.Inject
 
 private const val TAG = "ShowDetailsProgressView"
 @HiltViewModel
-class ShowDetailsProgressViewModel @Inject constructor(private val savedStateHandle: SavedStateHandle, private val repository: ShowDetailsProgressRepository) : ViewModel() {
+class ShowDetailsProgressViewModel @Inject constructor(private val savedStateHandle: SavedStateHandle, private val repository: ShowDetailsProgressRepository, private val seasonEpisodesRepository: SeasonEpisodesRepository, private val statsRepository: StatsRepository) : ViewModel() {
 
-    val progress = repository.progressChannel.receiveAsFlow()
-        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
+    private var showDataModel: ShowDataModel? = savedStateHandle.get<ShowDataModel>(
+        ShowDetailsActivity.SHOW_DATA_KEY)
 
-    private val traktId: Int = savedStateHandle.get(ShowDetailsRepository.SHOW_TRAKT_ID_KEY) ?: -1
-    private val tmndbId: Int? = savedStateHandle.get(ShowDetailsRepository.SHOW_TMDB_ID_KEY)
 
     private val eventsChannel = Channel<Event>()
     val events = eventsChannel.receiveAsFlow()
@@ -33,42 +35,25 @@ class ShowDetailsProgressViewModel @Inject constructor(private val savedStateHan
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
         .shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
-    init {
-        viewModelScope.launch {
-            repository.refreshShowProgress(traktId)
-        }
+    val seasons = refreshEvent.flatMapLatest { shouldRefresh ->
+        seasonEpisodesRepository.getSeasons(showDataModel?.traktId ?: 0, showDataModel?.tmdbId, shouldRefresh)
     }
 
-    val watchedEpisodes = refreshEvent.flatMapLatest { shouldRefresh ->
-        repository.getWatchedEpisodes(true, traktId).map {
-            if (it is Resource.Success) {
-                it.data = it.data?.sortedBy { watchedEpisode ->
-                    watchedEpisode.watched_at
-                }
-            }
-            it
-        }
-    }
-
-    fun removeWatchedEpisode(syncItems: SyncItems) = viewModelScope.launch {
-        eventsChannel.send(Event.DeleteWatchedHistoryItemEvent(repository.removeWatchedEpisode(syncItems)))
-    }
 
     fun onStart() {
         viewModelScope.launch {
             refreshEventChannel.send(false)
+
+            statsRepository.getWatchedSeasonStats(showDataModel?.traktId ?: 0, false)
         }
     }
 
     fun onRefresh() {
         Log.d(TAG, "onRefresh: Called")
         viewModelScope.launch {
-            launch {
-                refreshEventChannel.send(true)
-            }
-            launch {
-                repository.refreshShowProgress(traktId)
-            }
+            refreshEventChannel.send(true)
+            statsRepository.getWatchedSeasonStats(showDataModel?.traktId ?: 0, true)
+
         }
     }
 

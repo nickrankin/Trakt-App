@@ -20,35 +20,32 @@
             android:id="@+id/showsmainactivity_navigation_tabs"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:tabMode="scrollable"
             android:layout_marginTop="?attr/actionBarSize"
-            >
-            <com.google.android.material.tabs.TabItem
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Upcoming"
-                android:icon="@drawable/ic_notifications_black_24dp" />
-            <com.google.android.material.tabs.TabItem
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Watched"
-                android:icon="@drawable/ic_baseline_remove_red_eye_24" />
+            app:tabMode="scrollable">
 
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="TRACK"
-                android:icon="@drawable/ic_baseline_radar_24" />
-            <com.google.android.material.tabs.TabItem
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Collection"
-                android:icon="@drawable/ic_baseline_collections_bookmark_24"/>
+                android:text="Upcoming" />
 
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:icon="@drawable/ic_baseline_live_tv_24"
+                android:text="Watched" />
+
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="TRACK" />
+
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Collection" />
+
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="Suggested" />
         </com.google.android.material.tabs.TabLayout>
 

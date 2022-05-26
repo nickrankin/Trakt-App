@@ -49,7 +49,7 @@ interface TmUsers {
     @GET("users/{username}/collection/movies")
     suspend fun collectionMovies(
         @Path("username") userSlug: UserSlug,
-        @Query(value = "extended", encoded = true) extended: Extended
+        @Query(value = "extended", encoded = true) extended: Extended?
     ): List<BaseMovie>
 
     /**
@@ -249,8 +249,8 @@ interface TmUsers {
         @Query("page") page: Int,
         @Query("limit") limit: Int,
         @Query(value = "extended", encoded = true) extended: Extended,
-        @Query("start_at") startAt: OffsetDateTime,
-        @Query("end_at") endAt: OffsetDateTime
+        @Query("start_at") startAt: OffsetDateTime?,
+        @Query("end_at") endAt: OffsetDateTime?
     ): List<HistoryEntry>
 
     /**
@@ -272,8 +272,8 @@ interface TmUsers {
         @Query("page") page: Int,
         @Query("limit") limit: Int,
         @Query(value = "extended", encoded = true) extended: Extended,
-        @Query("start_at") startAt: OffsetDateTime,
-        @Query("end_at") endAt: OffsetDateTime
+        @Query("start_at") startAt: OffsetDateTime?,
+        @Query("end_at") endAt: OffsetDateTime?
     ): List<HistoryEntry>
 
     /**
@@ -296,11 +296,11 @@ interface TmUsers {
         @Path("username") userSlug: UserSlug,
         @Path("type") type: HistoryType,
         @Path("id") id: Int,
-        @Query("page") page: Int,
-        @Query("limit") limit: Int,
+        @Query("page") page: Int?,
+        @Query("limit") limit: Int?,
         @Query(value = "extended", encoded = true) extended: Extended?,
-        @Query("start_at") startAt: OffsetDateTime,
-        @Query("end_at") endAt: OffsetDateTime
+        @Query("start_at") startAt: OffsetDateTime?,
+        @Query("end_at") endAt: OffsetDateTime?
     ): List<HistoryEntry>
 
     /**
@@ -316,7 +316,7 @@ interface TmUsers {
     suspend fun ratingsMovies(
         @Path("username") userSlug: UserSlug,
         @Path(value = "rating", encoded = true) filter: RatingsFilter,
-        @Query(value = "extended", encoded = true) extended: Extended
+        @Query(value = "extended", encoded = true) extended: Extended?
     ): List<RatedMovie>
 
     /**
@@ -430,7 +430,7 @@ interface TmUsers {
     @GET("users/{username}/watched/movies")
     suspend fun watchedMovies(
         @Path("username") userSlug: UserSlug,
-        @Query(value = "extended", encoded = true) extended: Extended
+        @Query(value = "extended", encoded = true) extended: Extended?
     ): List<BaseMovie>
 
     /**
@@ -444,7 +444,7 @@ interface TmUsers {
     @GET("users/{username}/watched/shows")
     suspend fun watchedShows(
         @Path("username") userSlug: UserSlug,
-        @Query(value = "extended", encoded = true) extended: Extended
+        @Query(value = "extended", encoded = true) extended: Extended?
     ): List<BaseShow>
 
     /**

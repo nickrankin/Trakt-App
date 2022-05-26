@@ -63,7 +63,7 @@ class SeasonEpisodesRepository @Inject constructor(
         }
     )
 
-    fun getSeason(
+    fun getSeasons(
         showTraktId: Int,
         showTmdbId: Int?,
         shouldRefresh: Boolean
@@ -89,9 +89,7 @@ class SeasonEpisodesRepository @Inject constructor(
         showTraktId: Int,
         showTmdbId: Int?,
         seasonNumber: Int,
-        shouldRefresh: Boolean,
-        watchedEpisodes: List<WatchedEpisode>
-    ) = networkBoundResource(
+        shouldRefresh: Boolean) = networkBoundResource(
         query = {
             episodesDao.getEpisodes(showTraktId, seasonNumber)
         },
@@ -102,17 +100,6 @@ class SeasonEpisodesRepository @Inject constructor(
             shouldRefresh || episodes.isEmpty()
         },
         saveFetchResult = { episodes ->
-
-            // Mark episodes as watched if watched on Trakt
-            episodes.map { episode ->
-                val foundEpisode = watchedEpisodes.find { watchedEpisode ->
-                    watchedEpisode.episode_trakt_id == episode.episode_trakt_id
-                }
-
-                if (foundEpisode != null) {
-                    episode.watched = true
-                }
-            }
 
             showsDatabase.withTransaction {
                 episodesDao.deleteEpisodes(showTraktId, seasonNumber)

@@ -3,6 +3,8 @@ package com.nickrankin.traktapp.ui.shows.showdetails
 import android.content.Context
 import android.graphics.Typeface
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -21,6 +23,7 @@ import com.nickrankin.traktapp.dao.credits.ShowCastPerson
 import com.nickrankin.traktapp.dao.show.model.TmShow
 import com.nickrankin.traktapp.databinding.ShowDetailsOverviewFragmentBinding
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.shows.showdetails.ShowDetailsOverviewViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -36,11 +39,6 @@ class ShowDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
 
     private lateinit var castRecyclerView: RecyclerView
     private lateinit var showCastCreditsAdapter: ShowCastCreditsAdapter
-
-    private lateinit var overview: String
-
-    private var tmdbId = 0
-
 
     @Inject
     lateinit var glide: RequestManager
@@ -59,14 +57,22 @@ class ShowDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
         initCastRecycler()
         setupCastSwitcher()
 
-        tmdbId = arguments?.getInt(TMDB_ID_KEY, 0) ?: 0
-        overview = arguments?.getString(OVERVIEW_KEY, "") ?: ""
+        getShow()
+        getCast()
 
-        bindShowData()
+        bindings.showdetailsoverviewMainGroup.visibility = View.VISIBLE
+    }
+
+    private fun getShow() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.show.collectLatest { show ->
+                bindings.showdetailsoverviewOverview.text = show?.overview
+            }
+        }
     }
 
     private fun getCast() {
-
+        viewModel.filterCast(false)
         lifecycleScope.launchWhenStarted {
             viewModel.cast.collectLatest { castResource ->
                 when (castResource) {
@@ -120,13 +126,21 @@ class ShowDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
         }
     }
 
-    private fun displayCast(castPersons: List<ShowCastPerson>) {
+    override fun onStart() {
+        super.onStart()
+        viewModel.onStart()
+    }
 
+    private fun displayCast(castPersons: List<ShowCastPerson>) {
+        val castToggeButton = bindings.showdetailsactivityCrewToggle
+
+        // Some shows do not have Guest stars, this check is needed to prevent toggle dissapearing if guest stars are empty
         if (castPersons.isNotEmpty()) {
-            val castToggeButton = bindings.showdetailsactivityCrewToggle
             castToggeButton.visibility = View.VISIBLE
 
             showCastCreditsAdapter.submitList(castPersons)
+        } else {
+            castToggeButton.visibility = View.GONE
         }
     }
 
@@ -144,22 +158,10 @@ class ShowDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
         castRecyclerView.adapter = showCastCreditsAdapter
     }
 
-    private fun bindShowData() {
-        viewModel.setTmdbId(tmdbId)
 
-        viewModel.onStart()
-        getCast()
-        bindings.showdetailsoverviewMainGroup.visibility = View.VISIBLE
-
-        bindings.apply {
-            showdetailsoverviewOverview.text = overview
-        }
-    }
 
     override fun onRefresh() {
-        viewModel.setTmdbId(tmdbId)
-
-        Log.d(TAG, "onRefresh: Refreshing Show Overview")
+        Log.d(TAG, "onRefresh: Refreshing Overview")
         viewModel.onRefresh()
     }
 

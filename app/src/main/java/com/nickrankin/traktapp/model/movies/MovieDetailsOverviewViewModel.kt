@@ -3,8 +3,10 @@ package com.nickrankin.traktapp.model.movies
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.repo.movies.MovieDetailsOverviewRepository
 import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
+import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,15 +23,10 @@ class MovieDetailsOverviewViewModel @Inject constructor(private val savedStateHa
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
         .shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
-    private val traktId = savedStateHandle.get<Int>(MovieDetailsRepository.MOVIE_TRAKT_ID_KEY) ?: -1
-    private var tmdbId: Int? = 0
+    val movieDataModel = savedStateHandle.get<MovieDataModel>(MovieDetailsActivity.MOVIE_DATA_KEY)
 
     val credits = refreshEvent.flatMapLatest { shouldRefresh ->
-        repository.getMovieCredits(traktId, tmdbId, shouldRefresh)
-    }
-
-    fun setTmdbId(tmdbId: Int?) {
-        this.tmdbId = tmdbId
+        repository.getMovieCredits(movieDataModel?.traktId ?: 0, movieDataModel?.tmdbId, shouldRefresh)
     }
 
     fun onStart() {

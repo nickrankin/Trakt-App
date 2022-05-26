@@ -18,6 +18,10 @@ import javax.inject.Inject
 @HiltViewModel
 class CollectedShowsViewModel @Inject constructor(val repository: CollectedShowsRepository): ViewModel() {
 
+    private val sortingToggleChannel = Channel<String>()
+    private val sortingToggle = sortingToggleChannel.receiveAsFlow()
+        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
+
     private val showRefreshEventChannel = Channel<Boolean>()
     private val showRefreshEvent = showRefreshEventChannel.receiveAsFlow()
         .shareIn(viewModelScope, SharingStarted.Lazily, 1)
@@ -25,21 +29,50 @@ class CollectedShowsViewModel @Inject constructor(val repository: CollectedShows
     private val eventChannel = Channel<Event>()
     val events = eventChannel.receiveAsFlow()
 
-    private var sortBy = SortBy.ADDED
-    private var sortHow = SortHow.DESC
+    private var sortBy = SORT_COLLECT_AT
+    private var sortHow = SortHow.ASC
+
+    init {
+        // Initial sort
+        sortShows(SORT_COLLECT_AT)
+    }
 
     @ExperimentalCoroutinesApi
     val collectedShows = showRefreshEvent.flatMapLatest { shouldRefresh ->
-        repository.getCollectedShows(shouldRefresh).map { showsResource ->
-            // Sort only when we receive some shows
-            if(showsResource is Resource.Success) {
-                showsResource.data = doSorting(showsResource.data ?: emptyList())
+        sortingToggle.flatMapLatest { sortBy ->
+            repository.getCollectedShows(shouldRefresh).map { collectedShows ->
+                if(collectedShows is Resource.Success) {
+                    var sortedShows = collectedShows.data
+
+                    sortedShows = when(sortBy) {
+                        SORT_TITLE -> {
+                            sortedShows?.sortedBy { it.show_title }
+                        }
+                        SORT_COLLECT_AT -> {
+                            sortedShows?.sortedBy { it.collected_at }
+                        }
+                        SORT_YEAR -> {
+                            sortedShows?.sortedBy { it.airedDate }
+                        }
+                        else -> {
+                            sortedShows?.sortedBy { it.show_title }
+                        }
+                    }
+
+                    if(sortHow == SortHow.DESC) {
+                        sortedShows = sortedShows?.reversed()
+                    }
+
+                    Resource.Success(sortedShows)
+                } else {
+                    collectedShows
+                }
             }
-            showsResource
         }
+
     }
 
-    fun sortShows(sortBy: SortBy) {
+    fun sortShows(sortBy: String) {
         if(this.sortBy == sortBy) {
             if(sortHow == SortHow.DESC) {
                 sortHow = SortHow.ASC
@@ -51,27 +84,8 @@ class CollectedShowsViewModel @Inject constructor(val repository: CollectedShows
         this.sortBy = sortBy
 
         viewModelScope.launch {
-            showRefreshEventChannel.send(false)
+            sortingToggleChannel.send(sortBy)
         }
-    }
-
-    private fun doSorting(shows: List<CollectedShow>): List<CollectedShow> {
-        var sortedShows: List<CollectedShow> = listOf()
-        when(sortBy) {
-            SortBy.TITLE -> {
-                sortedShows = shows.sortedBy {show -> show.show_title }
-            }
-            SortBy.ADDED -> {
-                sortedShows = shows.sortedBy {show -> show.collected_at }
-            }
-
-        }
-
-        if(sortHow == SortHow.DESC) {
-            sortedShows = sortedShows.reversed()
-        }
-
-        return sortedShows
     }
 
     fun deleteShowFromCollection(collectedShow: CollectedShow) = viewModelScope.launch { eventChannel.send(Event.DELETE_COLLECTION_EVENT(repository.removeFromCollection(collectedShow))) }
@@ -96,6 +110,12 @@ class CollectedShowsViewModel @Inject constructor(val repository: CollectedShows
 
     sealed class Event {
         data class DELETE_COLLECTION_EVENT(val syncResponse: Resource<SyncResponse>): Event()
+    }
+
+    companion object {
+        const val SORT_TITLE = "title"
+        const val SORT_COLLECT_AT = "collected_at"
+        const val SORT_YEAR = "first_aired"
     }
 
 }

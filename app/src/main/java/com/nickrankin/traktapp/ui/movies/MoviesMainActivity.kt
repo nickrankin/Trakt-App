@@ -14,6 +14,7 @@ import com.nickrankin.traktapp.databinding.ActivityMoviesMainBinding
 import com.nickrankin.traktapp.helper.OnTitleChangeListener
 import com.nickrankin.traktapp.ui.movies.collected.CollectedMoviesFragment
 import com.nickrankin.traktapp.ui.movies.watched.WatchedMoviesFragment
+import com.nickrankin.traktapp.ui.search.SearchResultsActivity
 import dagger.hilt.android.AndroidEntryPoint
 
 private const val TAG = "MoviesMainActivity"
@@ -45,6 +46,9 @@ class MoviesMainActivity : BaseActivity(), OnTitleChangeListener, TabLayout.OnTa
         navTabs.addOnTabSelectedListener(this)
 
         setupDrawerLayout()
+
+        // Search defaults to movies
+        setSearchType(SearchResultsActivity.TYPE_MOVIE_KEY)
 
         currentFragmentTag = savedInstanceState?.getString(CURRENT_TAB, "") ?: ""
 
@@ -147,6 +151,8 @@ class MoviesMainActivity : BaseActivity(), OnTitleChangeListener, TabLayout.OnTa
             }
         }
     }
+
+
 
     override fun onTabUnselected(tab: TabLayout.Tab?) {
        // TODO("Not yet implemented")

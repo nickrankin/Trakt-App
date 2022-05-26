@@ -6,6 +6,8 @@ import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.lists.TraktListsDatabase
 import com.nickrankin.traktapp.dao.lists.model.*
 import com.nickrankin.traktapp.dao.lists.model.ListEntry
+import com.nickrankin.traktapp.dao.lists.model.TraktList
+import com.nickrankin.traktapp.dao.movies.model.TmMovie
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.networkBoundResource
 import com.nickrankin.traktapp.ui.auth.AuthActivity
@@ -34,7 +36,7 @@ class ListEntryRepository @Inject constructor(private val traktApi: TraktApi, pr
         }
     )
 
-    private suspend fun getListEntries(listId: Int, listEntries: List<com.uwetrottmann.trakt5.entities.ListEntry>): List<ListEntry> {
+    suspend fun getListEntries(listId: Int, listEntries: List<com.uwetrottmann.trakt5.entities.ListEntry>): List<ListEntry> {
         val listEntriesConverted: MutableList<ListEntry> = mutableListOf()
 
         listEntries.map { listEntry ->
@@ -77,6 +79,59 @@ class ListEntryRepository @Inject constructor(private val traktApi: TraktApi, pr
         }
 
         return listEntriesConverted
+    }
+
+    suspend fun addListEntry(type: String, itemTraktId: Int, traktList: TraktList): Resource<SyncResponse> {
+        return try {
+            val syncItems = SyncItems()
+
+            when(type) {
+                "show" -> {
+                    syncItems.apply {
+                        shows = listOf(
+                            SyncShow().id(ShowIds.trakt(itemTraktId))
+                        )
+                    }
+                }
+                "movie" -> {
+                    syncItems.apply {
+                        movies = listOf(
+                            SyncMovie().id(MovieIds.trakt(itemTraktId))
+                        )
+                    }
+                }
+                "episode" -> {
+                    syncItems.apply {
+                        episodes = listOf(
+                            SyncEpisode().id(EpisodeIds.trakt(itemTraktId))
+                        )
+                    }
+                }
+                "person" -> {
+                    syncItems.apply {
+                        people = listOf(
+                            SyncPerson().id(PersonIds.trakt(itemTraktId))
+                        )
+                    }
+                }
+            }
+
+            val response = traktApi.tmUsers().addListItems(UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "NULL")), traktList.trakt_id.toString(), syncItems)
+
+            // We need to manually refresh the current list so new item will be saved to the dao (Trakt doesn't return the ListItem ID when new one is added :( )
+            val listResponse = traktApi.tmUsers().listItems(UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "NULL")), traktList.trakt_id.toString(), Extended.FULL)
+
+            listsDatabase.withTransaction {
+                traktListEntryDao.insertListEntries(
+                    getListEntries(traktList.trakt_id, listResponse)
+                )
+            }
+
+
+            Resource.Success(response)
+        } catch(t: Throwable) {
+            Resource.Error(t, null)
+        }
     }
 
     suspend fun removeEntry(listTraktId: Int, listEntryTraktId: Int, type: Type): Resource<SyncResponse?> {

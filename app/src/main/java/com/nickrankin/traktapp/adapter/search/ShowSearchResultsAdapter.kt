@@ -23,29 +23,57 @@ class ShowSearchResultsAdapter(private val tmdbImageLoader: TmdbImageLoader, pri
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val currentSearchItem = getItem(position)
+        val currentSearchItem = getItem(position) ?: return
 
-        holder.bindings.apply {
-            val expandableTextView = collectedentryitemOverview
-            expandableTextView.collapse()
+        when(currentSearchItem?.type) {
+            "movie" -> {
+                holder.bindings.apply {
+                    val expandableTextView = collectedentryitemOverview
+                    expandableTextView.collapse()
 
-            collectedentryitemBackdrop.setImageResource(R.drawable.ic_baseline_tv_24)
-            collectedentryitemPoster.setImageResource(R.drawable.ic_trakt_svgrepo_com)
+                    collectedentryitemBackdrop.setImageResource(R.drawable.ic_baseline_local_movies_24)
+                    collectedentryitemPoster.setImageResource(R.drawable.ic_trakt_svgrepo_com)
 
-            collectedentryitemTitle.text = currentSearchItem?.show?.title
-            collectedentryitemCollectedDate.visibility = View.GONE
-            collectedentryitemOverview.text = currentSearchItem?.show?.overview
+                    collectedentryitemTitle.text = currentSearchItem.movie?.title
+                    collectedentryitemCollectedDate.visibility = View.GONE
+                    collectedentryitemOverview.text = currentSearchItem.movie?.overview
 
-            tmdbImageLoader.loadImages(currentSearchItem?.show?.ids?.trakt ?: 0, ImageItemType.SHOW, currentSearchItem?.show?.ids?.tmdb ?: 0, currentSearchItem?.show?.title ?: "", currentSearchItem?.show?.year, currentSearchItem?.show?.language, false, collectedentryitemPoster, collectedentryitemBackdrop)
+                    tmdbImageLoader.loadImages(currentSearchItem.movie?.ids?.trakt ?: 0, ImageItemType.MOVIE, currentSearchItem.movie?.ids?.tmdb ?: 0, currentSearchItem.movie?.title ?: "", currentSearchItem.movie?.year, currentSearchItem.movie?.language, false, collectedentryitemPoster, collectedentryitemBackdrop)
 
-            root.setOnClickListener {
-                callback(currentSearchItem)
+                    root.setOnClickListener {
+                        callback(currentSearchItem)
+                    }
+
+                    collectedentryitemOverview.setOnClickListener {
+                        expandableTextView.toggle()
+                    }
+                }
             }
+            "show" -> {
+                holder.bindings.apply {
+                    val expandableTextView = collectedentryitemOverview
+                    expandableTextView.collapse()
 
-            collectedentryitemOverview.setOnClickListener {
-                expandableTextView.toggle()
+                    collectedentryitemBackdrop.setImageResource(R.drawable.ic_baseline_tv_24)
+                    collectedentryitemPoster.setImageResource(R.drawable.ic_trakt_svgrepo_com)
+
+                    collectedentryitemTitle.text = currentSearchItem.show?.title
+                    collectedentryitemCollectedDate.visibility = View.GONE
+                    collectedentryitemOverview.text = currentSearchItem.show?.overview
+
+                    tmdbImageLoader.loadImages(currentSearchItem.show?.ids?.trakt ?: 0, ImageItemType.SHOW, currentSearchItem.show?.ids?.tmdb ?: 0, currentSearchItem.show?.title ?: "", currentSearchItem.show?.year, currentSearchItem.show?.language, false, collectedentryitemPoster, collectedentryitemBackdrop)
+
+                    root.setOnClickListener {
+                        callback(currentSearchItem)
+                    }
+
+                    collectedentryitemOverview.setOnClickListener {
+                        expandableTextView.toggle()
+                    }
+                }
             }
         }
+
     }
 
     inner class ViewHolder(val bindings: ShowSearchResultListItemBinding): RecyclerView.ViewHolder(bindings.root)

@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
 interface TmSeasonsDao {
     @Transaction
     @Query("SELECT * FROM seasons WHERE show_trakt_id = :showTraktId")
-    fun getSeasonsForShow(showTraktId: Int): Flow<List<TmSeason>>
+    fun getSeasonsForShow(showTraktId: Int): Flow<List<TmSeasonAndStats>>
 
     @Transaction
     @Query("SELECT * FROM seasons WHERE id = :id AND season_number = :seasonNumber")

@@ -1,5 +1,6 @@
 package com.nickrankin.traktapp.repo.shows
 
+import android.util.Log
 import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TmdbApi
 import com.nickrankin.traktapp.api.TraktApi
@@ -9,17 +10,18 @@ import com.nickrankin.traktapp.helper.ShowCreditsHelper
 import com.nickrankin.traktapp.helper.networkBoundResource
 import javax.inject.Inject
 
+private const val TAG = "CreditsRepository"
 open class CreditsRepository @Inject constructor(
     private val creditsHelper: ShowCreditsHelper,
     private val showsDatabase: ShowsDatabase,
-    private val creditsDatabase: CreditsDatabase,
+    private val creditsDatabase: CreditsDatabase
 ) {
     val tmShowDao = showsDatabase.tmShowDao()
 
     private val showCastPeopleDao = creditsDatabase.showCastPeopleDao()
     private val castPersonDao = creditsDatabase.castPersonDao()
 
-    suspend fun getCredits(traktId: Int, tmdbId: Int?, showGuestStars: Boolean, shouldRefresh: Boolean) = networkBoundResource(
+    suspend fun getCredits(traktId: Int, tmdbId: Int?, shouldRefresh: Boolean, showGuestStars: Boolean) = networkBoundResource(
         query = {
             showCastPeopleDao.getShowCast(traktId, showGuestStars)
         },
@@ -30,16 +32,29 @@ open class CreditsRepository @Inject constructor(
             showCastPersonList.isEmpty() || shouldRefresh
         },
         saveFetchResult = { castPersons ->
-            creditsDatabase.withTransaction {
-                showCastPeopleDao.deleteShowCast(traktId)
+
+            try {
+                Log.d(TAG, "getCredits: Refreshing Credits")
+
+                creditsDatabase.withTransaction {
+                    showCastPeopleDao.deleteShowCast(traktId)
+                }
+
+                showsDatabase.withTransaction {
+                    castPersons.map { castData ->
+                        castPersonDao.insert(castData.castPerson)
+                        showCastPeopleDao.insert(castData.castPersonData)
+                    }
+                }
+
+
+
+            } catch(e: Exception) {
+                Log.e(TAG, "getCredits: Error ${e.message}", )
+                e.printStackTrace()
             }
 
-            showsDatabase.withTransaction {
-                castPersons.map { castData ->
-                    castPersonDao.insert(castData.castPerson)
-                    showCastPeopleDao.insert(castData.castPersonData)
-                }
-            }
+
         }
     )
 }

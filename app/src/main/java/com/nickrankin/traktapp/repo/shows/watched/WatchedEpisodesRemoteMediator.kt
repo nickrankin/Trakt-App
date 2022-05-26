@@ -12,6 +12,7 @@ import com.nickrankin.traktapp.dao.calendars.model.ShowCalendarEntry
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.show.WatchedShowsMediatorDatabase
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
+import com.nickrankin.traktapp.dao.show.model.WatchedEpisodeAndStats
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisodePageKey
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.shouldRefreshContents
@@ -33,9 +34,9 @@ private const val TAG = "WatchedEpisodesRemoteMe"
 class WatchedEpisodesRemoteMediator(
     private val traktApi: TraktApi,
     private val shouldRefresh: Boolean,
-    private val showsDatabase: WatchedShowsMediatorDatabase,
+    private val showsDatabase: ShowsDatabase,
     private val sharedPreferences: SharedPreferences
-) : RemoteMediator<Int, WatchedEpisode>() {
+) : RemoteMediator<Int, WatchedEpisodeAndStats>() {
     val watchedEpisodesDao = showsDatabase.watchedEpisodesDao()
     private val remoteKeyDao = showsDatabase.watchedEpisodePageKeyDao()
     override suspend fun initialize(): InitializeAction {
@@ -63,7 +64,7 @@ class WatchedEpisodesRemoteMediator(
 
     override suspend fun load(
         loadType: LoadType,
-        state: PagingState<Int, WatchedEpisode>
+        state: PagingState<Int, WatchedEpisodeAndStats>
     ): MediatorResult {
         try {
             val page = when (loadType) {
@@ -148,36 +149,36 @@ class WatchedEpisodesRemoteMediator(
     }
 
     private suspend fun getRemoteKeyClosestToCurrentPosition(
-        state: PagingState<Int, WatchedEpisode>
+        state: PagingState<Int, WatchedEpisodeAndStats>
     ): WatchedEpisodePageKey? {
         // The paging library is trying to load data after the anchor position
         // Get the item closest to the anchor position
         return state.anchorPosition?.let { position ->
-            state.closestItemToPosition(position)?.episode_trakt_id?.let { episodeId ->
+            state.closestItemToPosition(position)?.watchedEpisode?.episode_trakt_id?.let { episodeId ->
                 remoteKeyDao.remoteKeyByPage(episodeId)
             }
         }
     }
 
 
-    private suspend fun getRemoteKeyForFirstItem(state: PagingState<Int, WatchedEpisode>): WatchedEpisodePageKey? {
+    private suspend fun getRemoteKeyForFirstItem(state: PagingState<Int, WatchedEpisodeAndStats>): WatchedEpisodePageKey? {
         // Get the first page that was retrieved, that contained items.
         // From that first page, get the first item
         return state.pages.firstOrNull { it.data.isNotEmpty() }?.data?.firstOrNull()
             ?.let { episode ->
                 // Get the remote keys of the first items retrieved
-                remoteKeyDao.remoteKeyByPage(episode.episode_trakt_id)
+                remoteKeyDao.remoteKeyByPage(episode.watchedEpisode.episode_trakt_id)
             }
     }
 
 
-    private suspend fun getRemoteKeyForLastItem(state: PagingState<Int, WatchedEpisode>): WatchedEpisodePageKey? {
+    private suspend fun getRemoteKeyForLastItem(state: PagingState<Int, WatchedEpisodeAndStats>): WatchedEpisodePageKey? {
         // Get the last page that was retrieved, that contained items.
         // From that last page, get the last item
         return state.pages.lastOrNull() { it.data.isNotEmpty() }?.data?.lastOrNull()
             ?.let { episode ->
                 // Get the remote keys of the last item retrieved
-                remoteKeyDao.remoteKeyByPage(episode.episode_trakt_id)
+                remoteKeyDao.remoteKeyByPage(episode.watchedEpisode.episode_trakt_id)
             }
     }
 

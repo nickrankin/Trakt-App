@@ -3,58 +3,21 @@ package com.nickrankin.traktapp.repo.ratings
 import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.movies.MoviesDatabase
-import com.nickrankin.traktapp.dao.ratings.model.RatedMovie
+import com.nickrankin.traktapp.dao.stats.model.RatingsMoviesStats
 import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.helper.networkBoundResource
 import com.uwetrottmann.trakt5.entities.MovieIds
 import com.uwetrottmann.trakt5.entities.SyncItems
 import com.uwetrottmann.trakt5.entities.SyncMovie
 import com.uwetrottmann.trakt5.entities.SyncResponse
-import com.uwetrottmann.trakt5.enums.Extended
 import com.uwetrottmann.trakt5.enums.Rating
-import com.uwetrottmann.trakt5.enums.RatingsFilter
 import org.threeten.bp.OffsetDateTime
-import java.lang.Exception
 import javax.inject.Inject
 
 class MovieRatingsRepository @Inject constructor(private val traktApi: TraktApi, private val moviesDatabase: MoviesDatabase) {
-    private val movieRatingDao = moviesDatabase.ratedMovieDao()
+    private val movieRatingDao = moviesDatabase.ratedMoviesStatsDao()
+    val movieRatings = movieRatingDao.getRatingsStats()
 
-    fun getRatings(shouldRefresh: Boolean, traktId: Int) = networkBoundResource(
-        query = {
-                movieRatingDao.getRatingForMovie(traktId)
-        },
-        fetch = {
-            traktApi.tmSync().ratingsMovies(RatingsFilter.ALL, Extended.NOSEASONS, null, null)
-        },
-        shouldFetch = { ratedMovie ->
-                      shouldRefresh || ratedMovie == null
-        },
-        saveFetchResult = { ratedMovies ->
-            moviesDatabase.withTransaction {
-                movieRatingDao.insert(getRatedMovies(ratedMovies))
-            }
-        }
-    )
-
-    private fun getRatedMovies(ratedMovies: List<com.uwetrottmann.trakt5.entities.RatedMovie>): List<RatedMovie> {
-        val movies: MutableList<RatedMovie> = mutableListOf()
-
-        ratedMovies.map {
-            movies.add(
-                RatedMovie(
-                    it.movie?.ids?.trakt ?: -1,
-                    it.rating?.value ?: -1,
-                    it.rated_at
-                )
-            )
-        }
-
-        return movies
-    }
-
-
-    suspend fun addRating(traktId: Int, newRating: Int): Resource<SyncResponse> {
+    suspend fun addRating(traktId: Int, tmdbId: Int?, movieTitle: String, newRating: Int): Resource<SyncResponse> {
 
         val syncItems = SyncItems().apply {
             movies = listOf(
@@ -68,8 +31,10 @@ class MovieRatingsRepository @Inject constructor(private val traktApi: TraktApi,
         return try {
             val response = traktApi.tmSync().addRatings(syncItems)
 
+            val ratingStats = RatingsMoviesStats(traktId, tmdbId, newRating, movieTitle,  OffsetDateTime.now())
+
             moviesDatabase.withTransaction {
-                movieRatingDao.insert(listOf(RatedMovie(traktId, newRating, OffsetDateTime.now())))
+                movieRatingDao.insert(ratingStats)
             }
 
             Resource.Success(response)
@@ -91,9 +56,8 @@ class MovieRatingsRepository @Inject constructor(private val traktApi: TraktApi,
             val response = traktApi.tmSync().deleteRatings(syncItems)
 
             moviesDatabase.withTransaction {
-                movieRatingDao.deleteRatingByTraktId(traktId)
+                movieRatingDao.deleteRatingsStatsById(traktId)
             }
-
             Resource.Success(response)
         } catch(t: Throwable) {
             Resource.Error(t, null)

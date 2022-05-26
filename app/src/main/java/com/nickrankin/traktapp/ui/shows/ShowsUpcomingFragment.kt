@@ -20,6 +20,8 @@ import com.nickrankin.traktapp.databinding.FragmentShowsOverviewBinding
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.model.auth.shows.ShowsOverviewViewModel
+import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
+import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
@@ -186,7 +188,7 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
                     navigateToEpisode(calendarEntry.show_trakt_id, calendarEntry.show_tmdb_id, calendarEntry.episode_season, calendarEntry.episode_number, calendarEntry.language ?: "en")
                 }
                 ShowCalendarEntriesAdapter.ACTION_NAVIGATE_SHOW -> {
-                    navigateToShow(calendarEntry.show_trakt_id, calendarEntry.show_tmdb_id, calendarEntry.show_title, calendarEntry.language)
+                    navigateToShow(calendarEntry.show_trakt_id, calendarEntry.show_tmdb_id, calendarEntry.show_title)
                 }
                 ShowCalendarEntriesAdapter.ACTION_REMOVE_COLLECTION-> {
                     viewModel.setShowHiddenState(calendarEntry.show_tmdb_id, !calendarEntry.hidden)
@@ -207,21 +209,28 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
 
     }
 
-    override fun navigateToShow(traktId: Int, tmdbId: Int, showTitle: String?, language: String?) {
-
-        val intent = Intent(context, ShowDetailsActivity::class.java)
-        intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
-
+    override fun navigateToShow(traktId: Int, tmdbId: Int?, title: String?) {
+        val intent = Intent(requireActivity(), ShowDetailsActivity::class.java)
+        intent.putExtra(ShowDetailsActivity.SHOW_DATA_KEY,
+            ShowDataModel(
+                traktId, tmdbId, title
+            )
+        )
         startActivity(intent)
     }
-
     override fun navigateToEpisode(showTraktId: Int, showTmdbId: Int?, seasonNumber: Int, episodeNumber: Int, language: String?) {
         val intent = Intent(context, EpisodeDetailsActivity::class.java)
-        intent.putExtra(EpisodeDetailsRepository.SHOW_TRAKT_ID_KEY, showTraktId)
-        intent.putExtra(EpisodeDetailsRepository.SHOW_TMDB_ID_KEY, showTmdbId)
-        intent.putExtra(EpisodeDetailsRepository.SEASON_NUMBER_KEY, seasonNumber)
-        intent.putExtra(EpisodeDetailsRepository.EPISODE_NUMBER_KEY, episodeNumber)
-        intent.putExtra(EpisodeDetailsRepository.LANGUAGE_KEY, language)
+
+        intent.putExtra(EpisodeDetailsActivity.EPISODE_DATA_KEY,
+            EpisodeDataModel(
+                showTraktId,
+                showTmdbId,
+                seasonNumber,
+                episodeNumber,
+                language
+            )
+        )
+
 
         // We cannot guarantee Watched Episode data is up to date at this point so force refresh (user could have watched more of this show in meantime)
         intent.putExtra(EpisodeDetailsRepository.SHOULD_REFRESH_WATCHED_KEY, true)

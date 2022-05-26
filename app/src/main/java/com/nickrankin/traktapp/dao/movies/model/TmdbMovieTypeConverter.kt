@@ -3,6 +3,7 @@ package com.nickrankin.traktapp.dao.movies.model
 import androidx.room.TypeConverter
 import com.google.gson.Gson
 import com.uwetrottmann.tmdb2.entities.*
+import com.uwetrottmann.trakt5.entities.CrewMember
 import org.apache.commons.lang3.time.DateFormatUtils
 import org.apache.commons.lang3.time.FastDateFormat
 import org.apache.commons.lang3.time.FastDateParser
@@ -89,6 +90,16 @@ class TmdbMovieTypeConverter {
     @TypeConverter
     fun convertToImages(json: String): Images? {
         return gson.fromJson(json, Images::class.java)
+    }
+
+    @TypeConverter
+    fun convertFromCrewMemberList(crewMembers: List<CrewMember?>): String {
+        return gson.toJson(crewMembers)
+    }
+
+    @TypeConverter
+    fun convertToCrewmemberList(json: String): List<CrewMember?> {
+        return gson.fromJson(json, Array<CrewMember?>::class.java).toList()
     }
 
     @TypeConverter

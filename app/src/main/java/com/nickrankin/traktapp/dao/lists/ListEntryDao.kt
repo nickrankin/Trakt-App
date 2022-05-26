@@ -7,6 +7,10 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ListEntryDao {
     @Transaction
+    @Query("SELECT * FROM lists")
+    fun getAllListEntries(): Flow<List<ListWithEntries>>
+
+    @Transaction
     @Query("SELECT * FROM list_entries WHERE trakt_list_id = :traktListId")
     fun getListEntries(traktListId: Int): Flow<List<TraktListEntry>>
 
@@ -32,5 +36,9 @@ interface ListEntryDao {
     @Transaction
     @Query("DELETE FROM list_entries WHERE trakt_list_id = :traktListId AND list_entry_trakt_id = :entryId")
     fun deleteListEntry(traktListId: Int, entryId: Int)
+
+    @Transaction
+    @Query("DELETE FROM list_entries")
+    fun deleteAllListEntriesFromCache()
 
 }

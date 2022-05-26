@@ -2,6 +2,7 @@ package com.nickrankin.traktapp.dao.movies
 
 import androidx.room.*
 import com.nickrankin.traktapp.dao.movies.model.CollectedMovie
+import com.uwetrottmann.trakt5.enums.SortBy
 import kotlinx.coroutines.flow.Flow
 
 @Dao

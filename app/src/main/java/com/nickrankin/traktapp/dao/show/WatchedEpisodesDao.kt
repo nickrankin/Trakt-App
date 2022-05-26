@@ -3,13 +3,14 @@ package com.nickrankin.traktapp.dao.show
 import androidx.paging.PagingSource
 import androidx.room.*
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
+import com.nickrankin.traktapp.dao.show.model.WatchedEpisodeAndStats
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface WatchedEpisodesDao {
     @Transaction
     @Query("SELECT * FROM watched_episodes ORDER BY watched_at DESC")
-    fun getWatchedEpisodes(): PagingSource<Int, WatchedEpisode>
+    fun getWatchedEpisodes(): PagingSource<Int, WatchedEpisodeAndStats>
 
     @Transaction
     @Query("SELECT * FROM watched_episodes WHERE show_trakt_id = :showTraktId")

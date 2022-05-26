@@ -11,14 +11,17 @@ import androidx.preference.PreferenceManager
 import com.google.android.material.navigation.NavigationView
 import com.nickrankin.traktapp.ui.lists.TraktListsActivity
 import com.nickrankin.traktapp.ui.movies.MoviesMainActivity
-import com.nickrankin.traktapp.ui.search.ShowSearchResultsActivity
+import com.nickrankin.traktapp.ui.search.SearchResultsActivity
 import com.nickrankin.traktapp.ui.settings.SettingsActivity
 import com.nickrankin.traktapp.ui.shows.ShowsMainActivity
+import com.uwetrottmann.trakt5.enums.Type
 import dagger.hilt.android.AndroidEntryPoint
 
 private const val TAG = "BaseActivity"
 @AndroidEntryPoint
 abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
+
+    private var searchType: String? = null
 
 //    @Inject
 //    lateinit var trackedEpisodeAlarmScheduler: TrackedEpisodeAlarmScheduler
@@ -52,7 +55,7 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
 
 
     private fun startSearch(searchView: SearchView) {
-        val intent = Intent(this, ShowSearchResultsActivity::class.java)
+        val intent = Intent(this, SearchResultsActivity::class.java)
 
         searchView.setOnQueryTextListener(object: SearchView.OnQueryTextListener {
 
@@ -63,12 +66,17 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
             override fun onQueryTextSubmit(query: String?): Boolean {
 
                 intent.putExtra(SearchManager.QUERY, query)
+                intent.putExtra(SearchResultsActivity.SEARCH_TYPE_KEY, searchType ?: SearchResultsActivity.TYPE_MOVIE_KEY)
 
                 startActivity(intent)
 
                 return false
             }
         })
+    }
+
+    protected fun setSearchType(type: String?) {
+        this.searchType = type
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

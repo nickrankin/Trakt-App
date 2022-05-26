@@ -13,7 +13,7 @@ import java.lang.UnsupportedOperationException
 import java.net.URLEncoder
 
 private const val TAG = "TraktApi"
-class TraktApi(private val context: Context, private val loggingOn: Boolean, private val isStaging: Boolean): TraktV2(ApiKeys.TRAKT_API_KEY, ApiKeys.TRAKT_API_SECRET, CALLBACK_URL, isStaging) {
+class TraktApi(private val context: Context, private val loggingOn: Boolean, private val loggerLevel: HttpLoggingInterceptor.Level, private val isStaging: Boolean): TraktV2(ApiKeys.TRAKT_API_KEY, ApiKeys.TRAKT_API_SECRET, CALLBACK_URL, isStaging) {
     private var okHttpClient: OkHttpClient? = null
     private var redirectUri: String? = null
     val STAGING_OAUTH2_AUTHORIZATION_URL = "$API_STAGING_URL/oauth/authorize"
@@ -37,7 +37,7 @@ class TraktApi(private val context: Context, private val loggingOn: Boolean, pri
 
     private fun getLogger(): HttpLoggingInterceptor {
         val logger = HttpLoggingInterceptor()
-        logger.setLevel(HttpLoggingInterceptor.Level.BODY)
+        logger.setLevel(loggerLevel)
 
         return logger
     }
@@ -94,6 +94,11 @@ class TraktApi(private val context: Context, private val loggingOn: Boolean, pri
     fun tmSeasons(): TraktSeasons {
         return retrofit().create(TraktSeasons::class.java)
     }
+
+    fun tmEpisodes(): TmEpisodes {
+        return retrofit().create(TmEpisodes::class.java)
+    }
+
     fun tmCalendars(): TmCalendars {
         return retrofit().create(TmCalendars::class.java)
     }

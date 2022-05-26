@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.nickrankin.traktapp">
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
@@ -96,7 +95,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ui.search.ShowSearchResultsActivity"
+            android:name=".ui.search.SearchResultsActivity"
             android:exported="true"
             android:launchMode="singleTop" /> <!-- If you want to disable android.startup completely. -->
         <provider

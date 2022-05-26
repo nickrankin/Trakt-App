@@ -20,6 +20,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import okhttp3.logging.HttpLoggingInterceptor
 import javax.inject.Singleton
 
 @Module
@@ -28,13 +29,13 @@ object ApiModules {
     @Singleton
     @Provides
     fun providesTraktApi(@ApplicationContext context: Context): TraktApi {
-        return TraktApi(context, false, false)
+        return TraktApi(context, true, HttpLoggingInterceptor.Level.BODY, false)
     }
 
     @Singleton
     @Provides
     fun provideTmdbApi(): TmdbApi {
-        return TmdbApi(true)
+        return TmdbApi(false)
     }
 
     @Singleton

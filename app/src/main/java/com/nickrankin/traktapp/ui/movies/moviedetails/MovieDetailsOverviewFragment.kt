@@ -34,10 +34,6 @@ class MovieDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshLis
     private lateinit var castRecyclerView: RecyclerView
     private lateinit var castAdapter: MovieCastCreditsAdapter
 
-    private var tmdbId: Int? = null
-    private var overview: String? = null
-
-
     @Inject
     lateinit var glide: RequestManager
 
@@ -52,18 +48,20 @@ class MovieDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshLis
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        tmdbId = arguments?.getInt(TMDB_ID_KEY)
-        overview = arguments?.getString(OVERVIEW_KEY)
-
         initRecyclerView()
 
-        viewModel.setTmdbId(tmdbId)
+    }
 
-        getCredits()
-        bindMovieData()
+    fun initFragment(tmMovie: TmMovie?) {
+        if(tmMovie == null) {
+            return
+        }
 
         viewModel.onStart()
+
+        getCredits()
+
+        bindMovieData(tmMovie)
     }
 
     private fun getCredits() {
@@ -100,10 +98,10 @@ class MovieDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshLis
         castRecyclerView.adapter = castAdapter
     }
 
-    private fun bindMovieData() {
+    private fun bindMovieData(movie: TmMovie) {
         bindings.apply {
             moviedetailsoverviewMainGroup.visibility = View.VISIBLE
-            moviedetailsoverviewOverview.text = overview
+            moviedetailsoverviewOverview.text = movie.overview
         }
     }
 

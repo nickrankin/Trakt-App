@@ -40,6 +40,7 @@ class ShowDataHelper @Inject constructor(
         var tmShow: TmShow? = null
 
         val traktShowResponse = traktApi.tmShows().summary(traktId.toString(), Extended.FULL)
+        val traktRatings= traktApi.tmShows().ratings(traktId.toString())
 
         val showTmdbId = traktShowResponse.ids?.tmdb ?: -1
 
@@ -55,27 +56,27 @@ class ShowDataHelper @Inject constructor(
                         AppendToResponseItem.VIDEOS
                     )
                 )
-                return convertTmdbShow(traktShowResponse, response)
+                return convertTmdbShow(traktShowResponse, response, traktRatings.rating ?: 0.0)
             } catch(e: HttpException) {
                 Log.e(TAG, "getShow: HttpException occurred. Code: ${e.code()}. ${e.message()}", )
-                return convertTraktShow(traktShowResponse)
+                return convertTraktShow(traktShowResponse, traktRatings.rating ?: 0.0)
 
             }catch(e: Exception) {
                 e.printStackTrace()
                 Log.e(TAG, "getShow: Error getting TMDB Data", )
-                return convertTraktShow(traktShowResponse)
+                return convertTraktShow(traktShowResponse, traktRatings.rating ?: 0.0)
             }
 
         } else {
             // Try to find TV Show on TMDB
-            tmShow = findTmdbShow(traktShowResponse)
+            tmShow = findTmdbShow(traktShowResponse, traktRatings.rating ?: 0.0)
 
             // If TmShow still null, fallback to Trakt Data
-            return tmShow ?: convertTraktShow(traktShowResponse)
+            return tmShow ?: convertTraktShow(traktShowResponse, traktRatings.rating ?: 0.0)
         }
     }
 
-    suspend fun findTmdbShow(traktShow: Show): TmShow? {
+    suspend fun findTmdbShow(traktShow: Show, traktRating: Double): TmShow? {
         val findShowResponse =
             tmdbApi.tmSearchService().tv(traktShow.title, 1, getTmdbLanguage(null), traktShow.year, false)
 
@@ -94,7 +95,7 @@ class ShowDataHelper @Inject constructor(
 
             Log.d(TAG, "findTmdbShow: Found show $tvShow")
 
-            return convertTmdbShow(traktShow, tvShow)
+            return convertTmdbShow(traktShow, tvShow, traktRating)
         } else {
             return null
         }
@@ -236,7 +237,10 @@ class ShowDataHelper @Inject constructor(
 
                 Log.d(TAG, "getSeasonEpisodesData: Got ${tmdbSeasonEpisodes.size} Episodes")
 
+
+
                 traktSeasonEpisodes.map { traktEpisode ->
+
                     val tmdbEpisode = tmdbSeasonEpisodes.find { tmdbEpisode ->
                         traktEpisode.number == tmdbEpisode.episode_number && traktEpisode.season == tmdbEpisode.season_number
                     }
@@ -254,6 +258,7 @@ class ShowDataHelper @Inject constructor(
                             tmdbEpisode?.production_code,
                             tmdbEpisode?.name ?: "",
                             tmdbEpisode?.overview,
+                            traktEpisode.runtime,
                             tmdbEpisode?.air_date,
                             tmdbEpisode?.credits,
                             tmdbEpisode?.crew ?: emptyList(),
@@ -262,8 +267,8 @@ class ShowDataHelper @Inject constructor(
                             tmdbEpisode?.external_ids,
                             tmdbEpisode?.still_path,
                             tmdbEpisode?.videos,
-                            null,
-                            TmEpisode.SOURCE_TMDB
+                            TmEpisode.SOURCE_TMDB,
+                            traktEpisode.rating ?: 0.0
                         )
                     )
                 }
@@ -340,6 +345,7 @@ class ShowDataHelper @Inject constructor(
                     null,
                     traktEpisode.title ?: "",
                     traktEpisode.overview,
+                    traktEpisode.runtime,
                     airedDate,
                     null,
                     emptyList(),
@@ -348,15 +354,15 @@ class ShowDataHelper @Inject constructor(
                     null,
                     null,
                     null,
-                    null,
-                    TmEpisode.SOURCE_TRAKT
+                    TmEpisode.SOURCE_TRAKT,
+                    traktEpisode.rating
                 )
             )
         }
         return episodes
     }
 
-    private fun convertTmdbShow(traktShow: Show, tmdbShow: TvShow?): TmShow? {
+    private fun convertTmdbShow(traktShow: Show, tmdbShow: TvShow?, traktRating: Double): TmShow? {
         if (tmdbShow == null) {
             return null
         }
@@ -390,7 +396,8 @@ class ShowDataHelper @Inject constructor(
             tmdbShow.backdrop_path,
             tmdbShow.type,
             tmdbShow.videos,
-            false)
+            false,
+            traktRating)
     }
 
     /**
@@ -398,7 +405,7 @@ class ShowDataHelper @Inject constructor(
      * Fallback method to use Trakt' own data and get the season data from Trakt API
      *
      * **/
-    private suspend fun convertTraktShow(show: Show): TmShow {
+    private suspend fun convertTraktShow(show: Show, traktRating: Double): TmShow {
         Log.d(TAG, "convertTraktShowToTmShow: Falling back to Trakt metadata")
 
         var airedDate: Date? = null
@@ -433,6 +440,7 @@ class ShowDataHelper @Inject constructor(
             null,
             null,
             null,
-            false)
+            false,
+        traktRating)
     }
 }

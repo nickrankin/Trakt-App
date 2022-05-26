@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
 import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.helper.TmdbImageLoader
+import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.uwetrottmann.trakt5.entities.Show
@@ -90,9 +91,7 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
                     navigateToShow(
                         selectedShow?.ids?.trakt ?: 0,
                         selectedShow?.ids?.tmdb ?: 0,
-                        selectedShow?.title,
-                        selectedShow?.language
-                    )
+                        selectedShow?.title)
                 }
                 RecommendedShowsAdapter.ACTION_REMOVE -> {
                     deleteRecommendation(selectedShow, pos)
@@ -101,9 +100,7 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
                     navigateToShow(
                         selectedShow?.ids?.trakt ?: 0,
                         selectedShow?.ids?.tmdb ?: 0,
-                        selectedShow?.title,
-                        selectedShow?.language
-                    )
+                        selectedShow?.title)
                 }
             }
         })
@@ -210,15 +207,14 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
         viewModel.onRefresh()
     }
 
-    override fun navigateToShow(traktId: Int, tmdbId: Int, showTitle: String?, language: String?) {
-        if (tmdbId == 0) {
-            Toast.makeText(context, "Trakt does not have this show's TMDB", Toast.LENGTH_LONG)
-                .show()
-            return
-        }
+    override fun navigateToShow(traktId: Int, tmdbId: Int?, title: String?) {
 
         val intent = Intent(context, ShowDetailsActivity::class.java)
-        intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
+        intent.putExtra(ShowDetailsActivity.SHOW_DATA_KEY,
+            ShowDataModel(
+                traktId, tmdbId, title
+            )
+        )
 
         startActivity(intent)
     }

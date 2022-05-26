@@ -1,17 +1,25 @@
 package com.nickrankin.traktapp.ui.shows.showdetails
 
+import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Typeface
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.util.TypedValue
 import android.view.MenuItem
 import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
+import com.google.android.flexbox.FlexboxLayout
+import com.google.android.material.appbar.AppBarLayout
+import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.google.android.material.tabs.TabLayout
 import com.google.gson.Gson
 import com.nickrankin.traktapp.R
@@ -21,14 +29,16 @@ import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.ImdbNavigationHelper
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.VideoTrailerHelper
+import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
+import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
 import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.shows.OnNavigateToEpisode
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
-import com.uwetrottmann.tmdb2.entities.TvExternalIds
-import com.uwetrottmann.tmdb2.entities.Videos
+import com.uwetrottmann.tmdb2.entities.*
+import com.uwetrottmann.trakt5.entities.CrewMember
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import org.apache.commons.lang3.time.DateFormatUtils
@@ -51,6 +61,8 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
     SwipeRefreshLayout.OnRefreshListener, TabLayout.OnTabSelectedListener {
     private lateinit var bindings: ActivityShowDetailsBinding
 
+    private lateinit var appBarLayout: AppBarLayout
+    private lateinit var collapsingToolbarLayout: CollapsingToolbarLayout
     private lateinit var swipeRefeshLayout: SwipeRefreshLayout
     private lateinit var tabLayout: TabLayout
 
@@ -64,9 +76,13 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
     private var shouldRefreshSeasonData = false
     private var shouldRefreshProgressData = false
 
+    private lateinit var showActionButtonsFragment: ShowDetailsActionButtonsFragment
+    private lateinit var showDetailsOverviewFragment: ShowDetailsOverviewFragment
+    private lateinit var showDetailsSeasonsFragment: ShowDetailsSeasonsFragment
+    private lateinit var showDetailsProgressFragment: ShowDetailsProgressFragment
+
     private val viewModel: ShowDetailsViewModel by viewModels()
 
-    private lateinit var showDetailsOverviewFragment: ShowDetailsOverviewFragment
 
     @Inject
     lateinit var sharedPreferences: SharedPreferences
@@ -85,6 +101,9 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
         bindings = ActivityShowDetailsBinding.inflate(layoutInflater)
 
         setContentView(bindings.root)
+
+        appBarLayout = bindings.showdetailsactivityAppbarlayout
+        collapsingToolbarLayout = bindings.showdetailsactivityCollapsingToolbarLayout
 
         // Init SwipeRefreshLayout
         swipeRefeshLayout = bindings.showdetailsactivitySwipeRefreshLayout
@@ -110,9 +129,16 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
 
         Log.d(TAG, "onCreate: Got show $showTitle with TraktId $showTraktId TmdbId $showTmdbId")
 
+        // We need to check if the parent activity has sent ShowDataModel
+        if(intent.extras?.containsKey(SHOW_DATA_KEY) == false || intent!!.extras?.getParcelable<ShowDataModel>(
+                SHOW_DATA_KEY) == null) {
+            throw RuntimeException("Must pass ShowDataModel to ${this.javaClass.name}.")
+        }
+
+        initFragments()
+
         // Get data
         getShow()
-        getTraktRatings()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -147,9 +173,7 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
                         handleExternalLinks(show?.external_ids)
                         handleTrailer(show?.videos)
 
-                        initActionButtons(show)
-
-                        createOverviewFragment(show)
+                        showActionButtonsFragment.initFragment(show)
 
                     }
                     is Resource.Error -> {
@@ -187,32 +211,19 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
         }
     }
 
-    private fun initActionButtons(show: TmShow?) {
-        val showActionButtonsFragment = ShowDetailsActionButtonsFragment.newInstance()
-
-        val bundle = Bundle()
-        bundle.putString(ShowDetailsRepository.SHOW_TITLE_KEY, show?.name)
-
-        showActionButtonsFragment.arguments = bundle
+    private fun initFragments() {
+        showActionButtonsFragment = ShowDetailsActionButtonsFragment.newInstance()
+        showDetailsOverviewFragment = ShowDetailsOverviewFragment.newInstance()
+        showDetailsSeasonsFragment = ShowDetailsSeasonsFragment.newInstance()
+        showDetailsProgressFragment = ShowDetailsProgressFragment.newInstance()
 
         supportFragmentManager.beginTransaction()
-            .add(
+            .replace(
                 bindings.showdetailsactivityInner.showdetailsactivityButtonsFragmentContainer.id,
                 showActionButtonsFragment,
                 FRAGMENT_ACTION_BUTTONS
             )
             .commit()
-    }
-
-    private fun createOverviewFragment(tmShow: TmShow?) {
-
-        Log.d(TAG, "createOverviewFragment: Called")
-        showDetailsOverviewFragment = ShowDetailsOverviewFragment.newInstance()
-
-        val bundle = Bundle()
-        bundle.putString(ShowDetailsOverviewFragment.OVERVIEW_KEY, tmShow?.overview)
-        bundle.putInt(ShowDetailsOverviewFragment.TMDB_ID_KEY, tmShow?.tmdb_id ?: 0)
-        showDetailsOverviewFragment.arguments = bundle
 
         // If device is rotated, user will see the tab that was selected, otherwise show Overview tab.
         if (selectedTab != null) {
@@ -220,7 +231,7 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
         } else if(supportFragmentManager.findFragmentByTag(FRAGMENT_OVERVIEW_TAG) == null) {
             // Fragment not added yet, so add it
             supportFragmentManager.beginTransaction()
-                .add(
+                .replace(
                     bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer.id,
                     showDetailsOverviewFragment,
                     FRAGMENT_OVERVIEW_TAG
@@ -236,6 +247,7 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
                 )
                 .commit()
         }
+
     }
 
     private fun toggleProgressBar(isRefreshing: Boolean) {
@@ -270,110 +282,130 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
         }
     }
 
-    private fun getTraktRatings() {
-        viewModel.state.getLiveData<Double>("trakt_ratings").observe(this) { rating ->
-            bindings.showdetailsactivityInner.showdetailsactivityTraktRating.visibility =
-                View.VISIBLE
-            bindings.showdetailsactivityInner.showdetailsactivityTraktRating.text =
-                "Trakt user rating: ${rating.toBigDecimal().setScale(1, RoundingMode.UP)}/10"
-        }
-    }
-
     private fun displayShowInformation(tmShow: TmShow?) {
-        bindings.showdetailsactivityCollapsingToolbarLayout.title = tmShow?.name
+        if(tmShow == null) {
+            return
+        }
 
-        if (tmShow?.backdrop_path?.isNotEmpty() == true) {
+        displayToolbarTitle(tmShow.name)
+
+        if (tmShow.backdrop_path?.isNotEmpty() == true) {
             glide
                 .load(AppConstants.TMDB_POSTER_URL + tmShow.backdrop_path)
                 .into(bindings.showdetailsactivityBackdrop)
         }
 
         bindings.showdetailsactivityInner.apply {
-            if (tmShow?.poster_path?.isNotEmpty() == true) {
+            if (tmShow.poster_path?.isNotEmpty() == true) {
                 glide
                     .load(AppConstants.TMDB_POSTER_URL + tmShow.poster_path)
                     .into(showdetailsactivityPoster)
             }
 
-            showdetailsactivityTitle.text = "${tmShow?.name}"
+            showdetailsactivityTitle.text = tmShow.name
 
-            showdetailsactivityStatus.text = "${tmShow?.status ?: "Unknown"}"
+            if(tmShow.status != null) {
+                showdetailsactivityStatus.visibility = View.VISIBLE
 
-            if (tmShow?.first_aired != null) {
+                showdetailsactivityStatus.text = "Status: ${tmShow.status}"
+            } else {
+                showdetailsactivityStatus.visibility = View.GONE
+
+            }
+
+            if (tmShow.first_aired != null) {
+                showdetailsactivityFirstAired.visibility = View.VISIBLE
+
                 showdetailsactivityFirstAired.text = "Premiered: " + DateFormatUtils.format(
-                    tmShow?.first_aired,
+                    tmShow.first_aired,
                     "dd MMM YYYY"
                 )
+            } else {
+                showdetailsactivityFirstAired.visibility = View.GONE
+
             }
 
-            if (tmShow?.networks?.isNotEmpty() == true) {
-                if (tmShow.networks.size > 1) {
-                    var networksString = "Networks: "
+            if(tmShow.networks.isNotEmpty()) {
+                bindings.showdetailsactivityInner.showdetailsactivityCompany.visibility = View.VISIBLE
 
-                    tmShow.networks.map { network ->
-                        networksString += network?.name
-                        if (network != tmShow.networks.last()) {
-                            networksString += ", "
-                        }
-                    }
-
-                    showdetailsactivityNetwork.text = networksString
-                } else {
-                    showdetailsactivityNetwork.text = "Network: ${tmShow.networks.first()?.name}"
+                displayNetworks(tmShow.networks) { networkClickCallback ->
                 }
+            } else {
+                bindings.showdetailsactivityInner.showdetailsactivityCompany.visibility = View.GONE
             }
 
-            if (tmShow?.country?.isNotEmpty() == true) {
-                showdetailsactivityCountry.text = "Countery: ${tmShow.country[0]}"
+            if(tmShow.country.isNotEmpty()) {
+                showdetailsactivityCountry.visibility = View.VISIBLE
+
+                displayCountries(tmShow.country) { countryClickCallback ->
+
+                }
+            } else {
+                showdetailsactivityCountry.visibility = View.GONE
             }
 
-            if (tmShow?.runtime != null) {
+
+            if (tmShow.runtime != null) {
+                showdetailsactivityRuntime.visibility = View.VISIBLE
+
                 showdetailsactivityRuntime.text = "Runtime: ${tmShow.runtime} Minutes"
+            } else {
+                showdetailsactivityRuntime.visibility = View.GONE
             }
 
-            if (tmShow?.genres?.isNotEmpty() == true) {
+            if(tmShow.genres.isNotEmpty()) {
                 showdetailsactivityGenres.visibility = View.VISIBLE
 
-                var networksString = "Genres: "
-
-                tmShow.genres.map { genre ->
-                    networksString += genre?.name
-                    if (genre != tmShow.genres.last()) {
-                        networksString += ", "
-                    }
-                }
-
-                showdetailsactivityGenres.text = networksString
-            }
-
-            if (tmShow?.created_by?.isNotEmpty() == true) {
-                // Directed by names
-                if (tmShow.created_by.isNotEmpty()) {
-                    bindings.showdetailsactivityInner.showdetailsactivityDirected.visibility =
-                        View.VISIBLE
-
-                    // More than one creator/director
-                    if (tmShow.created_by.size > 1) {
-                        var directedByText = "Creators: "
-
-                        tmShow.created_by.map { director ->
-                            directedByText += director?.name
-                            if (director != tmShow.created_by.last()) {
-                                directedByText += ", "
-                            }
-                        }
-                        bindings.showdetailsactivityInner.showdetailsactivityDirected.text =
-                            directedByText
-                    } else {
-                        bindings.showdetailsactivityInner.showdetailsactivityDirected.text =
-                            "Creator: ${tmShow.created_by.first()?.name}"
-                    }
+                displayGenres(tmShow.genres) { genresClickCallback ->
 
                 }
+            } else {
+                showdetailsactivityGenres.visibility = View.GONE
             }
 
-            showdetailsactivityTotalEpisodes.text = "Total episodes: ${tmShow?.num_episodes}"
+            if(tmShow.created_by.isNotEmpty()) {
+                showdetailsactivityDirected.visibility = View.VISIBLE
+
+                displayDirectors(tmShow.created_by) { directorClickedCallback ->
+
+                }
+
+            } else {
+                showdetailsactivityDirected.visibility = View.GONE
+
+            }
+
+            if(tmShow.trakt_rating != 0.0) {
+                showdetailsactivityTraktRating.visibility = View.VISIBLE
+
+                showdetailsactivityTraktRating.text = "Trakt user rating ${String.format("%.1f", tmShow.trakt_rating)}"
+            } else {
+                showdetailsactivityTraktRating.visibility = View.GONE
+
+            }
+
+            showdetailsactivityNumEpisodes.text = "Total episodes: ${tmShow.num_episodes}"
         }
+    }
+
+    private fun displayToolbarTitle(title: String?) {
+        // Only show the title once the toolbar is totally collapsed
+        // https://stackoverflow.com/questions/31662416/show-collapsingtoolbarlayout-title-only-when-collapsed
+        var isShow = true
+        var scrollRange = -1
+        appBarLayout.addOnOffsetChangedListener(AppBarLayout.OnOffsetChangedListener { barLayout, verticalOffset ->
+            if (scrollRange == -1) {
+                scrollRange = barLayout?.totalScrollRange!!
+            }
+            if (scrollRange + verticalOffset == 0) {
+                collapsingToolbarLayout.title = title
+                isShow = true
+            } else if (isShow) {
+                collapsingToolbarLayout.title =
+                    " " //careful there should a space between double quote otherwise it wont work
+                isShow = false
+            }
+        })
     }
 
     override fun navigateToEpisode(
@@ -384,14 +416,14 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
         language: String?
     ) {
         val intent = Intent(this, EpisodeDetailsActivity::class.java)
-        intent.putExtra(EpisodeDetailsRepository.SHOW_TRAKT_ID_KEY, showTraktId)
-        intent.putExtra(EpisodeDetailsRepository.SHOW_TMDB_ID_KEY, showTmdbId)
-        intent.putExtra(EpisodeDetailsRepository.SEASON_NUMBER_KEY, seasonNumber)
-        intent.putExtra(EpisodeDetailsRepository.EPISODE_NUMBER_KEY, episodeNumber)
-        intent.putExtra(EpisodeDetailsRepository.LANGUAGE_KEY, language)
-
-        // No need to force refresh of watched shows as this was done in this activity so assume the watched show data in cache is up to date
-        intent.putExtra(EpisodeDetailsRepository.SHOULD_REFRESH_WATCHED_KEY, false)
+        intent.putExtra(EpisodeDetailsActivity.EPISODE_DATA_KEY,
+        EpisodeDataModel(
+            showTraktId,
+            showTmdbId,
+            seasonNumber,
+            episodeNumber,
+            ""
+        ))
 
         startActivity(intent)
     }
@@ -409,18 +441,28 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
     override fun onRefresh() {
         viewModel.onRefresh()
 
+        // Check to see Fragment is attached before refreshing (fix a crash)
+        if(showDetailsOverviewFragment.isAdded) {
+            showDetailsOverviewFragment.onRefresh()
+        }
+
+        if(showDetailsSeasonsFragment.isAdded) {
+            showDetailsSeasonsFragment.onRefresh()
+        }
+
+
         refreshActionButtons()
 
-        val currentTab = tabLayout.selectedTabPosition
-
-        // Refresh tabs on subsequent clicks
-        shouldRefreshOverviewData = currentTab != 0
-        shouldRefreshProgressData = currentTab != 2
-        shouldRefreshSeasonData = currentTab != 1
-
-        // Refresh the current tab. Selecting current tab will reselect and trigger refresh
-        refreshCurrentTab()
-        Log.d(TAG, "onRefresh: Selected tab: currentTab")
+//        val currentTab = tabLayout.selectedTabPosition
+//
+//        // Refresh tabs on subsequent clicks
+//        shouldRefreshOverviewData = currentTab != 0
+//        shouldRefreshProgressData = currentTab != 2
+//        shouldRefreshSeasonData = currentTab != 1
+//
+//        // Refresh the current tab. Selecting current tab will reselect and trigger refresh
+//        refreshCurrentTab()
+//        Log.d(TAG, "onRefresh: Selected tab: currentTab")
     }
 
     private fun refreshActionButtons() {
@@ -475,6 +517,259 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
         }
     }
 
+    private fun displayDirectors(
+        people: List<Person?>,
+        callback: (person: Person?) -> Unit
+    ) {
+        val layout = bindings.showdetailsactivityInner.showdetailsactivityDirected
+
+        // If user refreshes or rotates screen, ensure to clear existing views
+        layout.removeAllViews()
+
+        Log.d(TAG, "getDirectorsViewList: Got ${people.size} people!")
+
+        layout.addView(setTextViewLayoutConfig(getTextView(layout.context, "Directed by: ")))
+
+        // List to store a TextView for each director
+        val textViews: MutableList<TextView> = mutableListOf()
+
+        people.map { director ->
+
+            // Check if director is last entry, in this case no trailing comma ','
+            val textView: TextView = if (director != people.last()) {
+                setTextViewLayoutConfig(getTextView(layout.context, director?.name + ", "))
+            } else {
+                setTextViewLayoutConfig(getTextView(layout.context, director?.name ?: ""))
+            }
+
+            // Director was clicked, we supply CrewMember object to callback
+            textView.setOnClickListener {
+                callback(director)
+            }
+
+            textViews.add(textView)
+        }
+
+        if (textViews.size > 2) {
+            val initialTextViews = truncateTextViewList(layout, textViews)
+
+            initialTextViews.map { initialTextView ->
+                layout.addView(initialTextView)
+            }
+
+
+        } else {
+            textViews.map {
+                layout.addView(it)
+            }
+        }
+    }
+
+    private fun displayNetworks(
+        networks: List<Network?>,
+        callback: (company: Network?) -> Unit
+    ) {
+        val layout = bindings.showdetailsactivityInner.showdetailsactivityCompany
+
+        // If user refreshes or rotates screen, ensure to clear existing views
+        layout.removeAllViews()
+
+        if (networks.size > 1) {
+            layout.addView(setTextViewLayoutConfig(getTextView(layout.context, "Networks: ")))
+
+        } else {
+            layout.addView(setTextViewLayoutConfig(getTextView(layout.context, "Network: ")))
+        }
+
+        // List to store a TextView for each director
+        val textViews: MutableList<TextView> = mutableListOf()
+
+        networks.map { network ->
+
+            // Check if director is last entry, in this case no trailing comma ','
+            val textView: TextView = if (network != networks.last()) {
+                setTextViewLayoutConfig(getTextView(layout.context, network?.name + ", "))
+            } else {
+                setTextViewLayoutConfig(getTextView(layout.context, network?.name ?: ""))
+            }
+
+            // Director was clicked, we supply CrewMember object to callback
+            textView.setOnClickListener {
+                callback(network)
+            }
+
+            textViews.add(textView)
+        }
+
+        if (textViews.size > 2) {
+            val initialTextViews = truncateTextViewList(layout, textViews)
+
+            initialTextViews.map { initialTextView ->
+                layout.addView(initialTextView)
+            }
+
+
+        } else {
+            textViews.map {
+                layout.addView(it)
+            }
+        }
+    }
+
+    private fun displayGenres(genres: List<Genre?>, callback: (genre: Genre?) -> Unit) {
+        val layout = bindings.showdetailsactivityInner.showdetailsactivityGenres
+
+        // If user refreshes or rotates screen, ensure to clear existing views
+        layout.removeAllViews()
+
+        if (genres.size > 1) {
+            layout.addView(setTextViewLayoutConfig(getTextView(layout.context, "Genres: ")))
+
+        } else {
+            layout.addView(setTextViewLayoutConfig(getTextView(layout.context, "Genre: ")))
+        }
+
+        // List to store a TextView for each director
+        val textViews: MutableList<TextView> = mutableListOf()
+
+        genres.map { genre ->
+
+            // Check if director is last entry, in this case no trailing comma ','
+            val textView: TextView = if (genre != genres.last()) {
+                setTextViewLayoutConfig(getTextView(layout.context, genre?.name + ", "))
+            } else {
+                setTextViewLayoutConfig(getTextView(layout.context, genre?.name ?: ""))
+            }
+
+            // Director was clicked, we supply CrewMember object to callback
+            textView.setOnClickListener {
+                callback(genre)
+            }
+
+            textViews.add(textView)
+        }
+
+        if (textViews.size > 4) {
+            val initialTextViews = truncateTextViewList(layout, textViews)
+
+            initialTextViews.map { initialTextView ->
+                layout.addView(initialTextView)
+            }
+
+
+        } else {
+            textViews.map {
+                layout.addView(it)
+            }
+        }
+    }
+
+    private fun displayCountries(countries: List<String?>, callback: (country: String?) -> Unit) {
+        val layout = bindings.showdetailsactivityInner.showdetailsactivityCountry
+
+        // If user refreshes or rotates screen, ensure to clear existing views
+        layout.removeAllViews()
+
+        if (countries.size > 1) {
+            layout.addView(setTextViewLayoutConfig(getTextView(layout.context, "Countries: ")))
+
+        } else {
+            layout.addView(setTextViewLayoutConfig(getTextView(layout.context, "Country: ")))
+        }
+
+        // List to store a TextView for each director
+        val textViews: MutableList<TextView> = mutableListOf()
+
+        countries.map { country ->
+
+            // Check if director is last entry, in this case no trailing comma ','
+            val textView: TextView = if (country != countries.last()) {
+                setTextViewLayoutConfig(getTextView(layout.context, country + ", "))
+            } else {
+                setTextViewLayoutConfig(getTextView(layout.context, country ?: ""))
+            }
+
+            // Director was clicked, we supply CrewMember object to callback
+            textView.setOnClickListener {
+                callback(country)
+            }
+
+            textViews.add(textView)
+        }
+
+        if (textViews.size > 2) {
+            val initialTextViews = truncateTextViewList(layout, textViews)
+
+            initialTextViews.map { initialTextView ->
+                layout.addView(initialTextView)
+            }
+
+
+        } else {
+            textViews.map {
+                layout.addView(it)
+            }
+        }
+    }
+
+    private fun getTextView(context: Context, title: String): TextView {
+        val textView = TextView(context)
+
+        textView.text = title
+
+        return textView
+    }
+
+    private fun setTextViewLayoutConfig(textView: TextView): TextView {
+        val lp = FlexboxLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+        lp.setMargins(0, 8, 6, 8)
+        textView.layoutParams = lp
+
+        textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+        textView.setTypeface(textView.typeface, Typeface.BOLD)
+
+        return textView
+    }
+
+    private fun truncateTextViewList(
+        layout: FlexboxLayout,
+        textViews: List<TextView>
+    ): List<TextView> {
+        // Trakt will truncate views when too many entries are appearing e.g, for a situation where there are 10 production companies, Trakt will show the first two with a trailing "plus 8 more..."
+        // This is a simple implementation of the same feature
+
+        // TextViews to initially show. We show one TextViews (Note TextView 0 is assumed to be the label string hence ending at Array pos 1)
+        val initialTextViews = textViews.subList(0, 1).toMutableList()
+        // Remaining TextViews to be appended by user action
+        val remainingTextViews = textViews.subList(1, textViews.size).toMutableList()
+
+        // A simple message to user to click to extend
+        val extenderTextView = setTextViewLayoutConfig(
+            getTextView(
+                layout.context,
+                " + ${remainingTextViews.size} more..."
+            )
+        )
+
+        initialTextViews.add(extenderTextView)
+
+        extenderTextView.setOnClickListener { extenderTextView ->
+            // Remove the Extender text view
+            layout.removeView(extenderTextView)
+
+            // Display remaining views
+            remainingTextViews.map { remainingTextViews ->
+                layout.addView(remainingTextViews)
+            }
+        }
+
+        return initialTextViews
+    }
+
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
 
         when (item.itemId) {
@@ -506,8 +801,6 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
                 Log.d(TAG, "onTabSelected: Tab Overview selected")
             }
             1 -> {
-                val showDetailsSeasonsFragment = ShowDetailsSeasonsFragment.newInstance()
-
                 supportFragmentManager.beginTransaction()
                     .replace(
                         bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer.id,
@@ -530,8 +823,6 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
                 Log.d(TAG, "onTabSelected: Tab Seasons selected")
             }
             2 -> {
-                val showDetailsProgressFragment = ShowDetailsProgressFragment.newInstance()
-
                 supportFragmentManager.beginTransaction()
                     .replace(
                         bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer.id,
@@ -625,6 +916,7 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
     }
 
     companion object {
+        const val SHOW_DATA_KEY = "show_data_key"
 
     }
 }

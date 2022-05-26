@@ -7,7 +7,9 @@ import com.uwetrottmann.tmdb2.entities.AppendToResponse
 import com.uwetrottmann.tmdb2.entities.BaseMovie
 import com.uwetrottmann.tmdb2.entities.Movie
 import com.uwetrottmann.tmdb2.enumerations.AppendToResponseItem
+import com.uwetrottmann.trakt5.entities.Credits
 import com.uwetrottmann.trakt5.enums.Extended
+import java.lang.StringBuilder
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -16,13 +18,15 @@ class MovieDataHelper @Inject constructor(
     private val traktApi: TraktApi,
     private val tmdbApi: TmdbApi
 ) {
-    suspend fun getMovieSummary(movieTraktId: Int): TmMovie? {
+    suspend fun getMovieSummary(movieTraktId: Int): TmMovie {
             val traktMovie = traktApi.tmMovies().summary(movieTraktId.toString(), Extended.FULL)
+            val traktMovieCredits = traktApi.tmMovies().people(movieTraktId.toString())
+            val traktMovieRating = traktApi.tmMovies().ratings(movieTraktId.toString())
 
             val tmMovie = getTmdbData(traktMovie.ids?.tmdb)
 
         return if (tmMovie != null) {
-                getMovieDataTmdb(traktMovie, tmMovie)
+                getMovieDataTmdb(traktMovie, traktMovieCredits, tmMovie, traktMovieRating.rating ?: 0.0)
             } else {
                 // Try to find the movie
                 val foundMovie = findTmdbMovie(
@@ -39,9 +43,9 @@ class MovieDataHelper @Inject constructor(
 
                 // If we have a valid TMDB Movie, use this source otherwise need to fallback to Trakt
                 if (tmdbFoundMovie != null) {
-                    getMovieDataTmdb(traktMovie, tmdbFoundMovie)
+                    getMovieDataTmdb(traktMovie, traktMovieCredits, tmdbFoundMovie, traktMovieRating.rating ?: 0.0)
                 } else {
-                    getMovieDataTrakt(traktMovie)
+                    getMovieDataTrakt(traktMovie, traktMovieCredits, traktMovieRating.rating ?: 0.0)
                 }
             }
     }
@@ -57,12 +61,14 @@ class MovieDataHelper @Inject constructor(
         return foundTmdbMovie.results?.first()
     }
 
-    private fun getMovieDataTmdb(traktMovie: com.uwetrottmann.trakt5.entities.Movie, tmdbMovie: Movie): TmMovie? {
+    private fun getMovieDataTmdb(traktMovie: com.uwetrottmann.trakt5.entities.Movie, credits: Credits, tmdbMovie: Movie, traktRating: Double): TmMovie {
+
         return TmMovie(
             traktMovie.ids?.trakt ?: 0,
             tmdbMovie.id,
             tmdbMovie.title ?: "Unknown Movie",
             tmdbMovie.overview,
+            credits.crew?.directing ?: emptyList(),
             tmdbMovie.genres ?: emptyList(),
             tmdbMovie.original_language,
             tmdbMovie.original_title,
@@ -78,17 +84,19 @@ class MovieDataHelper @Inject constructor(
             tmdbMovie.runtime,
             tmdbMovie.status,
             tmdbMovie.tagline,
-            traktMovie.trailer
+            traktMovie.trailer,
+            traktRating
         )
     }
 
     // Fallback behaviour
-    private fun getMovieDataTrakt(traktMovie: com.uwetrottmann.trakt5.entities.Movie): TmMovie? {
+    private fun getMovieDataTrakt(traktMovie: com.uwetrottmann.trakt5.entities.Movie, credits: Credits, traktRating: Double): TmMovie {
         return TmMovie(
             traktMovie.ids?.trakt ?: -1,
             null,
             traktMovie.title ?: "Unknown Movie",
             traktMovie.overview,
+            credits.crew?.directing ?: emptyList(),
             emptyList(),
             traktMovie.language,
             null,
@@ -104,7 +112,8 @@ class MovieDataHelper @Inject constructor(
             traktMovie.runtime,
             null,
             traktMovie.tagline,
-            traktMovie.trailer
+            traktMovie.trailer,
+            traktRating
 
         )
     }

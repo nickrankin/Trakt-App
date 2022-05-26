@@ -25,11 +25,13 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.history.EpisodeWatchedHistoryItemAdapter
+import com.nickrankin.traktapp.dao.show.TmSeasonAndStats
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
 import com.nickrankin.traktapp.databinding.ShowDetailsProgressFragmentBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.calculateProgress
+import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.model.shows.showdetails.ShowDetailsProgressViewModel
 import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
@@ -94,18 +96,16 @@ class ShowDetailsProgressFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
         // TODO Clicking will go to relevant Season page
         progressBarContainerLayout.setOnClickListener { }
 
-        initWatchedHistoryRecycler()
 
         // Get data
         getProgress()
-        getLastWatched()
         getEvents()
     }
 
     private fun getProgress() {
         lifecycleScope.launchWhenStarted {
-            viewModel.progress.collectLatest { progressResource ->
-                when (progressResource) {
+            viewModel.seasons.collectLatest { seasonsResource ->
+                when (seasonsResource) {
                     is Resource.Loading -> {
                         Log.d(TAG, "getProgress: Got progress")
                         bindings.apply {
@@ -124,12 +124,23 @@ class ShowDetailsProgressFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
 
                         }
 
-                        val progress = progressResource.data
+                        val seasons = seasonsResource.data?.sortedBy { it.season.season_number }
 
-                        if (progress != null) {
+                        // Every season object has every seasons stats for that show, as we use Show Trakt ID as PK for DAO. So we only need to use the first entry to calculate an overall progress
+                        val seasonStatsData = seasons?.first()?.watchedSeasonStats
+
+                        if (seasons != null) {
+                            var totalAired = 0
+                            var complete = 0
+
+                            seasonStatsData?.map { seasonStat ->
+                                totalAired += seasonStat?.aired ?: 0
+                                complete += seasonStat?.completed ?: 0
+                            }
+
                             val overallProgress = calculateProgress(
-                                progress.completed?.toDouble() ?: 0.0,
-                                progress.aired?.toDouble() ?: 0.0
+                                complete.toDouble() ?: 0.0,
+                                totalAired.toDouble() ?: 0.0
                             )
 
                             // Overall progress
@@ -140,14 +151,9 @@ class ShowDetailsProgressFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
                                     overallProgress
                             }
 
-                            // Up Next
-                            if(progress.next_episode != null) {
-                                displayNextEpisode(progress.next_episode)
-                            }
-
                             //Show individual Seasons progress
-                            progress.seasons?.map { baseSeason ->
-                                progressBarContainerLayout.addView(buildProgressItem(baseSeason))
+                            seasons.map { season ->
+                                progressBarContainerLayout.addView(buildProgressItem(season))
                             }
 
                         } else {
@@ -164,9 +170,9 @@ class ShowDetailsProgressFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
 
                         Log.e(
                             TAG,
-                            "getProgress: Error getting progress ${progressResource.error?.localizedMessage}",
+                            "getProgress: Error getting progress ${seasonsResource.error?.localizedMessage}",
                         )
-                        progressResource.error?.printStackTrace()
+                        seasonsResource.error?.printStackTrace()
                     }
                 }
             }
@@ -201,135 +207,8 @@ class ShowDetailsProgressFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
         }
     }
 
-    private fun displayNextEpisode(nextEpisode: Episode?) {
-        bindings.showdetailsprogressfragmentNextEpisode.apply {
-            episodeitemCardview.visibility = View.VISIBLE
-
-            episodeitemUpNextTitle.text = "Up next to Watch"
-
-            episodeitemName.text = nextEpisode?.title
-
-            if (nextEpisode?.first_aired != null) {
-                episodeitemAirDate.visibility = View.VISIBLE
-
-                episodeitemAirDate.text = "First aired: " + nextEpisode.first_aired?.format(
-                    DateTimeFormatter.ofPattern(
-                        sharedPreferences.getString(
-                            "date_format",
-                            AppConstants.DEFAULT_DATE_TIME_FORMAT
-                        )
-                    )
-                )
-            }
-
-            if (nextEpisode?.season != null && nextEpisode.number != null) {
-                episodeitemNumber.text = "S${nextEpisode.season}E${nextEpisode.number}"
-            }
-
-            if (nextEpisode?.overview != null) {
-                episodeitemOverview.visibility = View.VISIBLE
-
-                episodeitemOverview.text = nextEpisode.overview
-            }
-
-            root.setOnClickListener {
-                navigateToEpisode(showTraktId, showTmdbId, nextEpisode?.season ?: 0, nextEpisode?.number ?: 0, null)
-            }
-        }
-    }
-
-    private fun getLastWatched() {
-        lifecycleScope.launchWhenStarted {
-            viewModel.watchedEpisodes.collectLatest { watchedEpisodesResource ->
-                when(watchedEpisodesResource) {
-                    is Resource.Loading -> {
-                        Log.d(TAG, "displayWatchedEpisodes: Loading Watched Episodes")
-                    }
-                    is Resource.Success -> {
-                        Log.d(TAG, "displayWatchedEpisodes: Got watched episodes")
-                        val watchedEpisodes = watchedEpisodesResource.data
-                            ?.sortedBy { it.watched_at }?.reversed()
-
-                        if(watchedEpisodes?.isNotEmpty() == true) {
-
-                            episodeWatchedHistoryItemAdapter.submitList(watchedEpisodes)
-
-                            val lastWatched = watchedEpisodes.first()
-
-                            displayLastWatched(lastWatched)
-                        }
-                    }
-                    is Resource.Error -> {
-                        Log.e(TAG, "displayWatchedEpisodes: Error getting watched episodes. ${watchedEpisodesResource.error?.localizedMessage}", )
-                        watchedEpisodesResource.error?.printStackTrace()
-                    }
-                }
-            }
-        }
-    }
-
-    private fun displayLastWatched(lastWatched: WatchedEpisode?) {
-        bindings.showdetailsprogressfragmentLastWatched.apply {
-            episodeitemCardview.visibility = View.VISIBLE
-
-            episodeitemUpNextTitle.text = "Last Watched"
-            episodeitemName.text = lastWatched?.episode_title
-
-            if (lastWatched?.watched_at != null) {
-                episodeitemAirDate.visibility = View.VISIBLE
-
-                episodeitemAirDate.text = "Last watched: " + lastWatched.watched_at?.atZoneSameInstant(
-                    ZoneId.systemDefault())?.format(
-                    DateTimeFormatter.ofPattern(
-                        sharedPreferences.getString(
-                            "date_format",
-                            AppConstants.DEFAULT_DATE_TIME_FORMAT
-                        )
-                    )
-                )
-            }
-
-            if (lastWatched?.episode_season != null && lastWatched.episode_number != null) {
-                episodeitemNumber.text = "S${lastWatched.episode_season}E${lastWatched.episode_number}"
-            }
-
-            if (lastWatched?.episode_overview != null) {
-                episodeitemOverview.visibility = View.VISIBLE
-
-                episodeitemOverview.text = lastWatched.episode_overview
-            }
-
-            root.setOnClickListener {
-                watchedHistoryItemsDialog.show()
-            }
-        }
-    }
-
-    private fun initWatchedHistoryRecycler() {
-        val dialogLayout = layoutInflater.inflate(R.layout.dialog_watched_history_items, bindings.root, false)
-
-        watchedHistoryItemsDialog = AlertDialog.Builder(requireContext())
-            .setView(dialogLayout)
-            .setTitle("Watched History")
-            .setNegativeButton("Close", DialogInterface.OnClickListener { dialogInterface, i ->
-                dialogInterface.dismiss()
-            }).create()
-
-        val recyclerView = dialogLayout.findViewById<RecyclerView>(R.id.watched_history_item_recyclerview)
-        val layoutManager = LinearLayoutManager(requireContext())
-
-        episodeWatchedHistoryItemAdapter = EpisodeWatchedHistoryItemAdapter(callback = { watchedEpisode ->
-            handleWatchedShowDelete(watchedEpisode)
-        })
-
-        recyclerView.layoutManager = layoutManager
-        recyclerView.adapter = episodeWatchedHistoryItemAdapter
-
-
-
-    }
-
-    private fun buildProgressItem(season: BaseSeason): ConstraintLayout {
+    private fun buildProgressItem(tmSeasonAndStats: TmSeasonAndStats): ConstraintLayout {
+        val stats = tmSeasonAndStats.watchedSeasonStats.find { it?.season ?: 0 == tmSeasonAndStats.season.season_number }
         val overallProgressLayout = layoutInflater.inflate(
             R.layout.item_progress_layout_item,
             progressBarContainerLayout,
@@ -343,9 +222,9 @@ class ShowDetailsProgressFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
 
 
         val overallProgress =
-            calculateProgress(season.completed?.toDouble() ?: 0.0, season.aired?.toDouble() ?: 0.0)
+            calculateProgress(stats?.completed?.toDouble() ?: 0.0, stats?.aired?.toDouble() ?: 0.0)
 
-        titleField.text = "Season ${season.number} Progress ($overallProgress%)"
+        titleField.text = "Season ${stats?.season} Progress ($overallProgress%)"
         progressBarField.progress = overallProgress
 
         return overallProgressLayout
@@ -369,32 +248,20 @@ class ShowDetailsProgressFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
         language: String?
     ) {
         val intent = Intent(requireContext(), EpisodeDetailsActivity::class.java)
-        intent.putExtra(EpisodeDetailsRepository.SHOW_TRAKT_ID_KEY, showTraktId)
-        intent.putExtra(EpisodeDetailsRepository.SHOW_TMDB_ID_KEY, showTmdbId)
-        intent.putExtra(EpisodeDetailsRepository.SEASON_NUMBER_KEY, seasonNumber)
-        intent.putExtra(EpisodeDetailsRepository.EPISODE_NUMBER_KEY, episodeNumber)
-        intent.putExtra(EpisodeDetailsRepository.LANGUAGE_KEY, language)
 
+        intent.putExtra(EpisodeDetailsActivity.EPISODE_DATA_KEY,
+            EpisodeDataModel(
+                showTraktId,
+                showTmdbId,
+                seasonNumber,
+                episodeNumber,
+                language
+            )
+        )
         // No need to force refresh of watched shows as this was done in this activity so assume the watched show data in cache is up to date
         intent.putExtra(EpisodeDetailsRepository.SHOULD_REFRESH_WATCHED_KEY, false)
 
         startActivity(intent)
-    }
-
-    private fun handleWatchedShowDelete(watchedEpisode: WatchedEpisode) {
-        val syncItem = SyncItems().ids(watchedEpisode.id)
-        val dialog = AlertDialog.Builder(requireContext())
-            .setTitle("Delete ${watchedEpisode.episode_title} from your watched history?")
-            .setMessage("Are you sure you want to remove ${watchedEpisode.episode_title} from your Trakt History?")
-            .setPositiveButton("Yes", DialogInterface.OnClickListener { dialogInterface, i ->
-                viewModel.removeWatchedEpisode(syncItem)
-            })
-            .setNegativeButton("No", DialogInterface.OnClickListener { dialogInterface, i ->
-                dialogInterface.dismiss()
-            })
-            .create()
-
-        dialog.show()
     }
 
     private fun displayToastMessage(message: String, length: Int) {

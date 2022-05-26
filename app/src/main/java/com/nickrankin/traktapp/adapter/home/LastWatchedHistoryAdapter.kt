@@ -9,6 +9,10 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.flexbox.AlignItems
 import com.google.android.flexbox.FlexboxLayoutManager
+import com.nickrankin.traktapp.dao.movies.model.WatchedMovie
+import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
+import com.nickrankin.traktapp.dao.stats.model.WatchedEpisodeStats
+import com.nickrankin.traktapp.dao.stats.model.WatchedMoviesStats
 import com.nickrankin.traktapp.databinding.HistoryPosterItemBinding
 import com.nickrankin.traktapp.databinding.MoviePosterItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
@@ -18,19 +22,22 @@ import com.uwetrottmann.trakt5.entities.HistoryEntry
 import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 
-private const val TAG = "CollectedShowsAdapter"
-class LastWatchedHistoryAdapter(
+private const val TAG = "LastWatchedHistoryAdapter"
+class LastWatchedHistoryAdapter<T>(
+    private val comparator: DiffUtil.ItemCallback<T>,
     private val sharedPreferences: SharedPreferences,
     private val tmdbImageLoader: TmdbImageLoader,
-    private val callback: (historyEntry: HistoryEntry, action: Int, position: Int) -> Unit
-) : ListAdapter<HistoryEntry, LastWatchedHistoryAdapter.WatchedHistoryVH>(
-    COMPARATOR
+    private val callback: (item: T, action: Int, position: Int) -> Unit
+) : ListAdapter<T, LastWatchedHistoryAdapter<T>.WatchedHistoryVH>(
+    comparator
 ) {
+
+
 
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int
-    ): LastWatchedHistoryAdapter.WatchedHistoryVH {
+    ): LastWatchedHistoryAdapter<T>.WatchedHistoryVH {
         return WatchedHistoryVH(
             HistoryPosterItemBinding.inflate(
                 LayoutInflater.from(
@@ -44,36 +51,42 @@ class LastWatchedHistoryAdapter(
         val currentItem = getItem(position)
 
         holder.bindings.apply {
-            watcheditemTimestamp.text = "Watched: " + currentItem.watched_at?.atZoneSameInstant(
-                ZoneId.systemDefault())?.format(
-                DateTimeFormatter.ofPattern(AppConstants.DEFAULT_DATE_TIME_FORMAT))
 
-            when (currentItem.type) {
-                "movie" -> {
-                    movieitemTitle.text = currentItem.movie?.title
+
+            when (currentItem) {
+                is WatchedMoviesStats -> {
+                    watcheditemTimestamp.text = "Watched: " + currentItem.last_watched_at?.atZoneSameInstant(
+                        ZoneId.systemDefault())?.format(
+                        DateTimeFormatter.ofPattern(AppConstants.DEFAULT_DATE_TIME_FORMAT))
+
+                    movieitemTitle.text = currentItem.title
                     tmdbImageLoader.loadImages(
-                        currentItem.movie?.ids?.trakt ?: 0,
+                        currentItem.trakt_id,
                         ImageItemType.MOVIE,
-                        currentItem.movie?.ids?.tmdb ?: 0,
-                        currentItem.movie?.title,
+                        currentItem.tmdb_id,
+                        currentItem.title,
                         null,
-                        currentItem.movie?.language,
+                        null,
                         true,
                         movieitemPoster,
                         null
                     )
                 }
 
-                "episode" -> {
-                    movieitemTitle.text = currentItem.episode?.title
+                is WatchedEpisodeStats -> {
+                    movieitemTitle.text = "Season ${currentItem.season} Episode ${currentItem.episode}"
+
+                    watcheditemTimestamp.text = "Watched: " + currentItem.last_watched_at?.atZoneSameInstant(
+                        ZoneId.systemDefault())?.format(
+                        DateTimeFormatter.ofPattern(AppConstants.DEFAULT_DATE_TIME_FORMAT))
 
                     tmdbImageLoader.loadImages(
-                        currentItem.show?.ids?.trakt ?: 0,
+                        currentItem.show_trakt_id ?: 0,
                         ImageItemType.SHOW,
-                        currentItem.show?.ids?.tmdb ?: 0,
-                        currentItem.show?.title,
+                        currentItem.show_tmdb_id,
+                        currentItem.show_title,
                         null,
-                        currentItem.show?.language,
+                        null,
                         true,
                         movieitemPoster,
                         null
@@ -100,21 +113,6 @@ class LastWatchedHistoryAdapter(
                 lp.flexShrink = 0.0f
                 lp.alignSelf =
                     AlignItems.FLEX_START //this will align each itemView on Top or use AlignItems.FLEX_END to align it at Bottom
-            }
-        }
-    }
-
-    companion object {
-        val COMPARATOR = object : DiffUtil.ItemCallback<HistoryEntry>() {
-            override fun areItemsTheSame(oldItem: HistoryEntry, newItem: HistoryEntry): Boolean {
-                return oldItem == newItem
-            }
-
-            override fun areContentsTheSame(
-                oldItem: HistoryEntry,
-                newItem: HistoryEntry
-            ): Boolean {
-                return oldItem.id == newItem.id
             }
         }
     }

@@ -20,9 +20,11 @@ import com.nickrankin.traktapp.databinding.FragmentCollectedMoviesBinding
 import com.nickrankin.traktapp.helper.OnTitleChangeListener
 import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.movies.CollectedMoviesViewModel
 import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
 import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
+import com.uwetrottmann.trakt5.enums.SortBy
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
@@ -79,8 +81,8 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
 
     private fun getCollectedMovies() {
         lifecycleScope.launchWhenStarted {
-            viewModel.collectedShows.collectLatest { collectedShowsResource ->
-                when(collectedShowsResource) {
+            viewModel.collectedMovies.collectLatest { collectedMoviesResource ->
+                when(collectedMoviesResource) {
                     is Resource.Loading -> {
                         bindings.collectedmoviesfragmentProgressbar.visibility = View.VISIBLE
                         Log.d(TAG, "getCollectedMovies: Loading collected")
@@ -92,7 +94,7 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
                             swipeLayout.isRefreshing = false
                         }
 
-                        adapter.submitList(collectedShowsResource.data)
+                        adapter.submitList(collectedMoviesResource.data)
 //                        collectedShowsResource.data?.map { show ->
 //                            Log.d(TAG, "getCollectedMovies: Got show $show")
 //                        }
@@ -102,7 +104,7 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
                         if(swipeLayout.isRefreshing) {
                             swipeLayout.isRefreshing = false
                         }
-                        collectedShowsResource.error?.printStackTrace()
+                        collectedMoviesResource.error?.printStackTrace()
                     }
                 }
             }
@@ -120,7 +122,13 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
 
         adapter = CollectedMoviesAdapter(glide, tmdbImageLoader, callback = { movie, type ->
             val intent = Intent(requireContext(), MovieDetailsActivity::class.java)
-            intent.putExtra(MovieDetailsRepository.MOVIE_TRAKT_ID_KEY, movie.trakt_id)
+            intent.putExtra(MovieDetailsActivity.MOVIE_DATA_KEY,
+                MovieDataModel(
+                    movie.trakt_id,
+                    movie.tmdb_id,
+                    movie.title
+                )
+            )
 
             startActivity(intent)
         })
@@ -150,7 +158,6 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
             }
             R.id.collectedfiltermenu_year -> {
                 viewModel.sortMovies(CollectedMoviesViewModel.SORT_YEAR)
-
             }
         }
 

@@ -5,12 +5,17 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nickrankin.traktapp.dao.lists.model.TraktList
 import com.nickrankin.traktapp.dao.show.model.TmEpisode
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.model.shows.showdetails.ShowDetailsActionButtonsViewModel
+import com.nickrankin.traktapp.repo.lists.ListEntryRepository
+import com.nickrankin.traktapp.repo.lists.TraktListsRepository
 import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsActionButtonsRepository
 import com.uwetrottmann.trakt5.entities.EpisodeCheckin
 import com.uwetrottmann.trakt5.entities.EpisodeCheckinResponse
 import com.uwetrottmann.trakt5.entities.SyncResponse
+import com.uwetrottmann.trakt5.enums.Type
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.SharingStarted
@@ -23,7 +28,8 @@ import javax.inject.Inject
 
 private const val TAG = "EpisodeDetailsActionBut"
 @HiltViewModel
-class EpisodeDetailsActionButtonsViewModel @Inject constructor(private val savedStateHandle: SavedStateHandle, private val repository: EpisodeDetailsActionButtonsRepository) : ViewModel() {
+class EpisodeDetailsActionButtonsViewModel @Inject constructor(private val savedStateHandle: SavedStateHandle, private val repository: EpisodeDetailsActionButtonsRepository,private val listsRepository: TraktListsRepository,
+                                                               private val listEntryRepository: ListEntryRepository) : ViewModel() {
 
     private var episodeTraktId = -1
     private var ratingInitialLoad = true
@@ -36,6 +42,9 @@ class EpisodeDetailsActionButtonsViewModel @Inject constructor(private val saved
 
     private val eventsChannel = Channel<Event>()
     val events = eventsChannel.receiveAsFlow()
+
+    val listsWithEntries = listsRepository.listsWithEntries
+
 
 
     private fun getRatings(shouldRefresh: Boolean) {
@@ -69,6 +78,11 @@ class EpisodeDetailsActionButtonsViewModel @Inject constructor(private val saved
         }
 
     }
+
+    fun addListEntry(type: String, traktId: Int, traktList: TraktList) = viewModelScope.launch { eventsChannel.send(
+        Event.AddListEntryEvent(listEntryRepository.addListEntry(type, traktId, traktList))) }
+    fun removeListEntry(listTraktId: Int, listEntryTraktId: Int, type: Type) = viewModelScope.launch { eventsChannel.send(
+        Event.RemoveListEntryEvent(listEntryRepository.removeEntry(listTraktId, listEntryTraktId, type))) }
 
     fun addRating(newRating: Int, episodeTraktId: Int) = viewModelScope.launch { eventsChannel.send(Event.AddRatingsEvent(repository.addRatings(newRating, episodeTraktId))) }
 
@@ -104,5 +118,7 @@ class EpisodeDetailsActionButtonsViewModel @Inject constructor(private val saved
         data class AddCheckinEvent(val checkinResponse: Resource<EpisodeCheckinResponse?>): Event()
         data class CancelCheckinEvent(val checkinCurrentEpisode: Boolean, val cancelCheckinResult: Resource<Boolean>): Event()
         data class AddToWatchedHistoryEvent(val syncResponse: Resource<SyncResponse>): Event()
+        data class AddListEntryEvent(val addListEntryResponse: Resource<SyncResponse>): Event()
+        data class RemoveListEntryEvent(val removeListEntryResponse: Resource<SyncResponse?>): Event()
     }
 }

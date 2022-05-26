@@ -14,9 +14,11 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.adapter.shows.SeasonsAdapter
+import com.nickrankin.traktapp.dao.show.TmSeasonAndStats
 import com.nickrankin.traktapp.dao.show.model.TmSeason
 import com.nickrankin.traktapp.databinding.ShowDetailsSeasonsFragmentBinding
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.model.datamodel.SeasonDataModel
 import com.nickrankin.traktapp.model.shows.showdetails.ShowDetailsSeasonsViewModel
 import com.nickrankin.traktapp.repo.shows.SeasonEpisodesRepository
 import com.nickrankin.traktapp.ui.shows.SeasonEpisodesActivity
@@ -60,11 +62,14 @@ class ShowDetailsSeasonsFragment() : Fragment(), SwipeRefreshLayout.OnRefreshLis
         seasonsRecyclerView = bindings.showdetailsseasonsRecyclerview
         val layoutManager = LinearLayoutManager(requireContext())
 
-        seasonsAdapter = SeasonsAdapter(glide, callback = { selectedSeason ->
+        seasonsAdapter = SeasonsAdapter(glide, callback = { selectedSeasonData ->
+            val selectedSeason = selectedSeasonData.season
+
             navigateToSeason(
                 selectedSeason.show_trakt_id,
                 selectedSeason.show_tmdb_id ?: 0,
-                selectedSeason.season_number ?: 0
+                selectedSeason.season_number,
+                selectedSeason.name
             )
         })
 
@@ -124,17 +129,16 @@ class ShowDetailsSeasonsFragment() : Fragment(), SwipeRefreshLayout.OnRefreshLis
         }
     }
 
-    private fun submitSeasons(seasons: List<TmSeason>) {
+    private fun submitSeasons(seasons: List<TmSeasonAndStats>) {
         seasonsAdapter.submitList(seasons.sortedBy {
-            it.season_number
+            it.season.season_number
         })
     }
 
-    private fun navigateToSeason(showTraktId: Int, showTmdbId: Int, seasonNumber: Int) {
+    private fun navigateToSeason(showTraktId: Int, showTmdbId: Int, seasonNumber: Int, title: String) {
         val intent = Intent(requireContext(), SeasonEpisodesActivity::class.java)
-        intent.putExtra(SeasonEpisodesRepository.SHOW_TRAKT_ID_KEY, showTraktId)
-        intent.putExtra(SeasonEpisodesRepository.SHOW_TMDB_ID_KEY, showTmdbId)
-        intent.putExtra(SeasonEpisodesRepository.SEASON_NUMBER_KEY, seasonNumber)
+        intent.putExtra(SeasonEpisodesActivity.SEASON_DATA_KEY, SeasonDataModel(
+            showTraktId, showTmdbId, seasonNumber, title))
 
         startActivity(intent)
     }

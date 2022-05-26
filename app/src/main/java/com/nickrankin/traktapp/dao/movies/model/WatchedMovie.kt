@@ -8,11 +8,11 @@ import org.threeten.bp.OffsetDateTime
 
 @Entity(tableName = "watched_movies")
 data class WatchedMovie(
-@PrimaryKey val id: Long,
-val trakt_id: Int,
-val tmdb_id: Int,
-val language: String?,
-val watched_at: OffsetDateTime?,
-val overview: String?,
-val runtime: Int?,
-val title: String?)
+    @PrimaryKey val id: Long,
+    val trakt_id: Int,
+    val tmdb_id: Int,
+    val language: String?,
+    val watched_at: OffsetDateTime?,
+    val overview: String?,
+    val runtime: Int?,
+    var title: String?)

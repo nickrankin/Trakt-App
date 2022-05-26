@@ -16,8 +16,12 @@
     </string-array>
 
     <string-array name="date_format_values">
-        <item>dd-MM-YYYY HH:mm</item>
-        <item>MM-dd-YYYY HH:mm</item>
+        <item>dd-MM-YYYY</item>
+        <item>MM-dd-YYYY</item>
+    </string-array>
+
+    <string-array name="time_format_values">
+        <item>HH:mm</item>
     </string-array>
 
     <string-array name="privacy_array">

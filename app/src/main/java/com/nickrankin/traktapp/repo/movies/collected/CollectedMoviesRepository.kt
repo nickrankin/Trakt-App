@@ -6,14 +6,15 @@ import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.movies.MoviesDatabase
 import com.nickrankin.traktapp.dao.movies.model.CollectedMovie
-import com.nickrankin.traktapp.dao.movies.model.TmMovie
+import com.nickrankin.traktapp.dao.stats.model.CollectedMoviesStats
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.networkBoundResource
+import com.nickrankin.traktapp.repo.stats.StatsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.trakt5.entities.*
 import com.uwetrottmann.trakt5.enums.Extended
+import com.uwetrottmann.trakt5.enums.SortBy
 import kotlinx.coroutines.flow.first
-import org.apache.commons.lang3.time.DateFormatUtils
 import org.threeten.bp.Instant
 import org.threeten.bp.LocalDate
 import org.threeten.bp.OffsetDateTime
@@ -22,9 +23,11 @@ import java.lang.RuntimeException
 import javax.inject.Inject
 
 private const val TAG = "CollectedMoviesReposito"
-class CollectedMoviesRepository @Inject constructor(private val traktApi: TraktApi, private val moviesDatabase: MoviesDatabase, private val sharedPreferences: SharedPreferences) {
+class CollectedMoviesRepository @Inject constructor(private val traktApi: TraktApi, private val moviesDatabase: MoviesDatabase, private val sharedPreferences: SharedPreferences, private val statsRepository: StatsRepository) {
     private val tmMovieDao = moviesDatabase.tmMovieDao()
     private val collectedMoviesDao = moviesDatabase.collectedMovieDao()
+
+    private val collectedMoviesStatsDao = moviesDatabase.collectedMoviesStatsDao()
 
     suspend fun getCollectedMovies(shouldRefresh: Boolean) = networkBoundResource(
         query = { collectedMoviesDao.getCollectedMovies() },
@@ -125,6 +128,16 @@ class CollectedMoviesRepository @Inject constructor(private val traktApi: TraktA
                         )
                     )
                 )
+
+                collectedMoviesStatsDao.insert(
+                    CollectedMoviesStats(
+                        movie.trakt_id,
+                        movie.tmdb_id,
+                        OffsetDateTime.now(),
+                        movie.title,
+                        null
+                    )
+                )
             }
 
             Resource.Success(response)
@@ -146,6 +159,7 @@ class CollectedMoviesRepository @Inject constructor(private val traktApi: TraktA
 
             moviesDatabase.withTransaction {
                 collectedMoviesDao.deleteMovieById(traktId)
+                collectedMoviesStatsDao.deleteCollectedMovieStatById(traktId)
             }
 
             Resource.Success(response)

@@ -25,26 +25,25 @@ class ShowCreditsHelper @Inject constructor(
         Log.d(TAG, "getCredits: Getting cast credits")
         val castPeople: MutableList<CastPersonWithData> = mutableListOf()
 
+            if (showTmdbId != null && showTmdbId != 0 && showTmdbId != -1) {
+                Log.d(TAG, "getShowCredits: Getting credits for TMDB id $showTmdbId")
+                // we get the cast data from TMDB
+                castPeople.addAll(getCastDataFromTmdbCredits(showTraktId, getCastMembersFromTmdb(showTmdbId)))
+            }
 
-        if (showTmdbId != null && showTmdbId != 0 && showTmdbId != -1) {
-            Log.d(TAG, "getShowCredits: Getting credits for TMDB id $showTmdbId")
-            // we get the cast data from TMDB
-            castPeople.addAll(getCastDataFromTmdbCredits(showTraktId, getCastMembersFromTmdb(showTmdbId)))
-        }
+            if(castPeople.isEmpty()) {
+                Log.d(TAG, "getShowCredits: No data from TMDB, fallback to Trakt")
+                // No data from TMDB, so fall back to trakt
+                castPeople.addAll(getCastDataFromTraktCredits(showTraktId, getCastMembersDataFromTrakt(showTraktId.toString()), false))
+            } else {
+                Log.d(TAG, "getShowCredits: Getting guest stars from Trakt")
+                // Only get the Guest Stars data from Trakt (TMDB API only provides Guest Star data from Season endpoints)
+                castPeople.addAll(getCastDataFromTraktCredits(showTraktId, getCastMembersDataFromTrakt(showTraktId.toString()), true))
+            }
 
-        if(castPeople.isEmpty()) {
-            Log.d(TAG, "getShowCredits: No data from TMDB, fallback to Trakt")
-            // No data from TMDB, so fall back to trakt
-            castPeople.addAll(getCastDataFromTraktCredits(showTraktId, getCastMembersDataFromTrakt(showTraktId.toString()), false))
-        } else {
-            Log.d(TAG, "getShowCredits: Getting guest stars from Trakt")
-            // Only get the Guest Stars data from Trakt (TMDB API only provides Guest Star data from Season endpoints)
-            castPeople.addAll(getCastDataFromTraktCredits(showTraktId, getCastMembersDataFromTrakt(showTraktId.toString()), true))
-        }
+            Log.d(TAG, "getShowCredits: Returning ${castPeople.size} cast members")
 
-        Log.d(TAG, "getShowCredits: Returning ${castPeople.size} cast members")
-
-        return castPeople
+            return castPeople
     }
 
     private suspend fun getCastMembersDataFromTrakt(showTraktId: String): TmCredits? {

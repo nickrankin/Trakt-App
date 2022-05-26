@@ -9,17 +9,24 @@ import com.nickrankin.traktapp.dao.movies.model.CollectedMovie
 import com.nickrankin.traktapp.dao.movies.model.TmMovie
 import com.nickrankin.traktapp.dao.movies.model.TmdbMovieTypeConverter
 import com.nickrankin.traktapp.dao.movies.model.WatchedMovie
-import com.nickrankin.traktapp.dao.ratings.RatedMoviesDao
-import com.nickrankin.traktapp.dao.ratings.model.RatedMovie
+import com.nickrankin.traktapp.dao.stats.CollectedMoviesStatsDao
+import com.nickrankin.traktapp.dao.stats.RatingsMoviesStatsDao
+import com.nickrankin.traktapp.dao.stats.WatchedMoviesStatsDao
+import com.nickrankin.traktapp.dao.stats.model.CollectedMoviesStats
+import com.nickrankin.traktapp.dao.stats.model.RatingsMoviesStats
+import com.nickrankin.traktapp.dao.stats.model.WatchedMoviesStats
 
 
-@Database(entities = [TmMovie::class, CollectedMovie::class, WatchedMovie::class, RatedMovie::class], version=1, exportSchema = false)
+@Database(entities = [TmMovie::class, CollectedMovie::class, WatchedMovie::class, WatchedMoviePageKey::class, WatchedMoviesStats::class, CollectedMoviesStats::class, RatingsMoviesStats::class], version=1, exportSchema = false)
 @TypeConverters(TmdbMovieTypeConverter::class)
 abstract class MoviesDatabase: RoomDatabase() {
     abstract fun tmMovieDao(): TmMovieDao
     abstract fun collectedMovieDao(): CollectedMoviesDao
     abstract fun watchedMoviesDao(): WatchedMoviesDao
-    abstract fun ratedMovieDao(): RatedMoviesDao
+    abstract fun watchedMoviePageKeyDao(): WatchedMoviePageKeyDao
+    abstract fun watchedMoviesStatsDao(): WatchedMoviesStatsDao
+    abstract fun collectedMoviesStatsDao(): CollectedMoviesStatsDao
+    abstract fun ratedMoviesStatsDao(): RatingsMoviesStatsDao
 
     companion object {
         @Volatile

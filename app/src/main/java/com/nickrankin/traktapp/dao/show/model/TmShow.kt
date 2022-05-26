@@ -33,4 +33,5 @@ data class TmShow(
     val backdrop_path: String?,
     val type: String?,
     val videos: Videos?,
-    var user_tracking: Boolean)
+    var user_tracking: Boolean,
+    val trakt_rating: Double)

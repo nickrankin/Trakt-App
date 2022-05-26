@@ -5,7 +5,10 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
+import com.nickrankin.traktapp.repo.stats.StatsRepository
+import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
@@ -17,10 +20,9 @@ private const val TAG = "ShowDetailsViewModel"
 @HiltViewModel
 class ShowDetailsViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
-    private val repository: ShowDetailsRepository
+    private val repository: ShowDetailsRepository,
+    private val statsRepository: StatsRepository
 ) : ViewModel() {
-
-    private var ratingsInitialRefresh = true
 
     private val refreshEventChannel = Channel<Boolean>()
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
@@ -28,43 +30,25 @@ class ShowDetailsViewModel @Inject constructor(
 
     val state = savedStateHandle
 
-    val traktId: Int = savedStateHandle.get(ShowDetailsRepository.SHOW_TRAKT_ID_KEY) ?: 0
+    val showDataModel: ShowDataModel? = savedStateHandle.get(ShowDetailsActivity.SHOW_DATA_KEY)
 
     val show = refreshEvent.flatMapLatest { shouldRefresh ->
-        repository.getShowSummary(traktId, shouldRefresh)
-    }
-
-    fun getAllUserRatings(shouldRefresh: Boolean) = viewModelScope.launch {
-
-        if(ratingsInitialRefresh || shouldRefresh) {
-
-            Log.d(TAG, "getAllUserRatings: Getting Trakt User Ratings")
-            val ratings = repository.getAllUserRatings(traktId)
-
-            if(ratings is Resource.Success) {
-                ratingsInitialRefresh = false
-
-                if(ratings.data != null) {
-                    savedStateHandle.set("trakt_ratings", ratings.data!!.rating)
-                }
-            } else {
-                Log.e(TAG, "Error getting Trakt Ratings ${ratings.error?.localizedMessage}: ", )
-            }
-        }
+        repository.getShowSummary(showDataModel?.traktId ?: 0, shouldRefresh)
     }
 
     fun onStart() {
-        getAllUserRatings(false)
-
         viewModelScope.launch {
             refreshEventChannel.send(false)
+            statsRepository.getWatchedSeasonStats(showDataModel?.traktId ?: 0, false)
         }
     }
 
     fun onRefresh() {
         viewModelScope.launch {
             refreshEventChannel.send(true)
-            getAllUserRatings(true)
+
+            statsRepository.getWatchedSeasonStats(showDataModel?.traktId ?: 0, true)
+
         }
     }
 }

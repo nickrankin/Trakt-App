@@ -4,10 +4,19 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nickrankin.traktapp.dao.lists.model.TraktList
+import com.nickrankin.traktapp.dao.show.model.TmShow
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.model.datamodel.ShowDataModel
+import com.nickrankin.traktapp.model.movies.MovieDetailsActionButtonsViewModel
+import com.nickrankin.traktapp.repo.lists.ListEntryRepository
+import com.nickrankin.traktapp.repo.lists.TraktListsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsActionButtonsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
+import com.nickrankin.traktapp.repo.stats.StatsRepository
+import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.uwetrottmann.trakt5.entities.SyncResponse
+import com.uwetrottmann.trakt5.enums.Type
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.map
@@ -20,73 +29,52 @@ private const val TAG = "ShowDetailsActionButton"
 @HiltViewModel
 class ShowDetailsActionButtonsViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
-    private val repository: ShowDetailsActionButtonsRepository
+    private val repository: ShowDetailsActionButtonsRepository,
+    private val statsRepository: StatsRepository,
+    private val listsRepository: TraktListsRepository,
+    private val listEntryRepository: ListEntryRepository
 ) : ViewModel() {
 
-    val traktId = savedStateHandle.get<Int>(ShowDetailsRepository.SHOW_TRAKT_ID_KEY)
-    val ratings = savedStateHandle.getLiveData<Int>(RATINGS_KEY)
+    private var showDataModel: ShowDataModel? = savedStateHandle.get<ShowDataModel>(
+        ShowDetailsActivity.SHOW_DATA_KEY)
+
 
     private val eventsChannel = Channel<Event>()
     val events = eventsChannel.receiveAsFlow()
 
-    init {
-        getRatings()
+    val listsWithEntries = listsRepository.listsWithEntries
+
+    fun getRatings(traktId: Int) = repository.getRatings(traktId)
+
+    fun addRating(tmShow: TmShow, newRating: Int) = viewModelScope.launch {
+        eventsChannel.send(Event.AddRatingEvent(repository.setRatings(tmShow, newRating, false), newRating))
     }
 
-    fun getRatings() {
-        viewModelScope.launch {
-            val result = repository.getRatings()
+    fun deleteRating(tmShow: TmShow) = viewModelScope.launch { eventsChannel.send(Event.DeleteRatingEvent(repository.setRatings(tmShow, -1, true))) }
 
-            if (result is Resource.Success) {
-                Log.d(TAG, "getRatings: Got ratings successfully from Trakt")
-                val currentShowRating =
-                    result.data?.find { it.show?.ids?.trakt ?: 0 == traktId ?: -1 }
+    fun addToCollection(tmShow: TmShow) = viewModelScope.launch { eventsChannel.send(Event.AddToCollectionEvent(repository.addToCollection(tmShow))) }
 
-                if (currentShowRating != null) {
-                    Log.d(TAG, "getRatings: Found rating for show $traktId")
-                    // This show is rated
-                    updateRatingDisplay(currentShowRating.rating?.value)
-                } else {
-                    Log.d(TAG, "getRatings: Show $traktId not rated yet")
-                }
-            } else if(result is Resource.Error) {
-                Log.e(TAG, "getRatings: Error getting ratings", )
-            }
-        }
-    }
-
-    fun updateRatingDisplay(newRating: Int?) {
-        ratings.value = newRating
-    }
-
-    fun addRating(newRating: Int) = viewModelScope.launch {
-        eventsChannel.send(Event.AddRatingEvent(repository.setRatings(traktId ?: -1, newRating, false), newRating))
-    }
-
-    fun deleteRating() = viewModelScope.launch { eventsChannel.send(Event.DeleteRatingEvent(repository.setRatings(traktId ?: -1, -1, true))) }
-
-
-
-    fun addToCollection() = viewModelScope.launch { eventsChannel.send(Event.AddToCollectionEvent(repository.addToCollection(traktId ?: -1))) }
-
-    val showsCollectedStatus = repository.getCollectedShowFlow(traktId ?: -1).map { collectedShow ->
+    val showsCollectedStatus = repository.getCollectedShowFlow(showDataModel?.traktId ?: -1).map { collectedShow ->
         collectedShow != null
     }
 
-    fun removeFromCollection() = viewModelScope.launch { eventsChannel.send(Event.RemoveFromCollectionEvent(repository.removeFromCollection(traktId ?: -1))) }
+    fun addListEntry(type: String, traktId: Int, traktList: TraktList) = viewModelScope.launch { eventsChannel.send(
+       Event.AddListEntryEvent(listEntryRepository.addListEntry(type, traktId, traktList))) }
+    fun removeListEntry(listTraktId: Int, listEntryTraktId: Int, type: Type) = viewModelScope.launch { eventsChannel.send(
+        Event.RemoveListEntryEvent(listEntryRepository.removeEntry(listTraktId, listEntryTraktId, type))) }
+
+    fun removeFromCollection() = viewModelScope.launch { eventsChannel.send(Event.RemoveFromCollectionEvent(repository.removeFromCollection(showDataModel?.traktId ?: -1))) }
 
 
     fun onStart() {
         viewModelScope.launch {
-            repository.refreshCollectedStatus(false)
+            eventsChannel.send(Event.RefreshShowStatsEvent(statsRepository.refreshShowStats(false)))
         }
     }
 
     fun onRefresh() {
-        Log.d(TAG, "onRefresh: Refreshing ActionButtons Data")
-        getRatings()
         viewModelScope.launch {
-            repository.refreshCollectedStatus(true)
+            eventsChannel.send(Event.RefreshShowStatsEvent(statsRepository.refreshShowStats(true)))
         }
     }
 
@@ -95,9 +83,8 @@ class ShowDetailsActionButtonsViewModel @Inject constructor(
         data class RemoveFromCollectionEvent(val syncResponse: Resource<SyncResponse>): Event()
         data class AddRatingEvent(val syncResponse: Resource<SyncResponse>, val newRating: Int): Event()
         data class DeleteRatingEvent(val syncResponse: Resource<SyncResponse>): Event()
-    }
-
-    companion object {
-        const val RATINGS_KEY = "ratings_key"
+        data class RefreshShowStatsEvent(val refreshShowStatsResponse: Resource<Boolean>): Event()
+        data class AddListEntryEvent(val addListEntryResponse: Resource<SyncResponse>): Event()
+        data class RemoveListEntryEvent(val removeListEntryResponse: Resource<SyncResponse?>): Event()
     }
 }

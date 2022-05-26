@@ -4,13 +4,14 @@ import androidx.paging.PagingSource
 import androidx.room.*
 import com.nickrankin.traktapp.dao.movies.model.CollectedMovie
 import com.nickrankin.traktapp.dao.movies.model.WatchedMovie
+import com.nickrankin.traktapp.dao.movies.model.WatchedMovieAndStats
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface WatchedMoviesDao {
     @Transaction
     @Query("SELECT * FROM watched_movies ORDER BY watched_at DESC")
-    fun getWatchedMovies(): PagingSource<Int, WatchedMovie>
+    fun getWatchedMovies(): PagingSource<Int, WatchedMovieAndStats>
 
     @Transaction
     @Query("SELECT * FROM watched_movies ORDER BY watched_at DESC LIMIT 5")
@@ -23,6 +24,9 @@ interface WatchedMoviesDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(watchedMovies: List<WatchedMovie>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insert(watchedMovie: WatchedMovie)
 
     @Update
     fun update(watchedMovie: WatchedMovie)

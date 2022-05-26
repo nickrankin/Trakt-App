@@ -18,6 +18,7 @@ data class TmEpisode(
     val production_code: String?,
     val name: String?,
     val overview: String?,
+    val runtime: Int?,
     val air_date: Date?,
     val credits: Credits?,
     val crew: List<CrewMember>,
@@ -26,8 +27,8 @@ data class TmEpisode(
     val externalIds: TvEpisodeExternalIds?,
     val still_path: String?,
     val videos: Videos?,
-    var watched: Boolean?,
-    val source: String
+    val source: String,
+    val trakt_rating: Double
 ) {
     companion object {
         const val SOURCE_TRAKT = "trakt"

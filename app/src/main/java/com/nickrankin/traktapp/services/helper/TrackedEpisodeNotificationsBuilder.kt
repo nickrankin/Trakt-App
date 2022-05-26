@@ -13,6 +13,7 @@ import androidx.preference.PreferenceManager
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.dao.show.model.TrackedEpisode
 import com.nickrankin.traktapp.helper.convertToHumanReadableTime
+import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
 import com.nickrankin.traktapp.services.CancelShowTrackingNotificationReceiver
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
@@ -104,10 +105,16 @@ class TrackedEpisodeNotificationsBuilder(private val context: Context) {
 
     private fun getPendingIntent(trackedEpisode: TrackedEpisode): PendingIntent {
         val intent = Intent(context, EpisodeDetailsActivity::class.java)
-        intent.putExtra(EpisodeDetailsRepository.SHOW_TRAKT_ID_KEY, trackedEpisode.show_trakt_id)
-        intent.putExtra(EpisodeDetailsRepository.SHOW_TMDB_ID_KEY, trackedEpisode.show_tmdb_id)
-        intent.putExtra(EpisodeDetailsRepository.SEASON_NUMBER_KEY, trackedEpisode.season)
-        intent.putExtra(EpisodeDetailsRepository.EPISODE_NUMBER_KEY, trackedEpisode.episode)
+
+        intent.putExtra(EpisodeDetailsActivity.EPISODE_DATA_KEY,
+            EpisodeDataModel(
+                trackedEpisode.show_trakt_id,
+                trackedEpisode.show_tmdb_id,
+                trackedEpisode.season,
+                trackedEpisode.episode,
+                trackedEpisode.show_title
+            )
+        )
 
         // Extra params to handle Notification dismissal in EpisodeDetailsActivity
         intent.putExtra(FROM_NOTIFICATION_TAP, true)

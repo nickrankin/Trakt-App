@@ -9,9 +9,10 @@ import androidx.paging.RemoteMediator
 import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.calendars.model.ShowCalendarEntry
+import com.nickrankin.traktapp.dao.movies.MoviesDatabase
 import com.nickrankin.traktapp.dao.movies.WatchedMoviePageKey
-import com.nickrankin.traktapp.dao.movies.WatchedMoviesMediatorDatabase
 import com.nickrankin.traktapp.dao.movies.model.WatchedMovie
+import com.nickrankin.traktapp.dao.movies.model.WatchedMovieAndStats
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.show.WatchedShowsMediatorDatabase
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
@@ -36,27 +37,29 @@ private const val TAG = "WatchedEpisodesRemoteMe"
 class WatchedMoviesRemoteMediator(
     private val traktApi: TraktApi,
     private val shouldRefresh: Boolean,
-    private val watchedMoviesMediatorDatabase: WatchedMoviesMediatorDatabase,
+    private val moviesDatabase: MoviesDatabase,
     private val sharedPreferences: SharedPreferences
-) : RemoteMediator<Int, WatchedMovie>() {
-    val watchedMoviesDao = watchedMoviesMediatorDatabase.watchedMoviesDao()
-    private val remoteKeyDao = watchedMoviesMediatorDatabase.watchedMoviePageKeyDao()
+) : RemoteMediator<Int, WatchedMovieAndStats>() {
+    val watchedMoviesDao = moviesDatabase.watchedMoviesDao()
+    private val remoteKeyDao = moviesDatabase.watchedMoviePageKeyDao()
     override suspend fun initialize(): InitializeAction {
         return when {
             shouldRefresh -> {
-                Log.d(TAG, "initialize: Refresh forcing")
+                Log.d(TAG, "initialize: Refresh invoked by user")
                 InitializeAction.LAUNCH_INITIAL_REFRESH
             }
             else -> {
-                Log.d(TAG, "initialize: Initialize first refresh")
-
                 return if(shouldRefreshContents(sharedPreferences.getString(
-                        WATCHED_MOVIES_LAST_REFRESHED_KEY, "") ?: "", REFRESH_INTERVAL) || sharedPreferences.getBoolean(
-                        WATCHED_MOVIES_FORCE_REFRESH_KEY, false)) {
-
+                        WATCHED_MOVIES_LAST_REFRESHED_KEY, "") ?: "", REFRESH_INTERVAL)) {
                     Log.d(TAG, "initialize: Performing scheduled refresh")
                     InitializeAction.LAUNCH_INITIAL_REFRESH
-                } else {
+                } else if(sharedPreferences.getBoolean(
+                        WATCHED_MOVIES_FORCE_REFRESH_KEY, false)) {
+                    Log.d(TAG, "initialize: Performing Forced Refresh")
+                    InitializeAction.LAUNCH_INITIAL_REFRESH
+
+                }
+                else {
                     Log.d(TAG, "initialize: Skipping refresh, load from cache")
                     InitializeAction.SKIP_INITIAL_REFRESH
                 }
@@ -64,9 +67,11 @@ class WatchedMoviesRemoteMediator(
         }
     }
 
+
+
     override suspend fun load(
         loadType: LoadType,
-        state: PagingState<Int, WatchedMovie>
+        state: PagingState<Int, WatchedMovieAndStats>
     ): MediatorResult {
         try {
             val page = when (loadType) {
@@ -100,11 +105,9 @@ class WatchedMoviesRemoteMediator(
             
             if(loadType == LoadType.REFRESH) {
 //                watchedMoviesMediatorDatabase.withTransaction {
-//                    remoteKeyDao.deleteAll()
 //                    watchedMoviesDao.deleteAllMovies()
 //                }
-
-                // Save last refresh date
+                // Save last refresh date and reset the FORCED refresh flag
                 sharedPreferences.edit()
                     .putString(WATCHED_MOVIES_LAST_REFRESHED_KEY, OffsetDateTime.now().toString())
                     .putBoolean(WATCHED_MOVIES_FORCE_REFRESH_KEY, false)
@@ -118,8 +121,8 @@ class WatchedMoviesRemoteMediator(
                     page,
                     15,
                     Extended.FULL,
-                    OffsetDateTime.now().minusYears(99),
-                    OffsetDateTime.now()
+                    null,
+                    null
                 )
             )
 
@@ -132,7 +135,7 @@ class WatchedMoviesRemoteMediator(
                 WatchedMoviePageKey(it.id, prevKey, nextKey)
             }
 
-            watchedMoviesMediatorDatabase.withTransaction {
+            moviesDatabase.withTransaction {
                 remoteKeyDao.insert(keys)
                 watchedMoviesDao.insert(data)
             }
@@ -154,36 +157,36 @@ class WatchedMoviesRemoteMediator(
     }
 
     private suspend fun getRemoteKeyClosestToCurrentPosition(
-        state: PagingState<Int, WatchedMovie>
+        state: PagingState<Int, WatchedMovieAndStats>
     ): WatchedMoviePageKey? {
         // The paging library is trying to load data after the anchor position
         // Get the item closest to the anchor position
         return state.anchorPosition?.let { position ->
-            state.closestItemToPosition(position)?.id?.let { id ->
+            state.closestItemToPosition(position)?.watchedMovie?.id?.let { id ->
                 remoteKeyDao.remoteKeyByPage(id)
             }
         }
     }
 
 
-    private suspend fun getRemoteKeyForFirstItem(state: PagingState<Int, WatchedMovie>): WatchedMoviePageKey? {
+    private suspend fun getRemoteKeyForFirstItem(state: PagingState<Int, WatchedMovieAndStats>): WatchedMoviePageKey? {
         // Get the first page that was retrieved, that contained items.
         // From that first page, get the first item
         return state.pages.firstOrNull { it.data.isNotEmpty() }?.data?.firstOrNull()
             ?.let { movie ->
                 // Get the remote keys of the first items retrieved
-                remoteKeyDao.remoteKeyByPage(movie.id)
+                remoteKeyDao.remoteKeyByPage(movie.watchedMovie.id)
             }
     }
 
 
-    private suspend fun getRemoteKeyForLastItem(state: PagingState<Int, WatchedMovie>): WatchedMoviePageKey? {
+    private suspend fun getRemoteKeyForLastItem(state: PagingState<Int, WatchedMovieAndStats>): WatchedMoviePageKey? {
         // Get the last page that was retrieved, that contained items.
         // From that last page, get the last item
         return state.pages.lastOrNull() { it.data.isNotEmpty() }?.data?.lastOrNull()
             ?.let { movie ->
                 // Get the remote keys of the last item retrieved
-                remoteKeyDao.remoteKeyByPage(movie.id)
+                remoteKeyDao.remoteKeyByPage(movie.watchedMovie.id)
             }
     }
 

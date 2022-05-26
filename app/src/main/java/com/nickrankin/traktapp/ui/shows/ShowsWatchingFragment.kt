@@ -34,6 +34,8 @@ import com.nickrankin.traktapp.adapter.shows.WatchedEpisodesPagingAdapter
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
 import com.nickrankin.traktapp.databinding.FragmentWatchingBinding
 import com.nickrankin.traktapp.helper.*
+import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
+import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.shows.WatchedEpisodesViewModel
 import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
@@ -120,8 +122,6 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
     private fun collectEpisodes() {
         lifecycleScope.launchWhenStarted {
             viewModel.watchedEpisodes.collectLatest { latestData ->
-
-
                 progressBar.visibility = View.GONE
 
                 if(swipeLayout.isRefreshing) {
@@ -167,7 +167,10 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
     private fun initRecycler() {
         recyclerView = bindings.showwatchingfragmentRecyclerview
         layoutManager = LinearLayoutManager(context)
-        adapter = WatchedEpisodesPagingAdapter(sharedPreferences, tmdbImageLoader, callback = {selectedEpisode, action ->
+        adapter = WatchedEpisodesPagingAdapter(sharedPreferences, tmdbImageLoader, callback = {selectedEpisodeAndStats, action ->
+
+            val selectedEpisode = selectedEpisodeAndStats?.watchedEpisode
+
             when(action) {
                 WatchedEpisodesPagingAdapter.ACTION_NAVIGATE_EPISODE -> {
                     navigateToEpisode(selectedEpisode?.show_trakt_id ?: 0,selectedEpisode?.show_tmdb_id, selectedEpisode?.episode_season ?: 0, selectedEpisode?.episode_number ?: 0, selectedEpisode?.language ?: "en")
@@ -175,7 +178,7 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
                 }
 
                 WatchedEpisodesPagingAdapter.ACTION_NAVIGATE_SHOW -> {
-                    navigateToShow(selectedEpisode?.show_trakt_id ?: 0, selectedEpisode?.show_tmdb_id ?: 0, selectedEpisode?.show_title, selectedEpisode?.language)
+                    navigateToShow(selectedEpisode?.show_trakt_id ?: 0, selectedEpisode?.show_tmdb_id, selectedEpisode?.show_title)
                 }
 
                 WatchedEpisodesPagingAdapter.ACTION_REMOVE_HISTORY -> {
@@ -211,21 +214,28 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
 
     }
 
-    override fun navigateToShow(traktId: Int, tmdbId: Int, showTitle: String?, language: String?) {
-        val intent = Intent(context, ShowDetailsActivity::class.java)
-        intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
-
+    override fun navigateToShow(traktId: Int, tmdbId: Int?, title: String?) {
+        val intent = Intent(requireActivity(), ShowDetailsActivity::class.java)
+        intent.putExtra(ShowDetailsActivity.SHOW_DATA_KEY,
+            ShowDataModel(
+                traktId, tmdbId, title
+            )
+        )
         startActivity(intent)
     }
 
-
     override fun navigateToEpisode(showTraktId: Int, showTmdbId: Int?, seasonNumber: Int, episodeNumber: Int, language: String?) {
         val intent = Intent(context, EpisodeDetailsActivity::class.java)
-        intent.putExtra(EpisodeDetailsRepository.SHOW_TRAKT_ID_KEY, showTraktId)
-        intent.putExtra(EpisodeDetailsRepository.SHOW_TMDB_ID_KEY, showTmdbId)
-        intent.putExtra(EpisodeDetailsRepository.SEASON_NUMBER_KEY, seasonNumber)
-        intent.putExtra(EpisodeDetailsRepository.EPISODE_NUMBER_KEY, episodeNumber)
-        intent.putExtra(EpisodeDetailsRepository.LANGUAGE_KEY, language)
+
+        intent.putExtra(EpisodeDetailsActivity.EPISODE_DATA_KEY,
+            EpisodeDataModel(
+                showTraktId,
+                showTmdbId,
+                seasonNumber,
+                episodeNumber,
+                language
+            )
+        )
 
         // We cannot guarantee Watched Episode data is up to date at this point so force refresh (user could have watched more of this show in meantime)
         intent.putExtra(EpisodeDetailsRepository.SHOULD_REFRESH_WATCHED_KEY, true)

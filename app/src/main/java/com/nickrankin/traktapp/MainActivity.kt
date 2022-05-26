@@ -15,26 +15,28 @@ import androidx.appcompat.widget.Toolbar
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexWrap
 import com.google.android.flexbox.FlexboxLayoutManager
-import com.google.android.flexbox.JustifyContent
 import com.google.android.material.navigation.NavigationView
 import com.nickrankin.traktapp.adapter.home.LastWatchedHistoryAdapter
 import com.nickrankin.traktapp.adapter.home.UpcomingEpisodesAdapter
 import com.nickrankin.traktapp.api.services.trakt.model.stats.UserStats
+import com.nickrankin.traktapp.dao.stats.model.WatchedEpisodeStats
+import com.nickrankin.traktapp.dao.stats.model.WatchedMoviesStats
 import com.nickrankin.traktapp.databinding.ActivityMainBinding
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.helper.calculateRuntimeWithDays
 import com.nickrankin.traktapp.model.MainActivityViewModel
-import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
-import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
+import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
+import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.ui.movies.MoviesMainActivity
 import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
-import com.nickrankin.traktapp.ui.search.ShowSearchResultsActivity
+import com.nickrankin.traktapp.ui.search.SearchResultsActivity
 import com.nickrankin.traktapp.ui.settings.SettingsActivity
 import com.nickrankin.traktapp.ui.shows.ShowsMainActivity
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
@@ -43,8 +45,9 @@ import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
 
 private const val TAG = "MainActivity"
+
 @AndroidEntryPoint
-class MainActivity: BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
+class MainActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
 
     private lateinit var bindings: ActivityMainBinding
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
@@ -66,8 +69,8 @@ class MainActivity: BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
     private lateinit var lastWatchedEpisodesRecycler: RecyclerView
 
     private lateinit var upcomingEpisodesAdapter: UpcomingEpisodesAdapter
-    private lateinit var lastWatchedMoviesAdapter: LastWatchedHistoryAdapter
-    private lateinit var lastWatchedEpisodesAdapter: LastWatchedHistoryAdapter
+    private lateinit var lastWatchedMoviesAdapter: LastWatchedHistoryAdapter<WatchedMoviesStats>
+    private lateinit var lastWatchedEpisodesAdapter: LastWatchedHistoryAdapter<WatchedEpisodeStats>
 
 
 //    @Inject
@@ -100,51 +103,58 @@ class MainActivity: BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
         initLastWatchedShowsRecyclerView()
 
         getUserStats()
+
         getUpcomingEpisodes()
         getLastWatchedMovies()
         getLastWatchedEpisodes()
+        getEvents()
     }
 
     private fun getUserStats() {
-        lifecycleScope.launchWhenStarted {
-            viewModel.userStats.collectLatest { userStatsResource ->
-                when(userStatsResource) {
-                    is Resource.Loading -> {
-                        Log.d(TAG, "getUserStats: Loading UserStats")
-                    }
-                    is Resource.Success -> {
-                        bindUserStats(userStatsResource.data)
-                    }
-                    is Resource.Error -> {
-                        Log.e(TAG, "getUserStats: Error getting User Stats ${userStatsResource.error?.message}", )
-                        userStatsResource.error?.printStackTrace()
-                    }
-
-                }
-            }
-        }
+//        lifecycleScope.launchWhenStarted {
+//            viewModel.userStats.collectLatest { userStatsResource ->
+//                when (userStatsResource) {
+//                    is Resource.Loading -> {
+//                        Log.d(TAG, "getUserStats: Loading UserStats")
+//                    }
+//                    is Resource.Success -> {
+//                        bindUserStats(userStatsResource.data)
+//                    }
+//                    is Resource.Error -> {
+//                        Log.e(
+//                            TAG,
+//                            "getUserStats: Error getting User Stats ${userStatsResource.error?.message}",
+//                        )
+//                        userStatsResource.error?.printStackTrace()
+//                    }
+//                }
+//            }
+//        }
     }
 
     private fun getUpcomingEpisodes() {
         lifecycleScope.launchWhenStarted {
             viewModel.upcomingShows.collectLatest { upcomingEpisodes ->
-                when(upcomingEpisodes) {
+                when (upcomingEpisodes) {
                     is Resource.Loading -> {
                         Log.d(TAG, "getUpcomingEpisodes: Loading Upcoming episodes")
                         bindings.homeNextAiringProgressbar.visibility = View.VISIBLE
                     }
                     is Resource.Success -> {
-                        if(swipeRefreshLayout.isRefreshing) {
+                        if (swipeRefreshLayout.isRefreshing) {
                             swipeRefreshLayout.isRefreshing = false
                         }
 
-                        Log.d(TAG, "getUpcomingEpisodes: Got ${upcomingEpisodes.data?.size} episodes")
+                        Log.d(
+                            TAG,
+                            "getUpcomingEpisodes: Got ${upcomingEpisodes.data?.size} episodes"
+                        )
                         bindings.homeNextAiringProgressbar.visibility = View.GONE
 
                         upcomingEpisodesAdapter.submitList(upcomingEpisodes.data?.sortedBy { it.first_aired })
                     }
                     is Resource.Error -> {
-                        if(swipeRefreshLayout.isRefreshing) {
+                        if (swipeRefreshLayout.isRefreshing) {
                             swipeRefreshLayout.isRefreshing = false
                         }
 
@@ -158,15 +168,13 @@ class MainActivity: BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
     private fun getLastWatchedMovies() {
         lifecycleScope.launchWhenStarted {
             viewModel.watchedMovies.collectLatest {
-                if(it is Resource.Success) {
-                    if(swipeRefreshLayout.isRefreshing) {
+                    if (swipeRefreshLayout.isRefreshing) {
                         swipeRefreshLayout.isRefreshing = false
                     }
 
                     bindings.homeWatchedMoviesProgressbar.visibility = View.GONE
-                    Log.e(TAG, "getLastWatchedMovies: ${it.data?.size}", )
-                    lastWatchedMoviesAdapter.submitList(it.data)
-                }
+                    Log.e(TAG, "getLastWatchedMovies: ${it.size}")
+                    lastWatchedMoviesAdapter.submitList(it)
             }
         }
     }
@@ -174,23 +182,53 @@ class MainActivity: BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
     private fun getLastWatchedEpisodes() {
         lifecycleScope.launchWhenStarted {
             viewModel.watchedEpisodes.collectLatest {
-                if(it is Resource.Success) {
-                    if(swipeRefreshLayout.isRefreshing) {
+                    if (swipeRefreshLayout.isRefreshing) {
                         swipeRefreshLayout.isRefreshing = false
                     }
 
                     bindings.homeWatchedShowsProgressbar.visibility = View.GONE
 
-                    Log.e(TAG, "getLastWatchedEpisodes: ${it.data?.size}", )
+                    Log.e(TAG, "getLastWatchedEpisodes: ${it.size}")
 
-                    lastWatchedEpisodesAdapter.submitList(it.data)
+                    lastWatchedEpisodesAdapter.submitList(it)
+            }
+        }
+    }
+
+    private fun getEvents() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.events.collectLatest { event ->
+                when(event) {
+                    is MainActivityViewModel.Event.RefreshMovieStatsEvent -> {
+                        when(event.refreshStatus) {
+                            is Resource.Success -> {
+                                Log.d(TAG, "getEvents: Refreshed Movies successfully")
+                            }
+                            is Resource.Error -> {
+                                Log.e(TAG, "getEvents: Error refreshing movies", )
+                                event.refreshStatus.error?.printStackTrace()
+                            }
+                        }
+                    }
+
+                    is MainActivityViewModel.Event.RefreshShowStatsEvent -> {
+                        when(event.refreshStatus) {
+                            is Resource.Success -> {
+                                Log.d(TAG, "getEvents: Refreshed Shows successfully")
+                            }
+                            is Resource.Error -> {
+                                Log.e(TAG, "getEvents: Error refreshing Shows", )
+                                event.refreshStatus.error?.printStackTrace()
+                            }
+                        }
+                    }
                 }
             }
         }
     }
 
     private fun bindUserStats(userStats: UserStats?) {
-        if(userStats == null) {
+        if (userStats == null) {
             return
         }
         bindings.apply {
@@ -217,11 +255,20 @@ class MainActivity: BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
         lm.flexDirection = FlexDirection.ROW
         lm.flexWrap = FlexWrap.NOWRAP
 
-        upcomingEpisodesAdapter = UpcomingEpisodesAdapter(sharedPreferences, tmdbImageLoader) { historyEntry, action, position ->
+        upcomingEpisodesAdapter = UpcomingEpisodesAdapter(
+            sharedPreferences,
+            tmdbImageLoader
+        ) { historyEntry, action, position ->
             val intent = Intent(this, EpisodeDetailsActivity::class.java)
-            intent.putExtra(EpisodeDetailsRepository.SHOW_TRAKT_ID_KEY, historyEntry.show_trakt_id)
-            intent.putExtra(EpisodeDetailsRepository.SEASON_NUMBER_KEY, historyEntry.episode_season)
-            intent.putExtra(EpisodeDetailsRepository.EPISODE_NUMBER_KEY, historyEntry.episode_number)
+            intent.putExtra(EpisodeDetailsActivity.EPISODE_DATA_KEY,
+                EpisodeDataModel(
+                    historyEntry.show_trakt_id,
+                    historyEntry.show_tmdb_id,
+                    historyEntry.episode_season,
+                    historyEntry.episode_number,
+                    historyEntry.show_title
+                )
+            )
 
             startActivity(intent)
         }
@@ -239,11 +286,30 @@ class MainActivity: BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
         lm.flexDirection = FlexDirection.ROW
         lm.flexWrap = FlexWrap.NOWRAP
 
-        lastWatchedMoviesAdapter = LastWatchedHistoryAdapter(sharedPreferences, tmdbImageLoader) { historyEntry, action, position ->
+        val comparator = object : DiffUtil.ItemCallback<WatchedMoviesStats>() {
+            override fun areItemsTheSame(oldItem: WatchedMoviesStats, newItem: WatchedMoviesStats): Boolean {
+                return oldItem == oldItem
+            }
+
+            override fun areContentsTheSame(oldItem: WatchedMoviesStats, newItem: WatchedMoviesStats): Boolean {
+                return oldItem.trakt_id == newItem.trakt_id
+            }
+        }
+
+        lastWatchedMoviesAdapter = LastWatchedHistoryAdapter(
+            comparator,
+            sharedPreferences,
+            tmdbImageLoader
+        ) { watchedMovie, action, position ->
             val intent = Intent(this, MovieDetailsActivity::class.java)
 
-            intent.putExtra(MovieDetailsRepository.MOVIE_TITLE_KEY, historyEntry.movie?.title)
-            intent.putExtra(MovieDetailsRepository.MOVIE_TRAKT_ID_KEY, historyEntry.movie?.ids?.trakt ?: 0)
+            intent.putExtra(MovieDetailsActivity.MOVIE_DATA_KEY,
+                MovieDataModel(
+                    watchedMovie.trakt_id,
+                    watchedMovie.tmdb_id,
+                    watchedMovie.title
+                )
+            )
 
             startActivity(intent)
         }
@@ -261,11 +327,37 @@ class MainActivity: BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
         lm.flexDirection = FlexDirection.ROW
         lm.flexWrap = FlexWrap.NOWRAP
 
-        lastWatchedEpisodesAdapter = LastWatchedHistoryAdapter(sharedPreferences, tmdbImageLoader) { historyEntry, action, position ->
+        val comparator = object : DiffUtil.ItemCallback<WatchedEpisodeStats>() {
+            override fun areItemsTheSame(
+                oldItem: WatchedEpisodeStats,
+                newItem: WatchedEpisodeStats
+            ): Boolean {
+                return oldItem == oldItem
+            }
+
+            override fun areContentsTheSame(
+                oldItem: WatchedEpisodeStats,
+                newItem: WatchedEpisodeStats
+            ): Boolean {
+                return oldItem.id == newItem.id
+            }
+        }
+
+        lastWatchedEpisodesAdapter = LastWatchedHistoryAdapter(
+            comparator,
+            sharedPreferences,
+            tmdbImageLoader
+        ) { watchedEpisode, action, position ->
             val intent = Intent(this, EpisodeDetailsActivity::class.java)
-            intent.putExtra(EpisodeDetailsRepository.SHOW_TRAKT_ID_KEY, historyEntry.show?.ids?.trakt ?: 0)
-            intent.putExtra(EpisodeDetailsRepository.SEASON_NUMBER_KEY, historyEntry.episode?.season)
-            intent.putExtra(EpisodeDetailsRepository.EPISODE_NUMBER_KEY, historyEntry.episode?.number)
+
+            intent.putExtra(EpisodeDetailsActivity.EPISODE_DATA_KEY,
+                EpisodeDataModel(
+                    watchedEpisode.show_trakt_id,
+                    watchedEpisode.show_tmdb_id,
+                    watchedEpisode.season,
+                    watchedEpisode.episode,
+                    watchedEpisode.show_title
+                ))
 
             startActivity(intent)
         }
@@ -283,35 +375,26 @@ class MainActivity: BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
         }
 
         bindings.homeWatchedMoviesAllBtn.setOnClickListener {
-                val intent = Intent(this, MoviesMainActivity::class.java)
-                intent.putExtra(MoviesMainActivity.MOVIE_INITIAL_TAB, MoviesMainActivity.TAG_WATCHED_MOVIES)
+            val intent = Intent(this, MoviesMainActivity::class.java)
+            intent.putExtra(
+                MoviesMainActivity.MOVIE_INITIAL_TAB,
+                MoviesMainActivity.TAG_WATCHED_MOVIES
+            )
 
             startActivity(intent)
 
         }
         bindings.homeWatchedShowsAllBtn.setOnClickListener {
             val intent = Intent(this, ShowsMainActivity::class.java)
-            intent.putExtra(ShowsMainActivity.SHOW_CURRENT_FRAGMENT_TAG, ShowsMainActivity.WATCHED_SHOWS_TAG)
+            intent.putExtra(
+                ShowsMainActivity.SHOW_CURRENT_FRAGMENT_TAG,
+                ShowsMainActivity.WATCHED_SHOWS_TAG
+            )
 
             startActivity(intent)
 
         }
 
-    }
-
-
-
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.main_menu, menu)
-
-        // Get the SearchView and set the searchable configuration
-        val searchManager = getSystemService(SEARCH_SERVICE) as SearchManager
-        (menu?.findItem(R.id.mainmenu_search)?.actionView as SearchView).apply {
-            startSearch(this)
-        }
-
-
-        return true
     }
 
     private fun setupDrawerLayout() {
@@ -329,28 +412,8 @@ class MainActivity: BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
         navView.setNavigationItemSelectedListener(this)
     }
 
-    private fun startSearch(searchView: SearchView) {
-        val intent = Intent(this, ShowSearchResultsActivity::class.java)
-
-        searchView.setOnQueryTextListener(object: SearchView.OnQueryTextListener {
-
-            override fun onQueryTextChange(p0: String?): Boolean {
-                return true
-            }
-
-            override fun onQueryTextSubmit(query: String?): Boolean {
-
-                intent.putExtra(SearchManager.QUERY, query)
-
-                startActivity(intent)
-
-                return false
-            }
-        })
-    }
-
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when(item.itemId) {
+        when (item.itemId) {
             R.id.mainmenu_settings -> {
                 val intent = Intent(this, SettingsActivity::class.java)
                 startActivity(intent)

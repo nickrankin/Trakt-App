@@ -20,6 +20,9 @@ import com.nickrankin.traktapp.adapter.lists.ListEntryAdapter
 import com.nickrankin.traktapp.databinding.ActivityListItemsBinding
 import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
+import com.nickrankin.traktapp.model.datamodel.MovieDataModel
+import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.lists.ListEntryViewModel
 import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
 import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
@@ -152,13 +155,17 @@ class ListItemsActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
         recyclerView = bindings.traktlistsactivityRecyclerview
         val lm = LinearLayoutManager(this)
 
-        listEntryAdapter = ListEntryAdapter(glide, tmdbImageLoader, sharedPreferences) { traktId, action, type, episodeTraktId, season, episode ->
+        listEntryAdapter = ListEntryAdapter(glide, tmdbImageLoader, sharedPreferences) { traktId, action, type,  selectedItem ->
             when(type) {
                 Type.MOVIE -> {
                     when(action) {
                         ListEntryAdapter.ACTION_VIEW -> {
                             val movieIntent = Intent(this, MovieDetailsActivity::class.java)
-                            movieIntent.putExtra(MovieDetailsRepository.MOVIE_TRAKT_ID_KEY, traktId)
+                            movieIntent.putExtra(MovieDetailsActivity.MOVIE_DATA_KEY, MovieDataModel(
+                                traktId,
+                                selectedItem.movie?.tmdb_id,
+                                selectedItem.movie?.title
+                            ))
 
                             startActivity(movieIntent)
                         }
@@ -172,7 +179,12 @@ class ListItemsActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
                     when(action) {
                         ListEntryAdapter.ACTION_VIEW -> {
                             val showIntent = Intent(this, ShowDetailsActivity::class.java)
-                            showIntent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
+                            showIntent.putExtra(ShowDetailsActivity.SHOW_DATA_KEY,
+                            ShowDataModel(
+                                traktId,
+                                selectedItem.show?.tmdb_id,
+                                selectedItem.show?.title
+                            ))
 
                             startActivity(showIntent)
                         }
@@ -185,20 +197,24 @@ class ListItemsActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
                     when(action) {
                         ListEntryAdapter.ACTION_VIEW -> {
                             val episodeIntent = Intent(this, EpisodeDetailsActivity::class.java)
-                            episodeIntent.putExtra(EpisodeDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
-                            episodeIntent.putExtra(EpisodeDetailsRepository.SEASON_NUMBER_KEY, season)
-                            episodeIntent.putExtra(EpisodeDetailsRepository.EPISODE_NUMBER_KEY, episode)
+                            episodeIntent.putExtra(EpisodeDetailsActivity.EPISODE_DATA_KEY,
+                            EpisodeDataModel(
+                                selectedItem.episodeShow?.trakt_id ?: 0,
+                                selectedItem.episodeShow?.tmdb_id,
+                                selectedItem.episode?.season ?: 0,
+                                selectedItem.episode?.episode ?: 0,
+                                selectedItem.show?.title
+                            ))
 
                             startActivity(episodeIntent)
                         }
                         ListEntryAdapter.ACTION_REMOVE -> {
-                            removeListItemEntry(episodeTraktId!!, Type.EPISODE)
+                            removeListItemEntry(selectedItem.episode?.trakt_id ?: 0, Type.EPISODE)
                         }
                     }
 
                 }
             }
-
         }
 
         recyclerView.layoutManager = lm

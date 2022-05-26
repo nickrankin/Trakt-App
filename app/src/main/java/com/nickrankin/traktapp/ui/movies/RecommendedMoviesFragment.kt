@@ -31,6 +31,7 @@ import com.nickrankin.traktapp.helper.ItemDecorator
 import com.nickrankin.traktapp.helper.OnTitleChangeListener
 import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.movies.RecommendedMoviesViewModel
 import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
 import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
@@ -209,8 +210,13 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
         }
 
         val intent = Intent(requireContext(), MovieDetailsActivity::class.java)
-        intent.putExtra(MovieDetailsRepository.MOVIE_TRAKT_ID_KEY, movie.ids?.trakt)
-
+        intent.putExtra(MovieDetailsActivity.MOVIE_DATA_KEY,
+            MovieDataModel(
+                movie.ids?.trakt ?: 0,
+                movie.ids?.tmdb,
+                movie.title
+            )
+        )
         startActivity(intent)
     }
 

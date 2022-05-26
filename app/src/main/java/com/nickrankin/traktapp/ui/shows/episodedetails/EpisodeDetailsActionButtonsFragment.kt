@@ -1,5 +1,6 @@
 package com.nickrankin.traktapp.ui.shows.episodedetails
 
+import android.content.DialogInterface
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
@@ -7,11 +8,14 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.CheckBox
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import com.nickrankin.traktapp.dao.show.model.TmEpisode
+import com.nickrankin.traktapp.dao.show.model.TmShow
 import com.nickrankin.traktapp.databinding.ActionButtonsFragmentBinding
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.shows.episodedetails.EpisodeDetailsActionButtonsViewModel
@@ -19,6 +23,7 @@ import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.dialog.RatingPickerFragment
 import com.nickrankin.traktmanager.ui.dialoguifragments.WatchedDatePickerFragment
 import com.uwetrottmann.trakt5.enums.Rating
+import com.uwetrottmann.trakt5.enums.Type
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import retrofit2.HttpException
@@ -43,6 +48,7 @@ class EpisodeDetailsActionButtonsFragment(): Fragment(), OnEpisodeChangeListener
     private var cancelCheckinDialog: AlertDialog? = null
     private var addWatchedHistoryDialog: WatchedDatePickerFragment? = null
     private var ratingPickerFragment: RatingPickerFragment? = null
+    private lateinit var listsDialog: AlertDialog
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -73,10 +79,23 @@ class EpisodeDetailsActionButtonsFragment(): Fragment(), OnEpisodeChangeListener
             setupCheckinButton()
             setupAddToHistoryButton()
             setupRatingButton()
+            setupAddListsButton(episode)
 
             // Get Data
             getRatings()
             getEvents()
+        }
+    }
+
+    private fun setupAddListsButton(tmEpisode: TmEpisode) {
+        val addListsButton = bindings.actionbuttonLists
+        addListsButton.visibility = View.VISIBLE
+
+        setupListsDialog(tmEpisode)
+
+        Log.d(TAG, "setupAddListsButton: HERE")
+        addListsButton.setOnClickListener {
+            listsDialog.show()
         }
     }
 
@@ -308,6 +327,48 @@ class EpisodeDetailsActionButtonsFragment(): Fragment(), OnEpisodeChangeListener
             }
             .create()
     }
+
+    private fun setupListsDialog(tmEpisode: TmEpisode) {
+        Log.e(TAG, "setupListsDialog: Called", )
+        val layout = LinearLayout(requireContext())
+        layout.orientation = LinearLayout.VERTICAL
+
+        listsDialog = AlertDialog.Builder(requireContext())
+            .setTitle("Lists")
+            .setPositiveButton("Close", DialogInterface.OnClickListener { dialogInterface, i ->
+                dialogInterface.dismiss()
+            })
+            .setView(layout)
+            .create()
+
+        lifecycleScope.launchWhenStarted {
+            viewModel.listsWithEntries.collectLatest { listEntries->
+                layout.removeAllViews()
+                listEntries.map { listWithEntries ->
+                    val checkbox = CheckBox(layout.context)
+                    checkbox.text = listWithEntries.list.name
+
+                    // If we find current movie in list, checkbox should be ticked
+                    checkbox.isChecked = listWithEntries.entries.find {
+                        Log.d(TAG, "setupListsDialog: List Entry TraktId: ${it?.list_entry_trakt_id} TRAKT ID: ${tmEpisode.episode_trakt_id}")
+                        it?.list_entry_trakt_id == tmEpisode.episode_trakt_id } != null
+
+                    checkbox.setOnClickListener {
+                        val checkbox = it as CheckBox
+
+                        if(checkbox.isChecked) {
+                            viewModel.addListEntry("episode", tmEpisode.episode_trakt_id, listWithEntries.list)
+                        } else {
+                            viewModel.removeListEntry(listWithEntries.list.trakt_id, tmEpisode.episode_trakt_id, Type.EPISODE)
+                        }
+                    }
+
+                    layout.addView(checkbox)
+                }
+            }
+        }
+    }
+
 
     private fun initAddWatchedHistoryDialog() {
 

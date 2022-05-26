@@ -1,28 +1,42 @@
 package com.nickrankin.traktapp.repo.search
 
+import android.provider.Settings
 import android.util.Log
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.nickrankin.traktapp.api.TraktApi
+import com.nickrankin.traktapp.helper.getTmdbLanguage
 import com.uwetrottmann.trakt5.entities.SearchResult
 import com.uwetrottmann.trakt5.enums.Extended
+import com.uwetrottmann.trakt5.enums.Type
 import retrofit2.HttpException
 import java.io.IOException
+import java.util.*
 import javax.inject.Inject
 
 private const val TAG = "ShowSearchPagingSource"
 private const val START_PAGE_INDEX = 1
 private const val PAGE_LIMIT = 15
-class ShowSearchPagingSource constructor(val traktApi: TraktApi, var query: String): PagingSource<Int, SearchResult>() {
+class SearchPagingSource constructor(val traktApi: TraktApi, var query: String, var type: Type): PagingSource<Int, SearchResult>() {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, SearchResult> {
         val page = params.key ?: START_PAGE_INDEX
 
         return try {
-            val response = traktApi.tmSearch().textQueryShow(query, null, null, null, null, null, null, null, null, null, Extended.FULL, page,
-                PAGE_LIMIT)
-
-            Log.d(TAG, "load: Got ${response.size} Results!")
+            val response = when(type) {
+                Type.MOVIE -> {
+                    traktApi.tmSearch().textQueryMovie(query, null, null, null, null, null, null, null, Extended.FULL, page,
+                        PAGE_LIMIT)
+                }
+                Type.SHOW -> {
+                    traktApi.tmSearch().textQueryShow(query, null, null, null, null, null, null, null, null, null, Extended.FULL, page,
+                        PAGE_LIMIT)
+                }
+                else -> {
+                    traktApi.tmSearch().textQueryMovie(query, null, null, null, null, null, null, null, Extended.FULL, page,
+                        PAGE_LIMIT)
+                }
+            }
 
             val nextKey = if(response.isEmpty()) {
                 null

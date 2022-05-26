@@ -40,6 +40,8 @@ import com.nickrankin.traktapp.dao.show.model.TrackedShow
 import com.nickrankin.traktapp.dao.show.model.TrackedShowWithEpisodes
 import com.nickrankin.traktapp.databinding.ShowsTrackingFragmentBinding
 import com.nickrankin.traktapp.helper.*
+import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
+import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.shows.ShowsTrackingViewModel
 import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
@@ -300,7 +302,7 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
         val layoutManager = LinearLayoutManager(requireContext())
         trackedShowsAdapter = TrackedShowsAdapter(tmdbImageLoader, callback = { trackedShowWithEpisodes ->
             val trackedShow = trackedShowWithEpisodes.trackedShow
-            navigateToShow(trackedShow.trakt_id, trackedShow.tmdb_id ?: -1, trackedShow.title, null)
+            navigateToShow(trackedShow.trakt_id, trackedShow.tmdb_id, trackedShow.title)
         }) { showTitle, upcomingEpisodes ->
             upcomingEpisodesDialog.setTitle("Upcoming episodes for $showTitle")
             upcomingEpisodesAdapter.submitList(emptyList())
@@ -628,10 +630,13 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
 
 
 
-    override fun navigateToShow(traktId: Int, tmdbId: Int, title: String?, language: String?) {
+    override fun navigateToShow(traktId: Int, tmdbId: Int?, title: String?) {
         val intent = Intent(requireActivity(), ShowDetailsActivity::class.java)
-        intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
-
+        intent.putExtra(ShowDetailsActivity.SHOW_DATA_KEY,
+            ShowDataModel(
+                traktId, tmdbId, title
+            )
+        )
         startActivity(intent)
     }
 
@@ -640,14 +645,18 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
         showTmdbId: Int?,
         seasonNumber: Int,
         episodeNumber: Int,
-        language: String?
+        title: String?
     ) {
         val intent = Intent(requireActivity(), EpisodeDetailsActivity::class.java)
-        intent.putExtra(EpisodeDetailsRepository.SHOW_TRAKT_ID_KEY, showTraktId)
-        intent.putExtra(EpisodeDetailsRepository.SHOW_TMDB_ID_KEY, showTmdbId)
-        intent.putExtra(EpisodeDetailsRepository.SEASON_NUMBER_KEY, seasonNumber)
-        intent.putExtra(EpisodeDetailsRepository.EPISODE_NUMBER_KEY, episodeNumber)
-        intent.putExtra(EpisodeDetailsRepository.LANGUAGE_KEY, language)
+
+        intent.putExtra(EpisodeDetailsActivity.EPISODE_DATA_KEY,
+            EpisodeDataModel(
+                showTraktId,
+                showTmdbId,
+                seasonNumber,
+                episodeNumber,
+                title
+            ))
 
         startActivity(intent)
     }

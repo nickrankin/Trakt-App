@@ -12,9 +12,12 @@
         android:id="@+id/actionbutton_checkin"
         android:layout_width="75dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="4dp"
         android:orientation="vertical"
         android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@+id/actionbutton_add_to_collection"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintHorizontal_chainStyle="spread"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:visibility="visible">
@@ -53,10 +56,13 @@
         android:id="@+id/actionbutton_add_to_collection"
         android:layout_width="75dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="4dp"
         android:orientation="vertical"
         android:visibility="gone"
-        app:layout_constraintStart_toEndOf="@id/actionbutton_checkin"
+
+        app:layout_constraintEnd_toStartOf="@+id/actionbutton_add_history"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/actionbutton_checkin"
         app:layout_constraintTop_toTopOf="parent"
         tools:visibility="visible">
 
@@ -97,12 +103,14 @@
         android:id="@+id/actionbutton_add_history"
         android:layout_width="75dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
+        android:layout_marginStart="4dp"
         android:orientation="vertical"
         android:visibility="gone"
         app:barrierAllowsGoneWidgets="true"
         app:layout_constraintBaseline_toBaselineOf="@id/actionbutton_checkin"
-        app:layout_constraintStart_toEndOf="@id/actionbutton_add_to_collection"
+        app:layout_constraintEnd_toStartOf="@+id/actionbutton_rate"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/actionbutton_add_to_collection"
         app:layout_constraintTop_toTopOf="parent"
         tools:visibility="visible">
 
@@ -143,11 +151,12 @@
         android:id="@+id/actionbutton_rate"
         android:layout_width="75dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="12dp"
+        android:layout_marginEnd="4dp"
         android:orientation="vertical"
         android:visibility="gone"
-        app:layout_constraintStart_toEndOf="@id/actionbutton_add_history"
+        app:layout_constraintEnd_toStartOf="@+id/actionbutton_lists"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/actionbutton_add_history"
         app:layout_constraintTop_toTopOf="parent"
         tools:visibility="visible">
 
@@ -191,5 +200,51 @@
             android:textStyle="bold" />
 
     </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/actionbutton_lists"
+        android:layout_width="75dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        app:layout_constraintBaseline_toBaselineOf="@id/actionbutton_rate"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/actionbutton_rate"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible">
+
+        <ProgressBar
+            android:id="@+id/action_button_lists_progressbar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_gravity="center"
+            android:foregroundGravity="center"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <ImageView
+            android:id="@+id/actionbutton_lists_icon"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_centerHorizontal="true"
+            android:src="@drawable/ic_baseline_playlist_add_circle_24" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/actionbutton_lists_icon"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="center"
+            android:layout_marginTop="4dp"
+            android:text="Lists"
+            android:textAlignment="center"
+            android:textAllCaps="true"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+    </RelativeLayout>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

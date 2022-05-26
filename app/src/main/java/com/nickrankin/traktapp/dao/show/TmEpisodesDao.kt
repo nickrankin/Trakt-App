@@ -2,13 +2,14 @@ package com.nickrankin.traktapp.dao.show
 
 import androidx.room.*
 import com.nickrankin.traktapp.dao.show.model.TmEpisode
+import com.nickrankin.traktapp.dao.show.model.TmEpisodeAndStats
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TmEpisodesDao {
     @Transaction
     @Query("SELECT * FROM episodes WHERE show_trakt_id = :showTraktId AND season_number = :seasonNumber")
-    fun getEpisodes(showTraktId: Int, seasonNumber: Int): Flow<List<TmEpisode>>
+    fun getEpisodes(showTraktId: Int, seasonNumber: Int): Flow<List<TmEpisodeAndStats>>
 
     @Transaction
     @Query("SELECT * FROM episodes WHERE show_trakt_id = :showTraktId AND season_number = :seasonNumber AND episode_number = :episodeNumber")

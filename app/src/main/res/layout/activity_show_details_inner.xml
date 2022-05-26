@@ -25,7 +25,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
-            android:text="Error getting Show Details. Please check your internet connection"
+            android:text="Error getting Movie Details. Please check your internet connection"
             android:visibility="gone"
             tools:visibility="visible"
             app:layout_constraintTop_toTopOf="parent"
@@ -40,152 +40,138 @@
             android:text="Retry"
             app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_error_text"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/showdetailsactivity_imdb_button"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toBottomOf="parent" />
 
 
-        <ImageView
-            android:id="@+id/showdetailsactivity_poster"
-            android:layout_width="85dp"
-            android:layout_height="125dp"
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/showdetailsactivity_poster_cardview"
+            android:layout_width="95dp"
+            android:layout_height="135dp"
             android:layout_margin="8dp"
-            android:src="@drawable/ic_trakt_svgrepo_com"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent">
+            <ImageView
+                android:id="@+id/showdetailsactivity_poster"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitXY"
+                android:src="@drawable/ic_trakt_svgrepo_com"
+                />
+
+        </com.google.android.material.card.MaterialCardView>
+
 
         <TextView
             android:id="@+id/showdetailsactivity_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
+            android:layout_margin="8dp"
             android:textAllCaps="true"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            app:layout_constraintBottom_toBottomOf="@id/showdetailsactivity_title_barrier"
-            app:layout_constraintEnd_toStartOf="@id/showdetailsactivity_status"
-            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_poster"
-            app:layout_constraintTop_toTopOf="@id/showdetailsactivity_poster"
-            tools:text="The Simpsons (This is a extra extra large title)" />
+            android:textAlignment="center"
+            android:textAppearance="?attr/textAppearanceHeadline4"
+            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_poster_cardview"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="The Simpsons" />
 
         <TextView
             android:id="@+id/showdetailsactivity_status"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_margin="4dp"
-            android:background="@drawable/border"
-            android:backgroundTint="@color/red"
-            android:paddingStart="4dp"
-            android:paddingTop="2dp"
-            android:paddingEnd="4dp"
-            android:paddingBottom="2dp"
-            android:textAllCaps="true"
-            android:textSize="11sp"
+            android:textSize="16sp"
             android:textStyle="bold"
-            app:layout_constraintBaseline_toBaselineOf="@id/showdetailsactivity_title"
+            android:layout_margin="8dp"
+            android:textAlignment="viewStart"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_title"
+            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_poster_cardview"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_title"
-            app:layout_constraintTop_toTopOf="@id/showdetailsactivity_title"
-            tools:text="Status: Ended" />
-
-        <androidx.constraintlayout.widget.Barrier
-            android:id="@+id/showdetailsactivity_title_barrier"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:barrierDirection="bottom"
-            app:constraint_referenced_ids="showdetailsactivity_title, showdetailsactivity_status"
-            tools:layout_editor_absoluteY="82dp" />
-
+            tools:text="Status: ENDED" />
 
         <TextView
             android:id="@+id/showdetailsactivity_first_aired"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginStart="8dp"
-            android:textSize="11sp"
+            android:layout_margin="8dp"
+            android:textSize="16sp"
             android:textStyle="bold"
-            app:layout_constraintEnd_toStartOf="@id/showdetailsactivity_network"
-            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_poster"
-            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_title_barrier"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_poster_cardview"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_status"
             tools:text="Premiered: 01/01/1970" />
 
         <TextView
-            android:id="@+id/showdetailsactivity_network"
+            android:id="@+id/showdetailsactivity_runtime"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:textSize="11sp"
+            android:layout_margin="8dp"
             android:textStyle="bold"
-            android:layout_marginStart="36dp"
-            android:layout_marginEnd="8dp"
+            android:textSize="16sp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_first_aired"
-            app:layout_constraintTop_toTopOf="@id/showdetailsactivity_first_aired"
-            tools:text="Network: Netflix" />
-
-        <TextView
-            android:id="@+id/showdetailsactivity_runtime"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textSize="11sp"
-            android:textStyle="bold"
-            android:layout_marginStart="8dp"
-
-            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_poster"
-            app:layout_constraintStart_toStartOf="@+id/showdetailsactivity_first_aired"
+            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_poster_cardview"
             app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_first_aired"
             tools:text="Runtime: 60 Minutes" />
-        <TextView
-            android:id="@+id/showdetailsactivity_country"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="11sp"
-            android:textStyle="bold"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
-            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_first_aired"
-            app:layout_constraintStart_toStartOf="@+id/showdetailsactivity_network"
-            app:layout_constraintTop_toTopOf="@id/showdetailsactivity_runtime"
-            tools:text="Country: USA" />
+
         <androidx.constraintlayout.widget.Barrier
-            android:id="@+id/showdetailsactivity_infobox"
+            android:id="@+id/showdetailsactivity_top_banner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:barrierDirection="bottom"
-            app:constraint_referenced_ids="showdetailsactivity_first_aired, showdetailsactivity_network, showdetailsactivity_runtime, showdetailsactivity_country"
-            tools:layout_editor_absoluteY="128dp" />
+            app:constraint_referenced_ids="showdetailsactivity_poster_cardview, showdetailsactivity_title, showdetailsactivity_first_aired, showdetailsactivity_runtime" />
 
-        <TextView
+        <com.google.android.flexbox.FlexboxLayout
+            android:id="@+id/showdetailsactivity_company"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:flexDirection="row"
+            app:flexWrap="wrap"
+            android:layout_margin="8dp"
+            android:textSize="16sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_top_banner"
+            tools:text="Network: Netflix" />
+
+
+        <com.google.android.flexbox.FlexboxLayout
+            android:id="@+id/showdetailsactivity_country"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:flexDirection="row"
+            app:flexWrap="wrap"
+            android:layout_margin="8dp"
+            android:textSize="16sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_company"
+            tools:text="Country: USA" />
+
+
+        <com.google.android.flexbox.FlexboxLayout
             android:id="@+id/showdetailsactivity_genres"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:layout_marginEnd="8dp"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:visibility="gone"
-            app:barrierAllowsGoneWidgets="true"
+            app:flexDirection="row"
+            app:flexWrap="wrap"
+            android:layout_margin="8dp"
+            android:textSize="16sp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="@id/showdetailsactivity_title"
-            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_infobox"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_country"
             tools:text="Genres: Drame, Thriller, Action"
             tools:visibility="visible" />
 
-        <TextView
+        <com.google.android.flexbox.FlexboxLayout
             android:id="@+id/showdetailsactivity_directed"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
-            android:textSize="12sp"
-            android:textStyle="bold|italic"
-            app:barrierAllowsGoneWidgets="true"
+            app:flexDirection="row"
+            app:flexWrap="wrap"
+            android:layout_margin="8dp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="@+id/showdetailsactivity_genres"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_genres"
-            tools:text="Directed by: John Smith, Joe Bloggs" />
+            android:orientation="horizontal" />
 
         <androidx.constraintlayout.widget.Barrier
             android:id="@+id/showdetailsactivity_midsection_barrier"
@@ -193,104 +179,117 @@
             android:layout_height="wrap_content"
             app:barrierAllowsGoneWidgets="true"
             app:barrierDirection="bottom"
-            app:constraint_referenced_ids="showdetailsactivity_genres,showdetailsactivity_directed,showdetailsactivity_poster"
+            app:constraint_referenced_ids="showdetailsactivity_genres,showdetailsactivity_directed,showdetailsactivity_poster_cardview"
             tools:layout_editor_absoluteY="173dp" />
 
         <TextView
             android:id="@+id/showdetailsactivity_trakt_rating"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="4dp"
-            android:background="@drawable/rounded_corners_background"
-            android:paddingStart="4dp"
-            android:paddingTop="2dp"
-            android:paddingEnd="4dp"
-            android:paddingBottom="2dp"
-            android:textColor="@color/white"
-            android:textSize="12sp"
+            android:layout_margin="8dp"
+            android:textSize="16sp"
             android:textStyle="bold"
-            app:barrierAllowsGoneWidgets="true"
-            app:layout_constraintEnd_toStartOf="@id/showdetailsactivity_total_episodes"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_midsection_barrier"
             tools:text="Trakt Rating: 10 (XX Users)"
             tools:visibility="visible" />
 
         <TextView
-            android:id="@+id/showdetailsactivity_total_episodes"
-            android:layout_width="wrap_content"
+            android:id="@+id/showdetailsactivity_num_episodes"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="4dp"
-            android:background="@drawable/rounded_corners_background"
-            android:backgroundTint="@color/dark_green"
-            android:paddingStart="4dp"
-            android:paddingTop="2dp"
-            android:paddingEnd="4dp"
-            android:paddingBottom="2dp"
-            android:textColor="@color/white"
-            android:textSize="12sp"
+            android:layout_margin="8dp"
+            android:textSize="16sp"
             android:textStyle="bold"
-            app:layout_constraintBaseline_toBaselineOf="@id/showdetailsactivity_trakt_rating"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_trakt_rating"
-            app:layout_constraintTop_toTopOf="@id/showdetailsactivity_trakt_rating"
-            tools:text="Total episodes: 52" />
+            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_trakt_rating"
+            tools:text="Total Episodes: 150"
+            tools:visibility="visible" />
+
 
         <androidx.constraintlayout.widget.Barrier
             android:id="@+id/showdetailsactivity_rating_episode_count_labels"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:barrierDirection="bottom"
-            app:constraint_referenced_ids="showdetailsactivity_trakt_rating,showdetailsactivity_total_episodes" />
+            app:constraint_referenced_ids="showdetailsactivity_trakt_rating, showdetailsactivity_num_episodes" />
 
-
-        <Button
-            android:id="@+id/showdetailsactivity_trailer"
-            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:id="@+id/showdetailsactivity_buttons"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:drawableLeft="@drawable/ic_baseline_live_tv_24"
-            android:layout_marginTop="8dp"
-            android:text="Trailer"
-            android:visibility="gone"
-            tools:visibility="visible"
+            android:layout_margin="8dp"
+            android:orientation="horizontal"
             app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_rating_episode_count_labels"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent">
+            <Button
+                android:id="@+id/showdetailsactivity_trailer"
+                style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:drawableLeft="@drawable/ic_baseline_live_tv_24"
+                android:layout_marginTop="8dp"
+                android:text="Trailer"
+                android:visibility="gone"
+                tools:visibility="visible"
+                />
 
-        <Button
-            android:id="@+id/showdetailsactivity_imdb_button"
-            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:drawableLeft="@drawable/ic_imdb_logo_2016"
-            android:text="IMDB"
-            android:visibility="gone"
-            tools:visibility="visible"
-            app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_rating_episode_count_labels"
-            app:layout_constraintStart_toEndOf="@id/showdetailsactivity_trailer"
-            app:layout_constraintEnd_toEndOf="parent"/>
+            <Button
+                android:id="@+id/showdetailsactivity_imdb_button"
+                style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:drawableLeft="@drawable/ic_imdb_logo_2016"
+                android:text="IMDB"
+                android:visibility="gone"
+                tools:visibility="visible" />
 
+        </LinearLayout>
+        
         <androidx.constraintlayout.widget.Barrier
             android:id="@+id/showdetailsactivity_video_buttons"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:barrierDirection="bottom"
-            app:constraint_referenced_ids="showdetailsactivity_imdb_button, showdetailsactivity_trailer" />
+            app:constraint_referenced_ids="showdetailsactivity_buttons"
+            tools:layout_editor_absoluteY="223dp" />
 
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/showdetailsactivity_buttons_fragment_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="16dp"
+            android:layout_margin="8dp"
             app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_video_buttons"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/showdetailsactivity_topbarrier"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="showdetailsactivity_title,showdetailsactivity_directed,showdetailsactivity_first_aired,showdetailsactivity_poster_cardview, showdetailsactivity_trakt_rating"
+            tools:layout_editor_absoluteY="566dp" />
+
+        <androidx.constraintlayout.widget.Group
+            android:id="@+id/showdetailsactivity_main_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:constraint_referenced_ids="showdetailsactivity_status,showdetailsactivity_genres,showdetailsactivity_midsection_barrier,
+            showdetailsactivity_poster_cardview,showdetailsactivity_trakt_rating,showdetailsactivity_first_aired,showdetailsactivity_country,showdetailsactivity_topbarrier,
+            showdetailsactivity_runtime,showdetailsactivity_company,showdetailsactivity_title,showdetailsactivity_buttons_fragment_container,
+            showdetailsactivity_directed"
+            tools:visibility="visible" />
+
+        <androidx.constraintlayout.widget.Group
+            android:id="@+id/showdetailsactivity_error_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:constraint_referenced_ids="showdetailsactivity_error_text, showdetailsactivity_retry_button" />
 
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/showdetailsactivity_tablayout"
@@ -316,30 +315,6 @@
                 android:layout_height="wrap_content"
                 android:text="Progress" />
         </com.google.android.material.tabs.TabLayout>
-
-
-        <androidx.constraintlayout.widget.Barrier
-            android:id="@+id/showdetailsactivity_topbarrier"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:barrierDirection="bottom"
-            app:constraint_referenced_ids="showdetailsactivity_title,showdetailsactivity_directed,showdetailsactivity_first_aired,showdetailsactivity_poster, showdetailsactivity_trakt_rating"
-            tools:layout_editor_absoluteY="566dp" />
-
-        <androidx.constraintlayout.widget.Group
-            android:id="@+id/showdetailsactivity_main_group"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            tools:visibility="visible"
-            app:constraint_referenced_ids="showdetailsactivity_title_barrier,showdetailsactivity_genres,showdetailsactivity_midsection_barrier,showdetailsactivity_poster,showdetailsactivity_trakt_rating,showdetailsactivity_first_aired,showdetailsactivity_country,showdetailsactivity_topbarrier,showdetailsactivity_runtime,showdetailsactivity_network,showdetailsactivity_tablayout,showdetailsactivity_title,showdetailsactivity_status,showdetailsactivity_buttons_fragment_container,showdetailsactivity_directed,showdetailsactivity_total_episodes,showdetailsactivity_infobox" />
-
-        <androidx.constraintlayout.widget.Group
-            android:id="@+id/showdetailsactivity_error_group"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            app:constraint_referenced_ids="showdetailsactivity_error_text, showdetailsactivity_retry_button"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

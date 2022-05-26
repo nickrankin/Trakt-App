@@ -17,26 +17,61 @@ import javax.inject.Inject
 private const val TAG = "CollectedMoviesViewMode"
 @HiltViewModel
 class CollectedMoviesViewModel @Inject constructor(private val repository: CollectedMoviesRepository): ViewModel() {
+
+    private val sortingChangeChannel = Channel<String>()
+    private val sortingChange = sortingChangeChannel.receiveAsFlow()
+        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
+
     private val refreshEventChannel = Channel<Boolean>()
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
         .shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
-    private var sortBy = "collected_at"
-    private var sortHow = SortHow.DESC
+    private var currentSorting = SORT_COLLECTED_AT
+    private var sortHow = SortHow.ASC
+
+    init {
+        // Initially sort movies by collected at
+        sortMovies(SORT_COLLECTED_AT)
+    }
 
 
-    val collectedShows = refreshEvent.flatMapLatest { shouldRefresh ->
-        Log.d(TAG, "Getting movies: ")
-        repository.getCollectedMovies(shouldRefresh).map { resource ->
-            if(resource is Resource.Success) {
-                resource.data = sortMovies(resource.data)
+    val collectedMovies = refreshEvent.flatMapLatest { shouldRefresh ->
+        sortingChange.flatMapLatest { sortBy ->
+            repository.getCollectedMovies(shouldRefresh)
+                .map { resource ->
+                if(resource is Resource.Success) {
+                    var sortedData = resource.data
+
+                    sortedData = when(sortBy) {
+                        SORT_TITLE -> {
+                            sortedData?.sortedBy { it.title }
+                        }
+                        SORT_COLLECTED_AT -> {
+                            sortedData?.sortedBy { it.collected_at }
+                        }
+                        SORT_YEAR -> {
+                            sortedData?.sortedBy { it.release_date }
+                        }
+                        else -> {
+                            sortedData?.sortedBy { it.collected_at }
+                        }
+                    }
+
+                    if(sortHow == SortHow.DESC) {
+                        sortedData = sortedData?.reversed()
+                    }
+
+                    Resource.Success(sortedData)
+                } else {
+                    resource
+                }
             }
-            resource
         }
     }
 
     fun sortMovies(sortBy: String) {
-        if(this.sortBy == sortBy) {
+        // If user chooses the same sorting by, reverse the sorting..
+        if(this.currentSorting == sortBy) {
             if(sortHow == SortHow.DESC) {
                 this.sortHow = SortHow.ASC
             } else {
@@ -44,42 +79,13 @@ class CollectedMoviesViewModel @Inject constructor(private val repository: Colle
             }
         }
 
-        this.sortBy = sortBy
+        // Keep track current sorting in the ViewModel
+        this.currentSorting = sortBy
 
         viewModelScope.launch {
-            refreshEventChannel.send(false)
+            sortingChangeChannel.send(sortBy)
         }
     }
-
-    private fun sortMovies(movies: List<CollectedMovie>?): List<CollectedMovie>? {
-        return when(sortBy) {
-            SORT_COLLECTED_AT -> {
-                if(sortHow == SortHow.DESC) {
-                    movies?.sortedBy { it.collected_at }?.reversed()
-                } else {
-                    movies?.sortedBy { it.collected_at }
-                }
-            }
-            SORT_TITLE -> {
-                if(sortHow == SortHow.DESC) {
-                    movies?.sortedBy { it.title }?.reversed()
-                } else {
-                    movies?.sortedBy { it.title }
-                }
-            }
-            SORT_YEAR -> {
-                if(sortHow == SortHow.DESC) {
-                    movies?.sortedBy { it.release_date?.year }?.reversed()
-                } else {
-                    movies?.sortedBy { it.release_date?.year }
-                }
-            }
-            else -> {
-                movies
-            }
-        }
-    }
-
 
     fun onStart() {
         viewModelScope.launch {

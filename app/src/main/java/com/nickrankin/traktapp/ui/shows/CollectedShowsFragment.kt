@@ -31,6 +31,7 @@ import com.nickrankin.traktapp.helper.OnTitleChangeListener
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.model.auth.shows.CollectedShowsViewModel
+import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
@@ -221,7 +222,7 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
 
                 when (action) {
                     CollectedShowsAdapter.ACTION_NAVIGATE_SHOW -> {
-                        navigateToShow(show.show_trakt_id, show.show_tmdb_id, show.show_title, show.language)
+                        navigateToShow(show.show_trakt_id, show.show_tmdb_id, show.show_title)
                     }
                     CollectedShowsAdapter.ACTION_REMOVE_COLLECTION -> {
                         removeFromCollection(show, pos)
@@ -234,10 +235,13 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
         recyclerView.adapter = adapter
     }
 
-    override fun navigateToShow(traktId: Int, tmdbId: Int, showTitle: String?, language: String?) {
-        val intent = Intent(context, ShowDetailsActivity::class.java)
-        intent.putExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, traktId)
-
+    override fun navigateToShow(traktId: Int, tmdbId: Int?, title: String?) {
+        val intent = Intent(requireActivity(), ShowDetailsActivity::class.java)
+        intent.putExtra(ShowDetailsActivity.SHOW_DATA_KEY,
+            ShowDataModel(
+                traktId, tmdbId, title
+            )
+        )
         startActivity(intent)
     }
 
@@ -274,11 +278,15 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
         when (item.itemId) {
             R.id.collectedfiltermenu_title -> {
                 scrollToTop = true
-                viewModel.sortShows(SortBy.TITLE)
+                viewModel.sortShows(CollectedShowsViewModel.SORT_TITLE)
+            }
+            R.id.collectedfiltermenu_year -> {
+                scrollToTop = true
+                viewModel.sortShows(CollectedShowsViewModel.SORT_YEAR)
             }
             R.id.collectedfiltermenu_collected_at -> {
                 scrollToTop = true
-                viewModel.sortShows(SortBy.ADDED)
+                viewModel.sortShows(CollectedShowsViewModel.SORT_COLLECT_AT)
 
             }
         }

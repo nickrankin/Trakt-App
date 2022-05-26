@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ShowCastPeopleDao {
     @Transaction
-    @Query("SELECT * FROM show_cast WHERE showTraktId = :traktId AND isGuestStar = :showGuestStars ORDER BY ordering ASC")
+    @Query("SELECT * FROM show_cast WHERE showTraktId = :traktId  AND isGuestStar = :showGuestStars ORDER BY ordering ASC")
     fun getShowCast(traktId: Int, showGuestStars: Boolean): Flow<List<ShowCastPerson>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

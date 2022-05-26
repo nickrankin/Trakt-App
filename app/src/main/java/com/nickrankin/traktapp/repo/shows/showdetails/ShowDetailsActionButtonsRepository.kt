@@ -6,9 +6,13 @@ import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.show.model.CollectedShow
+import com.nickrankin.traktapp.dao.show.model.TmShow
+import com.nickrankin.traktapp.dao.stats.model.CollectedShowsStats
+import com.nickrankin.traktapp.dao.stats.model.RatingsShowsStats
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.shouldRefreshContents
 import com.nickrankin.traktapp.repo.shows.collected.CollectedShowsRepository
+import com.nickrankin.traktapp.repo.stats.StatsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.trakt5.entities.*
 import com.uwetrottmann.trakt5.enums.Extended
@@ -30,127 +34,53 @@ private const val TAG = "ShowDetailsActionButton"
 class ShowDetailsActionButtonsRepository @Inject constructor(
     private val traktApi: TraktApi,
     private val sharedPreferences: SharedPreferences,
-    private val showsDatabase: ShowsDatabase
+    private val showsDatabase: ShowsDatabase,
+    private val statsRepository: StatsRepository
 ) {
-    private val collectedShowDao = showsDatabase.collectedShowsDao()
+    private val collectedShowStatsDao = showsDatabase.collectedShowsStatsDao()
+    private val ratedShowsStatsDao = showsDatabase.ratedShowsStatsDao()
 
-    suspend fun getRatings(): Resource<List<RatedShow>> {
-        return try {
-            val ratingsResponse = traktApi.tmUsers().ratingsShows(
-                UserSlug(
-                    sharedPreferences.getString(
-                        AuthActivity.USER_SLUG_KEY,
-                        "null"
-                    )
-                ), RatingsFilter.ALL, null
-            )
-            Resource.Success(ratingsResponse)
-        } catch (e: HttpException) {
-            Log.e(
-                TAG,
-                "getRatings: Error getting Rating. HTTP Error code ${e.code()}. ${e.localizedMessage}",
-            )
-            e.printStackTrace()
-            Resource.Error(e, null)
-        } catch (e: Exception) {
-            Log.e(TAG, "getRatings: Error getting rating! ${e.localizedMessage}")
-            e.printStackTrace()
-            Resource.Error(e, null)
-        }
+
+    fun getRatings(traktId: Int): Flow<RatingsShowsStats?> {
+        return ratedShowsStatsDao.getRatingsStatsById(traktId)
     }
 
-    suspend fun refreshCollectedStatus(forceRefresh: Boolean) {
-        // Refresh Collected every 24 hours, or force it
-        if (shouldRefreshContents(
-                sharedPreferences.getString(
-                    CollectedShowsRepository.COLLECTED_SHOWS_LAST_REFRESHED_KEY,
-                    ""
-                ) ?: "", REFRESH_INTERVAL
-            ) || forceRefresh
-        ) {
-            try {
-                val baseShows = traktApi.tmUsers().collectionShows(
-                    UserSlug(
-                        sharedPreferences.getString(
-                            AuthActivity.USER_SLUG_KEY,
-                            "null"
-                        )
-                    ), Extended.FULL
-                )
-
-                showsDatabase.withTransaction {
-                    collectedShowDao.deleteAllShows()
-                    collectedShowDao.insert(convertToCollectedShows(baseShows))
-                }
-
-                sharedPreferences.edit()
-                    .putString(
-                        CollectedShowsRepository.COLLECTED_SHOWS_LAST_REFRESHED_KEY,
-                        OffsetDateTime.now().toString()
-                    )
-                    .apply()
-
-            } catch (e: HttpException) {
-                Log.e(
-                    TAG,
-                    "refreshCollectedStatus: Error getting CollectedShows. Code ${e.code()}. ${e.localizedMessage}",
-                )
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-
+    fun getCollectedShowFlow(traktId: Int): Flow<CollectedShowsStats?> {
+        return collectedShowStatsDao.getCollectedShowById(traktId)
     }
-
-    fun getCollectedShowFlow(traktId: Int): Flow<CollectedShow?> {
-        return collectedShowDao.getCollectedShow(traktId)
-    }
-
-    private fun convertToCollectedShows(baseShows: List<BaseShow>): List<CollectedShow> {
-        val collectedShows: MutableList<CollectedShow> = mutableListOf()
-
-        baseShows.map { baseShow ->
-            collectedShows.add(
-                CollectedShow(
-                    baseShow.show?.ids?.trakt ?: 0,
-                    baseShow.show?.ids?.tmdb ?: 0,
-                    baseShow.show?.language,
-                    baseShow.last_collected_at,
-                    baseShow.last_updated_at,
-                    baseShow.last_watched_at,
-                    baseShow.listed_at,
-                    baseShow.seasons?.size ?: 0,
-                    baseShow.plays ?: 0,
-                    baseShow.show?.overview,
-                    baseShow.show?.first_aired,
-                    baseShow.show?.runtime,
-                    baseShow.show?.status ?: Status.CANCELED,
-                    baseShow.show?.title ?: "",
-                    false
-                )
-            )
-        }
-
-        return collectedShows
-    }
-
 
     suspend fun setRatings(
-        traktId: Int,
+        tmShow: TmShow,
         rating: Int,
         resetRatings: Boolean
     ): Resource<SyncResponse> {
         return try {
             val syncResponse = if (!resetRatings) {
-                val syncItems = getSyncItems(traktId)
+                val syncItems = getSyncItems(tmShow.trakt_id)
 
                 // Apply new rating to syncitem
                 syncItems.shows!!.first()
                     .rating = Rating.fromValue(rating)
 
+                showsDatabase.withTransaction {
+                    ratedShowsStatsDao.insert(
+                        RatingsShowsStats(
+                            tmShow.trakt_id,
+                            tmShow.tmdb_id,
+                            rating,
+                            tmShow.name,
+                            OffsetDateTime.now()
+                        )
+                    )
+                }
+
                 traktApi.tmSync().addRatings(syncItems)
             } else {
-                traktApi.tmSync().deleteRatings(getSyncItems(traktId))
+
+                showsDatabase.withTransaction {
+                    ratedShowsStatsDao.getRatingsStatsById(tmShow.trakt_id)
+                }
+                traktApi.tmSync().deleteRatings(getSyncItems(tmShow.trakt_id))
             }
 
             // Trigger call to getRatings() to notify all active observers or rating channel
@@ -160,12 +90,11 @@ class ShowDetailsActionButtonsRepository @Inject constructor(
         }
     }
 
-    suspend fun addToCollection(traktId: Int): Resource<SyncResponse> {
+    suspend fun addToCollection(tmShow: TmShow): Resource<SyncResponse> {
         return try {
-            val result = traktApi.tmSync().addItemsToCollection(getSyncItems(traktId))
+            val result = traktApi.tmSync().addItemsToCollection(getSyncItems(tmShow.trakt_id))
 
-            // Refresh the users collected Shows
-            refreshCollectedStatus(true)
+            statsRepository.refreshCollectedShows()
 
             Resource.Success(result)
         } catch (t: Throwable) {
@@ -186,7 +115,7 @@ class ShowDetailsActionButtonsRepository @Inject constructor(
             val result = traktApi.tmSync().deleteItemsFromCollection(syncItems)
 
             showsDatabase.withTransaction {
-                collectedShowDao.deleteShowById(traktId)
+                collectedShowStatsDao.deleteCollectedStatsById(traktId)
             }
 
             Resource.Success(result)

@@ -1,13 +1,9 @@
 package com.nickrankin.traktapp.repo.shows.episodedetails
 
 import android.content.SharedPreferences
-import android.util.Log
-import androidx.room.withTransaction
+
 import com.nickrankin.traktapp.api.TraktApi
-import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.show.model.TmEpisode
-import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
-import com.nickrankin.traktapp.dao.watched.WatchedHistoryDatabase
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.repo.shows.watched.WatchedEpisodesRemoteMediator
@@ -15,10 +11,7 @@ import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.trakt5.entities.*
 import com.uwetrottmann.trakt5.enums.Rating
 import com.uwetrottmann.trakt5.enums.RatingsFilter
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
 import org.threeten.bp.OffsetDateTime
-import retrofit2.HttpException
 import javax.inject.Inject
 
 private const val TAG = "EpisodeDetailsActionBut"
@@ -126,8 +119,7 @@ class EpisodeDetailsActionButtonsRepository @Inject constructor(
 
             val response = traktApi.tmSync().addItemsToWatchedHistory(syncItems)
 
-            // Refresh this shows watched episodes after successful response
-            episodeDetailsRepository.refreshWatchedEpisodes(episode.show_trakt_id)
+            // TODO update watched history in DB
 
             // Force the update of the last watched pager
             sharedPreferences.edit()

@@ -26,7 +26,7 @@ class ListEntryAdapter constructor(
     private val glide: RequestManager,
     private val tmdbImageLoader: TmdbImageLoader,
     private val sharedPreferences: SharedPreferences,
-    private val callback: (traktId: Int, action: String, type: Type, episodeTraktId: Int?, season: Int?, episode: Int?) -> Unit
+    private val callback: (traktId: Int, action: String, type: Type, listEntry: TraktListEntry) -> Unit
 ) : ListAdapter<TraktListEntry, RecyclerView.ViewHolder>(COMPARATOR) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -122,9 +122,7 @@ class ListEntryAdapter constructor(
                             currentItem.movie?.trakt_id!!,
                             ACTION_VIEW,
                             Type.MOVIE,
-                            null,
-                            null,
-                            null
+                            currentItem
                         )
                     }
 
@@ -133,9 +131,7 @@ class ListEntryAdapter constructor(
                             currentItem.movie?.trakt_id!!,
                             ACTION_REMOVE,
                             Type.MOVIE,
-                            null,
-                            null,
-                            null
+                            currentItem
                         )
                     }
                 }
@@ -182,9 +178,7 @@ class ListEntryAdapter constructor(
                             currentItem.show?.trakt_id!!,
                             ACTION_VIEW,
                             Type.SHOW,
-                            null,
-                            null,
-                            null
+                            currentItem
                         )
                     }
 
@@ -193,9 +187,7 @@ class ListEntryAdapter constructor(
                             currentItem.show?.trakt_id!!,
                             ACTION_REMOVE,
                             Type.SHOW,
-                            null,
-                            null,
-                            null
+                            currentItem
                         )
                     }
                 }
@@ -246,9 +238,7 @@ class ListEntryAdapter constructor(
                             currentItem.episodeShow?.trakt_id!!,
                             ACTION_VIEW,
                             Type.EPISODE,
-                            currentItem.episode?.trakt_id,
-                            currentItem.episode?.season,
-                            currentItem.episode?.episode
+                            currentItem
                         )
                     }
 
@@ -258,9 +248,7 @@ class ListEntryAdapter constructor(
                             currentItem.episodeShow?.trakt_id!!,
                             ACTION_REMOVE,
                             Type.EPISODE,
-                            currentItem.episode?.trakt_id,
-                            currentItem.episode?.season,
-                            currentItem.episode?.episode
+                            currentItem
                         )
                     }
                 }
@@ -302,9 +290,7 @@ class ListEntryAdapter constructor(
                             currentItem.movie?.trakt_id!!,
                             ACTION_VIEW,
                             Type.PERSON,
-                            null,
-                            null,
-                            null
+                            currentItem
                         )
                     }
                 }
