@@ -8,6 +8,7 @@ import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.calendars.model.HiddenShowCalendarEntry
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.calendars.model.ShowCalendarEntry
+import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.networkBoundResource
 import com.nickrankin.traktapp.helper.shouldRefreshContents
@@ -22,7 +23,7 @@ import javax.inject.Inject
 private const val TAG = "ShowsOverviewRepository"
 private const val DEFAULT_TRAKT_DATE_FORMAT = "yyyy-MM-dd"
 private const val REFRESH_INTERVAL = 48L
-private const val NUM_DAYS = 8
+private const val NUM_DAYS = 180
 class ShowsOverviewRepository @Inject constructor(private val traktApi: TraktApi, private val tmdbApi: TmdbApi, private val sharedPreferences: SharedPreferences, private val showsDatabase: ShowsDatabase) {
     private val showCalendarEntryDao = showsDatabase.showCalendarentriesDao()
 

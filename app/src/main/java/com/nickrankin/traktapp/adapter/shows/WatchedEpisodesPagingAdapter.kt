@@ -24,6 +24,7 @@ import com.nickrankin.traktapp.databinding.WatchedEpisodeEntryListItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.ImageItemType
 import com.nickrankin.traktapp.helper.TmdbImageLoader
+import com.nickrankin.traktapp.helper.getFormattedDate
 import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 
@@ -45,8 +46,13 @@ class WatchedEpisodesPagingAdapter(private val sharedPreferences: SharedPreferen
             watchedentryitemTitle.text = currentItem?.watchedEpisode?.episode_title
             watchedentryitemShowTitle.text = currentItem?.watchedEpisode?.show_title
             watchedentryitemSeasonEpisodeNumber.text = "Season ${currentItem?.watchedEpisode?.episode_season}, Episode ${currentItem?.watchedEpisode?.episode_number}"
-            watchedentryitemWatchedDate.text = "Watched: " + currentItem?.watchedEpisode?.watched_at?.atZoneSameInstant(
-                ZoneId.systemDefault())?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)))
+
+
+            if(currentItem?.watchedEpisode?.watched_at != null) {
+                watchedentryitemWatchedDate.text = "Watched: ${getFormattedDate(currentItem.watchedEpisode.watched_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))}"
+
+            }
+
 
             tmdbImageLoader.loadEpisodeImages(currentItem?.watchedEpisode?.episode_trakt_id ?: 0, currentItem?.watchedEpisode?.show_tmdb_id ?: 0, currentItem?.watchedEpisode?.show_trakt_id ?: 0,
                 currentItem?.watchedEpisode?.episode_season, currentItem?.watchedEpisode?.episode_number, currentItem?.watchedEpisode?.show_title ?: "", currentItem?.watchedEpisode?.language, true, watchedentryitemPoster, watchedentryitemBackdrop)

@@ -116,7 +116,7 @@ class MovieDetailsActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLi
         // Check if Fragment is already attached, in this case we replace the fragment and not add new one
         if (supportFragmentManager.findFragmentByTag("overview_fragment") == null) {
             supportFragmentManager.beginTransaction()
-                .add(
+                .replace(
                     binding.moviedetailsactivityInner.moviedetailsactivityFragmentContainer.id,
                     movieDetailsOverviewFragment, "overview_fragment"
                 )

@@ -164,7 +164,8 @@ class ListItemsActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListe
                             movieIntent.putExtra(MovieDetailsActivity.MOVIE_DATA_KEY, MovieDataModel(
                                 traktId,
                                 selectedItem.movie?.tmdb_id,
-                                selectedItem.movie?.title
+                                selectedItem.movie?.title,
+                                        selectedItem.movie?.release_date?.year ?: 0
                             ))
 
                             startActivity(movieIntent)

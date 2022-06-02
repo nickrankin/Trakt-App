@@ -31,6 +31,7 @@
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.4248878923766816" />
         <entry key="app/src/main/res/layout/activity_movie_details.xml" value="0.5588541666666667" />
         <entry key="app/src/main/res/layout/activity_movies_main.xml" value="0.5927083333333333" />
+        <entry key="app/src/main/res/layout/activity_person.xml" value="0.4993587002992732" />
         <entry key="app/src/main/res/layout/activity_season_episodes.xml" value="0.3836050724637681" />
         <entry key="app/src/main/res/layout/activity_settings.xml" value="0.5234375" />
         <entry key="app/src/main/res/layout/activity_show_details.xml" value="0.3917572463768116" />
@@ -59,6 +60,8 @@
         <entry key="app/src/main/res/layout/fragment_movie_details_overview.xml" value="0.5927083333333333" />
         <entry key="app/src/main/res/layout/fragment_notifications.xml" value="0.578125" />
         <entry key="app/src/main/res/layout/fragment_overview.xml" value="0.58125" />
+        <entry key="app/src/main/res/layout/fragment_people_credits.xml" value="0.5121846943138093" />
+        <entry key="app/src/main/res/layout/fragment_person_overview.xml" value="0.6943138093202224" />
         <entry key="app/src/main/res/layout/fragment_recommended_movies.xml" value="0.5588541666666667" />
         <entry key="app/src/main/res/layout/fragment_shows_overview.xml" value="0.4166666666666667" />
         <entry key="app/src/main/res/layout/fragment_shows_recommended.xml" value="0.6154873164218959" />
@@ -69,6 +72,7 @@
         <entry key="app/src/main/res/layout/history_poster_item.xml" value="0.4878153056861907" />
         <entry key="app/src/main/res/layout/item_progress_layout_item.xml" value="0.5270833333333333" />
         <entry key="app/src/main/res/layout/layout_appbar.xml" value="0.42436594202898553" />
+        <entry key="app/src/main/res/layout/layout_character_poster_item.xml" value="0.5083368961094484" />
         <entry key="app/src/main/res/layout/list_entry_episode_item.xml" value="0.6904660111158615" />
         <entry key="app/src/main/res/layout/list_entry_movie_item.xml" value="0.6904660111158615" />
         <entry key="app/src/main/res/layout/list_entry_person_item.xml" value="0.4878153056861907" />

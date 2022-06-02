@@ -1,6 +1,5 @@
 package com.nickrankin.traktapp.api.services.trakt.model
 
-import com.uwetrottmann.trakt5.entities.CastMember
 import com.uwetrottmann.trakt5.entities.Crew
 
 class TmCredits {

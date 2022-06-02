@@ -157,8 +157,10 @@ class SearchResultsActivity : BaseActivity() {
                         MovieDataModel(
                             movie?.ids?.trakt ?: 0,
                             movie?.ids?.tmdb,
-                            movie?.title
-                        ))
+                            movie?.title,
+                            movie?.year
+                        )
+                        )
 
                         startActivity(movieIntent)
 

@@ -1,43 +1,46 @@
 package com.nickrankin.traktapp.repo.movies
 
+import android.util.Log
 import androidx.room.withTransaction
 import com.nickrankin.traktapp.dao.credits.CreditsDatabase
 import com.nickrankin.traktapp.dao.credits.MovieCastPeopleDao
-import com.nickrankin.traktapp.helper.MovieCreditsHelper
+import com.nickrankin.traktapp.dao.movies.model.TmMovie
+import com.nickrankin.traktapp.helper.PersonCreditsHelper
 import com.nickrankin.traktapp.helper.networkBoundResource
 import javax.inject.Inject
 
+private const val TAG = "MovieDetailsOverviewRep"
 class MovieDetailsOverviewRepository @Inject constructor(
-    private val movieCreditsHelper: MovieCreditsHelper,
+    private val personCreditsHelper: PersonCreditsHelper,
     private val creditsDatabase: CreditsDatabase
 ) {
-    private val castPersonDao = creditsDatabase.castPersonDao()
+    private val castPersonDao = creditsDatabase.personDao()
     private val movieCastPeopleDao = creditsDatabase.movieCastPeopleDao()
 
-    fun getMovieCredits(traktId: Int, tmdbId: Int?, shouldRefresh: Boolean) = networkBoundResource(
+    fun getMovieCredits(movieTraktId: Int, movieTmdbId: Int?, movieTitle: String?, movieYear: Int, shouldRefresh: Boolean) = networkBoundResource(
         query = {
-            movieCastPeopleDao.getMovieCast(traktId)
+            movieCastPeopleDao.getMovieCast(movieTraktId)
         },
         fetch = {
-            movieCreditsHelper.getMovieCredits(traktId, tmdbId)
+            personCreditsHelper.getMovieCredits(movieTraktId, movieTmdbId)
         },
         shouldFetch = { credits ->
             shouldRefresh || credits.isEmpty()
         },
         saveFetchResult = { credits ->
-            creditsDatabase.withTransaction {
-                credits.map { castPair ->
-                    val castPersonData = castPair.first
-                    val castPerson = castPair.second
+            Log.d(TAG, "getMovieCredits: Refreshing Credits")
 
-                    castPersonDao.insert(castPerson)
+            Log.d(TAG, "getMovieCredits: Got ${credits.size} credits")
+
+            creditsDatabase.withTransaction {
+                credits.map { movieCastPerson ->
+
+                    castPersonDao.insert(movieCastPerson.person)
 
                     movieCastPeopleDao.insert(
-                        castPersonData
+                        movieCastPerson.movieCastPersonData
                     )
-
                 }
-
             }
         }
     )

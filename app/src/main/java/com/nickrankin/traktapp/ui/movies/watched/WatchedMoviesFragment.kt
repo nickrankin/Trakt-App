@@ -188,7 +188,8 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
             MovieDataModel(
                 watchedMovie.trakt_id,
                 watchedMovie.tmdb_id,
-                watchedMovie.title
+                watchedMovie.title,
+                0
             )
         )
         startActivity(intent)

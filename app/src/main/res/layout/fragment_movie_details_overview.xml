@@ -34,7 +34,8 @@
         android:layout_marginTop="8dp"
         app:layout_constraintStart_toStartOf="@id/moviedetailsoverview_overview"
         app:layout_constraintEnd_toEndOf="@id/moviedetailsoverview_overview"
-        app:layout_constraintTop_toBottomOf="@id/moviedetailsoverview_cast_title" />
+        app:layout_constraintTop_toBottomOf="@id/moviedetailsoverview_cast_title"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
     <androidx.constraintlayout.widget.Group
         android:id="@+id/moviedetailsoverview_main_group"

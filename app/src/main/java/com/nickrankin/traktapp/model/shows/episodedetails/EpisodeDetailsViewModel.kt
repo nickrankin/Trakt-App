@@ -40,8 +40,16 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
         repository.getEpisodes(episodeDataModel?.traktId ?: 0, episodeDataModel?.tmdbId, episodeDataModel?.seasonNumber ?: -1, episodeDataModel?.episodeNumber ?: -1, shouldRefresh)
     }
 
-    val watchedEpisodeStats = statsRepository.watchedEpisodeStats.map { watchedEpisodeStats ->
-        watchedEpisodeStats.find { it.season == episodeDataModel?.seasonNumber && it.episode == episodeDataModel.episodeNumber }
+    val watchedEpisodeStats = statsRepository.watchedEpisodeStats.flatMapLatest { watchedEpisodeStats ->
+        show.mapLatest { show ->
+            if(show is Resource.Success) {
+                watchedEpisodeStats.filter { it.show_trakt_id == show.data?.trakt_id }
+            } else {
+                null
+            }
+        }
+    }.map { episodeStats ->
+        episodeStats?.find { it.season == episodeDataModel?.seasonNumber && it.episode == episodeDataModel.episodeNumber }
     }
 
     fun removeWatchedHistoryItem(syncItems: SyncItems) = viewModelScope.launch { eventChannel.send(Event.DeleteWatchedHistoryItem(repository.removeWatchedEpisode(syncItems))) }

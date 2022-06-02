@@ -22,6 +22,7 @@ private const val TAG = "BaseActivity"
 abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     private var searchType: String? = null
+    private lateinit var searchMenuItem: MenuItem
 
 //    @Inject
 //    lateinit var trackedEpisodeAlarmScheduler: TrackedEpisodeAlarmScheduler
@@ -45,7 +46,9 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
 
         // Get the SearchView and set the searchable configuration
         val searchManager = getSystemService(SEARCH_SERVICE) as SearchManager
-        (menu?.findItem(R.id.mainmenu_search)?.actionView as SearchView).apply {
+        searchMenuItem = menu?.findItem(R.id.mainmenu_search)!!
+
+        ((searchMenuItem).actionView as SearchView).apply {
             startSearch(this)
         }
 
@@ -64,6 +67,9 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
             }
 
             override fun onQueryTextSubmit(query: String?): Boolean {
+                // Collapse the search view when submitted
+                searchMenuItem.collapseActionView()
+                searchView.onActionViewCollapsed()
 
                 intent.putExtra(SearchManager.QUERY, query)
                 intent.putExtra(SearchResultsActivity.SEARCH_TYPE_KEY, searchType ?: SearchResultsActivity.TYPE_MOVIE_KEY)

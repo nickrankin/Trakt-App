@@ -1,5 +1,6 @@
 package com.nickrankin.traktapp.ui.shows.episodedetails
 
+import android.content.Intent
 import android.graphics.Typeface
 import android.os.Bundle
 import android.util.Log
@@ -26,6 +27,7 @@ import com.nickrankin.traktapp.databinding.FragmentMovieDetailsOverviewBinding
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.movies.MovieDetailsOverviewViewModel
 import com.nickrankin.traktapp.model.shows.episodedetails.EpisodeDetailsOverviewViewModel
+import com.nickrankin.traktapp.ui.person.PersonActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
@@ -107,10 +109,16 @@ class EpisodeDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshL
         setupCastSwitcher()
 
         castRecyclerView = bindings.episodedetailsoverviewCastRecycler
-        val layoutManager = FlexboxLayoutManager(requireContext())
-        layoutManager.flexDirection = FlexDirection.ROW
-        layoutManager.flexWrap = FlexWrap.NOWRAP
-        castAdapter = ShowCastCreditsAdapter(glide)
+
+        val layoutManager = LinearLayoutManager(requireContext())
+        layoutManager.orientation = LinearLayoutManager.HORIZONTAL
+
+        castAdapter = ShowCastCreditsAdapter(glide) { selectedCastPerson ->
+            val castPersonIntent = Intent(requireContext(), PersonActivity::class.java)
+            castPersonIntent.putExtra(PersonActivity.PERSON_ID_KEY, selectedCastPerson.person.trakt_id)
+
+            startActivity(castPersonIntent)
+        }
 
         castRecyclerView.layoutManager = layoutManager
         castRecyclerView.adapter = castAdapter

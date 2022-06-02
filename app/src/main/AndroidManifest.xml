@@ -20,6 +20,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TraktApp">
         <activity
+            android:name=".ui.person.PersonActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.lists.ListItemsActivity"
             android:exported="false" />
         <activity
@@ -33,8 +36,8 @@
         <activity
             android:name=".ui.movies.MoviesMainActivity"
             android:exported="false" />
-
-        <activity android:name=".BaseActivity"
+        <activity
+            android:name=".BaseActivity"
             android:exported="false" />
         <activity
             android:name=".ui.shows.ShowsMainActivity"

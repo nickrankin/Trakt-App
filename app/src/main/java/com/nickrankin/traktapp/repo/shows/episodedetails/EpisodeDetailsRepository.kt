@@ -32,9 +32,9 @@ class EpisodeDetailsRepository @Inject constructor(
     private val traktApi: TraktApi,
     private val showDataHelper: ShowDataHelper,
     private val sharedPreferences: SharedPreferences,
-    private val showCreditsHelper: ShowCreditsHelper,
+    private val creditsHelper: PersonCreditsHelper,
     private val showCreditsDatabase: CreditsDatabase,
-    private val showsDatabase: ShowsDatabase): CreditsRepository(showCreditsHelper, showsDatabase, showCreditsDatabase) {
+    private val showsDatabase: ShowsDatabase): CreditsRepository(creditsHelper, showsDatabase, showCreditsDatabase) {
 
     private val episodesDao = showsDatabase.TmEpisodesDao()
     private val showsDbWatchedHistoryShowsDao = showsDatabase.watchedEpisodesDao()

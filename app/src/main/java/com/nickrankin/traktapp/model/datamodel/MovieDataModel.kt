@@ -4,4 +4,4 @@ import android.os.Parcelable
 import kotlinx.android.parcel.Parcelize
 
 @Parcelize
-data class MovieDataModel(val traktId: Int, val tmdbId: Int?, val movieTitle: String?) : Parcelable
+data class MovieDataModel(val traktId: Int, val tmdbId: Int?, val movieTitle: String?, val movieYear: Int?) : Parcelable

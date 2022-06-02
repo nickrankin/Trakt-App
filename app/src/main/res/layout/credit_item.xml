@@ -9,10 +9,10 @@
     android:layout_marginStart="6dp"
     android:layout_marginBottom="4dp">
 
-        <androidx.cardview.widget.CardView
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/credititem_image_cardview"
-            android:layout_width="76dp"
-            android:layout_height="98dp"
+            android:layout_width="96dp"
+            android:layout_height="125dp"
             app:cardCornerRadius="4dp"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -25,14 +25,14 @@
                     android:scaleType="fitXY"
                     android:src="@drawable/ic_baseline_person_24"
  />
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
 
         <TextView
             android:id="@+id/credititem_person_name"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:textSize="12sp"
+            android:textSize="15sp"
             android:textStyle="bold"
             android:textAllCaps="true"
             android:textAlignment="center"
@@ -47,7 +47,7 @@
             android:id="@+id/credititem_person_role"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:textSize="11sp"
+            android:textSize="15sp"
             android:textStyle="italic"
             android:textAlignment="center"
             tools:text="Joe Bloggs A very long character name"

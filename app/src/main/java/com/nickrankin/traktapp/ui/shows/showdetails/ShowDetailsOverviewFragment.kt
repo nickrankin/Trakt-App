@@ -1,6 +1,7 @@
 package com.nickrankin.traktapp.ui.shows.showdetails
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Typeface
 import android.os.Bundle
 import android.os.Handler
@@ -12,6 +13,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
@@ -25,6 +27,7 @@ import com.nickrankin.traktapp.databinding.ShowDetailsOverviewFragmentBinding
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.shows.showdetails.ShowDetailsOverviewViewModel
+import com.nickrankin.traktapp.ui.person.PersonActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
@@ -148,11 +151,15 @@ class ShowDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
         castRecyclerView = bindings.showdetailsoverviewCastRecycler
         castRecyclerView.visibility = View.VISIBLE
 
-        val layoutManager = FlexboxLayoutManager(requireContext())
-        layoutManager.flexDirection = FlexDirection.ROW
-        layoutManager.flexWrap = FlexWrap.NOWRAP
+        val layoutManager = LinearLayoutManager(requireContext())
+        layoutManager.orientation = LinearLayoutManager.HORIZONTAL
 
-        showCastCreditsAdapter = ShowCastCreditsAdapter(glide)
+        showCastCreditsAdapter = ShowCastCreditsAdapter(glide) { selectedCastPerson ->
+            val castPersonIntent = Intent(requireContext(), PersonActivity::class.java)
+            castPersonIntent.putExtra(PersonActivity.PERSON_ID_KEY, selectedCastPerson.person.trakt_id)
+
+            startActivity(castPersonIntent)
+        }
 
         castRecyclerView.layoutManager = layoutManager
         castRecyclerView.adapter = showCastCreditsAdapter

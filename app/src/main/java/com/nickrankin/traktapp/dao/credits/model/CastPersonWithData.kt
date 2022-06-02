@@ -1,3 +1,3 @@
 package com.nickrankin.traktapp.dao.credits.model
 
-data class CastPersonWithData(val castPersonData: ShowCastPersonData, val castPerson: CastPerson)
+data class CastPersonWithData(val castPersonData: ShowCastPersonData, val person: Person)

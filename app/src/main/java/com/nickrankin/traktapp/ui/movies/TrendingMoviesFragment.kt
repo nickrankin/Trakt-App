@@ -129,7 +129,8 @@ class TrendingMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
                 MovieDataModel(
                     trendingMovie?.movie?.ids?.trakt ?: 0,
                     trendingMovie?.movie?.ids?.tmdb,
-                    trendingMovie?.movie?.title
+                    trendingMovie?.movie?.title,
+                    trendingMovie?.movie?.year
                 )
             )
             startActivity(intent)

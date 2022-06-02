@@ -1,5 +1,6 @@
 package com.nickrankin.traktapp.ui.movies.moviedetails
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -20,6 +21,7 @@ import com.nickrankin.traktapp.dao.movies.model.TmMovie
 import com.nickrankin.traktapp.databinding.FragmentMovieDetailsOverviewBinding
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.movies.MovieDetailsOverviewViewModel
+import com.nickrankin.traktapp.ui.person.PersonActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
@@ -72,11 +74,11 @@ class MovieDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshLis
                         Log.d(TAG, "getCredits: Loading Credits")
                     }
                     is Resource.Success -> {
-                        Log.d(TAG, "getCredits: Got ${creditsResource.data?.size} Credits")
-                        castAdapter.submitList(creditsResource.data)
-//                        creditsResource.data?.map {
-//                            Log.d(TAG, "getCredits: $it")
-//                        }
+
+                        castAdapter.submitList(creditsResource.data?.sortedBy { it.movieCastPersonData.ordering })
+                        creditsResource.data?.map {
+                            Log.d(TAG, "getCredits: ${it.person.name} is order ${it.movieCastPersonData.ordering}")
+                        }
                     }
                     is Resource.Error -> {
                         Log.e(TAG, "getCredits: Error getting credits ${creditsResource.error?.message}", )
@@ -88,11 +90,17 @@ class MovieDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshLis
     }
 
     private fun initRecyclerView() {
+        Log.d(TAG, "initRecyclerView: HERE")
         castRecyclerView = bindings.moviedetailsoverviewCastRecycler
-        val layoutManager = FlexboxLayoutManager(requireContext())
-        layoutManager.flexDirection = FlexDirection.ROW
-        layoutManager.flexWrap = FlexWrap.NOWRAP
-        castAdapter = MovieCastCreditsAdapter(glide)
+        val layoutManager = LinearLayoutManager(requireContext())
+        layoutManager.orientation = LinearLayoutManager.HORIZONTAL
+
+        castAdapter = MovieCastCreditsAdapter(glide) { selectedCredit ->
+            val creditIntent = Intent(requireContext(), PersonActivity::class.java)
+            creditIntent.putExtra(PersonActivity.PERSON_ID_KEY, selectedCredit.person.trakt_id)
+
+            startActivity(creditIntent)
+        }
 
         castRecyclerView.layoutManager = layoutManager
         castRecyclerView.adapter = castAdapter

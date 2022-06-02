@@ -3,6 +3,7 @@ package com.nickrankin.traktapp.model.movies
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nickrankin.traktapp.dao.movies.model.TmMovie
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.repo.movies.MovieDetailsOverviewRepository
 import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
@@ -26,7 +27,7 @@ class MovieDetailsOverviewViewModel @Inject constructor(private val savedStateHa
     val movieDataModel = savedStateHandle.get<MovieDataModel>(MovieDetailsActivity.MOVIE_DATA_KEY)
 
     val credits = refreshEvent.flatMapLatest { shouldRefresh ->
-        repository.getMovieCredits(movieDataModel?.traktId ?: 0, movieDataModel?.tmdbId, shouldRefresh)
+            repository.getMovieCredits(movieDataModel?.traktId ?: 0, movieDataModel?.tmdbId, movieDataModel?.movieTitle, movieDataModel?.movieYear ?: 0, shouldRefresh)
     }
 
     fun onStart() {

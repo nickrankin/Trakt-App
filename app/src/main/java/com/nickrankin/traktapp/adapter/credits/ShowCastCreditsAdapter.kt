@@ -15,43 +15,52 @@ import com.nickrankin.traktapp.databinding.CreditItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
 
 
-class ShowCastCreditsAdapter(private val glide: RequestManager): ListAdapter<ShowCastPerson, ShowCastCreditsAdapter.CreditsViewHolder>(
+class ShowCastCreditsAdapter(private val glide: RequestManager, private val callback: (selectedCastPerson: ShowCastPerson) -> Unit): ListAdapter<ShowCastPerson, ShowCastCreditsAdapter.CreditsViewHolder>(
     COMPARATOR) {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CreditsViewHolder {
         return CreditsViewHolder(CreditItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
     }
 
     override fun onBindViewHolder(holder: CreditsViewHolder, position: Int) {
+
+        // Equal height credits
+        holder.itemView.post {
+            val wMeasureSpec =
+                View.MeasureSpec.makeMeasureSpec(holder.itemView.width, View.MeasureSpec.EXACTLY)
+            val hMeasureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+
+            holder.itemView.measure(wMeasureSpec, hMeasureSpec)
+            if (holder.itemView.measuredHeight > holder.itemView.height) {
+                holder.itemView.layoutParams =
+                    (holder.itemView.layoutParams as ViewGroup.LayoutParams)
+                        .apply {
+                            height = holder.itemView.measuredHeight
+                        }
+            }
+        }
+
         val currentItem = getItem(position)
 
         holder.bindings.apply {
-            if(currentItem.castPerson.photo_path != null) {
+            if(currentItem.person.picture_path != null && currentItem.person.picture_path.isNotBlank()) {
                 glide
-                    .load(AppConstants.TMDB_POSTER_URL + currentItem.castPerson.photo_path )
+                    .load(AppConstants.TMDB_POSTER_URL + currentItem.person.picture_path )
                     .into(credititemImage)
             } else {
                 credititemImage.setImageResource(R.drawable.ic_baseline_person_24)
             }
 
-            credititemPersonName.text = currentItem.castPerson.name
+            credititemPersonName.text = currentItem.person.name
             credititemPersonRole.text = currentItem.showCastPersonData.character
-        }
-    }
 
-    inner class CreditsViewHolder(val bindings: CreditItemBinding): BaseViewHolder(bindings.root)
-
-    // Workaround to support variable height Cast Person elements in the horizontal RecyclerView.
-    // https://stackoverflow.com/questions/64504633/horizontal-recyclerview-with-dynamic-item-s-height
-    abstract class BaseViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        init {
-            val lp: ViewGroup.LayoutParams = itemView.layoutParams
-            if (lp is FlexboxLayoutManager.LayoutParams) {
-                lp.flexShrink = 0.0f
-                lp.alignSelf =
-                    AlignItems.FLEX_START //this will align each itemView on Top or use AlignItems.FLEX_END to align it at Bottom
+            root.setOnClickListener {
+                callback(currentItem)
             }
         }
     }
+
+    inner class CreditsViewHolder(val bindings: CreditItemBinding): RecyclerView.ViewHolder(bindings.root)
+
 
     companion object {
         val COMPARATOR = object: DiffUtil.ItemCallback<ShowCastPerson>() {
@@ -66,7 +75,7 @@ class ShowCastCreditsAdapter(private val glide: RequestManager): ListAdapter<Sho
                 oldItem: ShowCastPerson,
                 newItem: ShowCastPerson
             ): Boolean {
-                return oldItem.showCastPersonData.id == newItem.showCastPersonData.id
+                return oldItem.showCastPersonData.person_trakt_id == newItem.showCastPersonData.person_trakt_id
             }
         }
     }

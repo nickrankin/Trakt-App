@@ -95,6 +95,10 @@ class TraktApi(private val context: Context, private val loggingOn: Boolean, pri
         return retrofit().create(TraktSeasons::class.java)
     }
 
+    fun tmPeople(): TmPerson {
+        return retrofit().create(TmPerson::class.java)
+    }
+
     fun tmEpisodes(): TmEpisodes {
         return retrofit().create(TmEpisodes::class.java)
     }

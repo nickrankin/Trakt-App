@@ -37,7 +37,7 @@ class ShowDetailsOverviewViewModel @Inject constructor(private val savedStateHan
         castToggle.flatMapLatest { showGuestStars ->
             repository.getCredits(showDataModel?.traktId ?: 0, showDataModel?.tmdbId, shouldRefresh, showGuestStars).map { castResource ->
                 if(castResource is Resource.Success) {
-                    castResource.data = castResource.data?.filter { it.showCastPersonData.isGuestStar == showGuestStars }
+                    castResource.data = castResource.data?.filter { it.showCastPersonData.is_guest_star == showGuestStars }
                     castResource
                 } else {
                     castResource

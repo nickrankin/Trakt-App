@@ -22,6 +22,7 @@ import com.nickrankin.traktapp.databinding.ShowCalendarEntryListItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.ImageItemType
 import com.nickrankin.traktapp.helper.TmdbImageLoader
+import com.nickrankin.traktapp.helper.getFormattedDate
 import org.threeten.bp.format.DateTimeFormatter
 import javax.inject.Inject
 
@@ -42,7 +43,11 @@ class ShowCalendarEntriesAdapter @Inject constructor(private val sharedPreferenc
             showentryitemTitle.text = currentItem.episode_title
             showentryitemShowTitle.text = currentItem.show_title
             showentryitemSeasonEpisodeNumber.text = "Season ${currentItem.episode_season} Episode ${currentItem.episode_number}"
-            showentryitemAirDate.text = "Airing: " + currentItem.first_aired?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)))
+
+            if(currentItem.first_aired != null) {
+                showentryitemAirDate.text = "Airing: ${getFormattedDate(currentItem.first_aired, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))}"
+            }
+
             showentryitemOverview.text = currentItem.episode_overview
 
             tmdbImageLoader.loadEpisodeImages(currentItem.episode_trakt_id, currentItem.show_tmdb_id, currentItem.show_trakt_id, currentItem.episode_season,currentItem.episode_number, currentItem?.show_title ?: "",currentItem.language,true, showentryitemPoster, showentryitemBackdrop)

@@ -307,7 +307,8 @@ class MainActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
                 MovieDataModel(
                     watchedMovie.trakt_id,
                     watchedMovie.tmdb_id,
-                    watchedMovie.title
+                    watchedMovie.title,
+                    0
                 )
             )
 

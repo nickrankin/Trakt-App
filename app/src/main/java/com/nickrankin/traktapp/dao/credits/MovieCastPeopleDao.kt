@@ -8,11 +8,19 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface MovieCastPeopleDao {
     @Transaction
-    @Query("SELECT * FROM movie_cast WHERE movieTraktId = :traktId ORDER BY ordering ASC")
+    @Query("SELECT * FROM movie_cast WHERE movie_trakt_id = :traktId ORDER BY ordering ASC")
     fun getMovieCast(traktId: Int): Flow<List<MovieCastPerson>>
+
+    @Transaction
+    @Query("SELECT * FROM movie_cast WHERE person_trakt_id = :traktId")
+    fun getPersonMovies(traktId: Int): Flow<List<MovieCastPerson>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(movieCastPersonData: MovieCastPersonData)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insert(movieCastPersonData: List<MovieCastPersonData>)
+
 
     @Update
     fun update(movieCastPersonData: MovieCastPersonData)
@@ -21,6 +29,6 @@ interface MovieCastPeopleDao {
     fun delete(movieCastPersonData: MovieCastPersonData)
 
     @Transaction
-    @Query("DELETE FROM movie_cast WHERE movieTraktId = :traktId")
+    @Query("DELETE FROM movie_cast WHERE movie_trakt_id = :traktId")
     fun deleteMovieCast(traktId: Int)
 }

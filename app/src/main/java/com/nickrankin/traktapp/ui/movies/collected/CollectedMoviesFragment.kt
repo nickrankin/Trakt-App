@@ -126,7 +126,8 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
                 MovieDataModel(
                     movie.trakt_id,
                     movie.tmdb_id,
-                    movie.title
+                    movie.title,
+                    movie.release_date?.year
                 )
             )
 

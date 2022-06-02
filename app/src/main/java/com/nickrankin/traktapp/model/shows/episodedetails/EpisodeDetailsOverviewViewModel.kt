@@ -43,7 +43,7 @@ class EpisodeDetailsOverviewViewModel @Inject constructor(
                 .map { castResource ->
                     if (castResource is com.nickrankin.traktapp.helper.Resource.Success) {
                         castResource.data =
-                            castResource.data?.filter { it.showCastPersonData.isGuestStar == showGuestStars }
+                            castResource.data?.filter { it.showCastPersonData.is_guest_star == showGuestStars }
                         castResource
                     } else {
                         castResource
