@@ -2,43 +2,29 @@ package com.nickrankin.traktapp.ui.movies
 
 import android.content.DialogInterface
 import android.content.Intent
-import android.graphics.Canvas
-import android.graphics.Typeface
 import android.os.Bundle
-import android.os.CountDownTimer
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.bumptech.glide.RequestManager
-import com.google.android.material.snackbar.Snackbar
 import com.nickrankin.traktapp.BaseFragment
-import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.movies.ReccomendedMoviesAdaptor
 import com.nickrankin.traktapp.databinding.FragmentRecommendedMoviesBinding
-import com.nickrankin.traktapp.helper.ItemDecorator
-import com.nickrankin.traktapp.helper.OnTitleChangeListener
-import com.nickrankin.traktapp.helper.TmdbImageLoader
-import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.movies.RecommendedMoviesViewModel
-import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
 import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
 import com.uwetrottmann.trakt5.entities.*
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
-import retrofit2.HttpException
 import javax.inject.Inject
 
 private const val TAG = "RecommendedMoviesFragme"
@@ -79,8 +65,11 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
 
         initRecyclerView()
 
-        getRecommendedMovies()
+        if(!isLoggedIn) {
+            handleLoggedOutState(this.id)
+        }
 
+        getRecommendedMovies()
         getEvents()
     }
 
@@ -90,10 +79,6 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
                 when (recommendedMoviesResource) {
                     is Resource.Loading -> {
                         progressBar.visibility = View.VISIBLE
-
-                        bindings.recommendedmoviesfragmentErrorText.visibility = View.GONE
-                        bindings.recommendedmoviesfragmentRetryButton.visibility = View.GONE
-
                         recyclerView.visibility = View.VISIBLE
 
 
@@ -108,7 +93,17 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
                         }
                         Log.d(TAG, "getRecommendedMovies: Got recommendations successfully")
 
-                        adapter.submitList(recommendedMoviesResource.data)
+                        if(recommendedMoviesResource.data != null && recommendedMoviesResource.data!!.isNotEmpty()) {
+                            bindings.recommendedmoviesfragmentRecyclerview.visibility = View.VISIBLE
+                            bindings.recommendedmoviesfragmentMessageContainer.visibility = View.GONE
+
+                            adapter.submitList(recommendedMoviesResource.data)
+                        } else {
+                            bindings.recommendedmoviesfragmentRecyclerview.visibility = View.GONE
+                            bindings.recommendedmoviesfragmentMessageContainer.visibility = View.VISIBLE
+
+                            bindings.recommendedmoviesfragmentMessageContainer.text = "There are no recommended movies at this time!"
+                        }
                     }
 
                     is Resource.Error -> {
@@ -118,20 +113,24 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
                             swipeLayout.isRefreshing = false
                         }
 
-                        bindings.recommendedmoviesfragmentErrorText.visibility = View.VISIBLE
-                        bindings.recommendedmoviesfragmentRetryButton.visibility = View.VISIBLE
+                        if(recommendedMoviesResource.data != null && recommendedMoviesResource.data!!.isNotEmpty()) {
+                            bindings.recommendedmoviesfragmentRecyclerview.visibility = View.VISIBLE
+                            bindings.recommendedmoviesfragmentMessageContainer.visibility = View.GONE
 
-                        recyclerView.visibility = View.GONE
+                            adapter.submitList(recommendedMoviesResource.data)
+                        } else {
+                            bindings.recommendedmoviesfragmentRecyclerview.visibility = View.GONE
+                            bindings.recommendedmoviesfragmentMessageContainer.visibility = View.VISIBLE
 
-                        bindings.recommendedmoviesfragmentErrorText.text =
-                            "Error loading recommended Movies. ${recommendedMoviesResource.error?.message}"
+                            bindings.recommendedmoviesfragmentMessageContainer.text = "There are no recommended movies at this time!"
+                        }
 
-                        bindings.recommendedmoviesfragmentRetryButton.setOnClickListener { onRefresh() }
-
-                        Log.e(
-                            TAG,
-                            "getRecommendedMovies: Error loading recommendations. ${recommendedMoviesResource.error?.message}",
-                        )
+                        (activity as IHandleError).showErrorSnackbarRetryButton(
+                            recommendedMoviesResource.error,
+                            bindings.recommendedmoviesfragmentSwipeLayout
+                        ) {
+                            viewModel.onRefresh()
+                        }
                     }
                 }
             }
@@ -146,9 +145,6 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
                         val response = event.response
 
                         when (response) {
-                            is Resource.Loading -> {
-
-                            }
                             is Resource.Success -> {
                                 displayToast(
                                     "Successfully removed recommended movie",
@@ -156,22 +152,9 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
                                 )
                             }
                             is Resource.Error -> {
-                                val throwable = response.error
-
-                                throwable?.printStackTrace()
-
-                                if (throwable is HttpException) {
-                                    displayToast(
-                                        "HTTP Error occurred removing recommendation (HTTP Code (${throwable.code()})",
-                                        Toast.LENGTH_LONG
-                                    )
-                                } else {
-                                    displayToast(
-                                        "An exception was raised trying to remove recommendation, ${throwable?.message}",
-                                        Toast.LENGTH_LONG
-                                    )
-                                }
+                                (activity as IHandleError).showErrorMessageToast(response.error, "Error removing recommendation")
                             }
+                            else -> {}
                         }
                     }
                 }
@@ -210,7 +193,8 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
         }
 
         val intent = Intent(requireContext(), MovieDetailsActivity::class.java)
-        intent.putExtra(MovieDetailsActivity.MOVIE_DATA_KEY,
+        intent.putExtra(
+            MovieDetailsActivity.MOVIE_DATA_KEY,
             MovieDataModel(
                 movie.ids?.trakt ?: 0,
                 movie.ids?.tmdb,

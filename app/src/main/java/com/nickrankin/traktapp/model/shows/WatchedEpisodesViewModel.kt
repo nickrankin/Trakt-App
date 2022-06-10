@@ -22,6 +22,7 @@ class WatchedEpisodesViewModel @Inject constructor(private val repository: Watch
 
     private val refreshEventChannel = Channel<Boolean>()
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
+        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
     private val eventsChannel = Channel<Event>()
     val events = eventsChannel.receiveAsFlow()
@@ -29,7 +30,7 @@ class WatchedEpisodesViewModel @Inject constructor(private val repository: Watch
     @ExperimentalCoroutinesApi
     val watchedEpisodes = refreshEvent.flatMapLatest { shouldRefresh ->
         repository.watchedEpisodes(shouldRefresh)
-    }.cachedIn(viewModelScope)
+    }
 
     fun removeFromWatchedHistory(syncItems: SyncItems) = viewModelScope.launch { eventsChannel.send(
         Event.RemoveWatchedHistoryEvent(repository.deleteFromWatchedHistory(syncItems))

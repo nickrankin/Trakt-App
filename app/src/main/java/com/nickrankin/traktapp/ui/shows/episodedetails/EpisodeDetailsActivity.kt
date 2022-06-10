@@ -1,35 +1,20 @@
 package com.nickrankin.traktapp.ui.shows.episodedetails
 
-import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
-import android.content.SharedPreferences
-import android.graphics.Canvas
-import android.graphics.Typeface
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.CountDownTimer
 import android.util.Log
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.ItemTouchHelper
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
-import com.google.android.flexbox.FlexDirection
-import com.google.android.flexbox.FlexWrap
-import com.google.android.flexbox.FlexboxLayoutManager
-import com.google.android.material.snackbar.Snackbar
-import com.nickrankin.traktapp.R
-import com.nickrankin.traktapp.adapter.credits.ShowCastCreditsAdapter
+import com.nickrankin.traktapp.BaseActivity
 import com.nickrankin.traktapp.adapter.history.EpisodeWatchedHistoryItemAdapter
-import com.nickrankin.traktapp.dao.credits.ShowCastPerson
 import com.nickrankin.traktapp.dao.show.model.TmEpisode
 import com.nickrankin.traktapp.dao.show.model.TmShow
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
@@ -38,26 +23,22 @@ import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.shows.episodedetails.EpisodeDetailsViewModel
-import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.services.helper.TrackedEpisodeAlarmScheduler
 import com.nickrankin.traktapp.services.helper.TrackedEpisodeNotificationsBuilder
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.shows.OnNavigateToShow
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
-import com.uwetrottmann.tmdb2.entities.CastMember
 import com.uwetrottmann.trakt5.entities.SyncItems
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import org.apache.commons.lang3.time.DateFormatUtils
-import org.threeten.bp.format.DateTimeFormatter
-import retrofit2.HttpException
 import javax.inject.Inject
 
 private const val TAG = "EpisodeDetailsActivity"
 
 private const val FRAGMENT_ACTION_BUTTONS ="action_buttons_fragment"
 @AndroidEntryPoint
-class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefreshLayout.OnRefreshListener {
+class EpisodeDetailsActivity : BaseActivity(), OnNavigateToShow, SwipeRefreshLayout.OnRefreshListener {
     private lateinit var bindings: ActivityEpisodeDetailsBinding
     private val viewModel: EpisodeDetailsViewModel by viewModels()
 
@@ -68,11 +49,6 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
     private lateinit var watchedEpisodesAdapter: EpisodeWatchedHistoryItemAdapter
 
     private lateinit var episodeDetailsOverviewFragment: EpisodeDetailsOverviewFragment
-
-    private var isLoggedIn = false
-
-    @Inject
-    lateinit var sharedPreferences: SharedPreferences
 
     @Inject
     lateinit var trackedEpisodesAlarmScheduler: TrackedEpisodeAlarmScheduler
@@ -99,8 +75,6 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
         progressBar = bindings.episodedetailsactivityInner.episodedetailsactivityProgressbar
         swipeRefreshLayout = bindings.episodedetailsactivitySwipeLayout
         swipeRefreshLayout.setOnRefreshListener(this)
-
-        isLoggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
 
         if(intent.hasExtra(TrackedEpisodeNotificationsBuilder.FROM_NOTIFICATION_TAP) && intent.extras?.getBoolean(TrackedEpisodeNotificationsBuilder.FROM_NOTIFICATION_TAP, false) == true) {
             dismissEipsodeNotifications()
@@ -163,11 +137,9 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
                             displayShow(show)
                         }
 
-                        Log.e(
-                            TAG,
-                            "collectShow: Error getting show. ${showResource.error?.localizedMessage}"
-                        )
-                        showResource.error?.printStackTrace()
+                        showErrorSnackbarRetryButton(showResource.error, bindings.episodedetailsactivitySwipeLayout) {
+                            viewModel.onRefresh()
+                        }
                     }
                 }
             }
@@ -177,8 +149,6 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
 
     private fun getEpisode() {
         lifecycleScope.launchWhenStarted {
-            // Contains error text and retry button
-            val errorWidgets = bindings.episodedetailsactivityInner.episodedetailsactivityErrorGroup
             // Contains all UI elements for the Episode Details View
             val mainGroup = bindings.episodedetailsactivityInner.episodedetailsactivityMainGroup
             mainGroup.visibility = View.VISIBLE
@@ -189,8 +159,6 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
                 when (episodeResource) {
                     is Resource.Loading -> {
                         toggleProgressBar(true)
-
-                        errorWidgets.visibility = View.GONE
                         mainGroup.visibility = View.GONE
                         Log.d(TAG, "collectEpisode: Loading Episode...")
                     }
@@ -198,8 +166,6 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
                         toggleProgressBar(false)
 
                         mainGroup.visibility = View.VISIBLE
-                        errorWidgets.visibility = View.GONE
-
                         bindings.wpisodedetailsactivityCollapsingToolbarLayout.title = episode?.name ?: "Unknown"
 
                         displayEpisode(episode)
@@ -211,46 +177,21 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
                     is Resource.Error -> {
                         toggleProgressBar(false)
 
-                        displayMessageToast("Error getting episode. ${episodeResource.error?.localizedMessage}", Toast.LENGTH_LONG)
-
                         // Try to display cached episode if available
                         if(episodeResource.data != null) {
-                            errorWidgets.visibility = View.GONE
                             mainGroup.visibility = View.VISIBLE
 
                             displayEpisode(episode)
-
                             setupActionBarFragment(episode!!)
-
-                        } else {
-                            // No cached episode, need to show error message
-                            errorWidgets.visibility = View.VISIBLE
-                            mainGroup.visibility = View.GONE
-
-                            handleError(episodeResource.error)
                         }
 
-                        episodeResource.error?.printStackTrace()
+                        showErrorSnackbarRetryButton(episodeResource.error, bindings.episodedetailsactivitySwipeLayout) {
+                            viewModel.onRefresh()
+                        }
+
                     }
                 }
             }
-        }
-    }
-
-    private fun handleError(t: Throwable?) {
-        val errorText = bindings.episodedetailsactivityInner.episodedetailsactivityErrorText
-        val retryButton = bindings.episodedetailsactivityInner.episodedetailsactivityRetryButton
-
-        if(t != null) {
-            if(t is HttpException) {
-                errorText.text = "There was an error loading the Episode details. Please check your internet connection. Error code: (HTTP Status: ${t.code()}) "
-            } else {
-                errorText.text = "There was an error loading the Episode details. Please check your internet connection. Error: (${t.localizedMessage}) "
-            }
-        }
-
-        retryButton.setOnClickListener {
-            viewModel.onStart()
         }
     }
 
@@ -292,8 +233,7 @@ class EpisodeDetailsActivity : AppCompatActivity(), OnNavigateToShow, SwipeRefre
                             }
 
                         } else if (eventResource is Resource.Error) {
-                            displayMessageToast("Error deleting history item! ${eventResource.error?.localizedMessage}", Toast.LENGTH_LONG)
-                            eventResource.error?.printStackTrace()
+                            showErrorMessageToast(event.syncResponse.error, "Error deleting watched history item")
                         }
                     }
                 }

@@ -1,7 +1,6 @@
 package com.nickrankin.traktapp.ui.movies.moviedetails
 
 import android.content.Context
-import android.content.SharedPreferences
 import android.graphics.Typeface
 import android.os.Bundle
 import android.util.Log
@@ -11,13 +10,13 @@ import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.CollapsingToolbarLayout
+import com.nickrankin.traktapp.BaseActivity
 import com.nickrankin.traktapp.dao.movies.model.TmMovie
 import com.nickrankin.traktapp.databinding.ActivityMovieDetailsBinding
 import com.nickrankin.traktapp.helper.*
@@ -30,14 +29,13 @@ import com.uwetrottmann.tmdb2.entities.Genre
 import com.uwetrottmann.trakt5.entities.CrewMember
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
-import org.apache.commons.lang3.time.DateFormatUtils
 import javax.inject.Inject
 
 private const val ACTION_BUTTON_FRAGMENT = "action_button_fragment"
 private const val TAG = "MovieDetailsActivity"
 
 @AndroidEntryPoint
-class MovieDetailsActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener {
+class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
 
     private val viewModel: MovieDetailsViewModel by viewModels()
 
@@ -56,11 +54,6 @@ class MovieDetailsActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLi
 
     @Inject
     lateinit var glide: RequestManager
-
-    @Inject
-    lateinit var sharedPreferences: SharedPreferences
-
-    private var isLoggedIn = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,7 +74,6 @@ class MovieDetailsActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLi
 
         movieTraktId = intent.getIntExtra(MovieDetailsRepository.MOVIE_TRAKT_ID_KEY, -1)
 
-        initActionButtonFragment()
         initOverviewFragment()
 
         getMovie()
@@ -90,6 +82,10 @@ class MovieDetailsActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLi
         if(intent.extras?.containsKey(MOVIE_DATA_KEY) == false || intent.extras?.getParcelable<MovieDataModel>(
                 MOVIE_DATA_KEY) == null) {
             throw RuntimeException("MovieDataModel must be passed to this Activity.")
+        }
+
+        if(isLoggedIn) {
+            initActionButtonFragment()
         }
     }
 
@@ -113,23 +109,14 @@ class MovieDetailsActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLi
 
         movieDetailsOverviewFragment = MovieDetailsOverviewFragment.newInstance()
 
-        // Check if Fragment is already attached, in this case we replace the fragment and not add new one
-        if (supportFragmentManager.findFragmentByTag("overview_fragment") == null) {
+
             supportFragmentManager.beginTransaction()
                 .replace(
                     binding.moviedetailsactivityInner.moviedetailsactivityFragmentContainer.id,
                     movieDetailsOverviewFragment, "overview_fragment"
                 )
                 .commit()
-        } else {
-            // Refresh invoked, replace fragment instead
-            supportFragmentManager.beginTransaction()
-                .replace(
-                    binding.moviedetailsactivityInner.moviedetailsactivityFragmentContainer.id,
-                    movieDetailsOverviewFragment, "overview_fragment"
-                )
-                .commit()
-        }
+
     }
 
     private fun getMovie() {
@@ -139,9 +126,6 @@ class MovieDetailsActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLi
                 when (movieResource) {
                     is Resource.Loading -> {
                         progressBar.visibility = View.VISIBLE
-                        binding.moviedetailsactivityInner.moviedetailsactivityErrorGroup.visibility =
-                            View.GONE
-
                         Log.d(TAG, "getMovie: Loading ...")
                     }
                     is Resource.Success -> {
@@ -154,15 +138,15 @@ class MovieDetailsActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLi
 
                         binding.moviedetailsactivityInner.moviedetailsactivityMainGroup.visibility =
                             View.VISIBLE
-                        Log.d(TAG, "getMovie: ${movie}")
 
                         if (movie != null) {
                             displayMovie(movie)
                         }
 
-
                         // Pass movie to fragments
-                        movieDetailsActionButtonsFragment.initFragment(movie)
+                        if(isLoggedIn) {
+                            movieDetailsActionButtonsFragment.initFragment(movie)
+                        }
 
                         movieDetailsOverviewFragment.initFragment(movie)
 
@@ -175,22 +159,21 @@ class MovieDetailsActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshLi
                         }
 
                         if (movieResource.data != null) {
-                            displayMovie(movieResource.data!!)
-                        } else {
+                            val movie = movieResource.data
+                            displayMovie(movie)
 
-                            binding.moviedetailsactivityInner.moviedetailsactivityErrorGroup.visibility =
-                                View.VISIBLE
-
-                            binding.moviedetailsactivityInner.moviedetailsactivityErrorText.text =
-                                "An error occurred loading the movie. ${movieResource.error?.message}"
-
-                            binding.moviedetailsactivityInner.moviedetailsactivityRetryButton.setOnClickListener {
-                                onRefresh()
+                            // Pass movie to fragments
+                            if(isLoggedIn) {
+                                movieDetailsActionButtonsFragment.initFragment(movie)
                             }
+
+                            movieDetailsOverviewFragment.initFragment(movie)
                         }
 
+                        showErrorSnackbarRetryButton(movieResource.error, binding.moviedetailsactivityInner.moviedetailsactivityFragmentContainer) {
+                            viewModel.onRefresh()
+                        }
 
-                        movieResource.error?.printStackTrace()
                     }
                 }
 

@@ -1,11 +1,9 @@
 package com.nickrankin.traktapp.ui.shows
 
 import android.content.Intent
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.*
-import androidx.fragment.app.Fragment
 import android.widget.*
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
@@ -17,29 +15,22 @@ import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.shows.ShowCalendarEntriesAdapter
 import com.nickrankin.traktapp.databinding.FragmentShowsOverviewBinding
+import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.model.auth.shows.ShowsOverviewViewModel
 import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
-import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
-import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 private const val TAG = "OverviewFragment"
 @AndroidEntryPoint
 class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, OnNavigateToShow, OnNavigateToEpisode {
-    
-    @Inject
-    lateinit var sharedPreferences: SharedPreferences
 
     @Inject
     lateinit var glide: RequestManager
@@ -54,8 +45,6 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
     private lateinit var messageContainer: TextView
 
     private lateinit var adapter: ShowCalendarEntriesAdapter
-
-    private var isLoggedIn = false
 
     private lateinit var layoutManager: LinearLayoutManager
 
@@ -73,9 +62,7 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        bindings= FragmentShowsOverviewBinding.inflate(inflater)
-
-        isLoggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
+        bindings = FragmentShowsOverviewBinding.inflate(inflater)
 
         return bindings.root
     }
@@ -89,13 +76,13 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
         updateTitle("Upcoming Shows")
 
         progressBar = bindings.showsoverviewfragmentProgressbar
-        if(isLoggedIn) {
-            setupRecyclerView()
-            getMyShows()
 
-        } else {
-            handleLoggedOutState()
+        if(!isLoggedIn) {
+            handleLoggedOutState(this.id)
         }
+
+        setupRecyclerView()
+        getMyShows()
 
     }
 
@@ -105,21 +92,6 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
         inflater.inflate(R.menu.calendar_shows_filter_menu, menu)
     }
 
-    private fun handleLoggedOutState() {
-        progressBar.visibility = View.GONE
-        messageContainer.visibility = View.VISIBLE
-        refreshLayout.isEnabled = false
-
-        val connectButton = bindings.showsoverviewfragmentTraktConnectButton
-            connectButton.visibility = View.VISIBLE
-
-        messageContainer.text = "You are not logged in. Please login to see your shows."
-
-        connectButton.setOnClickListener {
-            startActivity(Intent(activity, AuthActivity::class.java))
-        }
-    }
-    
     private fun getMyShows() {
         lifecycleScope.launchWhenStarted {
             viewModel.myShows.collectLatest { myShowsResource ->
@@ -164,13 +136,14 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
 
                         if(myShowsResource.data != null) {
                             adapter.submitList(myShowsResource.data ?: emptyList())
-                        }else {
-                            messageContainer.visibility = View.VISIBLE
-                            messageContainer.text = "An error occurred loading your shows. ${myShowsResource.error?.localizedMessage}"
                         }
 
-
-                        Log.e(TAG, "getMyShows: Error getting my shows.. ${myShowsResource.error?.localizedMessage}", )
+                        (activity as IHandleError).showErrorSnackbarRetryButton(
+                            myShowsResource.error,
+                            bindings.showsoverviewfragmentSwipeRefreshLayout
+                        ) {
+                            viewModel.onRefresh()
+                        }
                     }
                 }
             }

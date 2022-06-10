@@ -20,31 +20,6 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toBottomOf="parent" />
 
-        <TextView
-            android:id="@+id/episodedetailsactivity_error_text"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
-            android:text="Error getting Movie Details. Please check your internet connection"
-            android:visibility="gone"
-            tools:visibility="visible"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toTopOf="@id/episodedetailsactivity_retry_button" />
-
-        <Button
-            android:id="@+id/episodedetailsactivity_retry_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Retry"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_error_text"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
-
-
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/episodedetailsactivity_poster_cardview"
             android:layout_width="95dp"
@@ -236,13 +211,6 @@
             episodedetailsactivity_poster_cardview,episodedetailsactivity_trakt_rating,episodedetailsactivity_first_aired,episodedetailsactivity_topbarrier,
             episodedetailsactivity_runtime,episodedetailsactivity_title,episodedetailsactivity_buttons_fragment_container, episodedetailsactivity_total_plays"
             tools:visibility="visible" />
-
-        <androidx.constraintlayout.widget.Group
-            android:id="@+id/episodedetailsactivity_error_group"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            app:constraint_referenced_ids="episodedetailsactivity_error_text, episodedetailsactivity_retry_button" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </FrameLayout>

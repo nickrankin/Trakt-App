@@ -28,9 +28,7 @@ import com.nickrankin.traktapp.adapter.history.EpisodeWatchedHistoryItemAdapter
 import com.nickrankin.traktapp.dao.show.TmSeasonAndStats
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
 import com.nickrankin.traktapp.databinding.ShowDetailsProgressFragmentBinding
-import com.nickrankin.traktapp.helper.AppConstants
-import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.helper.calculateProgress
+import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.model.shows.showdetails.ShowDetailsProgressViewModel
 import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
@@ -38,6 +36,7 @@ import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
 import com.nickrankin.traktapp.ui.shows.OnNavigateToEpisode
 import com.uwetrottmann.trakt5.entities.*
+import com.uwetrottmann.trakt5.enums.Type
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import org.threeten.bp.ZoneId
@@ -184,22 +183,34 @@ class ShowDetailsProgressFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
             viewModel.events.collectLatest { event ->
                 when(event) {
                     is ShowDetailsProgressViewModel.Event.DeleteWatchedHistoryItemEvent -> {
-                        val syncResponse = event.syncResponse.data
+                        val syncResponseResource = event.syncResponse
 
-                        if (event.syncResponse is Resource.Success) {
-                            if (syncResponse?.deleted?.episodes ?: 0 > 0) {
-                                displayToastMessage("Successfully removed play", Toast.LENGTH_LONG)
-                            } else if (syncResponse?.not_found?.episodes?.isNotEmpty() == true) {
-                                displayToastMessage(
-                                    "Could not locate play with this ID, error deleting watched history.",
-                                    Toast.LENGTH_LONG
-                                )
+                        when(syncResponseResource) {
+                            is Resource.Success -> {
+                                when(getSyncResponse(syncResponseResource.data, Type.SHOW)) {
+                                    Response.DELETED_OK -> {
+                                        displayToastMessage("Successfully removed play", Toast.LENGTH_LONG)
+
+                                    }
+                                    Response.NOT_FOUND -> {
+                                        displayToastMessage(
+                                            "Could not locate play with this ID, error deleting watched history.",
+                                            Toast.LENGTH_LONG
+                                        )
+                                    }
+                                    Response.ERROR -> {
+                                        displayToastMessage(
+                                            "Could not locate play with this ID, error deleting watched history.",
+                                            Toast.LENGTH_LONG
+                                        )
+                                    }
+                                    else -> {}
+                                }
                             }
-                        } else {
-                            displayToastMessage(
-                                "Error removing play ${event.syncResponse.error?.localizedMessage}",
-                                Toast.LENGTH_LONG
-                            )
+                            is Resource.Error -> {
+                                (activity as IHandleError).showErrorMessageToast(syncResponseResource.error, "Failed to remove play")
+                            }
+                            else -> {}
                         }
                     }
                 }

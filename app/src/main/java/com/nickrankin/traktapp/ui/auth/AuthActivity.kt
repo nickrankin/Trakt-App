@@ -2,9 +2,7 @@ package com.nickrankin.traktapp.ui.auth
 
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.content.SharedPreferences
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import com.nickrankin.traktapp.api.TraktApi
@@ -17,6 +15,7 @@ import android.webkit.*
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.nickrankin.traktapp.BaseActivity
+import com.nickrankin.traktapp.MainActivity
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.TitleHelper
 import com.nickrankin.traktapp.model.auth.AuthViewModel
@@ -28,7 +27,7 @@ import java.lang.RuntimeException
 
 private const val TAG = "AuthActivity"
 @AndroidEntryPoint
-class AuthActivity : AppCompatActivity(), TitleHelper {
+class AuthActivity : BaseActivity(), TitleHelper {
     private lateinit var bindings: ActivityAuthBinding
     private lateinit var webView: WebView
     private lateinit var csrfToken: String
@@ -38,9 +37,6 @@ class AuthActivity : AppCompatActivity(), TitleHelper {
 
     @Inject
     lateinit var traktApi: TraktApi
-
-    @Inject
-    lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -101,7 +97,9 @@ class AuthActivity : AppCompatActivity(), TitleHelper {
                         getUserSlug(accessToken)
                     }
                     is Resource.Error -> {
-                        tokenResource.error?.printStackTrace()
+                        showErrorSnackbarRetryButton(tokenResource.error, bindings.authactivityFragmentContainer) {
+                            viewModel.onRefresh()
+                        }
                     }
                 }
             }
@@ -142,6 +140,11 @@ class AuthActivity : AppCompatActivity(), TitleHelper {
 
     private fun finalizeLogin() {
         webView.visibility = View.GONE
+
+        sharedPreferences.edit()
+            .putBoolean(IS_LOGGED_IN, true)
+            .apply()
+
         restartApp()
     }
 
@@ -155,12 +158,7 @@ class AuthActivity : AppCompatActivity(), TitleHelper {
     }
 
     private fun restartApp() {
-
-        sharedPreferences.edit()
-            .putBoolean(IS_LOGGED_IN, true)
-            .apply()
-
-        val i = Intent(this, BaseActivity::class.java)
+        val i = Intent(this, MainActivity::class.java)
         i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(i)
@@ -176,6 +174,7 @@ class AuthActivity : AppCompatActivity(), TitleHelper {
             super.onReceivedError(view, request, error)
         }
 
+        @Deprecated("TODO Fix")
         override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
             if(url.contains("?")) {
                 // Fix faulty URI Trakt returns

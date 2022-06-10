@@ -7,7 +7,6 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
@@ -15,9 +14,9 @@ import com.bumptech.glide.RequestManager
 import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexWrap
 import com.google.android.flexbox.FlexboxLayoutManager
-import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.credits.CharacterPosterAdapter
 import com.nickrankin.traktapp.databinding.FragmentPeopleCreditsBinding
+import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
@@ -92,12 +91,13 @@ class PeopleCreditsFragment : Fragment() {
                         adapter.submitList(moviesCharacterResource.data)
                     }
                     is Resource.Error -> {
-                        Log.e(
-                            TAG,
-                            "getMovies: Error getting movies ${moviesCharacterResource.error?.message}",
-                        )
+                        if(moviesCharacterResource.data != null) {
+                            adapter.submitList(moviesCharacterResource.data)
+                        }
 
-                        moviesCharacterResource.error?.printStackTrace()
+                        (activity as IHandleError).showErrorSnackbarRetryButton(moviesCharacterResource.error, bindings.personactivitySwipeLayout) {
+                            viewModel.onRefresh()
+                        }
                     }
                 }
 
@@ -122,15 +122,15 @@ class PeopleCreditsFragment : Fragment() {
                         adapter.submitList(showsCharacterResource.data)
                     }
                     is Resource.Error -> {
-                        Log.e(
-                            TAG,
-                            "getShows: Error getting shows ${showsCharacterResource.error?.message}",
-                        )
+                        if(showsCharacterResource.data != null) {
+                            adapter.submitList(showsCharacterResource.data)
+                        }
 
-                        showsCharacterResource.error?.printStackTrace()
+                        (activity as IHandleError).showErrorSnackbarRetryButton(showsCharacterResource.error, bindings.personactivitySwipeLayout) {
+                            viewModel.onRefresh()
+                        }
                     }
                 }
-
             }
         }
     }

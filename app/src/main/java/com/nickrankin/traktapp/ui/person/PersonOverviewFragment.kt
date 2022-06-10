@@ -9,7 +9,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
-import androidx.activity.viewModels
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
@@ -17,7 +16,6 @@ import com.bumptech.glide.RequestManager
 import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexWrap
 import com.google.android.flexbox.FlexboxLayoutManager
-import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.credits.CharacterPosterAdapter
 import com.nickrankin.traktapp.dao.credits.model.Person
 import com.nickrankin.traktapp.databinding.FragmentPersonOverviewBinding
@@ -33,6 +31,7 @@ import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
 
 private const val TAG = "PersonOverviewFragment"
+
 @AndroidEntryPoint
 class PersonOverviewFragment : Fragment() {
 
@@ -87,7 +86,7 @@ class PersonOverviewFragment : Fragment() {
         lifecycleScope.launchWhenStarted {
             viewModel.person.collectLatest { personResource ->
 
-                when(personResource) {
+                when (personResource) {
                     is Resource.Loading -> {
                         progressBar.visibility = View.VISIBLE
                         Log.d(TAG, "getPerson: Loading person")
@@ -99,8 +98,12 @@ class PersonOverviewFragment : Fragment() {
                     is Resource.Error -> {
                         progressBar.visibility = View.GONE
 
-                        Log.e(TAG, "getPerson: Error getting person ${personResource.error?.message}", )
-                        personResource.error?.printStackTrace()
+                        (activity as IHandleError).showErrorSnackbarRetryButton(
+                            personResource.error,
+                            bindings.personactivitySwipeLayout
+                        ) {
+                            viewModel.onRefresh()
+                        }
                     }
                 }
             }
@@ -110,14 +113,14 @@ class PersonOverviewFragment : Fragment() {
     private fun getPersonsMovies() {
         lifecycleScope.launchWhenStarted {
             viewModel.personMovies.collectLatest { personMoviesResource ->
-                when(personMoviesResource) {
+                when (personMoviesResource) {
                     is Resource.Loading -> {
                         Log.d(TAG, "getPersonsMovies: Loading ...")
                     }
                     is Resource.Success -> {
                         val movieData = personMoviesResource.data
 
-                        if((movieData?.size ?: 0) > 6) {
+                        if ((movieData?.size ?: 0) > 6) {
                             personMoviesAdapter.submitList(movieData?.subList(0, 6))
                         } else {
                             personMoviesAdapter.submitList(movieData)
@@ -126,7 +129,12 @@ class PersonOverviewFragment : Fragment() {
 
                     }
                     is Resource.Error -> {
-                        Log.e(TAG, "getPersonsMovies: Error getting person movies ${personMoviesResource.error?.message}", )
+                        (activity as IHandleError).showErrorSnackbarRetryButton(
+                            personMoviesResource.error,
+                            bindings.personactivitySwipeLayout
+                        ) {
+                            viewModel.onRefresh()
+                        }
                     }
 
                 }
@@ -137,14 +145,14 @@ class PersonOverviewFragment : Fragment() {
     private fun getPersonsShows() {
         lifecycleScope.launchWhenStarted {
             viewModel.personShows.collectLatest { personShowsResource ->
-                when(personShowsResource) {
+                when (personShowsResource) {
                     is Resource.Loading -> {
                         Log.d(TAG, "getPersonsShows: Loading ...")
                     }
                     is Resource.Success -> {
                         val showData = personShowsResource.data
 
-                        if((showData?.size ?: 0) > 6) {
+                        if ((showData?.size ?: 0) > 6) {
                             personShowsAdapter.submitList(showData?.subList(0, 6))
                         } else {
                             personShowsAdapter.submitList(showData)
@@ -152,7 +160,12 @@ class PersonOverviewFragment : Fragment() {
 
                     }
                     is Resource.Error -> {
-                        Log.e(TAG, "getPersonsShows: Error getting person movies ${personShowsResource.error?.message}", )
+                        (activity as IHandleError).showErrorSnackbarRetryButton(
+                            personShowsResource.error,
+                            bindings.personactivitySwipeLayout
+                        ) {
+                            viewModel.onRefresh()
+                        }
                     }
 
                 }
@@ -161,19 +174,33 @@ class PersonOverviewFragment : Fragment() {
     }
 
     private fun displayPersonData(person: Person?) {
-        if(person == null) {
+        if (person == null) {
             return
         }
         (activity as OnTitleChangeListener).onTitleChanged(person.name)
 
         val datesSb = StringBuilder()
 
-        if(person.birthday != null) {
-            datesSb.append("Born: " + getFormattedDate(person.birthday, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT) ?: "", ""))
+        if (person.birthday != null) {
+            datesSb.append(
+                "Born: " + getFormattedDate(
+                    person.birthday,
+                    sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)
+                        ?: "",
+                    ""
+                )
+            )
         }
 
-        if(person.death != null) {
-            datesSb.append("- " + getFormattedDate(person.death, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT) ?: "", ""))
+        if (person.death != null) {
+            datesSb.append(
+                "- " + getFormattedDate(
+                    person.death,
+                    sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)
+                        ?: "",
+                    ""
+                )
+            )
         }
 
         bindings.apply {
@@ -181,7 +208,7 @@ class PersonOverviewFragment : Fragment() {
 
             personactivityDobDeath.text = datesSb.toString()
 
-            if(person.picture_path != null && person.picture_path.isNotBlank()) {
+            if (person.picture_path != null && person.picture_path.isNotBlank()) {
                 glide
                     .load(AppConstants.TMDB_POSTER_URL + person.picture_path)
                     .into(personactivityProfilePhoto)
@@ -245,7 +272,8 @@ class PersonOverviewFragment : Fragment() {
                 ShowDataModel(
                     selectedCredit.trakt_id,
                     selectedCredit.tmdb_id,
-                    selectedCredit.title)
+                    selectedCredit.title
+                )
             )
 
             startActivity(showIntent)
@@ -263,10 +291,13 @@ class PersonOverviewFragment : Fragment() {
 
         val fragTransaction = activity?.supportFragmentManager?.beginTransaction()
 
-        when(type) {
+        when (type) {
             Type.MOVIE -> {
                 val bundle = Bundle()
-                bundle.putString(PeopleCreditsFragment.CREDIT_TYPE_KEY, PeopleCreditsFragment.CREDIT_MOVIES_KEY)
+                bundle.putString(
+                    PeopleCreditsFragment.CREDIT_TYPE_KEY,
+                    PeopleCreditsFragment.CREDIT_MOVIES_KEY
+                )
 
                 peopleCreditsFragment.arguments = bundle
 
@@ -276,7 +307,10 @@ class PersonOverviewFragment : Fragment() {
             }
             Type.SHOW -> {
                 val bundle = Bundle()
-                bundle.putString(PeopleCreditsFragment.CREDIT_TYPE_KEY, PeopleCreditsFragment.SHOW_CREDITS_KEY)
+                bundle.putString(
+                    PeopleCreditsFragment.CREDIT_TYPE_KEY,
+                    PeopleCreditsFragment.SHOW_CREDITS_KEY
+                )
 
                 peopleCreditsFragment.arguments = bundle
 
@@ -285,7 +319,7 @@ class PersonOverviewFragment : Fragment() {
                     ?.commit()
             }
             else -> {
-                Log.e(TAG, "showAll: Unsupported type ${type.name}", )
+                Log.e(TAG, "showAll: Unsupported type ${type.name}")
             }
         }
     }

@@ -28,6 +28,7 @@ class MainActivityViewModel @Inject constructor(
 
     private val eventsChannel = Channel<Event>()
     val events = eventsChannel.receiveAsFlow()
+        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
     private val refreshEventChannel = Channel<Boolean>()
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
@@ -73,16 +74,16 @@ class MainActivityViewModel @Inject constructor(
     fun onStart() {
         viewModelScope.launch {
             refreshEventChannel.send(false)
-            eventsChannel.send(Event.RefreshMovieStatsEvent(statsRepository.refreshMovieStats(false)))
-            eventsChannel.send(Event.RefreshShowStatsEvent(statsRepository.refreshShowStats(false)))
+//            eventsChannel.send(Event.RefreshMovieStatsEvent(statsRepository.refreshMovieStats(false)))
+//            eventsChannel.send(Event.RefreshShowStatsEvent(statsRepository.refreshShowStats(false)))
         }
     }
 
     fun onRefresh() {
         viewModelScope.launch {
             refreshEventChannel.send(true)
-            eventsChannel.send(Event.RefreshMovieStatsEvent(statsRepository.refreshMovieStats(true)))
-            eventsChannel.send(Event.RefreshShowStatsEvent(statsRepository.refreshShowStats(true)))
+//            eventsChannel.send(Event.RefreshMovieStatsEvent(statsRepository.refreshMovieStats(true)))
+//            eventsChannel.send(Event.RefreshShowStatsEvent(statsRepository.refreshShowStats(true)))
         }
     }
 

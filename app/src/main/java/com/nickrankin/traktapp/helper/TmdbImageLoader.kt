@@ -171,6 +171,7 @@ class TmdbImageLoader @Inject constructor(
             ImageItemType.PERSON -> {
                 traktIdString = PREFIX_PERSON+traktId
             }
+            else -> {}
         }
 
         val images = Image(
@@ -320,6 +321,7 @@ class TmdbImageLoader @Inject constructor(
                 ImageItemType.EPISODE -> {
                     return null
                 }
+                else -> {}
             }
 
         } catch (e: HttpException) {

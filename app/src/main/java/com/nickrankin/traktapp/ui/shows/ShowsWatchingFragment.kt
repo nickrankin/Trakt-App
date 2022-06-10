@@ -64,23 +64,16 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
     private lateinit var adapter: WatchedEpisodesPagingAdapter
 
     @Inject
-    lateinit var sharedPreferences: SharedPreferences
-    
-    @Inject
     lateinit var tmdbImageLoader: TmdbImageLoader
 
     @Inject
     lateinit var glide: RequestManager
-
-    private var isLoggedIn = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         bindings = FragmentWatchingBinding.inflate(inflater)
-
-        isLoggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
 
         return bindings.root
     }
@@ -96,29 +89,13 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
         initRecycler()
         collectEvents()
 
-        if(isLoggedIn) {
-                collectEpisodes()
-        } else {
-            handleLoggedOutState()
+        if(!isLoggedIn) {
+            handleLoggedOutState(this.id)
         }
+
+        collectEpisodes()
     }
 
-    private fun handleLoggedOutState() {
-        progressBar.visibility = View.GONE
-        val messageContainer = bindings.showwatchingfragmentMessageContainer
-            messageContainer.visibility = View.VISIBLE
-        swipeLayout.isEnabled = false
-
-        val connectButton = bindings.showwatchingfragmentTraktConnectButton
-        connectButton.visibility = View.VISIBLE
-
-        messageContainer.text = "You are not logged in. Please login to see your  Watched shows."
-
-        connectButton.setOnClickListener {
-            startActivity(Intent(activity, AuthActivity::class.java))
-        }
-    }
-    
     private fun collectEpisodes() {
         lifecycleScope.launchWhenStarted {
             viewModel.watchedEpisodes.collectLatest { latestData ->
@@ -154,6 +131,8 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
                                 syncResponseResource.error?.printStackTrace()
                                 displayMessageToast("Error removing watched Episode. ${syncResponseResource.error?.localizedMessage}", Toast.LENGTH_LONG)
                             }
+                            else -> {}
+
                         }
                     } else -> {
                         //
@@ -273,7 +252,8 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
             Log.e(TAG, "onRefresh: CALLED", )
 
             //https://developer.android.com/reference/kotlin/androidx/paging/PagingDataAdapter#refresh()
-            adapter.refresh()
+            viewModel.onRefresh()
+            //adapter.refresh()
         }
     }
 

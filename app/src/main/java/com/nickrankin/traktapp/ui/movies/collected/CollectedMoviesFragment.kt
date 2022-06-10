@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.*
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
@@ -17,19 +16,18 @@ import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.movies.CollectedMoviesAdapter
 import com.nickrankin.traktapp.databinding.FragmentCollectedMoviesBinding
-import com.nickrankin.traktapp.helper.OnTitleChangeListener
+import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.movies.CollectedMoviesViewModel
-import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
 import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
-import com.uwetrottmann.trakt5.enums.SortBy
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
 
 private const val TAG = "CollectedMoviesFragment"
+
 @AndroidEntryPoint
 class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
@@ -67,9 +65,13 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
 
         updateTitle("Collected Movies")
 
-        initRecycler()
-        getCollectedMovies()
+        if(!isLoggedIn) {
+            handleLoggedOutState(this.id)
+        }
 
+        initRecycler()
+
+        getCollectedMovies()
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -82,7 +84,7 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
     private fun getCollectedMovies() {
         lifecycleScope.launchWhenStarted {
             viewModel.collectedMovies.collectLatest { collectedMoviesResource ->
-                when(collectedMoviesResource) {
+                when (collectedMoviesResource) {
                     is Resource.Loading -> {
                         bindings.collectedmoviesfragmentProgressbar.visibility = View.VISIBLE
                         Log.d(TAG, "getCollectedMovies: Loading collected")
@@ -90,25 +92,56 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
                     is Resource.Success -> {
                         bindings.collectedmoviesfragmentProgressbar.visibility = View.GONE
 
-                        if(swipeLayout.isRefreshing) {
+                        if (swipeLayout.isRefreshing) {
                             swipeLayout.isRefreshing = false
                         }
 
-                        adapter.submitList(collectedMoviesResource.data)
-//                        collectedShowsResource.data?.map { show ->
-//                            Log.d(TAG, "getCollectedMovies: Got show $show")
-//                        }
+                        val collectedMovies = collectedMoviesResource.data
+
+                        if(collectedMovies != null && collectedMovies.isNotEmpty()) {
+                            bindings.collectedmoviesfragmentMainGroup.visibility = View.VISIBLE
+                            bindings.collectedmoviesfragmentMessageContainer.visibility = View.GONE
+
+                            adapter.submitList(collectedMoviesResource.data)
+                        } else {
+                            handleNoResults()
+                            adapter.submitList(collectedMoviesResource.data)
+                        }
                     }
                     is Resource.Error -> {
                         bindings.collectedmoviesfragmentProgressbar.visibility = View.GONE
-                        if(swipeLayout.isRefreshing) {
+                        if (swipeLayout.isRefreshing) {
                             swipeLayout.isRefreshing = false
                         }
-                        collectedMoviesResource.error?.printStackTrace()
+
+                        val collectedMovies = collectedMoviesResource.data
+
+                        if(collectedMovies != null && collectedMovies.isNotEmpty()) {
+                            bindings.collectedmoviesfragmentMainGroup.visibility = View.VISIBLE
+                            bindings.collectedmoviesfragmentMessageContainer.visibility = View.GONE
+
+                            adapter.submitList(collectedMoviesResource.data)
+                        } else {
+                            handleNoResults()
+                            adapter.submitList(collectedMoviesResource.data)
+                        }
+
+                        (activity as IHandleError).showErrorSnackbarRetryButton(
+                            collectedMoviesResource.error,
+                            bindings.collectedmoviesfragmentSwipeLayout
+                        ) {
+                            viewModel.onRefresh()
+                        }
                     }
                 }
             }
         }
+    }
+
+    private fun handleNoResults() {
+        bindings.collectedmoviesfragmentMainGroup.visibility = View.GONE
+        bindings.collectedmoviesfragmentMessageContainer.visibility = View.VISIBLE
+        bindings.collectedmoviesfragmentMessageContainer.text = "You have nothing in your Trakt Collection :( "
     }
 
     private fun initRecycler() {
@@ -122,7 +155,8 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
 
         adapter = CollectedMoviesAdapter(glide, tmdbImageLoader, callback = { movie, type ->
             val intent = Intent(requireContext(), MovieDetailsActivity::class.java)
-            intent.putExtra(MovieDetailsActivity.MOVIE_DATA_KEY,
+            intent.putExtra(
+                MovieDetailsActivity.MOVIE_DATA_KEY,
                 MovieDataModel(
                     movie.trakt_id,
                     movie.tmdb_id,
@@ -148,8 +182,9 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
         viewModel.onRefresh()
     }
 
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when(item.itemId) {
+        when (item.itemId) {
             R.id.collectedfiltermenu_title -> {
                 viewModel.sortMovies(CollectedMoviesViewModel.SORT_TITLE)
             }

@@ -14,10 +14,13 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.dao.show.model.TmEpisode
-import com.nickrankin.traktapp.dao.show.model.TmShow
 import com.nickrankin.traktapp.databinding.ActionButtonsFragmentBinding
+import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.helper.Response
+import com.nickrankin.traktapp.helper.getSyncResponse
 import com.nickrankin.traktapp.model.shows.episodedetails.EpisodeDetailsActionButtonsViewModel
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.dialog.RatingPickerFragment
@@ -31,16 +34,11 @@ import javax.inject.Inject
 
 private const val TAG = "EpisodeDetailsActionBut"
 @AndroidEntryPoint
-class EpisodeDetailsActionButtonsFragment(): Fragment(), OnEpisodeChangeListener {
+class EpisodeDetailsActionButtonsFragment(): BaseFragment(), OnEpisodeChangeListener {
 
     private val viewModel: EpisodeDetailsActionButtonsViewModel by activityViewModels()
 
-    @Inject
-    lateinit var sharedPreferences: SharedPreferences
-
     private lateinit var bindings: ActionButtonsFragmentBinding
-
-    private var isLoggedIn = false
 
     private var episode: TmEpisode? = null
 
@@ -61,8 +59,6 @@ class EpisodeDetailsActionButtonsFragment(): Fragment(), OnEpisodeChangeListener
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        isLoggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
     }
 
     override fun bindEpisode(episode: TmEpisode) {
@@ -71,9 +67,8 @@ class EpisodeDetailsActionButtonsFragment(): Fragment(), OnEpisodeChangeListener
         viewModel.setEpisodeTraktId(episode.episode_trakt_id)
             Log.e(TAG, "onEpisodeIdChanged: EpisodeID is now $episode", )
 
-        // Only setup the buttons once we have Episode Trakt ID
         // Setup the buttons
-        //setupAddCollectionButton()
+        setupAddCollectionButton()
 
         if(isLoggedIn) {
             setupCheckinButton()
@@ -169,24 +164,15 @@ class EpisodeDetailsActionButtonsFragment(): Fragment(), OnEpisodeChangeListener
 
                             Log.e(TAG, "getEvents: Caught an exception ${exception?.localizedMessage}", )
 
-                            if(exception is HttpException) {
-                                val errorCode = exception.code()
-                                if(errorCode == 409) {
+                            if(exception is HttpException && exception.code() == 409) {
                                     // The user is already watching something, so give the user options
                                     cancelCheckinDialog?.show()
-                                } else {
-                                    checkinButton.isEnabled = true
-                                    checkinProgressBar.visibility = View.GONE
 
-                                    // Some other HTTP Error occurred
-                                    displayMessageToast("An HTTP error occurred while trying to checkin to this episode (code: $errorCode) ${exception?.localizedMessage}", Toast.LENGTH_LONG)
-
-                                }
                             } else {
                                 checkinButton.isEnabled = true
                                 checkinProgressBar.visibility = View.GONE
 
-                                displayMessageToast("An error occurred while trying to checkin to this episode ${exception?.localizedMessage}", Toast.LENGTH_LONG)
+                                (activity as IHandleError).showErrorMessageToast(checkInResponse.error, "Error checking in")
                             }
                         }
                     }
@@ -209,8 +195,8 @@ class EpisodeDetailsActionButtonsFragment(): Fragment(), OnEpisodeChangeListener
                             }
 
                         } else if(response is Resource.Error) {
-                            response.error?.printStackTrace()
-                            displayMessageToast("Error cancelling checkins. ${response.error?.localizedMessage}", Toast.LENGTH_LONG)
+                            (activity as IHandleError).showErrorMessageToast(response.error, "Error  deleting checkin")
+
                         }
                     }
                     is EpisodeDetailsActionButtonsViewModel.Event.AddToWatchedHistoryEvent -> {
@@ -220,20 +206,29 @@ class EpisodeDetailsActionButtonsFragment(): Fragment(), OnEpisodeChangeListener
                         addHistoryButton.isEnabled = true
                         addHistoryProgressBar.visibility = View.GONE
 
-                        val syncResponse = event.syncResponse
+                        val syncResponseResource = event.syncResponse
 
-                        if(syncResponse is Resource.Success) {
-                            val data = syncResponse.data
+                        if(syncResponseResource is Resource.Success) {
 
-                            if(data?.added?.episodes ?: 0 > 0) {
-                                displayMessageToast("Successfully added ${episode?.name ?: "episode"} to your watch history!", Toast.LENGTH_SHORT)
-                            } else {
-                                displayMessageToast("Unable to add current episode to watched history", Toast.LENGTH_LONG)
+
+                            when(val syncResponse = getSyncResponse(syncResponseResource.data, Type.EPISODE)) {
+                                Response.ADDED_OK -> {
+                                    displayMessageToast("Successfully added ${episode?.name ?: "episode"} to your watch history!", Toast.LENGTH_SHORT)
+                                }
+                                Response.NOT_FOUND -> {
+                                    displayMessageToast("Current Episode could not be found on Trakt", Toast.LENGTH_LONG)
+                                }
+                                Response.ERROR -> {
+                                    displayMessageToast("An error occorred adding item to your history", Toast.LENGTH_LONG)
+                                }
+                                else -> {
+
+                                }
                             }
-                        } else if(syncResponse is Resource.Error) {
-                            syncResponse.error?.printStackTrace()
 
-                            displayMessageToast("Error adding episode to your watched history", Toast.LENGTH_LONG)
+                        } else if(syncResponseResource is Resource.Error) {
+                            (activity as IHandleError).showErrorMessageToast(syncResponseResource.error, "Error adding episode to your watched history")
+
                         }
                     }
                     is EpisodeDetailsActionButtonsViewModel.Event.AddRatingsEvent -> {
@@ -241,17 +236,25 @@ class EpisodeDetailsActionButtonsFragment(): Fragment(), OnEpisodeChangeListener
                         val newRating = event.syncResponse.data?.second
 
                         if(event.syncResponse is Resource.Success) {
-                            if(syncResponse?.added?.episodes ?: 0 > 0) {
-                                displayMessageToast("Successfully rated ${episode?.name ?: "Unknown"} with ${Rating.fromValue(newRating ?: 7).name} ($newRating)", Toast.LENGTH_LONG)
 
-                                viewModel.updateRatings(newRating ?: 0)
-                            } else {
-                                displayMessageToast("Could not add rating, please try again later", Toast.LENGTH_LONG)
+                            when(getSyncResponse(syncResponse, Type.EPISODE)) {
+                                Response.ADDED_OK -> {
+                                    displayMessageToast("Successfully rated ${episode?.name ?: "Unknown"} with ${Rating.fromValue(newRating ?: 7).name} ($newRating)", Toast.LENGTH_LONG)
+                                }
+                                Response.NOT_FOUND -> {
+                                    displayMessageToast("Current Episode could not be found on Trakt", Toast.LENGTH_LONG)
+                                }
+                                Response.ERROR -> {
+                                    displayMessageToast("Could not add rating, please try again later", Toast.LENGTH_LONG)
+                                }
+                                else -> {
+
+                                }
                             }
 
                         } else if(event.syncResponse is Resource.Error) {
-                            displayMessageToast("Error adding rating. Error: ${event.syncResponse.error?.localizedMessage}", Toast.LENGTH_LONG)
-                            event.syncResponse.error?.printStackTrace()
+                            (activity as IHandleError).showErrorMessageToast(event.syncResponse.error, "Error adding rating")
+
                         }
                     }
 
@@ -259,19 +262,27 @@ class EpisodeDetailsActionButtonsFragment(): Fragment(), OnEpisodeChangeListener
                         val syncResponse = event.syncResponse.data
 
                         if(event.syncResponse is Resource.Success) {
-                            if(syncResponse?.deleted?.episodes ?: 0 > 0) {
-                                displayMessageToast("Successfully reset rating!", Toast.LENGTH_LONG)
+                            when(getSyncResponse(syncResponse, Type.EPISODE)) {
+                                Response.DELETED_OK -> {
+                                    displayMessageToast("Successfully reset rating!", Toast.LENGTH_LONG)
+                                }
+                                Response.NOT_FOUND -> {
+                                    displayMessageToast("Current Episode could not be found on Trakt", Toast.LENGTH_LONG)
+                                }
+                                Response.ERROR -> {
+                                    displayMessageToast("Could not delete rating, please try again later", Toast.LENGTH_LONG)
+                                }
+                                else -> {
 
-                                viewModel.updateRatings(null)
-                            } else {
-                                displayMessageToast("Could not delete rating, please try again later", Toast.LENGTH_LONG)
+                                }
                             }
 
                         } else if(event.syncResponse is Resource.Error) {
-                            displayMessageToast("Error deleting rating. Error: ${event.syncResponse.error?.localizedMessage}", Toast.LENGTH_LONG)
-                            event.syncResponse.error?.printStackTrace()
+                            (activity as IHandleError).showErrorMessageToast(event.syncResponse.error, "Error removing rating")
                         }
                     }
+                    else -> {}
+
                 }
             }
         }
@@ -368,7 +379,6 @@ class EpisodeDetailsActionButtonsFragment(): Fragment(), OnEpisodeChangeListener
             }
         }
     }
-
 
     private fun initAddWatchedHistoryDialog() {
 

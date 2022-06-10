@@ -168,6 +168,8 @@ class ListEntryRepository @Inject constructor(private val traktApi: TraktApi, pr
                         )
                     }
                 }
+                else -> {}
+
             }
 
             val response = traktApi.tmUsers().deleteListItems(userSlug, listTraktId.toString(), syncItems)

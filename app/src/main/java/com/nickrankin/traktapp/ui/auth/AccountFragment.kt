@@ -17,7 +17,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.room.withTransaction
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
-import com.nickrankin.traktapp.BaseActivity
+import com.nickrankin.traktapp.MainActivity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.TmApplication
 import com.nickrankin.traktapp.dao.auth.AuthDatabase
@@ -25,6 +25,7 @@ import com.nickrankin.traktapp.dao.auth.AuthUserDao
 import com.nickrankin.traktapp.dao.auth.model.AuthUser
 import com.nickrankin.traktapp.databinding.FragmentAccountBinding
 import com.nickrankin.traktapp.helper.AppConstants
+import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.TitleHelper
 import com.nickrankin.traktapp.model.auth.AuthViewModel
@@ -105,12 +106,12 @@ class AccountFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
                     }
 
                     if(userResource.data != null) {
-                        showToast("Error Refreshing Profile! ${userResource.error?.localizedMessage}", Toast.LENGTH_LONG)
                         bindUserData(userResource.data)
-                    } else {
-                        showToast("Error getting Profile! ${userResource.error?.localizedMessage}", Toast.LENGTH_LONG)
                     }
-                    userResource.error?.printStackTrace()
+
+                    (activity as IHandleError).showErrorSnackbarRetryButton(userResource.error, bindings.accountfragmentSwipeLayout) {
+                        viewModel.onRefresh()
+                    }
                 }
             }
         }
@@ -144,6 +145,7 @@ class AccountFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
                     false -> {
                         showToast("Public Trakt Account", Toast.LENGTH_LONG)
                     }
+                    else -> {}
                 }
             }
 
@@ -168,7 +170,7 @@ class AccountFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
             .setTitle("Trakt Logout")
             .setMessage("Are you sure you want to logout of Trakt? You will need to authenticate again to use most app features")
             .setPositiveButton("Logout", DialogInterface.OnClickListener { _, _ ->
-                val isLoggedOut = app.logout()
+                val isLoggedOut = app.logout(false)
 
                 if(isLoggedOut) {
                     // Finally clean up the database cache
@@ -178,12 +180,12 @@ class AccountFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
                         }
                     }
 
-                    val intent = Intent(context, BaseActivity::class.java)
+                    val intent = Intent(context, MainActivity::class.java)
                     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
                     startActivity(intent)
                 }
             })
-            .setNegativeButton("Cancel", DialogInterface.OnClickListener { dialogInterface, i ->
+            .setNegativeButton("Cancel", { dialogInterface, i ->
             })
             .show()
 

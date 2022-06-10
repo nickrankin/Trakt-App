@@ -37,17 +37,6 @@
             app:layout_constraintEnd_toEndOf="parent"
             android:visibility="gone" />
 
-        <Button
-            android:id="@+id/showwatchingfragment_trakt_connect_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            app:layout_constraintTop_toBottomOf="@id/showwatchingfragment_message_container"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="Connect Trakt Account"
-            android:visibility="gone" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/showwatchingfragment_recyclerview"

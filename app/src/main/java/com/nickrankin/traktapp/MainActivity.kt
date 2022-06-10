@@ -34,6 +34,7 @@ import com.nickrankin.traktapp.helper.calculateRuntimeWithDays
 import com.nickrankin.traktapp.model.MainActivityViewModel
 import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
+import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.movies.MoviesMainActivity
 import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
 import com.nickrankin.traktapp.ui.search.SearchResultsActivity
@@ -57,9 +58,6 @@ class MainActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
     private lateinit var navView: NavigationView
 
     @Inject
-    lateinit var sharedPreferences: SharedPreferences
-
-    @Inject
     lateinit var tmdbImageLoader: TmdbImageLoader
 
     private val viewModel: MainActivityViewModel by viewModels()
@@ -78,6 +76,9 @@ class MainActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        Log.d(TAG, "onCreate: Use logged in: ${sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)}")
+        Log.d(TAG, "onCreate: User logged in as ${sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "Unknown")}. Access token ${sharedPreferences.getString(AuthActivity.ACCESS_TOKEN_KEY, "empty")}")
 
         // Load the default preferences
         PreferenceManager.setDefaultValues(this, R.xml.root_preferences, false)
@@ -208,6 +209,7 @@ class MainActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
                                 Log.e(TAG, "getEvents: Error refreshing movies", )
                                 event.refreshStatus.error?.printStackTrace()
                             }
+                            else -> {}
                         }
                     }
 
@@ -220,6 +222,8 @@ class MainActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
                                 Log.e(TAG, "getEvents: Error refreshing Shows", )
                                 event.refreshStatus.error?.printStackTrace()
                             }
+                            else -> {}
+
                         }
                     }
                 }

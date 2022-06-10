@@ -48,25 +48,23 @@ class MovieDetailsActionButtonsViewModel @Inject constructor(
     val events = eventsChannel.receiveAsFlow()
         .shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
-    val traktId = savedStateHandle.get<Int>(MovieDetailsRepository.MOVIE_TRAKT_ID_KEY) ?: 0
-
     val listsWithEntries = listsRepository.listsWithEntries
 
     suspend fun collectedMovieStats(traktId: Int) = statsRepository.getCollectedMovieStatsById(traktId)
 
-    fun addToCollection() = viewModelScope.launch { eventsChannel.send(Event.AddToCollectionEvent(collectedMoviesRepository.addCollectedMovie(traktId ?: 0))) }
-    fun deleteFromCollection() = viewModelScope.launch { eventsChannel.send(Event.RemoveFromCollectionEvent(collectedMoviesRepository.removeCollectedMovie(traktId ?: -1))) }
+    fun addToCollection(traktId: Int) = viewModelScope.launch { eventsChannel.send(Event.AddToCollectionEvent(collectedMoviesRepository.addCollectedMovie(traktId ?: 0))) }
+    fun deleteFromCollection(traktId: Int) = viewModelScope.launch { eventsChannel.send(Event.RemoveFromCollectionEvent(collectedMoviesRepository.removeCollectedMovie(traktId ?: -1))) }
 
     fun addListEntry(type: String, traktId: Int, traktList: TraktList) = viewModelScope.launch { eventsChannel.send(Event.AddListEntryEvent(listEntryRepository.addListEntry(type, traktId, traktList))) }
     fun removeListEntry(listTraktId: Int, listEntryTraktId: Int, type: Type) = viewModelScope.launch { eventsChannel.send(Event.RemoveListEntryEvent(listEntryRepository.removeEntry(listTraktId, listEntryTraktId, type))) }
 
     val movieRatings = movieRatingsRepository.movieRatings
 
-    fun addRating(newRating: Int, tmdbId: Int?, movieTitle: String) = viewModelScope.launch { eventsChannel.send(Event.AddRatingEvent(movieRatingsRepository.addRating(traktId ?: -1, tmdbId, movieTitle, newRating), newRating)) }
+    fun addRating(newRating: Int, traktId: Int, tmdbId: Int?, movieTitle: String) = viewModelScope.launch { eventsChannel.send(Event.AddRatingEvent(movieRatingsRepository.addRating(traktId ?: -1, tmdbId, movieTitle, newRating), newRating)) }
 
-    fun deleteRating() = viewModelScope.launch { eventsChannel.send(Event.DeleteRatingEvent(movieRatingsRepository.deleteRating(traktId ?: -1))) }
+    fun deleteRating(traktId: Int) = viewModelScope.launch { eventsChannel.send(Event.DeleteRatingEvent(movieRatingsRepository.deleteRating(traktId ?: -1))) }
 
-    fun checkin(cancelActiveCheckins: Boolean) = viewModelScope.launch { eventsChannel.send(Event.CheckinEvent(repository.checkin(traktId, cancelActiveCheckins))) }
+    fun checkin(traktId: Int, cancelActiveCheckins: Boolean) = viewModelScope.launch { eventsChannel.send(Event.CheckinEvent(repository.checkin(traktId, cancelActiveCheckins))) }
     fun cancelCheckin() = viewModelScope.launch { eventsChannel.send(Event.CancelCheckinEvent(repository.cancelCheckins())) }
 
     fun addToWatchedHistory(movie: TmMovie, watchedDate: OffsetDateTime) = viewModelScope.launch { eventsChannel.send(Event.AddToHistoryEvent(repository.addToWatchedHistory(movie, watchedDate))) }

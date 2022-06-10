@@ -2,40 +2,27 @@ package com.nickrankin.traktapp.ui.shows
 
 import android.content.DialogInterface
 import android.content.Intent
-import android.content.SharedPreferences
-import android.graphics.Canvas
-import android.graphics.Typeface
 import android.os.Bundle
-import android.os.CountDownTimer
 import android.util.Log
 import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
-import com.google.android.material.snackbar.Snackbar
 import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.shows.CollectedShowsAdapter
 import com.nickrankin.traktapp.dao.show.model.CollectedShow
 import com.nickrankin.traktapp.databinding.FragmentCollectedShowsBinding
-import com.nickrankin.traktapp.helper.ItemDecorator
-import com.nickrankin.traktapp.helper.OnTitleChangeListener
-import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.helper.TmdbImageLoader
+import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.auth.shows.CollectedShowsViewModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
-import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
-import com.uwetrottmann.trakt5.enums.SortBy
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -56,11 +43,6 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
 
     private var scrollToTop = true
 
-    private var isLoggedIn = false
-
-    @Inject
-    lateinit var sharedPreferences: SharedPreferences
-
     @Inject
     lateinit var tmdbImageLoader: TmdbImageLoader
 
@@ -79,8 +61,6 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
 
         swipeLayout.setOnRefreshListener(this)
         setHasOptionsMenu(true)
-
-        isLoggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
 
         return bindings.root
     }
@@ -172,13 +152,14 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
 
                     if (collectedShowsResource.data != null) {
                         adapter.submitList(collectedShowsResource.data ?: emptyList())
-                    } else {
-                        messageContainer.visibility = View.VISIBLE
-                        messageContainer.text =
-                            "An error occurred while loading your Collected shows. ${collectedShowsResource.error?.localizedMessage} "
                     }
-                    Log.e(TAG, "collectCollectedShows: Error collecting shows")
-                    collectedShowsResource.error?.printStackTrace()
+
+                    (activity as IHandleError).showErrorSnackbarRetryButton(
+                        collectedShowsResource.error,
+                        bindings.collectedshowsfragmentSwipeLayout
+                    ) {
+                        viewModel.onRefresh()
+                    }
                 }
             }
         }
@@ -205,6 +186,7 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
                             )
                         }
                     }
+                    else -> {}
                 }
             }
         }

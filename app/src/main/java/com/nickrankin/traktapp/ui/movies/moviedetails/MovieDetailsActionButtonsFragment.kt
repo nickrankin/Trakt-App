@@ -8,7 +8,6 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.Toast
@@ -16,14 +15,14 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.nickrankin.traktapp.dao.lists.model.ListEntry
+import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.dao.movies.model.TmMovie
 import com.nickrankin.traktapp.databinding.ActionButtonsFragmentBinding
+import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.helper.Response
+import com.nickrankin.traktapp.helper.getSyncResponse
 import com.nickrankin.traktapp.model.movies.MovieDetailsActionButtonsViewModel
-import com.nickrankin.traktapp.model.shows.showdetails.ShowDetailsActionButtonsViewModel
-import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
-import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.dialog.RatingPickerFragment
 import com.nickrankin.traktmanager.ui.dialoguifragments.WatchedDatePickerFragment
@@ -32,21 +31,17 @@ import com.uwetrottmann.trakt5.enums.Type
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import retrofit2.HttpException
+import java.io.IOException
 import javax.inject.Inject
 
 private const val TAG = "ShowDetailsActionButton"
 
 @AndroidEntryPoint
-class MovieDetailsActionButtonsFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
+class MovieDetailsActionButtonsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
     private val viewModel: MovieDetailsActionButtonsViewModel by activityViewModels()
 
-    @Inject
-    lateinit var shedPreferences: SharedPreferences
-
     private lateinit var bindings: ActionButtonsFragmentBinding
-
-    private var isLoggedIn = false
 
     // Dialogs
     private lateinit var addToCollectionDialog: AlertDialog
@@ -66,20 +61,22 @@ class MovieDetailsActionButtonsFragment : Fragment(), SwipeRefreshLayout.OnRefre
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        Log.e(TAG, "onViewCreated:setupListsDialog HERE", )
+        Log.e(TAG, "onViewCreated:setupListsDialog HERE")
 
         super.onViewCreated(view, savedInstanceState)
 
-        isLoggedIn = shedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
-
-        if(isLoggedIn) {
+        if (isLoggedIn) {
             setupRatingButton()
             setupCollectionButton()
+        } else {
+            Log.e(TAG, "onViewCreated: User not logged in")
         }
     }
 
     fun initFragment(movie: TmMovie?) {
-        if(movie == null) {
+        Log.d(TAG, "initFragment: Initializing Fragment with $movie")
+        if (movie == null) {
+            Log.e(TAG, "initFragment: TmMovie must not be null")
             return
         }
 
@@ -122,10 +119,10 @@ class MovieDetailsActionButtonsFragment : Fragment(), SwipeRefreshLayout.OnRefre
             .setTitle("Start watching ${movie.title}?")
             .setMessage("Do you want to start watching ${movie.title}?")
             .setPositiveButton("Yes", DialogInterface.OnClickListener { dialogInterface, i ->
-                viewModel.checkin(false)
+                viewModel.checkin(movie.trakt_id, false)
                 dialogInterface.dismiss()
             })
-            .setNegativeButton("Cancel",  DialogInterface.OnClickListener { dialogInterface, i ->
+            .setNegativeButton("Cancel", DialogInterface.OnClickListener { dialogInterface, i ->
                 dialogInterface.dismiss()
             })
             .create()
@@ -144,7 +141,10 @@ class MovieDetailsActionButtonsFragment : Fragment(), SwipeRefreshLayout.OnRefre
         }
 
         addToHistoryButton.setOnClickListener {
-            addToWatchedHistoryFragment.show(requireActivity().supportFragmentManager, "Date Picker Fragment")
+            addToWatchedHistoryFragment.show(
+                requireActivity().supportFragmentManager,
+                "Date Picker Fragment"
+            )
         }
 
     }
@@ -171,12 +171,12 @@ class MovieDetailsActionButtonsFragment : Fragment(), SwipeRefreshLayout.OnRefre
             viewModel.movieRatings.collectLatest { ratings ->
                 val rating = ratings.find { it.trakt_id == movie.trakt_id }
 
-                    if (rating != null) {
-                        bindings.actionbuttonRateText.text = "${rating.rating}"
-                    } else {
-                        bindings.actionbuttonRateText.text = " - "
+                if (rating != null) {
+                    bindings.actionbuttonRateText.text = "${rating.rating}"
+                } else {
+                    bindings.actionbuttonRateText.text = " - "
 
-                    }
+                }
             }
         }
     }
@@ -186,7 +186,7 @@ class MovieDetailsActionButtonsFragment : Fragment(), SwipeRefreshLayout.OnRefre
             .setTitle("Already watching something")
             .setMessage("You are already watching something on Trakt. Cancel what you are watching and start watching ${movie.title}?")
             .setPositiveButton("Yes") { dialogInterface, i ->
-                viewModel.checkin(true)
+                viewModel.checkin(movie.trakt_id, true)
                 dialogInterface.dismiss()
             }
             .setNegativeButton("Cancel") { dialogInterface, i ->
@@ -234,7 +234,7 @@ class MovieDetailsActionButtonsFragment : Fragment(), SwipeRefreshLayout.OnRefre
                 collectedShowButton.isEnabled = false
                 addCollectionProgressBar.visibility = View.VISIBLE
 
-                viewModel.addToCollection()
+                viewModel.addToCollection(movie.trakt_id)
             })
             .setNegativeButton("Cancel", DialogInterface.OnClickListener { dialogInterface, i ->
                 dialogInterface.dismiss()
@@ -249,7 +249,7 @@ class MovieDetailsActionButtonsFragment : Fragment(), SwipeRefreshLayout.OnRefre
                 collectedShowButton.isEnabled = false
                 addCollectionProgressBar.visibility = View.VISIBLE
 
-                viewModel.deleteFromCollection()
+                viewModel.deleteFromCollection(movie.trakt_id)
             })
             .setNegativeButton("Cancel", DialogInterface.OnClickListener { dialogInterface, i ->
                 dialogInterface.dismiss()
@@ -265,16 +265,16 @@ class MovieDetailsActionButtonsFragment : Fragment(), SwipeRefreshLayout.OnRefre
 
             if (newRating != -1) {
                 Log.d(TAG, "Calling viewModel.updateRating")
-                viewModel.addRating(newRating, movie.tmdb_id, movie.title)
+                viewModel.addRating(newRating, movie.trakt_id, movie.tmdb_id, movie.title)
             } else {
                 Log.d(TAG, "initDialogs: Deleting rating")
-                viewModel.deleteRating()
+                viewModel.deleteRating(movie.trakt_id)
             }
         }, movie.title)
     }
 
     private fun setupListsDialog(movie: TmMovie) {
-        Log.e(TAG, "setupListsDialog: Called", )
+        Log.e(TAG, "setupListsDialog: Called")
         val layout = LinearLayout(requireContext())
         layout.orientation = LinearLayout.VERTICAL
 
@@ -287,7 +287,7 @@ class MovieDetailsActionButtonsFragment : Fragment(), SwipeRefreshLayout.OnRefre
             .create()
 
         lifecycleScope.launchWhenStarted {
-            viewModel.listsWithEntries.collectLatest { listEntries->
+            viewModel.listsWithEntries.collectLatest { listEntries ->
                 layout.removeAllViews()
                 listEntries.map { listWithEntries ->
                     val checkbox = CheckBox(layout.context)
@@ -295,16 +295,24 @@ class MovieDetailsActionButtonsFragment : Fragment(), SwipeRefreshLayout.OnRefre
 
                     // If we find current movie in list, checkbox should be ticked
                     checkbox.isChecked = listWithEntries.entries.find {
-                        Log.d(TAG, "setupListsDialog: List Entry TraktId: ${it?.list_entry_trakt_id} TRAKT ID: ${movie.trakt_id}")
-                         it?.list_entry_trakt_id == movie.trakt_id } != null
+                        Log.d(
+                            TAG,
+                            "setupListsDialog: List Entry TraktId: ${it?.list_entry_trakt_id} TRAKT ID: ${movie.trakt_id}"
+                        )
+                        it?.list_entry_trakt_id == movie.trakt_id
+                    } != null
 
                     checkbox.setOnClickListener {
                         val checkbox = it as CheckBox
 
-                        if(checkbox.isChecked) {
+                        if (checkbox.isChecked) {
                             viewModel.addListEntry("movie", movie.trakt_id, listWithEntries.list)
                         } else {
-                            viewModel.removeListEntry(listWithEntries.list.trakt_id, movie.trakt_id, Type.MOVIE)
+                            viewModel.removeListEntry(
+                                listWithEntries.list.trakt_id,
+                                movie.trakt_id,
+                                Type.MOVIE
+                            )
                         }
 
                     }
@@ -320,94 +328,190 @@ class MovieDetailsActionButtonsFragment : Fragment(), SwipeRefreshLayout.OnRefre
             viewModel.events.collectLatest { event ->
                 when (event) {
                     is MovieDetailsActionButtonsViewModel.Event.AddListEntryEvent -> {
-                        val syncResponse = event.addListEntryResponse
+                        val syncResponseResource = event.addListEntryResponse
 
-                        when(syncResponse) {
+                        when (syncResponseResource) {
                             is Resource.Success -> {
-                                if(syncResponse.data?.added?.movies ?: 0 > 0) {
-                                    displayMessageToast("Successfully added ${movie.title} to the list", Toast.LENGTH_SHORT)
+                                when (getSyncResponse(syncResponseResource.data, Type.MOVIE)) {
+                                    Response.ADDED_OK -> {
+                                        displayMessageToast(
+                                            "Successfully added ${movie.title} to the list",
+                                            Toast.LENGTH_SHORT
+                                        )
+
+                                    }
+                                    Response.NOT_FOUND -> {
+                                        displayMessageToast(
+                                            "Current Movie could not be found on Trakt (ID: ${movie.trakt_id})",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                    }
+                                    Response.ERROR -> {
+                                        Log.e(TAG, "getEvents: SyncResponse cannot be NULL")
+                                    }
+                                    else -> {
+                                        Log.e(TAG, "getEvents: Invalid Response")
+                                    }
                                 }
                             }
                             is Resource.Error -> {
-                                displayMessageToast("Error adding ${movie.title} to the list ${syncResponse.error?.message}", Toast.LENGTH_LONG)
-                                syncResponse.error?.printStackTrace()
-                                Log.e(TAG, "getEvents: ${syncResponse.error?.message}", )
+                                (activity as IHandleError).showErrorMessageToast(
+                                    syncResponseResource.error,
+                                    "Error adding ${movie.title} to the list"
+                                )
+                            }
+                            else -> {
+                                Log.e(TAG, "getEvents: Invalid Response")
                             }
                         }
 
                     }
                     is MovieDetailsActionButtonsViewModel.Event.RemoveListEntryEvent -> {
-                        val syncResponse = event.removeListEntryResponse
+                        val syncResponseResource = event.removeListEntryResponse
 
-                        when(syncResponse) {
+                        when (syncResponseResource) {
                             is Resource.Success -> {
-                                if(syncResponse.data?.deleted?.movies ?: 0 > 0) {
-                                    displayMessageToast("Successfully removed ${movie.title} from the list", Toast.LENGTH_SHORT)
+
+                                when (getSyncResponse(syncResponseResource.data, Type.MOVIE)) {
+                                    Response.DELETED_OK -> {
+                                        displayMessageToast(
+                                            "Successfully removed ${movie.title} from the list",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                    }
+                                    Response.NOT_FOUND -> {
+                                        displayMessageToast(
+                                            "Current Movie could not be found on Trakt (ID: ${movie.trakt_id})",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                    }
+                                    Response.ERROR -> {
+                                        Log.e(TAG, "getEvents: SyncResponse cannot be NULL")
+
+                                    }
+                                    else -> {
+                                        Log.e(TAG, "getEvents: Invalid Response")
+
+                                    }
                                 }
                             }
                             is Resource.Error -> {
-                                displayMessageToast("Error removing ${movie.title} from the list ${syncResponse.error?.message}", Toast.LENGTH_LONG)
-                                syncResponse.error?.printStackTrace()
-                                Log.e(TAG, "getEvents: ${syncResponse.error?.message}", )
+                                (activity as IHandleError).showErrorMessageToast(
+                                    syncResponseResource.error,
+                                    "Error removing ${movie.title} from the list"
+                                )
+                            }
+                            else -> {
+                                Log.e(TAG, "getEvents: Invalid Response")
                             }
                         }
                     }
                     is MovieDetailsActionButtonsViewModel.Event.AddToHistoryEvent -> {
-                        val syncResponse = event.addHistoryResponse
+                        val syncResponseResource = event.addHistoryResponse
 
-                        when(syncResponse) {
+                        when (syncResponseResource) {
                             is Resource.Success -> {
-                                if(syncResponse.data?.added?.movies ?: 0 > 0) {
-                                    displayMessageToast("Added ${movie.title} to your watched history successfully!", Toast.LENGTH_SHORT)
+                                when (getSyncResponse(syncResponseResource.data, Type.MOVIE)) {
+                                    Response.ADDED_OK -> {
+                                        displayMessageToast(
+                                            "Added ${movie.title} to your watched history successfully!",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                    }
+                                    Response.NOT_FOUND -> {
+                                        displayMessageToast(
+                                            "Current Movie could not be found on Trakt (ID: ${movie.trakt_id})",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                    }
+                                    Response.ERROR -> {
+                                        Log.e(TAG, "getEvents: SyncResponse cannot be NULL")
+                                    }
+                                    else -> {
+                                        Log.e(TAG, "getEvents: Invalid Response")
+                                    }
                                 }
                             }
                             is Resource.Error -> {
-                                Log.e(TAG, "getEvents: Error adding to watch history", )
-                                syncResponse.error?.printStackTrace()
-                                displayMessageToast("Error adding ${movie.title} to your watched History", Toast.LENGTH_SHORT)
+                                (activity as IHandleError).showErrorMessageToast(
+                                    syncResponseResource.error,
+                                    "Error adding ${movie.title} to your watch history"
+                                )
+                            }
+                            else -> {
+                                Log.e(TAG, "getEvents: Invalid Response")
                             }
                         }
+
                     }
 
                     is MovieDetailsActionButtonsViewModel.Event.CheckinEvent -> {
-                        when(event.movieCheckinResponse) {
+                        when (event.movieCheckinResponse) {
                             is Resource.Success -> {
-                                displayMessageToast("You are watching ${movie.title}", Toast.LENGTH_SHORT)
+                                displayMessageToast(
+                                    "You are watching ${movie.title}",
+                                    Toast.LENGTH_SHORT
+                                )
                             }
                             is Resource.Error -> {
                                 val error = event.movieCheckinResponse.error
-                                if(error is HttpException) {
-                                    if(error.code() == 409) {
+                                if (error is HttpException) {
+                                    if (error.code() == 409) {
                                         Log.d(TAG, "getEvents: User already checked in")
                                         // User already checked in to something
                                         showAlreadyCheckedInDialog(movie)
                                     } else {
-                                        displayMessageToast("An error occurred checking in to ${movie.title}", Toast.LENGTH_SHORT)
-                                        error.printStackTrace()
+                                        (activity as IHandleError).showErrorMessageToast(
+                                            event.movieCheckinResponse.error,
+                                            "Error checking in to ${movie.title} (HTTP Response ${error.code()})"
+                                        )
                                     }
-                                }
-                                error?.printStackTrace()
-
+                                }else if(error is IOException) {
+                                    (activity as IHandleError).showErrorMessageToast(
+                                        event.movieCheckinResponse.error,
+                                        "Error checking in to ${movie.title}. Please check your network connection."
+                                    )
+                                } else {
+                                    (activity as IHandleError).showErrorMessageToast(
+                                        event.movieCheckinResponse.error,
+                                        "Error checking in to ${movie.title}. Error: ${error?.localizedMessage}"
+                                    )                                }
                             }
+                            else -> {}
+
                         }
                     }
                     is MovieDetailsActionButtonsViewModel.Event.AddRatingEvent -> {
-                        val syncResponse = event.syncResponse
 
-                        when (syncResponse) {
+                        when (val syncResponseResource = event.syncResponse) {
                             is Resource.Success -> {
                                 // Disable progressbar and re-enable button
                                 bindings.actionbuttonRate.isEnabled = true
                                 bindings.actionButtonRateProgressbar.visibility = View.GONE
 
-                                if (syncResponse.data?.added?.movies ?: 0 > 0) {
-                                    displayMessageToast(
-                                        "Successfully rated ${movie.title} with ${
-                                            Rating.fromValue(
-                                                event.newRating
-                                            ).name
-                                        } (${event.newRating})", Toast.LENGTH_SHORT
-                                    )
+
+                                when (getSyncResponse(syncResponseResource.data, Type.MOVIE)) {
+                                    Response.ADDED_OK -> {
+                                        displayMessageToast(
+                                            "Successfully rated ${movie.title} with ${
+                                                Rating.fromValue(
+                                                    event.newRating
+                                                ).name
+                                            } (${event.newRating})", Toast.LENGTH_SHORT
+                                        )
+                                    }
+                                    Response.NOT_FOUND -> {
+                                        displayMessageToast(
+                                            "Current Movie could not be found on Trakt (ID: ${movie.trakt_id})",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                    }
+                                    Response.ERROR -> {
+                                        Log.e(TAG, "getEvents: SyncResponse cannot be NULL")
+                                    }
+                                    else -> {
+                                        Log.e(TAG, "getEvents: Invalid Response")
+                                    }
                                 }
                             }
                             is Resource.Error -> {
@@ -415,90 +519,128 @@ class MovieDetailsActionButtonsFragment : Fragment(), SwipeRefreshLayout.OnRefre
                                 bindings.actionbuttonRate.isEnabled = true
                                 bindings.actionButtonRateProgressbar.visibility = View.GONE
 
-                                displayMessageToast(
-                                    "Error rating ${movie.title}. Error ${syncResponse.error?.localizedMessage}",
-                                    Toast.LENGTH_LONG
+                                (activity as IHandleError).showErrorMessageToast(
+                                    syncResponseResource.error,
+                                    "Error rating ${movie.title}"
                                 )
                             }
+                            else -> {}
+
                         }
                     }
                     is MovieDetailsActionButtonsViewModel.Event.DeleteRatingEvent -> {
-                        val syncResponse = event.syncResponse
+                        val syncResponseResource = event.syncResponse
 
                         bindings.actionbuttonRate.isEnabled = true
                         bindings.actionButtonRateProgressbar.visibility = View.GONE
 
-                        if (syncResponse is Resource.Success) {
-                            if (syncResponse.data?.deleted?.movies ?: 0 > 0) {
-                                displayMessageToast(
-                                    "Reset ${movie.title} Rating successfully!",
-                                    Toast.LENGTH_SHORT
-                                )
+                        if (syncResponseResource is Resource.Success) {
+                            when (getSyncResponse(syncResponseResource.data, Type.MOVIE)) {
+                                Response.DELETED_OK -> {
+                                    displayMessageToast(
+                                        "Reset ${movie.title} Rating successfully!",
+                                        Toast.LENGTH_SHORT
+                                    )
+                                }
+                                Response.NOT_FOUND -> {
+                                    displayMessageToast(
+                                        "Current Movie could not be found on Trakt (ID: ${movie.trakt_id})",
+                                        Toast.LENGTH_SHORT
+                                    )
+                                }
+                                Response.ERROR -> {
+                                    Log.e(TAG, "getEvents: SyncResponse cannot be NULL")
+                                }
+                                else -> {
+                                    Log.e(TAG, "getEvents: Invalid Response")
+                                }
                             }
-                        } else if (syncResponse is Resource.Error) {
-                            displayMessageToast(
-                                "Error resetting rating ${movie.title}. Error ${syncResponse.error?.localizedMessage}",
-                                Toast.LENGTH_LONG
+                        } else if (syncResponseResource is Resource.Error) {
+                            (activity as IHandleError).showErrorMessageToast(
+                                syncResponseResource.error,
+                                "Error reseting rating for ${movie.title}"
                             )
-
-                            syncResponse.error?.printStackTrace()
                         }
                     }
 
                     is MovieDetailsActionButtonsViewModel.Event.AddToCollectionEvent -> {
-                        val syncResponse = event.syncResponse
+                        val syncResponseResource = event.syncResponse
 
-                        if (syncResponse is Resource.Success) {
+                        if (syncResponseResource is Resource.Success) {
                             bindings.actionbuttonAddToCollection.isEnabled = true
                             bindings.actionButtonAddToCollectionProgressbar.visibility = View.GONE
 
-                            if (syncResponse.data?.added?.movies ?: 0 > 0) {
-                                displayMessageToast(
-                                    "${movie.title} Added to collection successfully!",
-                                    Toast.LENGTH_SHORT
-                                )
+                            when (getSyncResponse(syncResponseResource.data, Type.MOVIE)) {
+                                Response.ADDED_OK -> {
+                                    displayMessageToast(
+                                        "${movie.title} Added to collection successfully!",
+                                        Toast.LENGTH_SHORT
+                                    )
+                                }
+                                Response.NOT_FOUND -> {
+                                    displayMessageToast(
+                                        "Current Movie could not be found on Trakt (ID: ${movie.trakt_id})",
+                                        Toast.LENGTH_SHORT
+                                    )
+                                }
+                                Response.ERROR -> {
+                                    Log.e(TAG, "getEvents: SyncResponse cannot be NULL")
+                                }
+                                else -> {
+                                    Log.e(TAG, "getEvents: Invalid Response")
+                                }
                             }
-                        } else if (syncResponse is Resource.Error) {
+                        } else if (syncResponseResource is Resource.Error) {
                             bindings.actionbuttonAddToCollection.isEnabled = true
                             bindings.actionButtonAddToCollectionProgressbar.visibility = View.GONE
 
-                            displayMessageToast(
-                                "Error adding ${movie.title} to collection. Error ${syncResponse.error?.localizedMessage}",
-                                Toast.LENGTH_LONG
+                            (activity as IHandleError).showErrorMessageToast(
+                                syncResponseResource.error,
+                                "Error adding ${movie.title} to your collection"
                             )
-
-                            syncResponse.error?.printStackTrace()
                         }
                     }
 
                     is MovieDetailsActionButtonsViewModel.Event.RemoveFromCollectionEvent -> {
-                        val syncResponse = event.syncResponse
+                        val syncResponseResource = event.syncResponse
 
-                        if (syncResponse is Resource.Success) {
+                        if (syncResponseResource is Resource.Success) {
                             bindings.actionbuttonAddToCollection.isEnabled = true
                             bindings.actionButtonAddToCollectionProgressbar.visibility = View.GONE
 
-                            if (syncResponse.data?.deleted?.movies ?: 0 > 0) {
-                                displayMessageToast(
-                                    "${movie.title} deleted from collection successfully!",
-                                    Toast.LENGTH_SHORT
-                                )
+                            when (getSyncResponse(syncResponseResource.data, Type.MOVIE)) {
+                                Response.DELETED_OK -> {
+                                    displayMessageToast(
+                                        "${movie.title} deleted from collection successfully!",
+                                        Toast.LENGTH_SHORT
+                                    )
+                                }
+                                Response.NOT_FOUND -> {
+                                    displayMessageToast(
+                                        "Current Movie could not be found on Trakt (ID: ${movie.trakt_id})",
+                                        Toast.LENGTH_SHORT
+                                    )
+                                }
+                                Response.ERROR -> {
+                                    Log.e(TAG, "getEvents: SyncResponse cannot be NULL")
+                                }
+                                else -> {
+                                    Log.e(TAG, "getEvents: Invalid Response")
+                                }
                             }
-                        } else if (syncResponse is Resource.Error) {
+                        } else if (syncResponseResource is Resource.Error) {
                             bindings.actionbuttonAddToCollection.isEnabled = true
                             bindings.actionButtonAddToCollectionProgressbar.visibility = View.GONE
 
-                            displayMessageToast(
-                                "Error deleting ${movie.title} from collection. Error ${syncResponse.error?.localizedMessage}",
-                                Toast.LENGTH_LONG
+                            (activity as IHandleError).showErrorMessageToast(
+                                syncResponseResource.error,
+                                "Error deleting ${movie.title} from your collection"
                             )
-
-                            syncResponse.error?.printStackTrace()
                         }
                     }
+                    else -> {}
 
                 }
-
             }
         }
     }

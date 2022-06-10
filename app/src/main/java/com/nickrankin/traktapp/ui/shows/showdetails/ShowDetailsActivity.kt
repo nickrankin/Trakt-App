@@ -2,9 +2,7 @@ package com.nickrankin.traktapp.ui.shows.showdetails
 
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.graphics.Typeface
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
@@ -22,6 +20,7 @@ import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.google.android.material.tabs.TabLayout
 import com.google.gson.Gson
+import com.nickrankin.traktapp.BaseActivity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.dao.show.model.TmShow
 import com.nickrankin.traktapp.databinding.ActivityShowDetailsBinding
@@ -32,18 +31,14 @@ import com.nickrankin.traktapp.helper.VideoTrailerHelper
 import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
-import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.shows.OnNavigateToEpisode
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
 import com.uwetrottmann.tmdb2.entities.*
-import com.uwetrottmann.trakt5.entities.CrewMember
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import org.apache.commons.lang3.time.DateFormatUtils
-import retrofit2.HttpException
-import java.math.RoundingMode
 import javax.inject.Inject
 import kotlin.ClassCastException
 import kotlin.Exception
@@ -57,7 +52,7 @@ private const val FRAGMENT_ACTION_BUTTONS = "action_buttons_fragment"
 private const val SELECT_TAB_POS = "selected_tab_pos"
 
 @AndroidEntryPoint
-class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
+class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
     SwipeRefreshLayout.OnRefreshListener, TabLayout.OnTabSelectedListener {
     private lateinit var bindings: ActivityShowDetailsBinding
 
@@ -65,8 +60,6 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
     private lateinit var collapsingToolbarLayout: CollapsingToolbarLayout
     private lateinit var swipeRefeshLayout: SwipeRefreshLayout
     private lateinit var tabLayout: TabLayout
-
-    private var isLoggedIn: Boolean = false
 
     private var showTraktId = 0
     private var showTmdbId: Int? = null
@@ -82,10 +75,6 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
     private lateinit var showDetailsProgressFragment: ShowDetailsProgressFragment
 
     private val viewModel: ShowDetailsViewModel by viewModels()
-
-
-    @Inject
-    lateinit var sharedPreferences: SharedPreferences
 
     @Inject
     lateinit var glide: RequestManager
@@ -125,8 +114,6 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
         // Init variable
         showTraktId = intent.getIntExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, 0)
 
-        isLoggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
-
         Log.d(TAG, "onCreate: Got show $showTitle with TraktId $showTraktId TmdbId $showTmdbId")
 
         // We need to check if the parent activity has sent ShowDataModel
@@ -155,8 +142,6 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
                     is Resource.Loading -> {
                         bindings.showdetailsactivityInner.showdetailsactivityMainGroup.visibility =
                             View.GONE
-                        bindings.showdetailsactivityInner.showdetailsactivityErrorGroup.visibility =
-                            View.GONE
 
                         toggleProgressBar(true)
                         Log.d(TAG, "collectShow: Show loading")
@@ -164,8 +149,6 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
                     is Resource.Success -> {
                         bindings.showdetailsactivityInner.showdetailsactivityMainGroup.visibility =
                             View.VISIBLE
-                        bindings.showdetailsactivityInner.showdetailsactivityErrorGroup.visibility =
-                            View.GONE
 
                         toggleProgressBar(false)
                         displayShowInformation(show)
@@ -187,24 +170,12 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
                             displayShowInformation(show)
                             handleExternalLinks(show.external_ids!!)
                             handleTrailer(show.videos)
-
-                        } else {
-                            bindings.showdetailsactivityInner.showdetailsactivityErrorGroup.visibility =
-                                View.VISIBLE
-
-                            handleError(showResource.error)
-
                         }
 
-                        displayToastMessage(
-                            "Error getting Show Details. ${showResource.error?.localizedMessage}",
-                            Toast.LENGTH_LONG
-                        )
-                        Log.e(
-                            TAG,
-                            "collectShow: Couldn't get the show. ${showResource.error?.localizedMessage}",
-                        )
-                        showResource.error?.printStackTrace()
+                        showErrorSnackbarRetryButton(showResource.error, bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer) {
+                            viewModel.onRefresh()
+                        }
+
                     }
                 }
             }
@@ -260,26 +231,6 @@ class ShowDetailsActivity : AppCompatActivity(), OnNavigateToEpisode,
         if (isRefreshing) progressBar.visibility = View.VISIBLE else progressBar.visibility =
             View.GONE
 
-    }
-
-    private fun handleError(exception: Throwable?) {
-        val errorTextView = bindings.showdetailsactivityInner.showdetailsactivityErrorText
-        val retryButton = bindings.showdetailsactivityInner.showdetailsactivityRetryButton
-
-        if (exception is HttpException) {
-            errorTextView.text =
-                "A HTTP Error has occurred getting the show. (Error code: HTTP: ${exception.code()}). ${exception.localizedMessage}. Please check your internet connection"
-        } else {
-            errorTextView.text =
-                "A Error has occurred getting the show. ${exception?.localizedMessage}. Please check your internet connection"
-        }
-
-        retryButton.setOnClickListener {
-            onStart()
-
-            // Refresh the current tab. Selecting current tab will reselect and trigger refresh
-            refreshCurrentTab()
-        }
     }
 
     private fun displayShowInformation(tmShow: TmShow?) {

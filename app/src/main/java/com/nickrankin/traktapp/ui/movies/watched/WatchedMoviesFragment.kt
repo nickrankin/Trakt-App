@@ -25,14 +25,13 @@ import com.nickrankin.traktapp.dao.movies.model.WatchedMovie
 import com.nickrankin.traktapp.dao.stats.model.CollectedMoviesStats
 import com.nickrankin.traktapp.dao.stats.model.RatingsMoviesStats
 import com.nickrankin.traktapp.databinding.FragmentWatchedMoviesBinding
-import com.nickrankin.traktapp.helper.AppConstants
-import com.nickrankin.traktapp.helper.TmdbImageLoader
-import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.movies.watched.WatchedMoviesViewModel
 import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
 import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
 import com.uwetrottmann.trakt5.entities.SyncItems
+import com.uwetrottmann.trakt5.enums.Type
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.*
 import org.threeten.bp.format.DateTimeFormatter
@@ -52,9 +51,6 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
     private lateinit var adapter: WatchedMoviesPagingAdapter
 
     @Inject
-    lateinit var sharedPreferences: SharedPreferences
-
-    @Inject
     lateinit var tmdbPosterImageLoader: TmdbImageLoader
 
     override fun onCreateView(
@@ -62,7 +58,6 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
         savedInstanceState: Bundle?
     ): View? {
         bindings = FragmentWatchedMoviesBinding.inflate(inflater)
-
 
         return bindings.root
     }
@@ -75,11 +70,17 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
 
         swipeLayout.setOnRefreshListener(this)
 
+
         updateTitle("Watched Movies")
 
         initRecycler()
 
+
+        if(!isLoggedIn) {
+            handleLoggedOutState(this.id)
+        }
         getEvents()
+        getWatchedMovies()
     }
 
     private fun getWatchedMovies() {
@@ -114,16 +115,28 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
 
                         when(syncResponseResource) {
                             is Resource.Success -> {
-                                if(syncResponseResource.data?.deleted?.movies ?: 0 > 0) {
-                                    displayMessageToast("Succesfully removed play!", Toast.LENGTH_LONG)
-                                } else {
-                                    displayMessageToast("Error removing play", Toast.LENGTH_LONG)
+
+                                val syncResponse = getSyncResponse(syncResponseResource.data, Type.MOVIE)
+
+                                when(syncResponse) {
+                                    Response.DELETED_OK -> {
+                                        displayMessageToast("Succesfully removed play!", Toast.LENGTH_SHORT)
+                                    }
+                                    Response.ERROR -> {
+                                        displayMessageToast("Error removing play", Toast.LENGTH_SHORT)
+                                    }
+                                    Response.NOT_FOUND -> {
+                                        displayMessageToast("Movie ID not found on Trakt", Toast.LENGTH_LONG)
+                                    }
+                                    else -> {}
+
                                 }
                             }
                             is Resource.Error -> {
-                                syncResponseResource.error?.printStackTrace()
-                                displayMessageToast("Error removing watched Episode. ${syncResponseResource.error?.localizedMessage}", Toast.LENGTH_LONG)
+                                (activity as IHandleError).showErrorMessageToast(event.syncResponse.error, "Error removing play")
                             }
+                            else -> {}
+
                         }
                     } else -> {
                     //
@@ -173,10 +186,6 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
                 .filter { it.refresh is LoadState.NotLoading }
                 .collect { bindings.moviewatchingfragmentRecyclerview.scrollToPosition(0) }
         }
-
-        getWatchedMovies()
-
-
     }
 
     private fun navigateToMovie(watchedMovie: WatchedMovie?) {

@@ -56,6 +56,8 @@ class MovieDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshLis
 
     fun initFragment(tmMovie: TmMovie?) {
         if(tmMovie == null) {
+            Log.e(TAG, "initFragment: $tmMovie", )
+            Log.e(TAG, "initFragment: TmMovie must not be null", )
             return
         }
 
@@ -74,7 +76,6 @@ class MovieDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshLis
                         Log.d(TAG, "getCredits: Loading Credits")
                     }
                     is Resource.Success -> {
-
                         castAdapter.submitList(creditsResource.data?.sortedBy { it.movieCastPersonData.ordering })
                         creditsResource.data?.map {
                             Log.d(TAG, "getCredits: ${it.person.name} is order ${it.movieCastPersonData.ordering}")

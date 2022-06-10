@@ -2,27 +2,42 @@ package com.nickrankin.traktapp
 
 import android.app.SearchManager
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.SearchView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceManager
 import com.google.android.material.navigation.NavigationView
+import com.google.android.material.snackbar.Snackbar
+import com.nickrankin.traktapp.helper.IHandleError
+import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.lists.TraktListsActivity
 import com.nickrankin.traktapp.ui.movies.MoviesMainActivity
 import com.nickrankin.traktapp.ui.search.SearchResultsActivity
 import com.nickrankin.traktapp.ui.settings.SettingsActivity
 import com.nickrankin.traktapp.ui.shows.ShowsMainActivity
-import com.uwetrottmann.trakt5.enums.Type
 import dagger.hilt.android.AndroidEntryPoint
+import retrofit2.HttpException
+import java.io.IOException
+import javax.inject.Inject
+import kotlin.text.StringBuilder
 
 private const val TAG = "BaseActivity"
 @AndroidEntryPoint
-abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
+abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener, IHandleError {
 
     private var searchType: String? = null
     private lateinit var searchMenuItem: MenuItem
+    
+    @Inject
+    lateinit var sharedPreferences: SharedPreferences
+
+    protected var isLoggedIn = false
 
 //    @Inject
 //    lateinit var trackedEpisodeAlarmScheduler: TrackedEpisodeAlarmScheduler
@@ -32,6 +47,10 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
 
         // Load the default preferences
         PreferenceManager.setDefaultValues(this, R.xml.root_preferences, false)
+
+        isLoggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
+
+
 
 //        lifecycleScope.launchWhenStarted {
 //            trackedEpisodeAlarmScheduler.scheduleAllAlarms()
@@ -117,5 +136,57 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
         }
 
         return false
+    }
+
+    override fun showErrorSnackbarRetryButton(throwable: Throwable?, view: View, retryCallback: () -> Unit) {
+        Log.e(TAG, "handleError: Error occurred ", )
+        throwable?.printStackTrace()
+
+        var errorMessage = StringBuilder()
+        errorMessage.append("Error: ")
+
+        // Standard HTTPException handling
+        if(throwable is HttpException) {
+            if(throwable.code() == 401) {
+                // Try refreshing access token...
+                handle401Error()
+            } else {
+                errorMessage.append(" Web Server responded with HTTP Error Code ${throwable.code()}")
+            }
+        } else if(throwable is IOException) {
+            errorMessage.append(" A Network issue occurred. Please check your network connection.")
+        } else {
+            // Some other kind of error
+            errorMessage.append(throwable?.message)
+        }
+
+        Snackbar.make(view, errorMessage, Snackbar.LENGTH_INDEFINITE)
+            .setAction("Retry", View.OnClickListener { retryCallback() })
+            .show()
+    }
+
+    override fun showErrorMessageToast(throwable: Throwable?, customMessage: String) {
+        throwable?.printStackTrace()
+        val errorMessage = StringBuilder()
+        errorMessage.append(customMessage)
+
+        if(throwable is HttpException) {
+            if(throwable.code() == 401) {
+                // Try refreshing access token...
+                handle401Error()
+            } else {
+                errorMessage.append(": HTTP Response code ${throwable.code()}")
+            }
+        } else if(throwable is IOException) {
+            errorMessage.append(": Please check your network connection")
+        } else {
+            errorMessage.append(throwable?.localizedMessage)
+        }
+
+        Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show()
+    }
+
+    private fun handle401Error() {
+        // TODO
     }
 }

@@ -13,10 +13,14 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.dao.movies.model.TmMovie
 import com.nickrankin.traktapp.dao.show.model.TmShow
 import com.nickrankin.traktapp.databinding.ActionButtonsFragmentBinding
+import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.helper.Response
+import com.nickrankin.traktapp.helper.getSyncResponse
 import com.nickrankin.traktapp.model.shows.showdetails.ShowDetailsActionButtonsViewModel
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
@@ -29,16 +33,11 @@ import javax.inject.Inject
 
 private const val TAG = "ShowDetailsActionButton"
 @AndroidEntryPoint
-class ShowDetailsActionButtonsFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
+class ShowDetailsActionButtonsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
     private val viewModel: ShowDetailsActionButtonsViewModel by activityViewModels()
 
-    @Inject
-    lateinit var shedPreferences: SharedPreferences
-
     private lateinit var bindings: ActionButtonsFragmentBinding
-
-    private var isLoggedIn = false
 
     private lateinit var collectedShowButton: RelativeLayout
     private lateinit var addCollectionProgressBar: ProgressBar
@@ -60,8 +59,6 @@ class ShowDetailsActionButtonsFragment : Fragment(), SwipeRefreshLayout.OnRefres
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        isLoggedIn = shedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
 
         if(isLoggedIn) {
             // Buttons
@@ -219,20 +216,30 @@ class ShowDetailsActionButtonsFragment : Fragment(), SwipeRefreshLayout.OnRefres
             viewModel.events.collectLatest { event ->
                 when(event) {
                     is ShowDetailsActionButtonsViewModel.Event.AddToCollectionEvent -> {
-                        val syncResponse = event.syncResponse
+                        val syncResponseResource = event.syncResponse
 
                         // Disable progressbar and re-enable button
                         bindings.actionbuttonAddToCollection.isEnabled = true
                         bindings.actionButtonAddToCollectionProgressbar.visibility = View.GONE
 
-                        if(syncResponse is Resource.Success) {
-                            if(syncResponse.data?.added?.episodes ?: 0 > 0) {
-                                displayMessageToast("Successfully added $showTitle to your Trakt collection!", Toast.LENGTH_SHORT)
-                            } else {
-                                displayMessageToast("Did  not add $showTitle to your Trakt collection", Toast.LENGTH_SHORT)
+                        if(syncResponseResource is Resource.Success) {
+
+                            when(getSyncResponse(syncResponseResource.data, Type.SHOW)) {
+                                Response.ADDED_OK -> {
+                                    displayMessageToast("Successfully added $showTitle to your Trakt collection!", Toast.LENGTH_SHORT)
+
+                                }
+                                Response.NOT_FOUND -> {
+                                    displayMessageToast("Current item was not found on Trakt", Toast.LENGTH_SHORT)
+                                }
+                                Response.ERROR -> {
+                                    displayMessageToast("Did  not add $showTitle to your Trakt collection", Toast.LENGTH_SHORT)
+
+                                }
+                                else -> {}
                             }
-                        } else if(syncResponse is Resource.Error) {
-                            displayMessageToast("Error adding $showTitle to your collection. ${syncResponse.error?.localizedMessage}", Toast.LENGTH_LONG)
+                        } else if(syncResponseResource is Resource.Error) {
+                            (activity as IHandleError).showErrorMessageToast(syncResponseResource.error, "Error adding $showTitle to your collection.")
                         }
                     }
                     is ShowDetailsActionButtonsViewModel.Event.RemoveFromCollectionEvent -> {
@@ -241,45 +248,85 @@ class ShowDetailsActionButtonsFragment : Fragment(), SwipeRefreshLayout.OnRefres
                         bindings.actionbuttonAddToCollection.isEnabled = true
                         bindings.actionButtonAddToCollectionProgressbar.visibility = View.GONE
 
-                        val syncResponse = event.syncResponse
-                        if(syncResponse is Resource.Success) {
-                            if(syncResponse.data?.deleted?.episodes ?: 0 > 0) {
-                                displayMessageToast("Successfully removed $showTitle from your Trakt collection!", Toast.LENGTH_SHORT)
-                            } else {
-                                displayMessageToast("Did  not remove $showTitle from your Trakt collection", Toast.LENGTH_SHORT)
+                        val syncResponseResource = event.syncResponse
+                        if(syncResponseResource is Resource.Success) {
+
+                            when(getSyncResponse(syncResponseResource.data, Type.SHOW)) {
+                                Response.DELETED_OK -> {
+                                    displayMessageToast("Successfully removed $showTitle from your Trakt collection!", Toast.LENGTH_SHORT)
+                                }
+                                Response.NOT_FOUND -> {
+                                    displayMessageToast("Current item was not found on Trakt", Toast.LENGTH_SHORT)
+                                }
+                                Response.ERROR -> {
+                                    displayMessageToast("Did  not remove $showTitle from your Trakt collection", Toast.LENGTH_SHORT)
+
+                                }
+
+                                else -> {}
                             }
-                        } else if(syncResponse is Resource.Error) {
-                            displayMessageToast("Error removing $showTitle from your collection. ${syncResponse.error?.localizedMessage}", Toast.LENGTH_LONG)
+                        } else if(syncResponseResource is Resource.Error) {
+                            (activity as IHandleError).showErrorMessageToast(syncResponseResource.error, "Error removing $showTitle from your Trakt collection!")
                         }
                     }
                     is ShowDetailsActionButtonsViewModel.Event.AddRatingEvent -> {
-                        val syncResponse = event.syncResponse
+                        val syncResponseResource = event.syncResponse
 
                         bindings.actionbuttonRate.isEnabled = true
                         bindings.actionButtonRateProgressbar.visibility = View.GONE
 
-                        if(syncResponse is Resource.Success) {
-                            displayMessageToast("Rated $showTitle with ${ event.newRating } (${ Rating.fromValue(event.newRating).name }) successfully!", Toast.LENGTH_SHORT)
-                        } else if(syncResponse is Resource.Error) {
-                            displayMessageToast("Error rating $showTitle. Error ${syncResponse.error?.localizedMessage}", Toast.LENGTH_LONG)
+                        if(syncResponseResource is Resource.Success) {
 
-                            syncResponse.error?.printStackTrace()
+                            when(getSyncResponse(syncResponseResource.data, Type.SHOW)) {
+                                Response.ADDED_OK -> {
+                                    displayMessageToast("Rated $showTitle with ${ event.newRating } (${ Rating.fromValue(event.newRating).name }) successfully!", Toast.LENGTH_SHORT)
+                                }
+                                Response.NOT_FOUND -> {
+                                    displayMessageToast("Current item was not found on Trakt", Toast.LENGTH_SHORT)
+                                }
+                                Response.ERROR -> {
+                                    displayMessageToast("Error rating $showTitle.", Toast.LENGTH_SHORT)
+                                }
+                                else -> {
+
+                                }
+                            }
+
+                        } else if(syncResponseResource is Resource.Error) {
+                            (activity as IHandleError).showErrorMessageToast(syncResponseResource.error, "Error rating $showTitle.")
                         }
                     }
                     is ShowDetailsActionButtonsViewModel.Event.DeleteRatingEvent -> {
-                        val syncResponse = event.syncResponse
+                        val syncResponseResource = event.syncResponse
 
                         bindings.actionbuttonRate.isEnabled = true
                         bindings.actionButtonRateProgressbar.visibility = View.GONE
 
-                        if(syncResponse is Resource.Success) {
-                            displayMessageToast("Reset $showTitle Rating successfully!", Toast.LENGTH_SHORT)
-                        } else if(syncResponse is Resource.Error) {
-                            displayMessageToast("Error resetting rating $showTitle. Error ${syncResponse.error?.localizedMessage}", Toast.LENGTH_LONG)
+                        if(syncResponseResource is Resource.Success) {
 
-                            syncResponse.error?.printStackTrace()
+                            when(getSyncResponse(syncResponseResource.data, Type.SHOW)) {
+                                Response.ADDED_OK -> {
+                                    displayMessageToast("Reset $showTitle Rating successfully!", Toast.LENGTH_SHORT)
+                                }
+                                Response.NOT_FOUND -> {
+                                    displayMessageToast("Current item was not found on Trakt", Toast.LENGTH_SHORT)
+                                }
+                                Response.ERROR -> {
+                                    displayMessageToast("Error resetting the rating for $showTitle.", Toast.LENGTH_SHORT)
+                                }
+                                else -> {
+
+                                }
+                            }
+
+                            displayMessageToast("Reset $showTitle Rating successfully!", Toast.LENGTH_SHORT)
+                        } else if(syncResponseResource is Resource.Error) {
+                            (activity as IHandleError).showErrorMessageToast(syncResponseResource.error, "Error resetting rating $showTitle.")
+
                         }
                     }
+                    else -> {}
+
                 }
             }
         }

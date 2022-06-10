@@ -107,7 +107,6 @@ class StatsRepository @Inject constructor(
     }
 
     suspend fun refreshShowStats(shouldRefresh: Boolean): Resource<Boolean> {
-
         val lastRefreshedShowStats =
             sharedPreferences.getString(LAST_REFRESH_SHOW_STATS_KEY, null).let { timestamp ->
                 if (timestamp != null) {
@@ -250,6 +249,7 @@ class StatsRepository @Inject constructor(
     }
 
     suspend fun refreshWatchedShows() {
+        Log.d(TAG, "refreshWatchedShows: Refreshing watched Shows")
         val watchedShowStatsResponse = traktApi.tmUsers().watchedShows(
             UserSlug(
                 sharedPreferences.getString(

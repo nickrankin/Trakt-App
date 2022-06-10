@@ -2,14 +2,12 @@ package com.nickrankin.traktapp.ui.shows
 
 import android.content.DialogInterface
 import android.content.Intent
-import android.content.SharedPreferences
 import android.graphics.Canvas
 import android.graphics.Typeface
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.util.Log
 import android.view.*
-import androidx.fragment.app.Fragment
 import android.widget.EditText
 import android.widget.PopupMenu
 import android.widget.ProgressBar
@@ -26,7 +24,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.room.withTransaction
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.bumptech.glide.RequestManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.nickrankin.traktapp.BaseFragment
@@ -43,21 +40,17 @@ import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.shows.ShowsTrackingViewModel
-import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
-import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.services.helper.TrackedEpisodeAlarmScheduler
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.settings.SettingsFragment
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.uwetrottmann.trakt5.entities.SearchResult
-import com.uwetrottmann.trakt5.enums.SortHow
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.runBlocking
 import org.threeten.bp.OffsetDateTime
 import javax.inject.Inject
 
@@ -97,9 +90,6 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
 
     @Inject
     lateinit var showsDatabase: ShowsDatabase
-
-    @Inject
-    lateinit var sharedPreferences: SharedPreferences
 
     @Inject
     lateinit var tmdbImageLoader: TmdbImageLoader
@@ -388,7 +378,6 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
                 dialogInterface.dismiss()
             })
             .create()
-
     }
 
     private fun initCollectedRecyclerView() {
@@ -454,8 +443,9 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
                     is Resource.Error -> {
                         collectedShowsProgressBar.visibility = View.GONE
 
-                        Log.e(TAG, "getCollectedShows: Error occurred")
-                        collectedShowsResource.error?.printStackTrace()
+                        (activity as IHandleError).showErrorSnackbarRetryButton(collectedShowsResource.error, bindings.showstrackingfragmentSwipeRefreshLayout) {
+                            viewModel.onRefresh()
+                        }
                     }
                 }
 

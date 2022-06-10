@@ -22,9 +22,7 @@
         <activity
             android:name=".ui.person.PersonActivity"
             android:exported="false" />
-        <activity
-            android:name=".ui.lists.ListItemsActivity"
-            android:exported="false" />
+
         <activity
             android:name=".ui.lists.TraktListsActivity"
             android:exported="false" />

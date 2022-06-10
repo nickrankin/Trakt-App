@@ -1,31 +1,19 @@
 package com.nickrankin.traktapp.ui.shows
 
-import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
-import android.graphics.Typeface
 import android.os.Bundle
 import android.util.Log
-import android.view.Gravity
 import android.view.View
-import android.view.ViewGroup
 import android.widget.*
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
-import com.google.android.flexbox.FlexDirection
-import com.google.android.flexbox.FlexWrap
-import com.google.android.flexbox.FlexboxLayout
-import com.google.android.flexbox.JustifyContent
-import com.nickrankin.traktapp.R
+import com.nickrankin.traktapp.BaseActivity
 import com.nickrankin.traktapp.adapter.shows.EpisodesAdapter
 import com.nickrankin.traktapp.dao.show.TmSeasonAndStats
-import com.nickrankin.traktapp.dao.show.model.TmSeason
 import com.nickrankin.traktapp.databinding.ActivitySeasonEpisodesBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.Resource
@@ -33,7 +21,6 @@ import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.model.datamodel.SeasonDataModel
 import com.nickrankin.traktapp.model.shows.SeasonEpisodesViewModel
 import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
-import com.nickrankin.traktapp.repo.shows.SeasonEpisodesRepository
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -43,7 +30,7 @@ import javax.inject.Inject
 private const val SELECTED_SEASON = "selected_season"
 private const val TAG = "SeasonEpisodesActivity"
 @AndroidEntryPoint
-class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
+class SeasonEpisodesActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener,
     OnNavigateToEpisode {
     private lateinit var bindings: ActivitySeasonEpisodesBinding
     private val viewModel: SeasonEpisodesViewModel by viewModels()
@@ -61,10 +48,6 @@ class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
 
     private var showTitle = "Show"
     private var seasonTitle = "Season Episodes"
-
-
-    @Inject
-    lateinit var sharedPreferences: SharedPreferences
 
     @Inject
     lateinit var glide: RequestManager
@@ -121,14 +104,15 @@ class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
                         }
                     }
                     is Resource.Error -> {
-                        Log.e(
-                            TAG,
-                            "getShow: Error getting the Show ${showResource.error?.localizedMessage}"
-                        )
+
                         if (show != null) {
                             showTitle = show.name
 
                             updateTitle()
+                        }
+
+                        showErrorSnackbarRetryButton(showResource.error, bindings.seasonepisodesactivitySwipeRefreshLayout) {
+                            viewModel.onRefresh()
                         }
                     }
                 }
@@ -156,15 +140,15 @@ class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
 
                     }
                     is Resource.Error -> {
-                        Log.e(
-                            TAG,
-                            "getSeason: Error getting season data ${seasonResource.error?.localizedMessage}"
-                        )
                         seasonTitle = season?.season?.name ?: "Episodes"
 
                         if (season != null) {
                             seasonTitle = season.season.name
                             updateTitle()
+                        }
+
+                        showErrorSnackbarRetryButton(seasonResource.error, bindings.seasonepisodesactivitySwipeRefreshLayout) {
+                            viewModel.onRefresh()
                         }
                     }
                 }
@@ -251,6 +235,8 @@ class SeasonEpisodesActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefresh
                     is Resource.Success -> {
                         setupSeasonSpinner(seasonResource.data ?: emptyList())
                     }
+                    else -> {}
+
                 }
             }
         }

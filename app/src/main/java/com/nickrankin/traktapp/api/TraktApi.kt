@@ -5,11 +5,11 @@ import android.util.Log
 import com.nickrankin.traktapp.ApiKeys
 import com.nickrankin.traktapp.api.services.trakt.*
 import com.uwetrottmann.trakt5.TraktV2
+import com.uwetrottmann.trakt5.TraktV2Authenticator
+import com.uwetrottmann.trakt5.TraktV2Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import java.io.UnsupportedEncodingException
-import java.lang.StringBuilder
-import java.lang.UnsupportedOperationException
 import java.net.URLEncoder
 
 private const val TAG = "TraktApi"
@@ -62,6 +62,15 @@ class TraktApi(private val context: Context, private val loggingOn: Boolean, pri
             throw UnsupportedOperationException(e)
         }
     }
+
+    /**
+     * Adds [TraktV2Interceptor] as an application interceptor and [TraktV2Authenticator] as an authenticator.
+     */
+    override fun setOkHttpClientDefaults(builder: OkHttpClient.Builder) {
+        builder.addInterceptor(TraktV2Interceptor(this))
+        builder.authenticator(TraktAuthenticator(context, this))
+    }
+
 
     fun tmCheckin(): TmCheckin {
         return retrofit().create(TmCheckin::class.java)

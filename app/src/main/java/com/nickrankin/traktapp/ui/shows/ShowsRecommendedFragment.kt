@@ -2,7 +2,6 @@ package com.nickrankin.traktapp.ui.shows
 
 import android.content.DialogInterface
 import android.content.Intent
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -19,18 +18,17 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.adapter.shows.RecommendedShowsAdapter
 import com.nickrankin.traktapp.databinding.FragmentShowsRecommendedBinding
-import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.shows.RecommendedShowsViewModel
-import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
 import com.nickrankin.traktapp.BaseFragment
-import com.nickrankin.traktapp.helper.TmdbImageLoader
+import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.uwetrottmann.trakt5.entities.Show
+import com.uwetrottmann.trakt5.enums.Type
 
 private const val TAG = "ShowsRecommendedFragmen"
 
@@ -51,10 +49,6 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
 
     @Inject
     lateinit var tmdbImageLoader: TmdbImageLoader
-
-    @Inject
-    lateinit var sharedPreferences: SharedPreferences
-
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -161,6 +155,12 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
                             "Error loading recommended shows from Trakt. ${data.error?.localizedMessage}",
                             Toast.LENGTH_LONG
                         ).show()
+
+                        (activity as IHandleError).showErrorSnackbarRetryButton(
+                            data.error, bindings.fragmentreccomendedshowsSwipeLayout
+                        ) {
+                            viewModel.onRefresh()
+                        }
                     }
                 }
             }
@@ -172,18 +172,25 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
             viewModel.events.collectLatest { event ->
                 when(event) {
                     is RecommendedShowsViewModel.Event.AddToCollectionEvent -> {
-                        val syncResponse = event.syncResponse
+                        val syncResponseResource = event.syncResponse
 
-                        if(syncResponse is Resource.Success) {
-                            if(syncResponse.data?.added?.episodes ?: 0 > 0) {
-                                Log.e(TAG, "collectEvents: Added Collected show success", )
-                            } else {
-                                displayMessageToast("Failed to add show to your collection.", Toast.LENGTH_LONG)
+                        if(syncResponseResource is Resource.Success) {
+
+                            when(getSyncResponse(syncResponseResource.data, Type.SHOW)) {
+                                Response.ADDED_OK -> {
+
+                                }
+                                Response.NOT_FOUND -> {
+                                    displayMessageToast("Failed to add show to your collection.", Toast.LENGTH_LONG)
+                                }
+                                Response.ERROR -> {
+                                    displayMessageToast("Failed to add show to your collection.", Toast.LENGTH_LONG)
+                                }
+                                else -> {}
                             }
-                        } else if (syncResponse is Resource.Error) {
-                            syncResponse.error?.printStackTrace()
+                        } else if (syncResponseResource is Resource.Error) {
 
-                            displayMessageToast("Error adding show to favourites", Toast.LENGTH_LONG)
+                            (activity as IHandleError).showErrorMessageToast(syncResponseResource.error, "Error adding show to favourites")
                         }
 
                     }
