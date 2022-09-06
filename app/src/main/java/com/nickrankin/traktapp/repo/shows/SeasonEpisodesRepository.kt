@@ -78,6 +78,7 @@ class SeasonEpisodesRepository @Inject constructor(
             seasons.isEmpty() || shouldRefresh
         },
         saveFetchResult = { seasons ->
+            Log.d(TAG, "getSeasons: Refreshing Seasons")
             showsDatabase.withTransaction {
                 seasonDao.deleteAllSeasonsForShow(showTraktId)
                 seasonDao.insertSeasons(seasons)

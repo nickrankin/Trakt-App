@@ -14,6 +14,10 @@ interface WatchedSeasonStatsDao {
     fun getWatchedStatsByShow(traktId: Int): Flow<List<WatchedSeasonStats>>
 
     @Transaction
+    @Query("SELECT * FROM stats_watched_season WHERE show_trakt_id = :showTraktId AND season = :seasonNumber")
+    fun getSeasonWatchedStats(showTraktId: Int, seasonNumber: Int): Flow<List<WatchedSeasonStats>>
+
+    @Transaction
     @Query("SELECT * FROM stats_watched_season")
     fun getWatchedStats(): Flow<List<WatchedSeasonStats>>
 

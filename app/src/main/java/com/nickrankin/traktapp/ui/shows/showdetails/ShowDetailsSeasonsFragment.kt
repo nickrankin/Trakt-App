@@ -11,28 +11,23 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.adapter.shows.SeasonsAdapter
 import com.nickrankin.traktapp.dao.show.TmSeasonAndStats
-import com.nickrankin.traktapp.dao.show.model.TmSeason
 import com.nickrankin.traktapp.databinding.ShowDetailsSeasonsFragmentBinding
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.datamodel.SeasonDataModel
-import com.nickrankin.traktapp.model.shows.showdetails.ShowDetailsSeasonsViewModel
-import com.nickrankin.traktapp.repo.shows.SeasonEpisodesRepository
+import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
 import com.nickrankin.traktapp.ui.shows.SeasonEpisodesActivity
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.receiveAsFlow
 import javax.inject.Inject
 
 private const val TAG = "ShowDetailsSeasonsFragm"
 
 @AndroidEntryPoint
-class ShowDetailsSeasonsFragment() : Fragment(), SwipeRefreshLayout.OnRefreshListener {
-    private val viewModel: ShowDetailsSeasonsViewModel by activityViewModels()
+class ShowDetailsSeasonsFragment() : Fragment() {
+    private val viewModel: ShowDetailsViewModel by activityViewModels()
     private lateinit var bindings: ShowDetailsSeasonsFragmentBinding
 
     private lateinit var seasonsRecyclerView: RecyclerView
@@ -80,51 +75,32 @@ class ShowDetailsSeasonsFragment() : Fragment(), SwipeRefreshLayout.OnRefreshLis
 
     private fun getSeasons() {
         lifecycleScope.launchWhenStarted {
-            viewModel.seasons.collectLatest { resource ->
-                when (resource) {
+            viewModel.seasons.collectLatest { seasonsResource ->
+                
+                when(seasonsResource) {
                     is Resource.Loading -> {
-                        bindings.apply {
-                            showdetailsseasonsProgressbar.visibility = View.VISIBLE
-                            showdetailsseasonsRecyclerview.visibility = View.GONE
-                        }
+                        Log.d(TAG, "getSeasons: Loading Seasons")
                     }
                     is Resource.Success -> {
-                        bindings.apply {
-                            showdetailsseasonsMainGroup.visibility = View.VISIBLE
-                            showdetailsseasonsProgressbar.visibility = View.GONE
-                            showdetailsseasonsRecyclerview.visibility = View.VISIBLE
-                        }
-
-                        submitSeasons(resource.data ?: emptyList())
-                    }
-                    is Resource.Error -> {
-                        bindings.apply {
-                            showdetailsseasonsMainGroup.visibility = View.GONE
-
-                            showdetailsseasonsProgressbar.visibility = View.GONE
-                            showdetailsseasonsRecyclerview.visibility = View.GONE
-                        }
-
-                        Log.e(
-                            TAG,
-                            "getSeasons: Error getting Seasons. ${resource.error?.localizedMessage}",
-                        )
-                        resource.error?.printStackTrace()
-
-                        if (resource.data != null) {
-                            // use cached datas
-
+                        val seasons = seasonsResource.data
+                        
+                        if(seasons != null) {
                             bindings.apply {
+                                showdetailsseasonsMainGroup.visibility = View.VISIBLE
                                 showdetailsseasonsProgressbar.visibility = View.GONE
                                 showdetailsseasonsRecyclerview.visibility = View.VISIBLE
                             }
 
-                            submitSeasons(resource.data ?: emptyList())
-
+                            submitSeasons(seasons)
                         }
-
                     }
+                    is Resource.Error -> {
+                        Log.e(TAG, "getSeasons: Error loading seasons ${seasonsResource.error?.message}", )
+                    }
+
                 }
+
+
             }
         }
     }
@@ -142,18 +118,6 @@ class ShowDetailsSeasonsFragment() : Fragment(), SwipeRefreshLayout.OnRefreshLis
 
         startActivity(intent)
     }
-
-    override fun onStart() {
-        super.onStart()
-
-        viewModel.onStart()
-    }
-
-    override fun onRefresh() {
-        Log.d(TAG, "onRefresh: Refreshing show seasons")
-        viewModel.onRefresh()
-    }
-
 
     companion object {
         fun newInstance() = ShowDetailsSeasonsFragment()

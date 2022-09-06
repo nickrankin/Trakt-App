@@ -9,6 +9,7 @@ import android.util.TypedValue
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
@@ -150,14 +151,13 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
                         bindings.showdetailsactivityInner.showdetailsactivityMainGroup.visibility =
                             View.VISIBLE
 
-                        toggleProgressBar(false)
-                        displayShowInformation(show)
+                        if(show != null) {
+                            toggleProgressBar(false)
+                            displayShowInformation(show)
 
-                        handleExternalLinks(show?.external_ids)
-                        handleTrailer(show?.videos)
-
-                        showActionButtonsFragment.initFragment(show)
-
+                            handleExternalLinks(show.external_ids)
+                            handleTrailer(show.videos)
+                        }
                     }
                     is Resource.Error -> {
                         toggleProgressBar(false)
@@ -223,13 +223,23 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
 
     private fun toggleProgressBar(isRefreshing: Boolean) {
         val progressBar = bindings.showdetailsactivityInner.showdetailsactivityProgressbar
+        val actionButtonsProgressBar = showActionButtonsFragment.view?.findViewById<ProgressBar>(R.id.actionbutton_loading_progress)
+        val overviewFragmentProgressBar = showDetailsOverviewFragment.view?.findViewById<ProgressBar>(R.id.showdetailsoverview_progressbar)
 
         if (swipeRefeshLayout.isRefreshing) {
             swipeRefeshLayout.isRefreshing = false
         }
 
-        if (isRefreshing) progressBar.visibility = View.VISIBLE else progressBar.visibility =
-            View.GONE
+        if (isRefreshing) {
+            progressBar.visibility = View.VISIBLE
+            actionButtonsProgressBar?.visibility = View.VISIBLE
+            overviewFragmentProgressBar?.visibility = View.VISIBLE
+        }
+        else {
+            progressBar.visibility = View.GONE
+            actionButtonsProgressBar?.visibility = View.GONE
+            overviewFragmentProgressBar?.visibility = View.GONE
+        }
 
     }
 
@@ -391,54 +401,6 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
 
     override fun onRefresh() {
         viewModel.onRefresh()
-
-        // Check to see Fragment is attached before refreshing (fix a crash)
-        if(showDetailsOverviewFragment.isAdded) {
-            showDetailsOverviewFragment.onRefresh()
-        }
-
-        if(showDetailsSeasonsFragment.isAdded) {
-            showDetailsSeasonsFragment.onRefresh()
-        }
-
-
-        refreshActionButtons()
-
-//        val currentTab = tabLayout.selectedTabPosition
-//
-//        // Refresh tabs on subsequent clicks
-//        shouldRefreshOverviewData = currentTab != 0
-//        shouldRefreshProgressData = currentTab != 2
-//        shouldRefreshSeasonData = currentTab != 1
-//
-//        // Refresh the current tab. Selecting current tab will reselect and trigger refresh
-//        refreshCurrentTab()
-//        Log.d(TAG, "onRefresh: Selected tab: currentTab")
-    }
-
-    private fun refreshActionButtons() {
-        Log.d(TAG, "refreshActionButtons: Refreshing Action buttons")
-        try {
-
-            val actionButtonSwipeLayout = supportFragmentManager.findFragmentByTag(
-                FRAGMENT_ACTION_BUTTONS
-            ) as SwipeRefreshLayout.OnRefreshListener
-
-            actionButtonSwipeLayout.onRefresh()
-
-        } catch (e: ClassCastException) {
-            Log.e(
-                TAG,
-                "refreshActionButtons: Couldn't Cast ${
-                    supportFragmentManager.findFragmentByTag(
-                        FRAGMENT_ACTION_BUTTONS
-                    )
-                } to SwipeRefreshLayout.OnRefreshListener",
-            )
-            e.printStackTrace()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 
     private fun handleTrailer(videos: Videos?) {
@@ -732,12 +694,6 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
         return false
     }
 
-    private fun refreshCurrentTab() {
-        // Refresh the current tab. Selecting current tab will reselect and trigger refresh
-        val currentTab = tabLayout.selectedTabPosition
-        tabLayout.selectTab(tabLayout.getTabAt(currentTab))
-    }
-
     override fun onTabSelected(tab: TabLayout.Tab?) {
         when (tab?.position) {
             0 -> {
@@ -760,17 +716,6 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
                     )
                     .commit()
 
-                if (shouldRefreshSeasonData) {
-                    Log.d(TAG, "onTabSelected: Forcing Refresh of Season tab")
-
-                    // without this, Dagger will fail. Make sure Fragment is fully attached before executing onRefresh()
-                    supportFragmentManager.executePendingTransactions()
-
-                    showDetailsSeasonsFragment.onRefresh()
-
-                    shouldRefreshSeasonData = false
-
-                }
                 Log.d(TAG, "onTabSelected: Tab Seasons selected")
             }
             2 -> {
@@ -782,16 +727,6 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
                     )
                     .commit()
 
-                if (shouldRefreshProgressData) {
-                    Log.d(TAG, "onTabSelected: Forcing Refresh of Progress tab")
-
-                    // without this, Dagger will fail. Make sure Fragment is fully attached before executing onRefresh()
-                    supportFragmentManager.executePendingTransactions()
-
-                    showDetailsProgressFragment.onRefresh()
-                    shouldRefreshProgressData = false
-
-                }
                 Log.d(TAG, "onTabSelected: Tab Progress selected")
             }
             else -> {
@@ -802,65 +737,14 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
     }
 
     override fun onTabUnselected(tab: TabLayout.Tab?) {
-        when (tab?.position) {
-            0 -> {
-                Log.d(TAG, "onTabSelected: Tab Overview unselected")
-            }
-            1 -> {
-                Log.d(TAG, "onTabSelected: Tab Seasons unselected")
-            }
-            2 -> {
-                Log.d(TAG, "onTabSelected: Tab Progress unselected")
-            }
-            else -> {
-                Log.d(TAG, "onTabSelected: Tab Unknown (${tab?.position}) unselected")
-            }
-        }
+
     }
 
     override fun onTabReselected(tab: TabLayout.Tab?) {
-        when (tab?.position) {
-            0 -> {
-                Log.d(TAG, "onTabSelected: Tab Overview reselected")
 
-                // We need to check Fragment is Attached to Activity to prevent crash situation
-                if (showDetailsOverviewFragment.isAdded) {
-                    Log.d(TAG, "onTabReselected: Refreshing Overview")
-                    (showDetailsOverviewFragment as SwipeRefreshLayout.OnRefreshListener).onRefresh()
-                }
-            }
-            1 -> {
-                refreshFragment(FRAGMENT_SEASONS_TAG)
-                Log.d(TAG, "onTabSelected: Tab Seasons reselected")
-            }
-            2 -> {
-                refreshFragment(FRAGMENT_PROGRESS_TAG)
-                Log.d(TAG, "onTabSelected: Tab Progress reselected")
-            }
-            else -> {
-                Log.d(TAG, "onTabSelected: Tab Unknown (${tab?.position}) reselected")
-            }
-        }
     }
 
-    private fun refreshFragment(fragmentTag: String): Boolean {
-        return try {
-            Log.d(TAG, "refreshFragment: Refreshing Fragment $fragmentTag")
-            val fragment =
-                supportFragmentManager.findFragmentByTag(fragmentTag) as SwipeRefreshLayout.OnRefreshListener
 
-            fragment.onRefresh()
-            true
-        } catch (cce: ClassCastException) {
-            Log.e(TAG, "refreshFragment: Casting error $fragmentTag")
-            cce.printStackTrace()
-            false
-        } catch (e: Exception) {
-            Log.e(TAG, "refreshFragment: Exception occur refreshing Fragment")
-            e.printStackTrace()
-            false
-        }
-    }
 
     private fun displayToastMessage(message: String, length: Int) {
         Toast.makeText(this, message, length).show()

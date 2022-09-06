@@ -22,7 +22,12 @@ class ShowDetailsProgressRepository @Inject constructor(
     private val showsDatabase: ShowsDatabase,
     private val sharedPreferences: SharedPreferences
 ) {
+    private val seasonStatsDao = showsDatabase.watchedSeasonStatsDao()
+    private val seasonsDao = showsDatabase.TmSeasonsDao()
 
-    val progressChannel = Channel<Resource<BaseShow>>()
+    fun getSeasons(traktId: Int) = seasonsDao.getSeasonsForShow(traktId)
 
+    fun getOverallSeasonStats(traktId: Int) = seasonStatsDao.getWatchedStatsByShow(traktId)
+
+    fun getSeasonWatchedStats(showTraktId: Int, seasonNumber: Int) = seasonStatsDao.getSeasonWatchedStats(showTraktId, seasonNumber)
 }

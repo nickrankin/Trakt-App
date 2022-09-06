@@ -5,6 +5,15 @@
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <ProgressBar
+        android:id="@+id/moviedetailsoverview_progressbar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
     <TextView
         android:id="@+id/moviedetailsoverview_overview"
         android:layout_width="0dp"
@@ -41,7 +50,6 @@
         android:id="@+id/moviedetailsoverview_main_group"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:visibility="gone"
         tools:visibility="visible"
         app:constraint_referenced_ids="moviedetailsoverview_overview,moviedetailsoverview_cast_title,moviedetailsoverview_cast_recycler" />
 

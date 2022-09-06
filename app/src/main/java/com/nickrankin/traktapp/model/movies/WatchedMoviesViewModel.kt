@@ -1,4 +1,4 @@
-package com.nickrankin.traktapp.model.movies.watched
+package com.nickrankin.traktapp.model.movies
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -43,15 +43,13 @@ class WatchedMoviesViewModel @Inject constructor(private val repository: Watched
     fun onStart() {
         viewModelScope.launch {
             refreshEventChannel.send(false)
-
-            statsRepository.refreshMovieStats(false)
         }
     }
 
     fun onRefresh() {
         viewModelScope.launch {
             refreshEventChannel.send(true)
-            statsRepository.refreshMovieStats(true)
+            statsRepository.refreshWatchedMovies()
         }
     }
 

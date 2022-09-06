@@ -1,6 +1,5 @@
 package com.nickrankin.traktapp.model
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nickrankin.traktapp.helper.Resource
@@ -25,11 +24,6 @@ class MainActivityViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val statsRepository: StatsRepository
 ) : ViewModel() {
-
-    private val eventsChannel = Channel<Event>()
-    val events = eventsChannel.receiveAsFlow()
-        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
-
     private val refreshEventChannel = Channel<Boolean>()
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
         .shareIn(viewModelScope, SharingStarted.Lazily, 1)
@@ -44,7 +38,11 @@ class MainActivityViewModel @Inject constructor(
 
     val watchedEpisodes = statsRepository.watchedEpisodeStats.map { watchedEpisodesStats ->
         if(watchedEpisodesStats.isNotEmpty() || watchedEpisodesStats.size > 8) {
-            watchedEpisodesStats.sortedBy {it.last_watched_at }.reversed().subList(0, 8)
+            if(watchedEpisodesStats.size > 4) {
+                watchedEpisodesStats.sortedBy {it.last_watched_at }.reversed().subList(0, 8)
+            } else {
+                watchedEpisodesStats.sortedBy {it.last_watched_at }.reversed()
+            }
         } else
             watchedEpisodesStats.sortedBy {it.last_watched_at }.reversed()
     }
@@ -58,7 +56,7 @@ class MainActivityViewModel @Inject constructor(
 
             showsOverviewRepository.removeAlreadyAiredEpisodes(data ?: emptyList())
 
-            if (data?.size ?: 0 >= 4) {
+            if ((data?.size ?: 0) >= 4) {
                 data = data?.subList(0, 4)
             }
             calendarEntriesResource.data = data
@@ -74,22 +72,14 @@ class MainActivityViewModel @Inject constructor(
     fun onStart() {
         viewModelScope.launch {
             refreshEventChannel.send(false)
-//            eventsChannel.send(Event.RefreshMovieStatsEvent(statsRepository.refreshMovieStats(false)))
-//            eventsChannel.send(Event.RefreshShowStatsEvent(statsRepository.refreshShowStats(false)))
         }
     }
 
     fun onRefresh() {
         viewModelScope.launch {
             refreshEventChannel.send(true)
-//            eventsChannel.send(Event.RefreshMovieStatsEvent(statsRepository.refreshMovieStats(true)))
-//            eventsChannel.send(Event.RefreshShowStatsEvent(statsRepository.refreshShowStats(true)))
+            statsRepository.refreshWatchedMovies()
+            statsRepository.refreshWatchedShows()
         }
     }
-
-    sealed class Event {
-        data class RefreshMovieStatsEvent(val refreshStatus: Resource<Boolean>): Event()
-        data class RefreshShowStatsEvent(val refreshStatus: Resource<Boolean>): Event()
-    }
-
 }

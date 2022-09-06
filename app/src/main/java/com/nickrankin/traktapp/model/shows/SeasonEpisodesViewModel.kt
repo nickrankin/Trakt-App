@@ -59,17 +59,13 @@ class SeasonEpisodesViewModel @Inject constructor(private val savedStateHandle: 
     fun onStart() {
         viewModelScope.launch {
             refreshEventChannel.send(false)
-
-            statsRepository.refreshShowStats( false)
-            statsRepository.getWatchedSeasonStats(seasonDataModel?.traktId ?: 0, false)
         }
     }
 
     fun onRefresh() {
         viewModelScope.launch {
             refreshEventChannel.send(true)
-            statsRepository.refreshShowStats( true)
-            statsRepository.getWatchedSeasonStats(seasonDataModel?.traktId ?: 0, true)
+            statsRepository.refreshAllShowStats()
         }
     }
 }

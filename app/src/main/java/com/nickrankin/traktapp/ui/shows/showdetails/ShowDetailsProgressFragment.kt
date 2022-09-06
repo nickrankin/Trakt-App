@@ -1,12 +1,8 @@
 package com.nickrankin.traktapp.ui.shows.showdetails
 
-import android.content.DialogInterface
 import android.content.Intent
-import android.content.SharedPreferences
-import androidx.lifecycle.ViewModelProvider
 import android.os.Bundle
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,288 +10,132 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.cardview.widget.CardView
-import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.R
-import com.nickrankin.traktapp.adapter.history.EpisodeWatchedHistoryItemAdapter
-import com.nickrankin.traktapp.dao.show.TmSeasonAndStats
-import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
+import com.nickrankin.traktapp.dao.stats.model.WatchedSeasonStats
 import com.nickrankin.traktapp.databinding.ShowDetailsProgressFragmentBinding
-import com.nickrankin.traktapp.helper.*
-import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
-import com.nickrankin.traktapp.model.shows.showdetails.ShowDetailsProgressViewModel
-import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
-import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
-import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
-import com.nickrankin.traktapp.ui.shows.OnNavigateToEpisode
-import com.uwetrottmann.trakt5.entities.*
-import com.uwetrottmann.trakt5.enums.Type
+import com.nickrankin.traktapp.helper.calculateProgress
+import com.nickrankin.traktapp.model.datamodel.SeasonDataModel
+import com.nickrankin.traktapp.model.shows.ShowDetailsFragmentsViewModel
+import com.nickrankin.traktapp.ui.shows.SeasonEpisodesActivity
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.collectLatest
-import org.threeten.bp.ZoneId
-import org.threeten.bp.format.DateTimeFormatter
-import javax.inject.Inject
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.internal.ChannelFlow
 
-private const val TAG = "ShowDetailsProgressFrag"
-
+private const val TAG = "HERE"
 @AndroidEntryPoint
-class ShowDetailsProgressFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener,
-    OnNavigateToEpisode {
-    private val viewModel: ShowDetailsProgressViewModel by activityViewModels()
+class ShowDetailsProgressFragment: Fragment() {
     private lateinit var bindings: ShowDetailsProgressFragmentBinding
 
-    private lateinit var overallProgressCardView: CardView
-    private var progressVisibilityToggle = false
-    private lateinit var progressBarContainerLayout: LinearLayout
+    private val viewModel: ShowDetailsFragmentsViewModel by activityViewModels()
+    private lateinit var progressCardview: CardView
+    private lateinit var progressItemContainer: LinearLayout
 
-    private lateinit var watchedHistoryItemsDialog: AlertDialog
-    private lateinit var episodeWatchedHistoryItemAdapter: EpisodeWatchedHistoryItemAdapter
-
-    private var showTraktId: Int = 0
-    private var showTmdbId: Int? = null
-
-
-    @Inject
-    lateinit var sharedPreferences: SharedPreferences
-
-    @Inject
-    lateinit var glide: RequestManager
+    private val allSeasonsToggleChannel = Channel<Boolean>()
+    private val allSeasonsToggled = allSeasonsToggleChannel.receiveAsFlow()
+        .stateIn(lifecycleScope, SharingStarted.Eagerly, false)
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-
-        bindings = ShowDetailsProgressFragmentBinding.inflate(layoutInflater)
-
+    ): View {
+        bindings = ShowDetailsProgressFragmentBinding.inflate(inflater)
         return bindings.root
-
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Variables
-        showTraktId = activity?.intent?.getIntExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, -1) ?: -1
-        showTmdbId = activity?.intent?.getIntExtra(ShowDetailsRepository.SHOW_TMDB_ID_KEY, -1) ?: -1
+        progressCardview = bindings.showdetailsprogressfragmentCardview
+        progressItemContainer = bindings.showdetailsprogressfragmentContainer
 
-        // Views
-        overallProgressCardView = bindings.showdetailsprogressfragmentOverallprogressCardview
-        progressBarContainerLayout = bindings.showdetailsprogressfragmentContainer
+        progressCardview.setOnClickListener {
+            lifecycleScope.launchWhenStarted {
+                allSeasonsToggleChannel.send(!allSeasonsToggled.value)
+            }
 
-        // Season progress toggle
-        overallProgressCardView.setOnClickListener { toggleSeasonProgress() }
-        // TODO Clicking will go to relevant Season page
-        progressBarContainerLayout.setOnClickListener { }
+            toggleProgress()
+        }
 
-
-        // Get data
         getProgress()
-        getEvents()
     }
-
+    
     private fun getProgress() {
-        lifecycleScope.launchWhenStarted {
-            viewModel.seasons.collectLatest { seasonsResource ->
-                when (seasonsResource) {
-                    is Resource.Loading -> {
-                        Log.d(TAG, "getProgress: Got progress")
-                        bindings.apply {
-                            showdetailsprogressfragmentLoadingProgressbar.visibility = View.VISIBLE
-                            showdetailsprogressfragmentContainer.visibility = View.GONE
-                        }
+        lifecycleScope.launchWhenStarted { 
+            viewModel.overallSeasonStats.collectLatest { seasonData ->
+                
+                var totalEpisodes = 0
+                var totalWatched = 0
+                
+                seasonData.map { stats ->
+                    Log.e(TAG, "getProgress: Completed ${stats.season} SNO complete ${stats.completed} overall ${seasonData.size}", )
 
-                    }
-                    is Resource.Success -> {
-                        bindings.apply {
-                            showdetailsprogressfragmentMainGroup.visibility = View.VISIBLE
-
-                            showdetailsprogressfragmentLoadingProgressbar.visibility = View.GONE
-                            showdetailsprogressfragmentContainer.visibility =
-                                if (progressVisibilityToggle) View.VISIBLE else View.GONE
-
-                        }
-
-                        val seasons = seasonsResource.data?.sortedBy { it.season.season_number }
-
-                        // Every season object has every seasons stats for that show, as we use Show Trakt ID as PK for DAO. So we only need to use the first entry to calculate an overall progress
-                        val seasonStatsData = seasons?.first()?.watchedSeasonStats
-
-                        if (seasons != null) {
-                            var totalAired = 0
-                            var complete = 0
-
-                            seasonStatsData?.map { seasonStat ->
-                                totalAired += seasonStat?.aired ?: 0
-                                complete += seasonStat?.completed ?: 0
-                            }
-
-                            val overallProgress = calculateProgress(
-                                complete.toDouble() ?: 0.0,
-                                totalAired.toDouble() ?: 0.0
-                            )
-
-                            // Overall progress
-                            bindings.showdetailsprogressfragmentOverallprogress.apply {
-                                showdetailsprogressfragmentProgressTitle.text =
-                                    "Overall Progress ($overallProgress%)"
-                                showdetailsprogressfragmentProgressbarOverall.progress =
-                                    overallProgress
-                            }
-
-                            //Show individual Seasons progress
-                            seasons.map { season ->
-                                progressBarContainerLayout.addView(buildProgressItem(season))
-                            }
-
-                        } else {
-                            Log.d(TAG, "getProgress: Show progress is null")
-                        }
-                    }
-                    is Resource.Error -> {
-                        bindings.apply {
-                            showdetailsprogressfragmentMainGroup.visibility = View.GONE
-
-                            showdetailsprogressfragmentLoadingProgressbar.visibility = View.GONE
-                            showdetailsprogressfragmentContainer.visibility = View.GONE
-                        }
-
-                        Log.e(
-                            TAG,
-                            "getProgress: Error getting progress ${seasonsResource.error?.localizedMessage}",
-                        )
-                        seasonsResource.error?.printStackTrace()
-                    }
+                    totalEpisodes += stats.aired
+                    totalWatched += stats.completed
                 }
+
+                val overappProgressPercentage = calculateProgress(totalWatched.toDouble(), totalEpisodes.toDouble())
+
+                bindings.showdetailsprogressfragmentOverview.apply {
+                    showdetailsprogressfragmentProgressTitle.text = "Overall progress ($overappProgressPercentage%)"
+                    showdetailsprogressfragmentProgressbar.progress = overappProgressPercentage
+                }
+
+                seasonData.map { seasonStat ->
+                    progressItemContainer.addView(buildProgressItem(seasonStat))
+                }
+
             }
         }
     }
 
-    private fun getEvents() {
+    private fun toggleProgress() {
         lifecycleScope.launchWhenStarted {
-            viewModel.events.collectLatest { event ->
-                when(event) {
-                    is ShowDetailsProgressViewModel.Event.DeleteWatchedHistoryItemEvent -> {
-                        val syncResponseResource = event.syncResponse
-
-                        when(syncResponseResource) {
-                            is Resource.Success -> {
-                                when(getSyncResponse(syncResponseResource.data, Type.SHOW)) {
-                                    Response.DELETED_OK -> {
-                                        displayToastMessage("Successfully removed play", Toast.LENGTH_LONG)
-
-                                    }
-                                    Response.NOT_FOUND -> {
-                                        displayToastMessage(
-                                            "Could not locate play with this ID, error deleting watched history.",
-                                            Toast.LENGTH_LONG
-                                        )
-                                    }
-                                    Response.ERROR -> {
-                                        displayToastMessage(
-                                            "Could not locate play with this ID, error deleting watched history.",
-                                            Toast.LENGTH_LONG
-                                        )
-                                    }
-                                    else -> {}
-                                }
-                            }
-                            is Resource.Error -> {
-                                (activity as IHandleError).showErrorMessageToast(syncResponseResource.error, "Failed to remove play")
-                            }
-                            else -> {}
-                        }
-                    }
+            allSeasonsToggled.collectLatest { isToggled ->
+                if(isToggled) {
+                    progressItemContainer.visibility = View.VISIBLE
+                } else {
+                    progressItemContainer.visibility = View.GONE
                 }
             }
         }
+
     }
 
-    private fun buildProgressItem(tmSeasonAndStats: TmSeasonAndStats): ConstraintLayout {
-        val stats = tmSeasonAndStats.watchedSeasonStats.find { it?.season ?: 0 == tmSeasonAndStats.season.season_number }
-        val overallProgressLayout = layoutInflater.inflate(
-            R.layout.item_progress_layout_item,
-            progressBarContainerLayout,
-            false
-        ) as ConstraintLayout
+    private fun buildProgressItem(watchedSeasonStats: WatchedSeasonStats): View {
+        val progressView = layoutInflater.inflate(R.layout.item_progress_layout_item, null)
 
-        val titleField =
-            overallProgressLayout.findViewById<TextView>(R.id.showdetailsprogressfragment_progress_title)
-        val progressBarField =
-            overallProgressLayout.findViewById<ProgressBar>(R.id.showdetailsprogressfragment_progressbar_overall)
+        val title = progressView.findViewById<TextView>(R.id.showdetailsprogressfragment_progress_title)
+        val progressBar = progressView.findViewById<ProgressBar>(R.id.showdetailsprogressfragment_progressbar)
 
+        val progressPercent = calculateProgress(watchedSeasonStats.completed.toDouble(), watchedSeasonStats.aired.toDouble())
 
-        val overallProgress =
-            calculateProgress(stats?.completed?.toDouble() ?: 0.0, stats?.aired?.toDouble() ?: 0.0)
+        title.text = "Season ${watchedSeasonStats.season} ($progressPercent)"
+        progressBar.progress = progressPercent
 
-        titleField.text = "Season ${stats?.season} Progress ($overallProgress%)"
-        progressBarField.progress = overallProgress
+        progressView.setOnClickListener {
+            val seasonEpisodesIntent = Intent(activity, SeasonEpisodesActivity::class.java)
+            seasonEpisodesIntent.putExtra(SeasonEpisodesActivity.SEASON_DATA_KEY,
+            SeasonDataModel(
+                watchedSeasonStats.show_trakt_id,
+                null,
+                watchedSeasonStats.season,
+                ""
+            ))
 
-        return overallProgressLayout
-    }
+            startActivity(seasonEpisodesIntent)
 
-    private fun toggleSeasonProgress() {
-        progressVisibilityToggle = !progressVisibilityToggle
-
-        if (progressVisibilityToggle) {
-            progressBarContainerLayout.visibility = View.VISIBLE
-        } else {
-            progressBarContainerLayout.visibility = View.GONE
         }
-    }
 
-    override fun navigateToEpisode(
-        showTraktId: Int,
-        showTmdbId: Int?,
-        seasonNumber: Int,
-        episodeNumber: Int,
-        language: String?
-    ) {
-        val intent = Intent(requireContext(), EpisodeDetailsActivity::class.java)
-
-        intent.putExtra(EpisodeDetailsActivity.EPISODE_DATA_KEY,
-            EpisodeDataModel(
-                showTraktId,
-                showTmdbId,
-                seasonNumber,
-                episodeNumber,
-                language
-            )
-        )
-        // No need to force refresh of watched shows as this was done in this activity so assume the watched show data in cache is up to date
-        intent.putExtra(EpisodeDetailsRepository.SHOULD_REFRESH_WATCHED_KEY, false)
-
-        startActivity(intent)
-    }
-
-    private fun displayToastMessage(message: String, length: Int) {
-        Toast.makeText(requireContext(), message, length).show()
-    }
-
-    override fun onStart() {
-        super.onStart()
-        viewModel.onStart()
-    }
-
-    override fun onRefresh() {
-        Log.d(TAG, "onRefresh: Refreshing Show Progress")
-
-        // To prevent duplication of Season specific progress
-        progressBarContainerLayout.removeAllViews()
-
-        viewModel.onRefresh()
+        return progressView
     }
 
     companion object {
         fun newInstance() = ShowDetailsProgressFragment()
     }
-
-
 }

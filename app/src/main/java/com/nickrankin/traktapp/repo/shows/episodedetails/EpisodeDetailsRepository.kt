@@ -3,41 +3,58 @@ package com.nickrankin.traktapp.repo.shows.episodedetails
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.room.withTransaction
-import com.nickrankin.traktapp.api.TmdbApi
 import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.credits.CreditsDatabase
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
-import com.nickrankin.traktapp.dao.show.model.TmEpisode
-import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
 import com.nickrankin.traktapp.helper.*
+import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.repo.shows.CreditsRepository
 import com.nickrankin.traktapp.repo.shows.watched.WatchedEpisodesRemoteMediator
-import com.nickrankin.traktapp.ui.auth.AuthActivity
-import com.uwetrottmann.tmdb2.entities.AppendToResponse
-import com.uwetrottmann.tmdb2.entities.TvEpisode
-import com.uwetrottmann.tmdb2.enumerations.AppendToResponseItem
 import com.uwetrottmann.trakt5.entities.*
-import com.uwetrottmann.trakt5.enums.HistoryType
-import com.uwetrottmann.trakt5.enums.RatingsFilter
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.flow
-import org.threeten.bp.OffsetDateTime
-import retrofit2.HttpException
+import kotlinx.coroutines.flow.first
 import java.lang.Exception
 import javax.inject.Inject
 
 private const val TAG = "EpisodeDetailsRepositor"
-
 class EpisodeDetailsRepository @Inject constructor(
     private val traktApi: TraktApi,
     private val showDataHelper: ShowDataHelper,
     private val sharedPreferences: SharedPreferences,
     private val creditsHelper: PersonCreditsHelper,
-    private val showCreditsDatabase: CreditsDatabase,
-    private val showsDatabase: ShowsDatabase): CreditsRepository(creditsHelper, showsDatabase, showCreditsDatabase) {
+    private val creditsDatabase: CreditsDatabase,
+    private val showsDatabase: ShowsDatabase): CreditsRepository(creditsHelper, showsDatabase, creditsDatabase) {
 
     private val episodesDao = showsDatabase.TmEpisodesDao()
     private val showsDbWatchedHistoryShowsDao = showsDatabase.watchedEpisodesDao()
+    private val personDao = creditsDatabase.personDao()
+    private val showCastPeopleDao = creditsDatabase.showCastPeopleDao()
+
+    suspend fun getCast(episodeDataModel: EpisodeDataModel?, shouldRefresh: Boolean) {
+        if(episodeDataModel ==  null) {
+            return
+        }
+        val credits = showCastPeopleDao.getShowCast(episodeDataModel.showTraktId, false).first()
+
+        if(shouldRefresh || credits.isEmpty()) {
+            val creditsResponse = creditsHelper.getShowCredits(episodeDataModel.showTraktId , episodeDataModel.tmdbId)
+
+            Log.d(TAG, "refreshCast: Refreshing Credits")
+
+            creditsDatabase.withTransaction {
+                showCastPeopleDao.deleteShowCast(episodeDataModel?.showTraktId ?: 0)
+            }
+
+            showsDatabase.withTransaction {
+                creditsResponse.map { castData ->
+                    personDao.insert(castData.person)
+                    showCastPeopleDao.insert(castData.showCastPersonData)
+                }
+            }
+
+        }
+
+    }
+
     suspend fun getEpisodes(
         showTraktId: Int,
         showTmdbId: Int?,

@@ -10,9 +10,10 @@ class TmdbApi(private val enableLogging: Boolean): Tmdb(ApiKeys.TMDB_API_KEY) {
     private var okHttpClient: OkHttpClient? = null
 
     @Synchronized
-    override fun okHttpClient(): OkHttpClient? {
+    override fun okHttpClient(): OkHttpClient {
         if (okHttpClient == null) {
             val builder = OkHttpClient.Builder()
+                .eventListener(OkHttpPerformanceEventListener())
             setOkHttpClientDefaults(builder)
 
             if(enableLogging) {
@@ -21,7 +22,7 @@ class TmdbApi(private val enableLogging: Boolean): Tmdb(ApiKeys.TMDB_API_KEY) {
 
             okHttpClient = builder.build()
         }
-        return okHttpClient
+        return okHttpClient!!
     }
 
     private fun getLogger(): HttpLoggingInterceptor {

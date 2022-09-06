@@ -18,6 +18,7 @@ import javax.inject.Inject
 
 class ListEntryRepository @Inject constructor(private val traktApi: TraktApi, private val sharedPreferences: SharedPreferences, private val listsDatabase: TraktListsDatabase) {
     private val traktListEntryDao = listsDatabase.listEntryDao()
+    val listEntries = traktListEntryDao.getAllListEntries()
 
     fun getListEntries(listId: Int, shouldRefresh: Boolean) = networkBoundResource(
         query = {

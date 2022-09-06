@@ -8,12 +8,12 @@ plugins {
 }
 
 android {
-    compileSdk 31
+    compileSdk 32
 
     defaultConfig {
         applicationId "com.nickrankin.traktapp"
         minSdk 21
-        targetSdk 31
+        targetSdk 32
         versionCode 1
         versionName "1.0"
 
@@ -42,7 +42,7 @@ android {
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2")
     implementation 'androidx.core:core-ktx:1.8.0'
-    implementation 'androidx.appcompat:appcompat:1.4.2'
+    implementation 'androidx.appcompat:appcompat:1.5.0'
     implementation 'com.google.android.material:material:1.6.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.4.1'
@@ -68,6 +68,9 @@ dependencies {
     implementation ("com.uwetrottmann.trakt5:trakt-java:6.10.0") {
         exclude group: "org.threeten", module: "threetenbp"
     }
+
+    implementation('com.squareup.retrofit2:retrofit:2.9.0')
+    implementation("com.squareup.okhttp3:okhttp:4.10.0")
     implementation 'com.squareup.okhttp3:logging-interceptor:4.9.1'
     implementation("com.uwetrottmann.tmdb2:tmdb-java:2.5.0")
 

@@ -364,7 +364,10 @@ interface TmUsers {
     suspend fun ratingsEpisodes(
         @Path("username") userSlug: UserSlug,
         @Path(value = "rating", encoded = true) filter: RatingsFilter,
-        @Query(value = "extended", encoded = true) extended: Extended?
+        @Query(value = "extended", encoded = true) extended: Extended?,
+        @Query(value = "limit", encoded = true) limit: Int?,
+        @Query(value = "page", encoded = true) page: Int?
+
     ): List<RatedEpisode>
 
     /**

@@ -1,31 +1,28 @@
 package com.nickrankin.traktapp.repo.movies
 
 import android.content.SharedPreferences
-import android.util.Log
 import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TraktApi
+import com.nickrankin.traktapp.dao.lists.TraktListsDatabase
 import com.nickrankin.traktapp.dao.movies.MoviesDatabase
 import com.nickrankin.traktapp.dao.movies.model.TmMovie
-import com.nickrankin.traktapp.dao.movies.model.WatchedMovie
-import com.nickrankin.traktapp.dao.stats.model.WatchedMoviesStats
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.repo.movies.watched.WatchedMoviesRemoteMediator
 import com.nickrankin.traktapp.repo.movies.watched.WatchedMoviesRepository
 import com.nickrankin.traktapp.repo.stats.StatsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.trakt5.entities.*
 import com.uwetrottmann.trakt5.enums.Extended
 import com.uwetrottmann.trakt5.enums.HistoryType
-import com.uwetrottmann.trakt5.enums.RatingsFilter
-import kotlinx.coroutines.flow.flow
 import org.threeten.bp.OffsetDateTime
 import javax.inject.Inject
 
 private const val TAG = "MovieDetailsActionButto"
-class MovieDetailsActionButtonRepository @Inject constructor(private val traktApi: TraktApi, private val sharedPreferences: SharedPreferences, private val statsRepository: StatsRepository, private val moviesDatabase: MoviesDatabase) {
+class MovieDetailsActionButtonRepository @Inject constructor(private val traktApi: TraktApi, private val sharedPreferences: SharedPreferences, private val statsRepository: StatsRepository, private val listsDatabase: TraktListsDatabase, private val moviesDatabase: MoviesDatabase) {
     private val watchedMoviesDao = moviesDatabase.watchedMoviesDao()
     private val watchedMoviesStatsDao = moviesDatabase.watchedMoviesStatsDao()
+    private val listEntryDao = listsDatabase.listEntryDao()
+    val listsWithEntries = listEntryDao.getAllListEntries()
 
     suspend fun checkin(movieTraktId: Int, cancelActiveCheckins: Boolean): Resource<MovieCheckinResponse> {
         return try {
@@ -77,7 +74,7 @@ class MovieDetailsActionButtonRepository @Inject constructor(private val traktAp
                 watchedMoviesDao.getWatchedMovies().invalidate()
 
                 // Refresh the WatchedStats
-                statsRepository.refreshMovieWatchedStats()
+                statsRepository.refreshWatchedMovies()
             }
 
             Resource.Success(response)

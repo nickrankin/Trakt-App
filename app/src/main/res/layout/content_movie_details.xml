@@ -8,7 +8,7 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="match_parent">
 
         <ProgressBar
             android:id="@+id/moviedetailsactivity_progressbar"
@@ -236,11 +236,13 @@
             app:constraint_referenced_ids="moviedetailsactivity_buttons"
             tools:layout_editor_absoluteY="223dp" />
 
+
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/moviedetailsactivity_buttons_fragment_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="8dp"
+            android:name="com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActionButtonsFragment"
             app:layout_constraintTop_toBottomOf="@id/moviedetailsactivity_video_buttons"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
@@ -260,8 +262,7 @@
             android:visibility="gone"
             app:constraint_referenced_ids="moviedetailsactivity_tagline,moviedetailsactivity_genres,moviedetailsactivity_midsection_barrier,
             moviedetailsactivity_poster_cardview,moviedetailsactivity_trakt_rating,moviedetailsactivity_first_aired,moviedetailsactivity_country,moviedetailsactivity_topbarrier,
-            moviedetailsactivity_runtime,moviedetailsactivity_company,moviedetailsactivity_title,moviedetailsactivity_buttons_fragment_container,
-            moviedetailsactivity_directed"
+            moviedetailsactivity_runtime,moviedetailsactivity_company,moviedetailsactivity_title, moviedetailsactivity_directed,moviedetailsactivity_total_plays"
             tools:visibility="visible" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
@@ -271,6 +272,7 @@
         android:id="@+id/moviedetailsactivity_fragment_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:name="com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsOverviewFragment"
         android:layout_margin="8dp"/>
 
 </LinearLayout>

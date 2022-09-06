@@ -17,6 +17,7 @@ import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.nickrankin.traktapp.BaseActivity
+import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.dao.movies.model.TmMovie
 import com.nickrankin.traktapp.databinding.ActivityMovieDetailsBinding
 import com.nickrankin.traktapp.helper.*
@@ -74,7 +75,8 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
 
         movieTraktId = intent.getIntExtra(MovieDetailsRepository.MOVIE_TRAKT_ID_KEY, -1)
 
-        initOverviewFragment()
+
+        initFragments()
 
         getMovie()
         getPlayCount()
@@ -84,12 +86,10 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
             throw RuntimeException("MovieDataModel must be passed to this Activity.")
         }
 
-        if(isLoggedIn) {
-            initActionButtonFragment()
-        }
+
     }
 
-    private fun initActionButtonFragment() {
+    private fun initFragments() {
         movieDetailsActionButtonsFragment = MovieDetailsActionButtonsFragment.newInstance()
 
         supportFragmentManager.beginTransaction()
@@ -99,15 +99,9 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
                 ACTION_BUTTON_FRAGMENT
             )
             .commit()
-    }
 
-    private fun initOverviewFragment() {
-        Log.d(TAG, "initOverviewFragment: Adding overview Fragment")
-
-        binding.moviedetailsactivityInner.moviedetailsactivityFragmentContainer.visibility =
-            View.VISIBLE
-
-        movieDetailsOverviewFragment = MovieDetailsOverviewFragment.newInstance()
+        if(isLoggedIn) {
+            movieDetailsOverviewFragment = MovieDetailsOverviewFragment.newInstance()
 
 
             supportFragmentManager.beginTransaction()
@@ -116,7 +110,7 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
                     movieDetailsOverviewFragment, "overview_fragment"
                 )
                 .commit()
-
+        }
     }
 
     private fun getMovie() {
@@ -125,6 +119,9 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
 
                 when (movieResource) {
                     is Resource.Loading -> {
+
+                        toggleFragmentProgressBar(true)
+
                         progressBar.visibility = View.VISIBLE
                         Log.d(TAG, "getMovie: Loading ...")
                     }
@@ -143,16 +140,12 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
                             displayMovie(movie)
                         }
 
-                        // Pass movie to fragments
-                        if(isLoggedIn) {
-                            movieDetailsActionButtonsFragment.initFragment(movie)
-                        }
-
-                        movieDetailsOverviewFragment.initFragment(movie)
-
+                        toggleFragmentProgressBar(false)
                     }
 
                     is Resource.Error -> {
+                        toggleFragmentProgressBar(false)
+
                         progressBar.visibility = View.GONE
                         if (swipeRefreshLayout.isRefreshing) {
                             swipeRefreshLayout.isRefreshing = false
@@ -162,12 +155,6 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
                             val movie = movieResource.data
                             displayMovie(movie)
 
-                            // Pass movie to fragments
-                            if(isLoggedIn) {
-                                movieDetailsActionButtonsFragment.initFragment(movie)
-                            }
-
-                            movieDetailsOverviewFragment.initFragment(movie)
                         }
 
                         showErrorSnackbarRetryButton(movieResource.error, binding.moviedetailsactivityInner.moviedetailsactivityFragmentContainer) {
@@ -176,8 +163,17 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
 
                     }
                 }
-
             }
+        }
+    }
+
+    private fun toggleFragmentProgressBar(shouldDisplay: Boolean) {
+        if(shouldDisplay) {
+            movieDetailsActionButtonsFragment.view?.findViewById<ProgressBar>(R.id.actionbutton_loading_progress)?.visibility = View.VISIBLE
+            movieDetailsOverviewFragment.view?.findViewById<ProgressBar>(R.id.moviedetailsoverview_progressbar)?.visibility = View.VISIBLE
+        } else {
+            movieDetailsActionButtonsFragment.view?.findViewById<ProgressBar>(R.id.actionbutton_loading_progress)?.visibility = View.GONE
+            movieDetailsOverviewFragment.view?.findViewById<ProgressBar>(R.id.moviedetailsoverview_progressbar)?.visibility = View.GONE
         }
     }
 
@@ -606,13 +602,6 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
 
     override fun onRefresh() {
         viewModel.onRefresh()
-
-        try {
-            movieDetailsActionButtonsFragment.onRefresh()
-            movieDetailsOverviewFragment.onRefresh()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 
     override fun onSupportNavigateUp(): Boolean {

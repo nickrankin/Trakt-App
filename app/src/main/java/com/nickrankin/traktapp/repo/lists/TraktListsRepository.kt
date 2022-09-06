@@ -16,6 +16,8 @@ import com.uwetrottmann.trakt5.entities.SyncResponse
 import com.uwetrottmann.trakt5.entities.UserSlug
 import com.uwetrottmann.trakt5.enums.Extended
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import javax.inject.Inject
 
 private const val TAG = "TraktListsRepository"
@@ -23,7 +25,7 @@ class TraktListsRepository @Inject constructor(private val traktApi: TraktApi, p
     private val traktListsDao = listsDatabase.traktListDao()
     private val traktListEntriesDao = listsDatabase.listEntryDao()
 
-    val listsWithEntries = traktListEntriesDao.getAllListEntries()
+    private val listsWithEntries = traktListEntriesDao.getAllListEntries()
 
     fun getLists(shouldRefresh: Boolean) = networkBoundResource(
         query = {
@@ -69,8 +71,10 @@ class TraktListsRepository @Inject constructor(private val traktApi: TraktApi, p
         return convertedLists
     }
 
-    suspend fun refreshAllListsAndListItems(shouldRefresh: Boolean) {
-        if(shouldRefresh) {
+    suspend fun getListsAndEntries(shouldRefresh: Boolean): Flow<List<ListWithEntries>> {
+        val lists = traktListsDao.getAllTraktLists()
+
+        if(lists.first().isEmpty() || shouldRefresh) {
             try {
                 Log.d(TAG, "refreshAllListsAndListItems: Refreshing lists and it's entries")
                 val lists = traktApi.tmUsers().lists(UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "NULL")))
@@ -101,10 +105,10 @@ class TraktListsRepository @Inject constructor(private val traktApi: TraktApi, p
                 }
 
             } catch(e: Exception) {
-                Log.e(TAG, "refreshListsAndListItems: Error Refreshing lists and list items ${e.message}", )
                 e.printStackTrace()
             }
         }
+        return listsWithEntries
     }
 
     suspend fun addTraktList(traktList: com.uwetrottmann.trakt5.entities.TraktList): Resource<TraktList> {

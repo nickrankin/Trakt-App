@@ -4,6 +4,8 @@ import android.content.SharedPreferences
 import android.util.Log
 import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TraktApi
+import com.nickrankin.traktapp.dao.credits.CreditsDatabase
+import com.nickrankin.traktapp.dao.lists.TraktListsDatabase
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.show.model.CollectedShow
 import com.nickrankin.traktapp.dao.show.model.TmShow
@@ -11,6 +13,8 @@ import com.nickrankin.traktapp.dao.stats.model.CollectedShowsStats
 import com.nickrankin.traktapp.dao.stats.model.RatingsShowsStats
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.shouldRefreshContents
+import com.nickrankin.traktapp.repo.lists.ListEntryRepository
+import com.nickrankin.traktapp.repo.lists.TraktListsRepository
 import com.nickrankin.traktapp.repo.shows.collected.CollectedShowsRepository
 import com.nickrankin.traktapp.repo.stats.StatsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
@@ -35,10 +39,18 @@ class ShowDetailsActionButtonsRepository @Inject constructor(
     private val traktApi: TraktApi,
     private val sharedPreferences: SharedPreferences,
     private val showsDatabase: ShowsDatabase,
+    private val creditsDatabase: CreditsDatabase,
+    private val listsDatabase: TraktListsDatabase,
     private val statsRepository: StatsRepository
 ) {
     private val collectedShowStatsDao = showsDatabase.collectedShowsStatsDao()
     private val ratedShowsStatsDao = showsDatabase.ratedShowsStatsDao()
+
+
+    private val listEntryDao = listsDatabase.listEntryDao()
+    val listsWithEntries = listEntryDao.getAllListEntries()
+
+
 
 
     fun getRatings(traktId: Int): Flow<RatingsShowsStats?> {

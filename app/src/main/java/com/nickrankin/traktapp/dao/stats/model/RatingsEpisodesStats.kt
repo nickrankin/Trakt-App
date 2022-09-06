@@ -9,10 +9,7 @@ import org.threeten.bp.OffsetDateTime
 data class RatingsEpisodesStats(
     @PrimaryKey val trakt_id: Int,
     val show_trakt_id: Int,
-    val show_tmdb_id: Int?,
     val season: Int,
     val episode: Int,
     val rating: Int,
-    val title: String,
-    val show_title: String,
     val rated_at: OffsetDateTime)

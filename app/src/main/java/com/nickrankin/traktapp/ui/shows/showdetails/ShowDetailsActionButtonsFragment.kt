@@ -12,30 +12,26 @@ import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.nickrankin.traktapp.BaseFragment
-import com.nickrankin.traktapp.dao.movies.model.TmMovie
 import com.nickrankin.traktapp.dao.show.model.TmShow
 import com.nickrankin.traktapp.databinding.ActionButtonsFragmentBinding
 import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.Response
 import com.nickrankin.traktapp.helper.getSyncResponse
-import com.nickrankin.traktapp.model.shows.showdetails.ShowDetailsActionButtonsViewModel
-import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
-import com.nickrankin.traktapp.ui.auth.AuthActivity
+import com.nickrankin.traktapp.model.shows.ShowDetailsFragmentsViewModel
+import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
 import com.nickrankin.traktapp.ui.dialog.RatingPickerFragment
 import com.uwetrottmann.trakt5.enums.Rating
 import com.uwetrottmann.trakt5.enums.Type
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
-import javax.inject.Inject
 
 private const val TAG = "ShowDetailsActionButton"
 @AndroidEntryPoint
-class ShowDetailsActionButtonsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
+class ShowDetailsActionButtonsFragment : BaseFragment() {
 
-    private val viewModel: ShowDetailsActionButtonsViewModel by activityViewModels()
+    private val viewModel: ShowDetailsFragmentsViewModel by activityViewModels()
 
     private lateinit var bindings: ActionButtonsFragmentBinding
 
@@ -51,7 +47,7 @@ class ShowDetailsActionButtonsFragment : BaseFragment(), SwipeRefreshLayout.OnRe
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         bindings = ActionButtonsFragmentBinding.inflate(inflater)
 
         return bindings.root
@@ -68,6 +64,8 @@ class ShowDetailsActionButtonsFragment : BaseFragment(), SwipeRefreshLayout.OnRe
 
             // Get Data
             getCollectedShowStatus()
+
+            initDialogs()
         }
     }
 
@@ -76,17 +74,19 @@ class ShowDetailsActionButtonsFragment : BaseFragment(), SwipeRefreshLayout.OnRe
         addCollectionProgressBar = bindings.actionButtonAddToCollectionProgressbar
     }
 
-    fun initFragment(tmShow: TmShow?) {
-        if(tmShow == null) {
-            return
+    private fun initDialogs() {
+
+        lifecycleScope.launchWhenStarted {
+            viewModel.show.collectLatest { show ->
+                if(show != null) {
+                    initRatingsDialog(show)
+                    initAddToCollectionDialogs(show)
+                    getRatings(show)
+                    getEvents(show)
+                    setupAddListsButton(show)
+                }
+            }
         }
-
-        initRatingsDialog(tmShow)
-        initAddToCollectionDialogs(tmShow)
-        getRatings(tmShow)
-        getEvents(tmShow)
-        setupAddListsButton(tmShow)
-
     }
 
     private fun setupAddListsButton(tmShow: TmShow) {
@@ -215,7 +215,7 @@ class ShowDetailsActionButtonsFragment : BaseFragment(), SwipeRefreshLayout.OnRe
         lifecycleScope.launchWhenStarted {
             viewModel.events.collectLatest { event ->
                 when(event) {
-                    is ShowDetailsActionButtonsViewModel.Event.AddToCollectionEvent -> {
+                    is ShowDetailsFragmentsViewModel.Event.AddToCollectionEvent -> {
                         val syncResponseResource = event.syncResponse
 
                         // Disable progressbar and re-enable button
@@ -242,7 +242,7 @@ class ShowDetailsActionButtonsFragment : BaseFragment(), SwipeRefreshLayout.OnRe
                             (activity as IHandleError).showErrorMessageToast(syncResponseResource.error, "Error adding $showTitle to your collection.")
                         }
                     }
-                    is ShowDetailsActionButtonsViewModel.Event.RemoveFromCollectionEvent -> {
+                    is ShowDetailsFragmentsViewModel.Event.RemoveFromCollectionEvent -> {
 
                         // Reenable button and hide progressbar
                         bindings.actionbuttonAddToCollection.isEnabled = true
@@ -269,7 +269,7 @@ class ShowDetailsActionButtonsFragment : BaseFragment(), SwipeRefreshLayout.OnRe
                             (activity as IHandleError).showErrorMessageToast(syncResponseResource.error, "Error removing $showTitle from your Trakt collection!")
                         }
                     }
-                    is ShowDetailsActionButtonsViewModel.Event.AddRatingEvent -> {
+                    is ShowDetailsFragmentsViewModel.Event.AddRatingEvent -> {
                         val syncResponseResource = event.syncResponse
 
                         bindings.actionbuttonRate.isEnabled = true
@@ -296,7 +296,7 @@ class ShowDetailsActionButtonsFragment : BaseFragment(), SwipeRefreshLayout.OnRe
                             (activity as IHandleError).showErrorMessageToast(syncResponseResource.error, "Error rating $showTitle.")
                         }
                     }
-                    is ShowDetailsActionButtonsViewModel.Event.DeleteRatingEvent -> {
+                    is ShowDetailsFragmentsViewModel.Event.DeleteRatingEvent -> {
                         val syncResponseResource = event.syncResponse
 
                         bindings.actionbuttonRate.isEnabled = true
@@ -371,15 +371,6 @@ class ShowDetailsActionButtonsFragment : BaseFragment(), SwipeRefreshLayout.OnRe
                 }
             }
         }
-    }
-
-    override fun onStart() {
-        super.onStart()
-        viewModel.onStart()
-    }
-
-    override fun onRefresh() {
-        viewModel.onRefresh()
     }
 
     private fun displayMessageToast(message: String, length: Int) {

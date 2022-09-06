@@ -12,6 +12,7 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.*
 import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.services.EpisodeTrackingRefreshWorker
+import com.nickrankin.traktapp.services.StatsRefreshWorker
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.trakt5.entities.UserSlug
 import dagger.hilt.android.HiltAndroidApp
@@ -22,22 +23,28 @@ import javax.inject.Inject
 private const val REFRESH_INTERVAL = 24L
 private const val RETRY_INTERVAL = 30
 private const val EPISODES_NOTIFICATION_SERVICE_WORKER_KEY = "refresh_trakt_episodes_worker"
+private const val STATS_REFRESH_WORK_KEY = "refresh_user_stats_worker"
 
 private const val TAG = "TmApplication"
 @HiltAndroidApp
 class TmApplication : Application(), Configuration.Provider {
+    private lateinit var workManager: WorkManager
+
     @Inject
     lateinit var traktApi: TraktApi
 
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
-
-
+    
     @Inject
     lateinit var sharedPreferences: SharedPreferences
 
     @Inject
     lateinit var userSlug: UserSlug
+
+    private var isLoggedIn = false
+
+
 
     override fun getWorkManagerConfiguration(): Configuration {
         return Configuration.Builder()
@@ -48,7 +55,15 @@ class TmApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        workManager = WorkManager.getInstance(this)
+
         authenticate()
+        
+        if(isLoggedIn) {
+            // Setup Stats Refresh worker
+            setupStatisticsRefreshService()
+        }
+        
 
         // Uncomment to cancel all work
         //WorkManager.getInstance(this).cancelAllWork()
@@ -71,6 +86,8 @@ class TmApplication : Application(), Configuration.Provider {
 
             traktApi.accessToken(accessToken)
             traktApi.refreshToken(refreshToken)
+
+            isLoggedIn = true
         } else {
 
             updateLoginState(false)
@@ -121,8 +138,6 @@ class TmApplication : Application(), Configuration.Provider {
     }
 
     private fun setupEpisodeNotificationService() {
-        val workManager = WorkManager.getInstance(this)
-
         val notificationsRefreshWork = PeriodicWorkRequestBuilder<EpisodeTrackingRefreshWorker>(
             REFRESH_INTERVAL, TimeUnit.HOURS
         ).addTag(EPISODES_NOTIFICATION_SERVICE_WORKER_KEY)
@@ -134,6 +149,22 @@ class TmApplication : Application(), Configuration.Provider {
             EPISODES_NOTIFICATION_SERVICE_WORKER_KEY,
             ExistingPeriodicWorkPolicy.KEEP,
             notificationsRefreshWork
+        )
+    }
+    
+    private fun setupStatisticsRefreshService() {
+        Log.d(TAG, "setupStatisticsRefreshService: Setting up StatsRefreshWorker")
+        val statsWork = PeriodicWorkRequestBuilder<StatsRefreshWorker>(
+            REFRESH_INTERVAL, TimeUnit.HOURS
+        ).addTag(STATS_REFRESH_WORK_KEY)
+            .setBackoffCriteria(
+                BackoffPolicy.EXPONENTIAL, PeriodicWorkRequest.MIN_BACKOFF_MILLIS, TimeUnit.MINUTES
+            ).build()
+
+        workManager.enqueueUniquePeriodicWork(
+            STATS_REFRESH_WORK_KEY,
+            ExistingPeriodicWorkPolicy.KEEP,
+            statsWork
         )
     }
 }

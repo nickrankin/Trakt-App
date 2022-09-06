@@ -8,6 +8,15 @@
     app:barrierAllowsGoneWidgets="true"
     tools:visibility="visible">
 
+    <ProgressBar
+        android:id="@+id/actionbutton_loading_progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
     <RelativeLayout
         android:id="@+id/actionbutton_checkin"
         android:layout_width="75dp"

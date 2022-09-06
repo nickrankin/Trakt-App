@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.BaseActivity
+import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.history.EpisodeWatchedHistoryItemAdapter
 import com.nickrankin.traktapp.dao.show.model.TmEpisode
 import com.nickrankin.traktapp.dao.show.model.TmShow
@@ -22,7 +23,7 @@ import com.nickrankin.traktapp.databinding.ActivityEpisodeDetailsBinding
 import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
-import com.nickrankin.traktapp.model.shows.episodedetails.EpisodeDetailsViewModel
+import com.nickrankin.traktapp.model.shows.EpisodeDetailsViewModel
 import com.nickrankin.traktapp.services.helper.TrackedEpisodeAlarmScheduler
 import com.nickrankin.traktapp.services.helper.TrackedEpisodeNotificationsBuilder
 import com.nickrankin.traktapp.ui.auth.AuthActivity
@@ -48,6 +49,7 @@ class EpisodeDetailsActivity : BaseActivity(), OnNavigateToShow, SwipeRefreshLay
     private lateinit var watchedEpisodesRecyclerView: RecyclerView
     private lateinit var watchedEpisodesAdapter: EpisodeWatchedHistoryItemAdapter
 
+    private lateinit var episodeDetailsActionButtonsFragment: EpisodeDetailsActionButtonsFragment
     private lateinit var episodeDetailsOverviewFragment: EpisodeDetailsOverviewFragment
 
     @Inject
@@ -66,12 +68,6 @@ class EpisodeDetailsActivity : BaseActivity(), OnNavigateToShow, SwipeRefreshLay
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        if(savedInstanceState == null) {
-                supportFragmentManager.beginTransaction()
-                    .add(bindings.episodedetailsactivityInner.episodedetailsactivityButtonsFragmentContainer.id, EpisodeDetailsActionButtonsFragment.newInstance(), FRAGMENT_ACTION_BUTTONS)
-                    .commit()
-        }
-
         progressBar = bindings.episodedetailsactivityInner.episodedetailsactivityProgressbar
         swipeRefreshLayout = bindings.episodedetailsactivitySwipeLayout
         swipeRefreshLayout.setOnRefreshListener(this)
@@ -87,15 +83,12 @@ class EpisodeDetailsActivity : BaseActivity(), OnNavigateToShow, SwipeRefreshLay
             throw RuntimeException("Must pass EpisodeDataModel to ${this.javaClass.name}.")
         }
 
-        initOverviewFragment()
+        initFragments()
 
         getShow()
         getEpisode()
-        getEvents()
+//        getEvents()
 
-        if(isLoggedIn) {
-            getWatchedEpisodes()
-        }
 
     }
 
@@ -108,27 +101,39 @@ class EpisodeDetailsActivity : BaseActivity(), OnNavigateToShow, SwipeRefreshLay
         }
     }
 
-    private fun initOverviewFragment() {
+    private fun initFragments() {
         episodeDetailsOverviewFragment = EpisodeDetailsOverviewFragment.newInstance()
+        episodeDetailsActionButtonsFragment = EpisodeDetailsActionButtonsFragment.newInstance()
 
         supportFragmentManager.beginTransaction()
             .replace(bindings.episodedetailsactivityInner.episodedetailsactivityMainFragmentContainer.id, episodeDetailsOverviewFragment)
             .commit()
+
+        if(isLoggedIn) {
+            supportFragmentManager.beginTransaction()
+                .add(bindings.episodedetailsactivityInner.episodedetailsactivityButtonsFragmentContainer.id, episodeDetailsActionButtonsFragment, FRAGMENT_ACTION_BUTTONS)
+                .commit()
+        }
+
+
     }
 
     private fun getShow() {
         lifecycleScope.launchWhenStarted {
             viewModel.show.collectLatest { showResource ->
                 val show = showResource.data
+
                 when (showResource) {
                     is Resource.Loading -> {
                         Log.d(TAG, "collectShow: Loading show..")
                     }
                     is Resource.Success -> {
-
                         Log.d(TAG, "collectShow: Got show! ${showResource.data}")
-
                         displayShow(show)
+
+                        if(isLoggedIn) {
+                            getWatchedEpisodes(show)
+                        }
                     }
                     is Resource.Error -> {
 
@@ -144,7 +149,6 @@ class EpisodeDetailsActivity : BaseActivity(), OnNavigateToShow, SwipeRefreshLay
                 }
             }
         }
-
     }
 
     private fun getEpisode() {
@@ -154,12 +158,12 @@ class EpisodeDetailsActivity : BaseActivity(), OnNavigateToShow, SwipeRefreshLay
             mainGroup.visibility = View.VISIBLE
 
             viewModel.episode.collectLatest { episodeResource ->
+
                 val episode = episodeResource.data
 
                 when (episodeResource) {
                     is Resource.Loading -> {
                         toggleProgressBar(true)
-                        mainGroup.visibility = View.GONE
                         Log.d(TAG, "collectEpisode: Loading Episode...")
                     }
                     is Resource.Success -> {
@@ -170,9 +174,6 @@ class EpisodeDetailsActivity : BaseActivity(), OnNavigateToShow, SwipeRefreshLay
 
                         displayEpisode(episode)
 
-                        setupActionBarFragment(episode)
-
-                        episodeDetailsOverviewFragment.initFragment(episode)
                     }
                     is Resource.Error -> {
                         toggleProgressBar(false)
@@ -182,7 +183,6 @@ class EpisodeDetailsActivity : BaseActivity(), OnNavigateToShow, SwipeRefreshLay
                             mainGroup.visibility = View.VISIBLE
 
                             displayEpisode(episode)
-                            setupActionBarFragment(episode!!)
                         }
 
                         showErrorSnackbarRetryButton(episodeResource.error, bindings.episodedetailsactivitySwipeLayout) {
@@ -195,20 +195,37 @@ class EpisodeDetailsActivity : BaseActivity(), OnNavigateToShow, SwipeRefreshLay
         }
     }
 
-    private fun toggleProgressBar(isVisible: Boolean) {
+    private fun toggleProgressBar(isRefreshing: Boolean) {
+        val actionButtonProgressbar = episodeDetailsActionButtonsFragment.view?.findViewById<ProgressBar>(R.id.actionbutton_loading_progress)
+        val episodeDetailsOverViewProgressBar = episodeDetailsOverviewFragment.view?.findViewById<ProgressBar>(R.id.episodedetailsoverview_progressbar)
+
             if(swipeRefreshLayout.isRefreshing) {
                 swipeRefreshLayout.isRefreshing = false
             }
 
-            if(isVisible) progressBar.visibility = View.VISIBLE else progressBar.visibility = View.GONE
+            if(isRefreshing) {
+                progressBar.visibility = View.VISIBLE
+                actionButtonProgressbar?.visibility = View.VISIBLE
+                episodeDetailsOverViewProgressBar?.visibility = View.VISIBLE
+            } else {
+                 progressBar.visibility = View.GONE
+                actionButtonProgressbar?.visibility = View.GONE
+                episodeDetailsOverViewProgressBar?.visibility = View.GONE
+            }
     }
 
-    private fun getWatchedEpisodes() {
+    private fun getWatchedEpisodes(show: TmShow?) {
+        if(show == null) {
+            return
+        }
+
         lifecycleScope.launchWhenStarted {
-            viewModel.watchedEpisodeStats.collectLatest { watchedEpisode ->
-                if(watchedEpisode?.last_watched_at != null) {
+            viewModel.watchedEpisodeStats.collectLatest { watchedEpisodes ->
+                val foundShow = watchedEpisodes.find { it.show_trakt_id == show.trakt_id }
+
+                if(foundShow?.last_watched_at != null) {
                     bindings.episodedetailsactivityInner.episodedetailsactivityTotalPlays.visibility = View.VISIBLE
-                    bindings.episodedetailsactivityInner.episodedetailsactivityTotalPlays.text = "Total plays: ${watchedEpisode.plays} \nLast watched at: ${getFormattedDate(watchedEpisode.last_watched_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)!!, sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT)!!)}"
+                    bindings.episodedetailsactivityInner.episodedetailsactivityTotalPlays.text = "Total plays: ${foundShow.plays} \nLast watched at: ${getFormattedDate(foundShow.last_watched_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)!!, sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT)!!)}"
                 } else {
                     bindings.episodedetailsactivityInner.episodedetailsactivityTotalPlays.visibility = View.GONE
                 }
@@ -216,49 +233,37 @@ class EpisodeDetailsActivity : BaseActivity(), OnNavigateToShow, SwipeRefreshLay
         }
     }
 
-    private fun getEvents() {
-        lifecycleScope.launchWhenStarted {
-            viewModel.events.collectLatest { event ->
-                when(event) {
-                    is EpisodeDetailsViewModel.Event.DeleteWatchedHistoryItem -> {
-                        val eventResource = event.syncResponse
-
-                        if(eventResource is Resource.Success) {
-                            val syncResponse = eventResource.data
-
-                            if(syncResponse?.deleted?.episodes ?: 0 > 0) {
-                                displayMessageToast("Successfully removed play", Toast.LENGTH_SHORT)
-                            } else {
-                                displayMessageToast("Didn't remove play", Toast.LENGTH_SHORT)
-                            }
-
-                        } else if (eventResource is Resource.Error) {
-                            showErrorMessageToast(event.syncResponse.error, "Error deleting watched history item")
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private fun setupActionBarFragment(episode: TmEpisode?) {
-        if(episode == null) {
-            return
-        }
-
-        try {
-            val fragment = supportFragmentManager.findFragmentByTag(
-                FRAGMENT_ACTION_BUTTONS) as OnEpisodeChangeListener
-
-            fragment.bindEpisode(episode!!)
-        } catch(e: ClassCastException) {
-            Log.e(TAG, "getShow: Cannot cast ${supportFragmentManager.findFragmentByTag(
-                FRAGMENT_ACTION_BUTTONS)} as OnEpisodeIdChangeListener", )
-            e.printStackTrace()
-        } catch(e: Exception) {
-            e.printStackTrace()
-        }
-    }
+//    private fun getEvents() {
+//        lifecycleScope.launchWhenStarted {
+//            viewModel.events.collectLatest { event ->
+//                when(event) {
+//                    is EpisodeDetailsViewModel.Event.DeleteWatchedHistoryItem -> {
+//                        val eventResource = event.syncResponse
+//
+//                        if(eventResource is Resource.Success) {
+//                            val syncResponse = eventResource.data
+//
+//                            if(syncResponse?.deleted?.episodes ?: 0 > 0) {
+//                                displayMessageToast("Successfully removed play", Toast.LENGTH_SHORT)
+//                            } else {
+//                                displayMessageToast("Didn't remove play", Toast.LENGTH_SHORT)
+//                            }
+//
+//                        } else if (eventResource is Resource.Error) {
+//                            showErrorMessageToast(event.syncResponse.error, "Error deleting watched history item")
+//                        }
+//                    }
+//                    is EpisodeDetailsViewModel.Event.AddCheckinEvent -> TODO()
+//                    is EpisodeDetailsViewModel.Event.AddListEntryEvent -> TODO()
+//                    is EpisodeDetailsViewModel.Event.AddRatingsEvent -> TODO()
+//                    is EpisodeDetailsViewModel.Event.AddToWatchedHistoryEvent -> TODO()
+//                    is EpisodeDetailsViewModel.Event.CancelCheckinEvent -> TODO()
+//                    is EpisodeDetailsViewModel.Event.DeleteRatingsEvent -> TODO()
+//                    is EpisodeDetailsViewModel.Event.RemoveListEntryEvent -> TODO()
+//                }
+//            }
+//        }
+//    }
 
     private fun displayShow(show: TmShow?) {
         bindings.episodedetailsactivityInner.apply {
@@ -336,27 +341,27 @@ class EpisodeDetailsActivity : BaseActivity(), OnNavigateToShow, SwipeRefreshLay
         startActivity(intent)
     }
 
-    private fun handleWatchedEpisodeDelete(watchedEpisode: WatchedEpisode, showConfirmation: Boolean) {
-        val syncItem = SyncItems().ids(watchedEpisode.id)
-
-        if(!showConfirmation) {
-            viewModel.removeWatchedHistoryItem(syncItem)
-            return
-        }
-
-        val dialog = AlertDialog.Builder(this)
-            .setTitle("Delete ${watchedEpisode.episode_title} from your watched history?")
-            .setMessage("Are you sure you want to remove ${watchedEpisode.episode_title} from your Trakt History?")
-            .setPositiveButton("Yes", DialogInterface.OnClickListener { dialogInterface, i ->
-                viewModel.removeWatchedHistoryItem(syncItem)
-            })
-            .setNegativeButton("No", DialogInterface.OnClickListener { dialogInterface, i ->
-                dialogInterface.dismiss()
-            })
-            .create()
-
-        dialog.show()
-    }
+//    private fun handleWatchedEpisodeDelete(watchedEpisode: WatchedEpisode, showConfirmation: Boolean) {
+//        val syncItem = SyncItems().ids(watchedEpisode.id)
+//
+//        if(!showConfirmation) {
+//            viewModel.removeWatchedHistoryItem(syncItem)
+//            return
+//        }
+//
+//        val dialog = AlertDialog.Builder(this)
+//            .setTitle("Delete ${watchedEpisode.episode_title} from your watched history?")
+//            .setMessage("Are you sure you want to remove ${watchedEpisode.episode_title} from your Trakt History?")
+//            .setPositiveButton("Yes", DialogInterface.OnClickListener { dialogInterface, i ->
+//                viewModel.removeWatchedHistoryItem(syncItem)
+//            })
+//            .setNegativeButton("No", DialogInterface.OnClickListener { dialogInterface, i ->
+//                dialogInterface.dismiss()
+//            })
+//            .create()
+//
+//        dialog.show()
+//    }
 
 
 

@@ -3,6 +3,7 @@ package com.nickrankin.traktapp.repo.shows.episodedetails
 import android.content.SharedPreferences
 
 import com.nickrankin.traktapp.api.TraktApi
+import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.show.model.TmEpisode
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.Resource
@@ -17,65 +18,12 @@ import javax.inject.Inject
 private const val TAG = "EpisodeDetailsActionBut"
 class EpisodeDetailsActionButtonsRepository @Inject constructor(
     private val traktApi: TraktApi,
-    private val episodeDetailsRepository: EpisodeDetailsRepository,
+    private val showsDatabase: ShowsDatabase,
     private val sharedPreferences: SharedPreferences
 ) {
-    suspend fun getRatings(): Resource<List<RatedEpisode>> {
-        return try {
-            val response = traktApi.tmUsers().ratingsEpisodes(
-                UserSlug(
-                    sharedPreferences.getString(
-                        AuthActivity.USER_SLUG_KEY,
-                        "NULL"
-                    )
-                ), RatingsFilter.ALL, null
-            )
+    private val episodeDetailsDao = showsDatabase.TmEpisodesDao()
 
-            Resource.Success(response)
-
-        } catch (e: Throwable) {
-            e.printStackTrace()
-            Resource.Error(e, null)
-        }
-    }
-
-    suspend fun addRatings(newRating: Int, episodeTraktId: Int): Resource<Pair<SyncResponse, Int>> {
-        return try {
-            val syncItems = SyncItems().apply {
-                episodes = listOf(
-                    SyncEpisode().rating(
-                        Rating.fromValue(newRating)
-                    )
-                        .id(EpisodeIds.trakt(episodeTraktId))
-                )
-            }
-
-            val response = traktApi.tmSync().addRatings(syncItems)
-
-            Resource.Success(Pair(response, newRating))
-
-        } catch (t: Throwable) {
-            Resource.Error(t, null)
-        }
-    }
-
-    suspend fun resetRating(episodeTraktId: Int): Resource<SyncResponse> {
-        return try {
-            val syncItems = SyncItems().apply {
-                    episodes = listOf(
-                        SyncEpisode().id(EpisodeIds.trakt(episodeTraktId))
-                    )
-                }
-
-            val response = traktApi.tmSync().deleteRatings(syncItems)
-
-
-            Resource.Success(response)
-        } catch(t: Throwable) {
-
-            Resource.Error(t, null)
-        }
-    }
+    fun getEpisodeDetails(showTraktId: Int, seasonNo: Int, EpisodeNo: Int) = episodeDetailsDao.getEpisode(showTraktId, seasonNo, EpisodeNo)
 
     suspend fun checkin(episodeTraktId: Int): Resource<EpisodeCheckinResponse?> {
 

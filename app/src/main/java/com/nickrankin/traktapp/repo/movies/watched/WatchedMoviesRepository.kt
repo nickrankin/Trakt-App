@@ -42,7 +42,7 @@ class WatchedMoviesRepository @Inject constructor(private val traktApi: TraktApi
             }
 
             // Refresh watched stats
-            statsRepository.refreshMovieWatchedStats()
+            statsRepository.refreshWatchedMovies()
 
             Resource.Success(response)
 

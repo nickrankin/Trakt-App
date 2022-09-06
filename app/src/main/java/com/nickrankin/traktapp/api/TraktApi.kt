@@ -7,24 +7,42 @@ import com.nickrankin.traktapp.api.services.trakt.*
 import com.uwetrottmann.trakt5.TraktV2
 import com.uwetrottmann.trakt5.TraktV2Authenticator
 import com.uwetrottmann.trakt5.TraktV2Interceptor
+import okhttp3.ConnectionPool
 import okhttp3.OkHttpClient
+import okhttp3.Protocol
 import okhttp3.logging.HttpLoggingInterceptor
 import java.io.UnsupportedEncodingException
 import java.net.URLEncoder
+import java.util.*
+import java.util.concurrent.TimeUnit
 
 private const val TAG = "TraktApi"
-class TraktApi(private val context: Context, private val loggingOn: Boolean, private val loggerLevel: HttpLoggingInterceptor.Level, private val isStaging: Boolean): TraktV2(ApiKeys.TRAKT_API_KEY, ApiKeys.TRAKT_API_SECRET, CALLBACK_URL, isStaging) {
+
+class TraktApi(
+    private val context: Context,
+    private val loggingOn: Boolean,
+    private val loggerLevel: HttpLoggingInterceptor.Level,
+    private val isStaging: Boolean
+) : TraktV2(ApiKeys.TRAKT_API_KEY, ApiKeys.TRAKT_API_SECRET, CALLBACK_URL, isStaging) {
     private var okHttpClient: OkHttpClient? = null
     private var redirectUri: String? = null
     val STAGING_OAUTH2_AUTHORIZATION_URL = "$API_STAGING_URL/oauth/authorize"
+
     init {
-        Log.e(TAG, ": New instance" )
+        Log.e(TAG, ": New instance")
     }
 
     override fun okHttpClient(): OkHttpClient {
         synchronized(this) {
             if (okHttpClient == null) {
                 val builder = OkHttpClient.Builder()
+                    .eventListener(OkHttpPerformanceEventListener())
+                    .retryOnConnectionFailure(true)
+                    .pingInterval(8, TimeUnit.SECONDS)
+                    .connectTimeout(9, TimeUnit.SECONDS)
+                    .readTimeout(7, TimeUnit.SECONDS)
+                    .writeTimeout(7, TimeUnit.SECONDS)
+                    .connectionPool(ConnectionPool(1, 25, TimeUnit.SECONDS))
                 if (loggingOn) {
                     builder.addInterceptor(getLogger())
                 }
@@ -69,6 +87,8 @@ class TraktApi(private val context: Context, private val loggingOn: Boolean, pri
     override fun setOkHttpClientDefaults(builder: OkHttpClient.Builder) {
         builder.addInterceptor(TraktV2Interceptor(this))
         builder.authenticator(TraktAuthenticator(context, this))
+//        builder.authenticator(com.uwetrottmann.trakt5.TraktV2Authenticator(this))
+
     }
 
 

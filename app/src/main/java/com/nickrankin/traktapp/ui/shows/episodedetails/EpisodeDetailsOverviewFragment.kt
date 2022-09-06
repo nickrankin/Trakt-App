@@ -14,30 +14,24 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
-import com.google.android.flexbox.FlexDirection
-import com.google.android.flexbox.FlexWrap
-import com.google.android.flexbox.FlexboxLayoutManager
-import com.nickrankin.traktapp.adapter.credits.MovieCastCreditsAdapter
 import com.nickrankin.traktapp.adapter.credits.ShowCastCreditsAdapter
-import com.nickrankin.traktapp.api.services.trakt.TmEpisodes
-import com.nickrankin.traktapp.dao.movies.model.TmMovie
 import com.nickrankin.traktapp.dao.show.model.TmEpisode
 import com.nickrankin.traktapp.databinding.FragmentEpisodeDetailsOverviewBinding
-import com.nickrankin.traktapp.databinding.FragmentMovieDetailsOverviewBinding
 import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.model.movies.MovieDetailsOverviewViewModel
-import com.nickrankin.traktapp.model.shows.episodedetails.EpisodeDetailsOverviewViewModel
+import com.nickrankin.traktapp.model.shows.EpisodeDetailsFragmentsViewModel
+import com.nickrankin.traktapp.model.shows.EpisodeDetailsViewModel
 import com.nickrankin.traktapp.ui.person.PersonActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
 
 private const val TAG = "MovieDetailsOverviewFr"
+
 @AndroidEntryPoint
-class EpisodeDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
+class EpisodeDetailsOverviewFragment : Fragment() {
 
     private lateinit var bindings: FragmentEpisodeDetailsOverviewBinding
-    private val viewModel: EpisodeDetailsOverviewViewModel by activityViewModels()
+    private val viewModel: EpisodeDetailsFragmentsViewModel by activityViewModels()
 
     private lateinit var castRecyclerView: RecyclerView
     private lateinit var castAdapter: ShowCastCreditsAdapter
@@ -58,49 +52,31 @@ class EpisodeDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshL
         super.onViewCreated(view, savedInstanceState)
         initRecyclerView()
 
-    }
-
-    fun initFragment(tmEpisode: TmEpisode?) {
-        if(tmEpisode == null) {
-            return
-        }
-
-        viewModel.onStart()
-
+        initFragment()
         getCredits()
 
-        bindMovieData(tmEpisode)
+    }
+
+    fun initFragment() {
+
+        lifecycleScope.launchWhenStarted {
+            viewModel.episode.collectLatest { episode ->
+
+                if (episode != null) {
+                    bindEpisodeData(episode)
+                }
+            }
+        }
+
     }
 
     private fun getCredits() {
         viewModel.filterCast(false)
 
         lifecycleScope.launchWhenStarted {
-            viewModel.cast.collectLatest { creditsResource ->
-                when(creditsResource) {
-                    is Resource.Loading -> {
-                        Log.d(TAG, "getCredits: Loading Credits")
-                    }
-                    is Resource.Success -> {
-                        if(creditsResource.data?.isNotEmpty() == true) {
-                            val castPeople = creditsResource.data
-
-                            if(castPeople != null) {
-                                bindings.showdetailsactivityCrewToggle.visibility = View.VISIBLE
-                                } else {
-                                    bindings.showdetailsactivityCrewToggle.visibility = View.GONE
-                                }
-
-                        }
-
-                        Log.d(TAG, "getCredits: Got ${creditsResource.data?.size} Credits")
-                        castAdapter.submitList(creditsResource.data)
-                    }
-                    is Resource.Error -> {
-                        Log.e(TAG, "getCredits: Error getting credits ${creditsResource.error?.message}", )
-                        creditsResource.error?.printStackTrace()
-                    }
-                }
+            viewModel.cast.collectLatest { credits ->
+                bindings.showdetailsactivityCrewToggle.visibility = View.VISIBLE
+                castAdapter.submitList(credits)
             }
         }
     }
@@ -115,7 +91,10 @@ class EpisodeDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshL
 
         castAdapter = ShowCastCreditsAdapter(glide) { selectedCastPerson ->
             val castPersonIntent = Intent(requireContext(), PersonActivity::class.java)
-            castPersonIntent.putExtra(PersonActivity.PERSON_ID_KEY, selectedCastPerson.person.trakt_id)
+            castPersonIntent.putExtra(
+                PersonActivity.PERSON_ID_KEY,
+                selectedCastPerson.person.trakt_id
+            )
 
             startActivity(castPersonIntent)
         }
@@ -124,7 +103,7 @@ class EpisodeDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshL
         castRecyclerView.adapter = castAdapter
     }
 
-    private fun bindMovieData(episode: TmEpisode) {
+    private fun bindEpisodeData(episode: TmEpisode) {
         bindings.apply {
             episodedetailsoverviewMainGroup.visibility = View.VISIBLE
             episodedetailsoverviewOverview.text = episode.overview
@@ -155,10 +134,6 @@ class EpisodeDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshL
                 viewModel.filterCast(true)
             }
         }
-    }
-
-    override fun onRefresh() {
-        viewModel.onRefresh()
     }
 
     companion object {

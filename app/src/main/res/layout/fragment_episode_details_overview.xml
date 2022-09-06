@@ -5,6 +5,15 @@
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <ProgressBar
+        android:id="@+id/episodedetailsoverview_progressbar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
     <TextView
         android:id="@+id/episodedetailsoverview_overview"
         android:layout_width="0dp"
@@ -74,7 +83,7 @@
         android:layout_height="wrap_content"
         android:visibility="gone"
         tools:visibility="visible"
-        app:constraint_referenced_ids="episodedetailsoverview_overview,episodedetailsoverview_cast_recycler" />
+        app:constraint_referenced_ids="episodedetailsoverview_overview, episodedetailsoverview_cast_recycler,showdetailsactivity_cast_guest_button,showdetailsactivity_cast_regular_button,episodedetailsoverview_cast_title" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

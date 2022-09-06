@@ -60,12 +60,12 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
 
     }
 
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
 
         // Get the SearchView and set the searchable configuration
         val searchManager = getSystemService(SEARCH_SERVICE) as SearchManager
-        searchMenuItem = menu?.findItem(R.id.mainmenu_search)!!
+        searchMenuItem = menu.findItem(R.id.mainmenu_search)!!
 
         ((searchMenuItem).actionView as SearchView).apply {
             startSearch(this)

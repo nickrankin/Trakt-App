@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.nickrankin.traktapp.dao.movies.model.CollectedMovie
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.repo.movies.collected.CollectedMoviesRepository
+import com.nickrankin.traktapp.repo.stats.StatsRepository
 import com.uwetrottmann.trakt5.enums.SortBy
 import com.uwetrottmann.trakt5.enums.SortHow
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,7 +17,7 @@ import javax.inject.Inject
 
 private const val TAG = "CollectedMoviesViewMode"
 @HiltViewModel
-class CollectedMoviesViewModel @Inject constructor(private val repository: CollectedMoviesRepository): ViewModel() {
+class CollectedMoviesViewModel @Inject constructor(private val repository: CollectedMoviesRepository, private val statsRepository: StatsRepository): ViewModel() {
 
     private val sortingChangeChannel = Channel<String>()
     private val sortingChange = sortingChangeChannel.receiveAsFlow()
@@ -96,6 +97,7 @@ class CollectedMoviesViewModel @Inject constructor(private val repository: Colle
     fun onRefresh() {
         viewModelScope.launch {
             refreshEventChannel.send(true)
+            statsRepository.refreshCollectedMovieStats()
         }
     }
 

@@ -12,6 +12,9 @@ interface RatingsEpisodesStatsDao {
     fun getRatingsStats(): Flow<List<RatingsEpisodesStats>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insert(ratingsEpisodesStat: RatingsEpisodesStats)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(ratingsEpisodesStats: List<RatingsEpisodesStats>)
 
     @Update
@@ -19,6 +22,10 @@ interface RatingsEpisodesStatsDao {
 
     @Delete
     fun delete(ratingsEpisodesStats: RatingsEpisodesStats)
+
+    @Transaction
+    @Query("DELETE FROM stats_ratings_episodes WHERE trakt_id = :episodeTraktId")
+    fun deleteRatingsStatByEpisodeId(episodeTraktId: Int)
 
     @Transaction
     @Query("DELETE FROM stats_ratings_episodes")

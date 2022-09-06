@@ -22,13 +22,10 @@ import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.adapter.movies.WatchedMoviesLoadStateAdapter
 import com.nickrankin.traktapp.adapter.movies.WatchedMoviesPagingAdapter
 import com.nickrankin.traktapp.dao.movies.model.WatchedMovie
-import com.nickrankin.traktapp.dao.stats.model.CollectedMoviesStats
-import com.nickrankin.traktapp.dao.stats.model.RatingsMoviesStats
 import com.nickrankin.traktapp.databinding.FragmentWatchedMoviesBinding
 import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
-import com.nickrankin.traktapp.model.movies.watched.WatchedMoviesViewModel
-import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
+import com.nickrankin.traktapp.model.movies.WatchedMoviesViewModel
 import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
 import com.uwetrottmann.trakt5.entities.SyncItems
 import com.uwetrottmann.trakt5.enums.Type

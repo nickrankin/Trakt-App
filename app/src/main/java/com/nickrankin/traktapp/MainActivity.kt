@@ -34,6 +34,8 @@ import com.nickrankin.traktapp.helper.calculateRuntimeWithDays
 import com.nickrankin.traktapp.model.MainActivityViewModel
 import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
+import com.nickrankin.traktapp.repo.movies.watched.WatchedMoviesRemoteMediator
+import com.nickrankin.traktapp.repo.shows.watched.WatchedEpisodesRemoteMediator
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.movies.MoviesMainActivity
 import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
@@ -108,7 +110,6 @@ class MainActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
         getUpcomingEpisodes()
         getLastWatchedMovies()
         getLastWatchedEpisodes()
-        getEvents()
     }
 
     private fun getUserStats() {
@@ -188,45 +189,7 @@ class MainActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
                     }
 
                     bindings.homeWatchedShowsProgressbar.visibility = View.GONE
-
-                    Log.e(TAG, "getLastWatchedEpisodes: ${it.size}")
-
                     lastWatchedEpisodesAdapter.submitList(it)
-            }
-        }
-    }
-
-    private fun getEvents() {
-        lifecycleScope.launchWhenStarted {
-            viewModel.events.collectLatest { event ->
-                when(event) {
-                    is MainActivityViewModel.Event.RefreshMovieStatsEvent -> {
-                        when(event.refreshStatus) {
-                            is Resource.Success -> {
-                                Log.d(TAG, "getEvents: Refreshed Movies successfully")
-                            }
-                            is Resource.Error -> {
-                                Log.e(TAG, "getEvents: Error refreshing movies", )
-                                event.refreshStatus.error?.printStackTrace()
-                            }
-                            else -> {}
-                        }
-                    }
-
-                    is MainActivityViewModel.Event.RefreshShowStatsEvent -> {
-                        when(event.refreshStatus) {
-                            is Resource.Success -> {
-                                Log.d(TAG, "getEvents: Refreshed Shows successfully")
-                            }
-                            is Resource.Error -> {
-                                Log.e(TAG, "getEvents: Error refreshing Shows", )
-                                event.refreshStatus.error?.printStackTrace()
-                            }
-                            else -> {}
-
-                        }
-                    }
-                }
             }
         }
     }
@@ -444,6 +407,14 @@ class MainActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
     }
 
     override fun onRefresh() {
+
+        // Force refresh of Watched Movies and Shows
+        sharedPreferences.edit()
+            .putBoolean(WatchedMoviesRemoteMediator.WATCHED_MOVIES_FORCE_REFRESH_KEY, true)
+            .putBoolean(WatchedEpisodesRemoteMediator.WATCHED_EPISODES_FORCE_REFRESH_KEY, true)
+            .apply()
+
+
         viewModel.onRefresh()
     }
 }

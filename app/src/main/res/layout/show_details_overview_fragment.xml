@@ -6,6 +6,15 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".ui.shows.showdetails.ShowDetailsOverviewFragment">
 
+    <ProgressBar
+        android:id="@+id/showdetailsoverview_progressbar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
     <TextView
         android:id="@+id/showdetailsoverview_overview"
         android:layout_width="0dp"
@@ -68,14 +77,5 @@
         app:layout_constraintStart_toStartOf="@id/showdetailsoverview_overview"
         app:layout_constraintEnd_toEndOf="@id/showdetailsoverview_overview"
         app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_cast_regular_button" />
-
-    <androidx.constraintlayout.widget.Group
-        android:id="@+id/showdetailsoverview_main_group"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        tools:visibility="visible"
-        app:constraint_referenced_ids="showdetailsoverview_overview,showdetailsoverview_cast_recycler" />
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

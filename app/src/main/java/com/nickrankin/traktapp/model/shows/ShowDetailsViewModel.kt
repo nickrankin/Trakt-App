@@ -1,14 +1,22 @@
 package com.nickrankin.traktapp.model.shows
 
-import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nickrankin.traktapp.dao.lists.model.TraktList
+import com.nickrankin.traktapp.dao.show.model.TmShow
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
+import com.nickrankin.traktapp.repo.lists.ListEntryRepository
+import com.nickrankin.traktapp.repo.lists.TraktListsRepository
+import com.nickrankin.traktapp.repo.shows.SeasonEpisodesRepository
+import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsActionButtonsRepository
+import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsOverviewRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.repo.stats.StatsRepository
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
+import com.uwetrottmann.trakt5.entities.SyncResponse
+import com.uwetrottmann.trakt5.enums.Type
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
@@ -21,12 +29,15 @@ private const val TAG = "ShowDetailsViewModel"
 class ShowDetailsViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val repository: ShowDetailsRepository,
+    private val seasonEpisodesRepository: SeasonEpisodesRepository,
+    private val showDetailsOverviewRepository: ShowDetailsOverviewRepository,
+    private val listsRepository: TraktListsRepository,
     private val statsRepository: StatsRepository
 ) : ViewModel() {
 
     private val refreshEventChannel = Channel<Boolean>()
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
-        .shareIn(viewModelScope, replay = 1, started = SharingStarted.WhileSubscribed())
+        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
     val state = savedStateHandle
 
@@ -36,10 +47,18 @@ class ShowDetailsViewModel @Inject constructor(
         repository.getShowSummary(showDataModel?.traktId ?: 0, shouldRefresh)
     }
 
+    // Seasons & progress
+    val seasons = refreshEvent.flatMapLatest { shouldRefresh ->
+        seasonEpisodesRepository.getSeasons(showDataModel?.traktId ?: 0, showDataModel?.tmdbId ?: 0, shouldRefresh)
+    }
+
     fun onStart() {
         viewModelScope.launch {
             refreshEventChannel.send(false)
-            statsRepository.getWatchedSeasonStats(showDataModel?.traktId ?: 0, false)
+
+            showDetailsOverviewRepository.getCredits(showDataModel, false)
+            listsRepository.getListsAndEntries(false)
+
         }
     }
 
@@ -47,8 +66,11 @@ class ShowDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             refreshEventChannel.send(true)
 
-            statsRepository.getWatchedSeasonStats(showDataModel?.traktId ?: 0, true)
-
+            statsRepository.refreshAllShowStats()
+            showDetailsOverviewRepository.getCredits(showDataModel, true)
+            listsRepository.getListsAndEntries(true)
         }
     }
+
+
 }

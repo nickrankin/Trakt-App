@@ -1,10 +1,8 @@
 package com.nickrankin.traktapp.ui.shows.episodedetails
 
 import android.content.DialogInterface
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,8 +19,8 @@ import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.Response
 import com.nickrankin.traktapp.helper.getSyncResponse
-import com.nickrankin.traktapp.model.shows.episodedetails.EpisodeDetailsActionButtonsViewModel
-import com.nickrankin.traktapp.ui.auth.AuthActivity
+import com.nickrankin.traktapp.model.shows.EpisodeDetailsFragmentsViewModel
+import com.nickrankin.traktapp.model.shows.EpisodeDetailsViewModel
 import com.nickrankin.traktapp.ui.dialog.RatingPickerFragment
 import com.nickrankin.traktmanager.ui.dialoguifragments.WatchedDatePickerFragment
 import com.uwetrottmann.trakt5.enums.Rating
@@ -34,13 +32,11 @@ import javax.inject.Inject
 
 private const val TAG = "EpisodeDetailsActionBut"
 @AndroidEntryPoint
-class EpisodeDetailsActionButtonsFragment(): BaseFragment(), OnEpisodeChangeListener {
+class EpisodeDetailsActionButtonsFragment(): BaseFragment() {
 
-    private val viewModel: EpisodeDetailsActionButtonsViewModel by activityViewModels()
+    private val viewModel: EpisodeDetailsFragmentsViewModel by activityViewModels()
 
     private lateinit var bindings: ActionButtonsFragmentBinding
-
-    private var episode: TmEpisode? = null
 
     private var checkinDialog: AlertDialog? = null
     private var cancelCheckinDialog: AlertDialog? = null
@@ -59,28 +55,32 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment(), OnEpisodeChangeList
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-    }
-
-    override fun bindEpisode(episode: TmEpisode) {
-        this.episode = episode
-
-        viewModel.setEpisodeTraktId(episode.episode_trakt_id)
-            Log.e(TAG, "onEpisodeIdChanged: EpisodeID is now $episode", )
-
-        // Setup the buttons
         setupAddCollectionButton()
 
-        if(isLoggedIn) {
-            setupCheckinButton()
-            setupAddToHistoryButton()
-            setupRatingButton()
-            setupAddListsButton(episode)
+        getEpisode()
 
-            // Get Data
-            getRatings()
-            getEvents()
+    }
+
+    private fun getEpisode() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.episode.collectLatest { episode ->
+
+                        if(episode != null) {
+                            if(isLoggedIn) {
+                                setupCheckinButton(episode)
+                                setupAddToHistoryButton()
+                                setupRatingButton(episode)
+                                setupAddListsButton(episode)
+
+                                // Get Data
+                                getRatings(episode)
+                                getEvents(episode)
+                            }
+                        }
+            }
         }
     }
+
 
     private fun setupAddListsButton(tmEpisode: TmEpisode) {
         val addListsButton = bindings.actionbuttonLists
@@ -94,13 +94,13 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment(), OnEpisodeChangeList
         }
     }
 
-    private fun setupCheckinButton() {
+    private fun setupCheckinButton(episode: TmEpisode) {
         val checkinButton = bindings.actionbuttonCheckin
         checkinButton.visibility = View.VISIBLE
 
-        initCheckinDialog()
-        initCancelCheckinDialog()
-        initAddWatchedHistoryDialog()
+        initCheckinDialog(episode)
+        initCancelCheckinDialog(episode)
+        initAddWatchedHistoryDialog(episode)
 
         checkinButton.setOnClickListener { checkinDialog?.show() }
     }
@@ -117,12 +117,12 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment(), OnEpisodeChangeList
         addHistoryButton.setOnClickListener { addWatchedHistoryDialog?.show(requireActivity().supportFragmentManager, "Add To History dialog") }
     }
 
-    private fun setupRatingButton() {
+    private fun setupRatingButton(episode: TmEpisode) {
         val ratingButton = bindings.actionbuttonRate
         ratingButton.visibility = View.VISIBLE
         bindings.actionbuttonRateText.text = " - "
 
-        initRatingDialog()
+        initRatingDialog(episode)
 
         ratingButton.setOnClickListener {
             ratingPickerFragment?.show(requireActivity().supportFragmentManager, "add_rating_fragment")
@@ -130,26 +130,30 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment(), OnEpisodeChangeList
         }
     }
 
-    private fun getRatings() {
-        viewModel.ratings.observe(viewLifecycleOwner) { rating ->
-            Log.d(TAG, "getRatings: Got rating $rating")
+    private fun getRatings(episode: TmEpisode) {
+        lifecycleScope.launchWhenStarted {
+            viewModel.ratings.collectLatest  { ratings ->
+                val rating = ratings.find { it.trakt_id == episode.episode_trakt_id }?.rating ?: 0
+                Log.d(TAG, "getRatings: Got rating $rating")
 
-            if(rating > 0) {
-                bindings.actionbuttonRateText.text = "$rating"
+                if(rating > 0) {
+                    bindings.actionbuttonRateText.text = "$rating"
 
-            } else {
-                bindings.actionbuttonRateText.text = " - "
+                } else {
+                    bindings.actionbuttonRateText.text = " - "
+
+                }
 
             }
-
         }
+
     }
 
-    private fun getEvents() {
+    private fun getEvents(episode: TmEpisode) {
         lifecycleScope.launchWhenStarted {
             viewModel.events.collectLatest { event ->
                 when(event) {
-                    is EpisodeDetailsActionButtonsViewModel.Event.AddCheckinEvent -> {
+                    is EpisodeDetailsFragmentsViewModel.Event.AddCheckinEvent -> {
                         val checkInResponse = event.checkinResponse
                         val checkinButton = bindings.actionbuttonCheckin
                         val checkinProgressBar = bindings.actionButtonCheckinProgressbar
@@ -158,7 +162,7 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment(), OnEpisodeChangeList
                             checkinButton.isEnabled = true
                             checkinProgressBar.visibility = View.GONE
 
-                            displayMessageToast("You are watching ${episode?.name}", Toast.LENGTH_SHORT)
+                            displayMessageToast("You are watching ${episode.name}", Toast.LENGTH_SHORT)
                         } else if(checkInResponse is Resource.Error) {
                             val exception = checkInResponse.error
 
@@ -176,7 +180,7 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment(), OnEpisodeChangeList
                             }
                         }
                     }
-                    is EpisodeDetailsActionButtonsViewModel.Event.CancelCheckinEvent -> {
+                    is EpisodeDetailsFragmentsViewModel.Event.CancelCheckinEvent -> {
                         val shouldCheckinCurrentEpisode = event.checkinCurrentEpisode
                         val response = event.cancelCheckinResult
 
@@ -189,7 +193,7 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment(), OnEpisodeChangeList
                         if(response is Resource.Success) {
                             if(shouldCheckinCurrentEpisode) {
                                 // Past checkins are now cleared, so checkin the current episode
-                                checkin()
+                                checkin(episode)
                             } else {
                                 displayMessageToast("Successfully cleared active Trakt Checkins", Toast.LENGTH_SHORT)
                             }
@@ -199,7 +203,7 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment(), OnEpisodeChangeList
 
                         }
                     }
-                    is EpisodeDetailsActionButtonsViewModel.Event.AddToWatchedHistoryEvent -> {
+                    is EpisodeDetailsFragmentsViewModel.Event.AddToWatchedHistoryEvent -> {
                         val addHistoryButton = bindings.actionbuttonAddHistory
                         val addHistoryProgressBar = bindings.actionButtonAddHistoryProgressbar
 
@@ -213,7 +217,7 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment(), OnEpisodeChangeList
 
                             when(val syncResponse = getSyncResponse(syncResponseResource.data, Type.EPISODE)) {
                                 Response.ADDED_OK -> {
-                                    displayMessageToast("Successfully added ${episode?.name ?: "episode"} to your watch history!", Toast.LENGTH_SHORT)
+                                    displayMessageToast("Successfully added ${episode.name ?: "episode"} to your watch history!", Toast.LENGTH_SHORT)
                                 }
                                 Response.NOT_FOUND -> {
                                     displayMessageToast("Current Episode could not be found on Trakt", Toast.LENGTH_LONG)
@@ -231,7 +235,7 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment(), OnEpisodeChangeList
 
                         }
                     }
-                    is EpisodeDetailsActionButtonsViewModel.Event.AddRatingsEvent -> {
+                    is EpisodeDetailsFragmentsViewModel.Event.AddRatingsEvent -> {
                         val syncResponse = event.syncResponse.data?.first
                         val newRating = event.syncResponse.data?.second
 
@@ -239,7 +243,7 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment(), OnEpisodeChangeList
 
                             when(getSyncResponse(syncResponse, Type.EPISODE)) {
                                 Response.ADDED_OK -> {
-                                    displayMessageToast("Successfully rated ${episode?.name ?: "Unknown"} with ${Rating.fromValue(newRating ?: 7).name} ($newRating)", Toast.LENGTH_LONG)
+                                    displayMessageToast("Successfully rated ${episode.name ?: "Unknown"} with ${Rating.fromValue(newRating ?: 7).name} ($newRating)", Toast.LENGTH_LONG)
                                 }
                                 Response.NOT_FOUND -> {
                                     displayMessageToast("Current Episode could not be found on Trakt", Toast.LENGTH_LONG)
@@ -258,7 +262,7 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment(), OnEpisodeChangeList
                         }
                     }
 
-                    is EpisodeDetailsActionButtonsViewModel.Event.DeleteRatingsEvent -> {
+                    is EpisodeDetailsFragmentsViewModel.Event.DeleteRatingsEvent -> {
                         val syncResponse = event.syncResponse.data
 
                         if(event.syncResponse is Resource.Success) {
@@ -288,21 +292,21 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment(), OnEpisodeChangeList
         }
     }
 
-    private fun initCheckinDialog() {
+    private fun initCheckinDialog(episode: TmEpisode) {
 
         if(checkinDialog != null) {
             return
         }
 
         checkinDialog = AlertDialog.Builder(requireContext())
-            .setTitle("Start watching ${episode?.name}")
-            .setMessage("Do you want to start watching ${episode?.name}?")
-            .setPositiveButton("Yes" ) { dialogInterface, i -> checkin() }
+            .setTitle("Start watching ${episode.name}")
+            .setMessage("Do you want to start watching ${episode.name}?")
+            .setPositiveButton("Yes" ) { dialogInterface, i -> checkin(episode) }
             .setNegativeButton("Cancel" ) { dialogInterface, i -> dialogInterface.dismiss() }
             .create()
     }
 
-    private fun initCancelCheckinDialog() {
+    private fun initCancelCheckinDialog(episode: TmEpisode) {
 
         if(cancelCheckinDialog != null) {
             return
@@ -310,7 +314,7 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment(), OnEpisodeChangeList
 
         cancelCheckinDialog = AlertDialog.Builder(requireContext())
             .setTitle("You are already watching something. What do you want to do?")
-            .setItems(arrayOf("Start watching ${episode?.name ?: " this episode"}", "Nothing", "Just cancel checkin")) { dialogInterface, i ->
+            .setItems(arrayOf("Start watching ${episode.name ?: " this episode"}", "Nothing", "Just cancel checkin")) { dialogInterface, i ->
                 val checkinButton = bindings.actionbuttonCheckin
                 val checkinProgressBar = bindings.actionButtonCheckinProgressbar
 
@@ -380,7 +384,7 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment(), OnEpisodeChangeList
         }
     }
 
-    private fun initAddWatchedHistoryDialog() {
+    private fun initAddWatchedHistoryDialog(episode: TmEpisode) {
 
         if(addWatchedHistoryDialog != null) {
             return
@@ -393,11 +397,11 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment(), OnEpisodeChangeList
             addHistoryButton.isEnabled = false
             addHistoryProgressBar.visibility = View.VISIBLE
 
-            viewModel.addToWatchedHistory(episode!!, watchedAt)
+            viewModel.addToWatchedHistory(episode, watchedAt)
         })
     }
 
-    private fun initRatingDialog() {
+    private fun initRatingDialog(episode: TmEpisode) {
 
         if(ratingPickerFragment != null) {
             return
@@ -406,16 +410,16 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment(), OnEpisodeChangeList
         ratingPickerFragment = RatingPickerFragment(callback = { newRating ->
             if(newRating != -1) {
                 // New rating to be added
-                viewModel.addRating(newRating, episode?.episode_trakt_id ?: -1)
+                viewModel.addRating(newRating, episode.episode_trakt_id ?: -1)
             } else {
                 // User reset rating
-                viewModel.resetRating(episode?.episode_trakt_id ?: -1)
+                viewModel.resetRating(episode.episode_trakt_id ?: -1)
             }
-        }, episode?.name ?: "Episode")
+        }, episode.name ?: "Episode")
     }
 
-    private fun checkin() {
-        viewModel.checkin(episode?.episode_trakt_id ?: -1)
+    private fun checkin(episode: TmEpisode) {
+        viewModel.checkin(episode.episode_trakt_id ?: -1)
     }
 
     private fun cancelCheckin(checkinCurrentEpisode: Boolean) {
@@ -429,8 +433,4 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment(), OnEpisodeChangeList
     companion object {
         fun newInstance() = EpisodeDetailsActionButtonsFragment()
     }
-}
-
-interface OnEpisodeChangeListener {
-    fun bindEpisode(episode: TmEpisode)
 }

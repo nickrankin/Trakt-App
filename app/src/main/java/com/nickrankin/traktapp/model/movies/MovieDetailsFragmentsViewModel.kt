@@ -1,54 +1,60 @@
 package com.nickrankin.traktapp.model.movies
 
-import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nickrankin.traktapp.dao.lists.model.ListEntry
 import com.nickrankin.traktapp.dao.lists.model.TraktList
 import com.nickrankin.traktapp.dao.movies.model.TmMovie
 import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.model.lists.ListEntryViewModel
+import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.repo.lists.ListEntryRepository
 import com.nickrankin.traktapp.repo.lists.TraktListsRepository
 import com.nickrankin.traktapp.repo.movies.MovieDetailsActionButtonRepository
-import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
+import com.nickrankin.traktapp.repo.movies.MovieDetailsOverviewRepository
 import com.nickrankin.traktapp.repo.movies.collected.CollectedMoviesRepository
 import com.nickrankin.traktapp.repo.ratings.MovieRatingsRepository
-import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsActionButtonsRepository
-import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
+import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsOverviewRepository
 import com.nickrankin.traktapp.repo.stats.StatsRepository
+import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
 import com.uwetrottmann.trakt5.entities.MovieCheckinResponse
 import com.uwetrottmann.trakt5.entities.SyncResponse
 import com.uwetrottmann.trakt5.enums.Type
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
 import org.threeten.bp.OffsetDateTime
 import javax.inject.Inject
 
-private const val TAG = "MovieDetailsActionButto"
 @HiltViewModel
-class MovieDetailsActionButtonsViewModel @Inject constructor(
-    private val savedStateHandle: SavedStateHandle,
-    private val collectedMoviesRepository: CollectedMoviesRepository,
-    private val movieRatingsRepository: MovieRatingsRepository,
-    private val repository: MovieDetailsActionButtonRepository,
-    private val listsRepository: TraktListsRepository,
-    private val listEntryRepository: ListEntryRepository,
-    private val statsRepository: StatsRepository
-) : ViewModel() {
-
-    private val refreshEventChannel = Channel<Boolean>()
-    private val refreshEvent = refreshEventChannel.receiveAsFlow()
-        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
-
+class MovieDetailsFragmentsViewModel @Inject constructor(private val savedStateHandle: SavedStateHandle, private val movieRatingsRepository: MovieRatingsRepository,
+                                                             private val movieDetailsOverviewRepository: MovieDetailsOverviewRepository,
+                                                             private val collectedMoviesRepository: CollectedMoviesRepository,
+                                                             private val movieDetailsActionButtonRepository: MovieDetailsActionButtonRepository,
+                                                             private val listsRepository: TraktListsRepository,
+                                                             private val listEntryRepository: ListEntryRepository,
+                                                             private val statsRepository: StatsRepository
+): ViewModel() {
     private val eventsChannel = Channel<Event>()
     val events = eventsChannel.receiveAsFlow()
         .shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
-    val listsWithEntries = listsRepository.listsWithEntries
+    private val movieDataModel: MovieDataModel? =
+        savedStateHandle.get(MovieDetailsActivity.MOVIE_DATA_KEY)
+
+    // Overview Fragment
+    val credits = movieDetailsOverviewRepository.getCredits(movieDataModel)
+
+
+    // Action Button Fragment
+    val listsWithEntries = listEntryRepository.listEntries
+
+    val movie = movieDetailsOverviewRepository.getMovie(movieDataModel)
+
 
     suspend fun collectedMovieStats(traktId: Int) = statsRepository.getCollectedMovieStatsById(traktId)
 
@@ -64,31 +70,10 @@ class MovieDetailsActionButtonsViewModel @Inject constructor(
 
     fun deleteRating(traktId: Int) = viewModelScope.launch { eventsChannel.send(Event.DeleteRatingEvent(movieRatingsRepository.deleteRating(traktId ?: -1))) }
 
-    fun checkin(traktId: Int, cancelActiveCheckins: Boolean) = viewModelScope.launch { eventsChannel.send(Event.CheckinEvent(repository.checkin(traktId, cancelActiveCheckins))) }
-    fun cancelCheckin() = viewModelScope.launch { eventsChannel.send(Event.CancelCheckinEvent(repository.cancelCheckins())) }
+    fun checkin(traktId: Int, cancelActiveCheckins: Boolean) = viewModelScope.launch { eventsChannel.send(Event.CheckinEvent(movieDetailsActionButtonRepository.checkin(traktId, cancelActiveCheckins))) }
+    fun cancelCheckin() = viewModelScope.launch { eventsChannel.send(Event.CancelCheckinEvent(movieDetailsActionButtonRepository.cancelCheckins())) }
 
-    fun addToWatchedHistory(movie: TmMovie, watchedDate: OffsetDateTime) = viewModelScope.launch { eventsChannel.send(Event.AddToHistoryEvent(repository.addToWatchedHistory(movie, watchedDate))) }
-
-    fun onStart() {
-        viewModelScope.launch {
-            refreshEventChannel.send(false)
-
-            eventsChannel.send(Event.RefreshMovieStats(statsRepository.refreshMovieStats(false)))
-        }
-    }
-
-    fun onRefresh() {
-        Log.e(TAG, "onRefresh: Called", )
-        viewModelScope.launch {
-            refreshEventChannel.send(true)
-
-            eventsChannel.send(Event.RefreshMovieStats(statsRepository.refreshMovieStats(true)))
-
-            listsRepository.refreshAllListsAndListItems(true)
-
-        }
-
-    }
+    fun addToWatchedHistory(movie: TmMovie, watchedDate: OffsetDateTime) = viewModelScope.launch { eventsChannel.send(Event.AddToHistoryEvent(movieDetailsActionButtonRepository.addToWatchedHistory(movie, watchedDate))) }
 
     sealed class Event {
         data class AddToCollectionEvent(val syncResponse: Resource<SyncResponse>): Event()
@@ -100,8 +85,5 @@ class MovieDetailsActionButtonsViewModel @Inject constructor(
         data class AddToHistoryEvent(val addHistoryResponse: Resource<SyncResponse>): Event()
         data class AddListEntryEvent(val addListEntryResponse: Resource<SyncResponse>): Event()
         data class RemoveListEntryEvent(val removeListEntryResponse: Resource<SyncResponse?>): Event()
-        data class RefreshMovieStats(val refreshStats: Resource<Boolean>): Event()
-
     }
-
 }

@@ -15,18 +15,13 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
-import com.google.android.flexbox.FlexDirection
-import com.google.android.flexbox.FlexWrap
-import com.google.android.flexbox.FlexboxLayoutManager
 import com.nickrankin.traktapp.adapter.credits.ShowCastCreditsAdapter
 import com.nickrankin.traktapp.dao.credits.ShowCastPerson
-import com.nickrankin.traktapp.dao.show.model.TmShow
 import com.nickrankin.traktapp.databinding.ShowDetailsOverviewFragmentBinding
 import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.model.datamodel.ShowDataModel
-import com.nickrankin.traktapp.model.shows.showdetails.ShowDetailsOverviewViewModel
+import com.nickrankin.traktapp.model.shows.ShowDetailsFragmentsViewModel
+import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
 import com.nickrankin.traktapp.ui.person.PersonActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -35,10 +30,10 @@ import javax.inject.Inject
 private const val TAG = "ShowDetailsOverviewFrag"
 
 @AndroidEntryPoint
-class ShowDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
+class ShowDetailsOverviewFragment : Fragment() {
 
     private lateinit var bindings: ShowDetailsOverviewFragmentBinding
-    private val viewModel: ShowDetailsOverviewViewModel by activityViewModels()
+    private val viewModel: ShowDetailsFragmentsViewModel by activityViewModels()
 
     private lateinit var castRecyclerView: RecyclerView
     private lateinit var showCastCreditsAdapter: ShowCastCreditsAdapter
@@ -62,14 +57,14 @@ class ShowDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
 
         getShow()
         getCast()
-
-        bindings.showdetailsoverviewMainGroup.visibility = View.VISIBLE
     }
 
     private fun getShow() {
         lifecycleScope.launchWhenStarted {
             viewModel.show.collectLatest { show ->
-                bindings.showdetailsoverviewOverview.text = show?.overview
+                if(show != null) {
+                    bindings.showdetailsoverviewOverview.text = show.overview
+                }
             }
         }
     }
@@ -77,25 +72,10 @@ class ShowDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
     private fun getCast() {
         viewModel.filterCast(false)
         lifecycleScope.launchWhenStarted {
-            viewModel.cast.collectLatest { castResource ->
-                when (castResource) {
-                    is Resource.Loading -> {
-                        Log.d(TAG, "getCast: Loading Cast People")
-                    }
-                    is Resource.Success -> {
-                        bindings.showdetailsoverviewMainGroup.visibility = View.VISIBLE
-                        displayCast(castResource.data ?: emptyList())
-                    }
-                    is Resource.Error -> {
-                        bindings.showdetailsoverviewMainGroup.visibility = View.GONE
+            viewModel.cast.collectLatest { castMembers ->
+            displayCast(castMembers)
 
-                        Log.e(
-                            TAG,
-                            "getCast: Error getting Cast People. ${castResource.error?.localizedMessage}",
-                        )
-                        castResource.error?.printStackTrace()
-                    }
-                }
+
             }
         }
     }
@@ -129,22 +109,9 @@ class ShowDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-        viewModel.onStart()
-    }
-
     private fun displayCast(castPersons: List<ShowCastPerson>) {
         val castToggeButton = bindings.showdetailsactivityCrewToggle
-
-        // Some shows do not have Guest stars, this check is needed to prevent toggle dissapearing if guest stars are empty
-        if (castPersons.isNotEmpty()) {
-            castToggeButton.visibility = View.VISIBLE
-
-            showCastCreditsAdapter.submitList(castPersons)
-        } else {
-            castToggeButton.visibility = View.GONE
-        }
+        showCastCreditsAdapter.submitList(castPersons)
     }
 
     private fun initCastRecycler() {
@@ -165,12 +132,6 @@ class ShowDetailsOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshList
         castRecyclerView.adapter = showCastCreditsAdapter
     }
 
-
-
-    override fun onRefresh() {
-        Log.d(TAG, "onRefresh: Refreshing Overview")
-        viewModel.onRefresh()
-    }
 
     companion object {
         const val OVERVIEW_KEY = "overview_key"

@@ -41,15 +41,18 @@
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/moviedetailsactivity_swipe_refresh_layout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:fillViewport="true"
             app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
             <include
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
                 android:id="@+id/moviedetailsactivity_inner"
                 layout="@layout/content_movie_details" />
         </androidx.core.widget.NestedScrollView>
