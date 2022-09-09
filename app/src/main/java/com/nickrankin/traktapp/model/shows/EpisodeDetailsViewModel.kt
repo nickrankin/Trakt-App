@@ -18,6 +18,7 @@ import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepositor
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsOverviewRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.repo.stats.StatsRepository
+import com.nickrankin.traktapp.services.helper.StatsWorkRefreshHelper
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
 import com.uwetrottmann.trakt5.entities.EpisodeCheckinResponse
 import com.uwetrottmann.trakt5.entities.SyncItems
@@ -39,6 +40,7 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
                                                   private val repository: EpisodeDetailsRepository,
                                                   private val listsRepository: TraktListsRepository,
                                                   private val statsRepository: StatsRepository,
+                                                  private val statsWorkRefreshHelper: StatsWorkRefreshHelper,
 private val episodeRatingsRepository: EpisodeRatingsRepository): ViewModel() {
 
     private val refreshEventChannel = Channel<Boolean>()
@@ -76,10 +78,11 @@ private val episodeRatingsRepository: EpisodeRatingsRepository): ViewModel() {
         Log.d(TAG, "onRefresh: Called callStart")
         viewModelScope.launch {
             refreshEventChannel.send(true)
-            statsRepository.refreshAllShowStats()
 
             repository.getCast(episodeDataModel, true)
             listsRepository.getListsAndEntries(true)
+
+            statsWorkRefreshHelper.refreshShowStats()
         }
     }
 

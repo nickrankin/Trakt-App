@@ -24,4 +24,8 @@ interface WatchedEpisodesStatsDao {
     @Transaction
     @Query("DELETE FROM stats_watched_episode")
     fun deleteWatchedStats()
+
+    @Transaction
+    @Query("DELETE FROM stats_watched_episode WHERE show_trakt_id = :showTraktId")
+    fun deleteWatchedStatsPerShow(showTraktId: Int)
 }

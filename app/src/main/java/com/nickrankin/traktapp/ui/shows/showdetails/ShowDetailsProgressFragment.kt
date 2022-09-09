@@ -66,15 +66,23 @@ class ShowDetailsProgressFragment: Fragment() {
     }
     
     private fun getProgress() {
+        val progressBar = bindings.showdetailsprogressfragmentLoadingProgressbar
+
         lifecycleScope.launchWhenStarted { 
-            viewModel.overallSeasonStats.collectLatest { seasonData ->
+            viewModel.overallSeasonStats().collectLatest { seasonData ->
+                progressItemContainer.removeAllViews()
+
+                // If watched episode data is refreshing, seasonData will possibly return empty for a period until that shows data is refreshed, for consistency show progressbar until season information retrieved
+                if(seasonData.isEmpty()) {
+                    progressBar.visibility = View.VISIBLE
+                } else {
+                    progressBar.visibility = View.GONE
+                }
                 
                 var totalEpisodes = 0
                 var totalWatched = 0
                 
                 seasonData.map { stats ->
-                    Log.e(TAG, "getProgress: Completed ${stats.season} SNO complete ${stats.completed} overall ${seasonData.size}", )
-
                     totalEpisodes += stats.aired
                     totalWatched += stats.completed
                 }

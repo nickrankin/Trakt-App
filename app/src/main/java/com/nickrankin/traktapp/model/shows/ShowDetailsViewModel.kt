@@ -3,6 +3,9 @@ package com.nickrankin.traktapp.model.shows
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.OutOfQuotaPolicy
+import androidx.work.WorkManager
 import com.nickrankin.traktapp.dao.lists.model.TraktList
 import com.nickrankin.traktapp.dao.show.model.TmShow
 import com.nickrankin.traktapp.helper.Resource
@@ -14,6 +17,8 @@ import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsActionButtonsRe
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsOverviewRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
 import com.nickrankin.traktapp.repo.stats.StatsRepository
+import com.nickrankin.traktapp.services.ShowStatsRefreshWorker
+import com.nickrankin.traktapp.services.helper.StatsWorkRefreshHelper
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.uwetrottmann.trakt5.entities.SyncResponse
 import com.uwetrottmann.trakt5.enums.Type
@@ -32,7 +37,7 @@ class ShowDetailsViewModel @Inject constructor(
     private val seasonEpisodesRepository: SeasonEpisodesRepository,
     private val showDetailsOverviewRepository: ShowDetailsOverviewRepository,
     private val listsRepository: TraktListsRepository,
-    private val statsRepository: StatsRepository
+    private val statsWorkRefreshHelper: StatsWorkRefreshHelper
 ) : ViewModel() {
 
     private val refreshEventChannel = Channel<Boolean>()
@@ -66,10 +71,12 @@ class ShowDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             refreshEventChannel.send(true)
 
-            statsRepository.refreshAllShowStats()
             showDetailsOverviewRepository.getCredits(showDataModel, true)
             listsRepository.getListsAndEntries(true)
+
+            statsWorkRefreshHelper.refreshShowStats()
         }
+
     }
 
 

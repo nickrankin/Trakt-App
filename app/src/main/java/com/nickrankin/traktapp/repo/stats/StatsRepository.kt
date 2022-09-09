@@ -12,9 +12,12 @@ import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.trakt5.entities.*
 import com.uwetrottmann.trakt5.enums.ProgressLastActivity
 import com.uwetrottmann.trakt5.enums.RatingsFilter
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import java.util.concurrent.CancellationException
 import javax.inject.Inject
+import kotlin.coroutines.coroutineContext
 
 private const val REFRESH_INTERVAL = 24L
 private const val TAG = "StatsRepository"
@@ -60,14 +63,16 @@ class StatsRepository @Inject constructor(
     }
 
     suspend fun refreshAllMovieStats() {
-        Log.d(TAG, "refreshAllMovieStats: Refreshing All Movie Stats")
-        refreshWatchedMovies()
-        refreshCollectedMovieStats()
-        refreshMovieRatingsStats()
+            Log.d(TAG, "refreshAllMovieStats: Refreshing All Movie Stats")
+            refreshWatchedMovies()
+            refreshCollectedMovieStats()
+            refreshMovieRatingsStats()
+
     }
 
     suspend fun refreshAllShowStats() {
-            Log.d(TAG, "refreshShowStats: Refreshing All Show stats")
+        purgeWatchedShowDataStata()
+        Log.d(TAG, "refreshAllShowStatsTest: Refreshing All Show stats")
             refreshShowsRatings()
             refreshEpisodeRatings()
             refreshCollectedShows()
@@ -286,6 +291,15 @@ class StatsRepository @Inject constructor(
 
     }
 
+    private suspend fun purgeWatchedShowDataStata() {
+        showsDatabase.withTransaction {
+            watchedShowsStatsDao.deleteWatchedStats()
+            watchedSeasonStatsDao.deleteWatchedStats()
+            watchedEpisodesStatsDao.deleteWatchedStats()
+
+        }
+    }
+
     private suspend fun insertWatchedShowsStats(watchedShows: List<BaseShow>) {
         val watchedShowsStatsList: MutableList<WatchedShowsStats> = mutableListOf()
 
@@ -307,7 +321,6 @@ class StatsRepository @Inject constructor(
         }
 
         showsDatabase.withTransaction {
-            watchedShowsStatsDao.deleteWatchedStats()
             watchedShowsStatsDao.insert(watchedShowsStatsList)
         }
     }

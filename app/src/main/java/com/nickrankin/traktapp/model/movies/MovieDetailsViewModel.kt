@@ -15,6 +15,7 @@ import com.nickrankin.traktapp.repo.movies.collected.CollectedMoviesRepository
 import com.nickrankin.traktapp.repo.movies.watched.WatchedMoviesRepository
 import com.nickrankin.traktapp.repo.ratings.MovieRatingsRepository
 import com.nickrankin.traktapp.repo.stats.StatsRepository
+import com.nickrankin.traktapp.services.helper.StatsWorkRefreshHelper
 import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
 import com.uwetrottmann.trakt5.entities.MovieCheckinResponse
 import com.uwetrottmann.trakt5.entities.SyncResponse
@@ -32,6 +33,7 @@ class MovieDetailsViewModel @Inject constructor(
     private val repository: MovieDetailsRepository,
     private val traktListsRepository: TraktListsRepository,
     private val statsRepository: StatsRepository,
+    private val statsWorkRefreshHelper: StatsWorkRefreshHelper
 
 ) : ViewModel() {
     private val refreshEventChannel = Channel<Boolean>()
@@ -61,11 +63,12 @@ class MovieDetailsViewModel @Inject constructor(
     fun onRefresh() {
         viewModelScope.launch {
             refreshEventChannel.send(true)
-
-            statsRepository.refreshAllMovieStats()
             repository.getCredits(movieDataModel, true)
             traktListsRepository.getListsAndEntries(true)
+            statsWorkRefreshHelper.refreshMovieStats()
+
         }
+
     }
 
 

@@ -56,7 +56,7 @@ class ShowDetailsFragmentsViewModel @Inject constructor(private val savedStateHa
         castToggleChannel.send(showGuestStars)
     }
 
-    val overallSeasonStats = showDetailsProgressRepository.getOverallSeasonStats(showDataModel?.traktId ?: 0)
+    suspend fun overallSeasonStats() = showDetailsProgressRepository.getOverallSeasonStats(showDataModel?.traktId ?: 0, showDataModel?.tmdbId)
 
     fun getSeasonWatchedStats(seasonNumber: Int) = showDetailsProgressRepository.getSeasonWatchedStats(showDataModel?.traktId ?: 0, seasonNumber)
 

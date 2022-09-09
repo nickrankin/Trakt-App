@@ -127,16 +127,12 @@ class SeasonEpisodesActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListe
 
                 when (seasonResource) {
                     is Resource.Loading -> {
-                        bindings.seasonepisodesactivityProgressbar.visibility = View.VISIBLE
                         Log.d(TAG, "getSeason: Loading season ...")
                     }
                     is Resource.Success -> {
-                        bindings.seasonepisodesactivityProgressbar.visibility = View.GONE
-
                         Log.d(TAG, "getSeason: Got season ${season?.season?.name}")
 
                         displaySeason(season)
-
 
                     }
                     is Resource.Error -> {
@@ -264,18 +260,17 @@ class SeasonEpisodesActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListe
             seasonSpinner.onItemSelectedListener = object: AdapterView.OnItemSelectedListener
             {
                 override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
+                    // Reset the view and enable progressbar
+                    progressBar.visibility = View.VISIBLE
+                    adapter.submitList(emptyList())
+
                     val currentSeason = (p0?.selectedItem as String).replace(seasonIntro, "").toInt()
                     Log.d(TAG, "onItemSelected: $currentSeason", )
 
                     displaySeason(seasonsData.find { it.season.season_number == currentSeason })
 
-                    // Hide the current season while new one is loaded
-                    if(currentSeason != seasonDataModel.seasonNumber) {
-                        selectedSeason = currentSeason
-                        bindings.seasonepisodeactivityMainGroup.visibility = View.GONE
+                    viewModel.switchSeason(currentSeason)
 
-                        viewModel.switchSeason(currentSeason)
-                    }
                 }
 
                 override fun onNothingSelected(p0: AdapterView<*>?) {

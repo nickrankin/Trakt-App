@@ -7,6 +7,7 @@ import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.datamodel.SeasonDataModel
 import com.nickrankin.traktapp.repo.shows.SeasonEpisodesRepository
 import com.nickrankin.traktapp.repo.stats.StatsRepository
+import com.nickrankin.traktapp.services.helper.StatsWorkRefreshHelper
 import com.nickrankin.traktapp.ui.shows.SeasonEpisodesActivity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -17,7 +18,7 @@ import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 @HiltViewModel
-class SeasonEpisodesViewModel @Inject constructor(private val savedStateHandle: SavedStateHandle, private val repository: SeasonEpisodesRepository, private val statsRepository: StatsRepository): ViewModel() {
+class SeasonEpisodesViewModel @Inject constructor(private val savedStateHandle: SavedStateHandle, private val repository: SeasonEpisodesRepository, private val statsWorkRefreshHelper: StatsWorkRefreshHelper): ViewModel() {
 
     private val refreshEventChannel = Channel<Boolean>()
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
@@ -65,7 +66,7 @@ class SeasonEpisodesViewModel @Inject constructor(private val savedStateHandle: 
     fun onRefresh() {
         viewModelScope.launch {
             refreshEventChannel.send(true)
-            statsRepository.refreshAllShowStats()
+            statsWorkRefreshHelper.refreshShowStats()
         }
     }
 }

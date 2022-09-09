@@ -8,6 +8,7 @@ import com.nickrankin.traktapp.repo.auth.shows.ShowsOverviewRepository
 import com.nickrankin.traktapp.repo.movies.watched.WatchedMoviesRepository
 import com.nickrankin.traktapp.repo.shows.watched.WatchedEpisodesRepository
 import com.nickrankin.traktapp.repo.stats.StatsRepository
+import com.nickrankin.traktapp.services.helper.StatsWorkRefreshHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
@@ -22,7 +23,8 @@ class MainActivityViewModel @Inject constructor(
     private val watchedEpisodesRepository: WatchedEpisodesRepository,
     private val showsOverviewRepository: ShowsOverviewRepository,
     private val authRepository: AuthRepository,
-    private val statsRepository: StatsRepository
+    private val statsRepository: StatsRepository,
+    private val statsWorkRefreshHelper: StatsWorkRefreshHelper
 ) : ViewModel() {
     private val refreshEventChannel = Channel<Boolean>()
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
@@ -35,10 +37,9 @@ class MainActivityViewModel @Inject constructor(
             watchedMovieStats.sortedBy {it.last_watched_at }.reversed()
     }
 
-
     val watchedEpisodes = statsRepository.watchedEpisodeStats.map { watchedEpisodesStats ->
         if(watchedEpisodesStats.isNotEmpty() || watchedEpisodesStats.size > 8) {
-            if(watchedEpisodesStats.size > 4) {
+            if(watchedEpisodesStats.size > 8) {
                 watchedEpisodesStats.sortedBy {it.last_watched_at }.reversed().subList(0, 8)
             } else {
                 watchedEpisodesStats.sortedBy {it.last_watched_at }.reversed()
@@ -78,8 +79,8 @@ class MainActivityViewModel @Inject constructor(
     fun onRefresh() {
         viewModelScope.launch {
             refreshEventChannel.send(true)
-            statsRepository.refreshWatchedMovies()
-            statsRepository.refreshWatchedShows()
+            statsWorkRefreshHelper.refreshMovieStats()
+            statsWorkRefreshHelper.refreshShowStats()
         }
     }
 }

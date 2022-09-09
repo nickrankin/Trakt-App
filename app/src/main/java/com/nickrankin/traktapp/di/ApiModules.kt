@@ -4,6 +4,7 @@ import android.app.AlarmManager
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
+import androidx.work.WorkManager
 import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestManager
 import com.google.gson.Gson
@@ -84,5 +85,11 @@ object ApiModules {
     @Provides
     fun provideTrackedEpisodeNotificationsBuilder(@ApplicationContext context: Context): TrackedEpisodeNotificationsBuilder {
         return TrackedEpisodeNotificationsBuilder(context)
+    }
+
+    @Singleton
+    @Provides
+    fun provideWorkManager(@ApplicationContext context: Context): WorkManager {
+        return WorkManager.getInstance(context)
     }
 }
