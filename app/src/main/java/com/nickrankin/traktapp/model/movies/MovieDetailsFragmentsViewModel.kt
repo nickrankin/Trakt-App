@@ -14,6 +14,7 @@ import com.nickrankin.traktapp.repo.movies.MovieDetailsOverviewRepository
 import com.nickrankin.traktapp.repo.movies.collected.CollectedMoviesRepository
 import com.nickrankin.traktapp.repo.ratings.MovieRatingsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsOverviewRepository
+import com.nickrankin.traktapp.repo.stats.MovieStatsRepository
 import com.nickrankin.traktapp.repo.stats.StatsRepository
 import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
 import com.uwetrottmann.trakt5.entities.MovieCheckinResponse
@@ -37,7 +38,7 @@ class MovieDetailsFragmentsViewModel @Inject constructor(private val savedStateH
                                                              private val movieDetailsActionButtonRepository: MovieDetailsActionButtonRepository,
                                                              private val listsRepository: TraktListsRepository,
                                                              private val listEntryRepository: ListEntryRepository,
-                                                             private val statsRepository: StatsRepository
+                                                         private val movieStatsRepository: MovieStatsRepository
 ): ViewModel() {
     private val eventsChannel = Channel<Event>()
     val events = eventsChannel.receiveAsFlow()
@@ -56,7 +57,7 @@ class MovieDetailsFragmentsViewModel @Inject constructor(private val savedStateH
     val movie = movieDetailsOverviewRepository.getMovie(movieDataModel)
 
 
-    suspend fun collectedMovieStats(traktId: Int) = statsRepository.getCollectedMovieStatsById(traktId)
+    suspend fun collectedMovieStats(traktId: Int) = movieStatsRepository.getCollectedMovieStatsById(traktId)
 
     fun addToCollection(traktId: Int) = viewModelScope.launch { eventsChannel.send(Event.AddToCollectionEvent(collectedMoviesRepository.addCollectedMovie(traktId ?: 0))) }
     fun deleteFromCollection(traktId: Int) = viewModelScope.launch { eventsChannel.send(Event.RemoveFromCollectionEvent(collectedMoviesRepository.removeCollectedMovie(traktId ?: -1))) }

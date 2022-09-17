@@ -6,13 +6,12 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.CheckBox
-import android.widget.LinearLayout
-import android.widget.Toast
+import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.dao.show.model.TmEpisode
 import com.nickrankin.traktapp.databinding.ActionButtonsFragmentBinding
 import com.nickrankin.traktapp.helper.IHandleError
@@ -37,6 +36,8 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment() {
     private val viewModel: EpisodeDetailsFragmentsViewModel by activityViewModels()
 
     private lateinit var bindings: ActionButtonsFragmentBinding
+
+    private lateinit var addCollectionButton: RelativeLayout
 
     private var checkinDialog: AlertDialog? = null
     private var cancelCheckinDialog: AlertDialog? = null
@@ -67,6 +68,7 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment() {
 
                         if(episode != null) {
                             if(isLoggedIn) {
+                                setupCollectionButton(episode)
                                 setupCheckinButton(episode)
                                 setupAddToHistoryButton()
                                 setupRatingButton(episode)
@@ -81,6 +83,45 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment() {
         }
     }
 
+    private fun setupCollectionButton(episode: TmEpisode?) {
+        if(episode == null) {
+            return
+        }
+
+        addCollectionButton = bindings.actionbuttonAddToCollection
+
+        getCollectionStatus(episode)
+
+    }
+
+    private fun getCollectionStatus(episode: TmEpisode) {
+        val collectedButtonLabel = addCollectionButton.findViewById<TextView>(R.id.actionbutton_collected_textview)
+        lifecycleScope.launchWhenStarted {
+            viewModel.collectedEpisodes.collectLatest { collectedEpisodes ->
+                val collectedEpisode = collectedEpisodes.filter { it.trakt_id == episode.episode_trakt_id }
+
+                if(collectedEpisode.isNotEmpty()) {
+                    collectedButtonLabel.text = "Remove from Collection"
+
+                    addCollectionButton.setOnClickListener {
+                        AlertDialog.Builder(requireContext())
+                            .setTitle("Remove from Collection")
+                            .setMessage("Are you sure you want to remove ${episode.name} from your Collection?")
+                            .setPositiveButton("Yes", DialogInterface.OnClickListener { dialogInterface, i -> viewModel.removeFromCollection(episode.episode_trakt_id) })
+                            .setNegativeButton("Cancel", DialogInterface.OnClickListener { dialogInterface, i -> dialogInterface.dismiss() })
+                            .create()
+                            .show()
+                    }
+                } else {
+                    collectedButtonLabel.text = "Add to Collection"
+
+                    addCollectionButton.setOnClickListener {
+                        viewModel.addToCollection(episode)
+                    }
+                }
+            }
+        }
+    }
 
     private fun setupAddListsButton(tmEpisode: TmEpisode) {
         val addListsButton = bindings.actionbuttonLists

@@ -14,6 +14,7 @@ import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
 import com.nickrankin.traktapp.repo.movies.collected.CollectedMoviesRepository
 import com.nickrankin.traktapp.repo.movies.watched.WatchedMoviesRepository
 import com.nickrankin.traktapp.repo.ratings.MovieRatingsRepository
+import com.nickrankin.traktapp.repo.stats.MovieStatsRepository
 import com.nickrankin.traktapp.repo.stats.StatsRepository
 import com.nickrankin.traktapp.services.helper.StatsWorkRefreshHelper
 import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
@@ -32,7 +33,7 @@ class MovieDetailsViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val repository: MovieDetailsRepository,
     private val traktListsRepository: TraktListsRepository,
-    private val statsRepository: StatsRepository,
+    private val movieStatsRepository: MovieStatsRepository,
     private val statsWorkRefreshHelper: StatsWorkRefreshHelper
 
 ) : ViewModel() {
@@ -47,7 +48,7 @@ class MovieDetailsViewModel @Inject constructor(
         repository.getMovieSummary(movieDataModel?.traktId ?: 0, shouldRefresh)
     }
 
-    val watchedMovieStats = statsRepository.watchedMoviesStats.map { watchedMovies ->
+    val watchedMovieStats = movieStatsRepository.watchedMoviesStats.map { watchedMovies ->
         watchedMovies.find { it.trakt_id == movieDataModel?.traktId ?: 0 }
     }
 

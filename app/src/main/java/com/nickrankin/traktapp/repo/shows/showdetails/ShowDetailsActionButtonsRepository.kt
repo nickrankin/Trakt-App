@@ -16,6 +16,7 @@ import com.nickrankin.traktapp.helper.shouldRefreshContents
 import com.nickrankin.traktapp.repo.lists.ListEntryRepository
 import com.nickrankin.traktapp.repo.lists.TraktListsRepository
 import com.nickrankin.traktapp.repo.shows.collected.CollectedShowsRepository
+import com.nickrankin.traktapp.repo.stats.ShowStatsRepository
 import com.nickrankin.traktapp.repo.stats.StatsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.trakt5.entities.*
@@ -41,7 +42,7 @@ class ShowDetailsActionButtonsRepository @Inject constructor(
     private val showsDatabase: ShowsDatabase,
     private val creditsDatabase: CreditsDatabase,
     private val listsDatabase: TraktListsDatabase,
-    private val statsRepository: StatsRepository
+    private val showStatsRepository: ShowStatsRepository
 ) {
     private val collectedShowStatsDao = showsDatabase.collectedShowsStatsDao()
     private val ratedShowsStatsDao = showsDatabase.ratedShowsStatsDao()
@@ -106,7 +107,7 @@ class ShowDetailsActionButtonsRepository @Inject constructor(
         return try {
             val result = traktApi.tmSync().addItemsToCollection(getSyncItems(tmShow.trakt_id))
 
-            statsRepository.refreshCollectedShows()
+            showStatsRepository.refreshCollectedShows()
 
             Resource.Success(result)
         } catch (t: Throwable) {

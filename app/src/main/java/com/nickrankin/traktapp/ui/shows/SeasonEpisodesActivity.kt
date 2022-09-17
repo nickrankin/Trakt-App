@@ -123,26 +123,28 @@ class SeasonEpisodesActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListe
     private fun getSeason() {
         lifecycleScope.launchWhenStarted {
             viewModel.currentSeason.collectLatest { seasonResource ->
-                val season = seasonResource.data?.first()
+                val season = seasonResource.data
 
                 when (seasonResource) {
                     is Resource.Loading -> {
                         Log.d(TAG, "getSeason: Loading season ...")
                     }
                     is Resource.Success -> {
-                        Log.d(TAG, "getSeason: Got season ${season?.season?.name}")
 
-                        displaySeason(season)
+                        // Season Stats can be empty initially if user hasn't watched any of show before. See SeasonStatsRepository -> getWatchedSeasonStatsPerShow()
+                        if(season?.isNotEmpty() == true) {
+                            Log.d(TAG, "getSeason: Got season ${season.first().season.name}")
+
+                            displaySeason(season.first())
+
+                        }
 
                     }
                     is Resource.Error -> {
-                        seasonTitle = season?.season?.name ?: "Episodes"
+                        if(season?.isNotEmpty() == true) {
+                            displaySeason(season.first())
 
-                        if (season != null) {
-                            seasonTitle = season.season.name
-                            updateTitle()
                         }
-
                         showErrorSnackbarRetryButton(seasonResource.error, bindings.seasonepisodesactivitySwipeRefreshLayout) {
                             viewModel.onRefresh()
                         }

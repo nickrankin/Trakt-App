@@ -1,10 +1,12 @@
 package com.nickrankin.traktapp.model.shows
 
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.nickrankin.traktapp.dao.lists.model.TraktList
 import com.nickrankin.traktapp.dao.show.model.TmShow
@@ -16,6 +18,7 @@ import com.nickrankin.traktapp.repo.shows.SeasonEpisodesRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsActionButtonsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsOverviewRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
+import com.nickrankin.traktapp.repo.stats.SeasonStatsRepository
 import com.nickrankin.traktapp.repo.stats.StatsRepository
 import com.nickrankin.traktapp.services.ShowStatsRefreshWorker
 import com.nickrankin.traktapp.services.helper.StatsWorkRefreshHelper
@@ -37,7 +40,8 @@ class ShowDetailsViewModel @Inject constructor(
     private val seasonEpisodesRepository: SeasonEpisodesRepository,
     private val showDetailsOverviewRepository: ShowDetailsOverviewRepository,
     private val listsRepository: TraktListsRepository,
-    private val statsWorkRefreshHelper: StatsWorkRefreshHelper
+    private val statsWorkRefreshHelper: StatsWorkRefreshHelper,
+    private val seasonStatsRepository: SeasonStatsRepository
 ) : ViewModel() {
 
     private val refreshEventChannel = Channel<Boolean>()
@@ -61,20 +65,24 @@ class ShowDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             refreshEventChannel.send(false)
 
+            seasonStatsRepository.getWatchedSeasonStatsPerShow(showDataModel?.traktId ?: 0, false)
+
             showDetailsOverviewRepository.getCredits(showDataModel, false)
             listsRepository.getListsAndEntries(false)
 
         }
     }
 
-    fun onRefresh() {
+    fun onRefresh(showStatsRefreshWorkInfo: (workInfo: LiveData<WorkInfo>) -> Unit) {
         viewModelScope.launch {
             refreshEventChannel.send(true)
 
             showDetailsOverviewRepository.getCredits(showDataModel, true)
             listsRepository.getListsAndEntries(true)
 
-            statsWorkRefreshHelper.refreshShowStats()
+            seasonStatsRepository.getWatchedSeasonStatsPerShow(showDataModel?.traktId ?: 0, true)
+
+            showStatsRefreshWorkInfo(statsWorkRefreshHelper.refreshShowStats())
         }
 
     }

@@ -317,15 +317,6 @@
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintEnd_toEndOf="parent" />
 
-                        <ProgressBar
-                            android:id="@+id/home_watched_movies_progressbar"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            app:layout_constraintBottom_toBottomOf="@id/home_watched_movies_recyclerview"
-                            app:layout_constraintEnd_toEndOf="@id/home_watched_movies_recyclerview"
-                            app:layout_constraintStart_toStartOf="@id/home_watched_movies_recyclerview"
-                            app:layout_constraintTop_toTopOf="@id/home_watched_movies_recyclerview" />
-
 
                         <androidx.recyclerview.widget.RecyclerView
                             android:id="@+id/home_watched_movies_recyclerview"
@@ -335,6 +326,15 @@
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toBottomOf="@id/home_watched_movies_divider" />
+
+                        <ProgressBar
+                            android:id="@+id/home_watched_movies_progressbar"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/home_watched_movies_all_btn"

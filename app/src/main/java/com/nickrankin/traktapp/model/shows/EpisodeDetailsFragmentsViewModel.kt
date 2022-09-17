@@ -49,11 +49,11 @@ class EpisodeDetailsFragmentsViewModel @Inject constructor(
 
 
     // Overview Fragment
-        val cast = castToggle.flatMapLatest { showGuestStars ->
-            showDetailsOverviewRepository.getShowCast(
-                episodeDataModel?.showTraktId ?: 0,
-                showGuestStars
-            )
+    val cast = castToggle.flatMapLatest { showGuestStars ->
+        showDetailsOverviewRepository.getShowCast(
+            episodeDataModel?.showTraktId ?: 0,
+            showGuestStars
+        )
     }
 
     val episode = episodeDetailsActionButtonsRepository.getEpisodeDetails(
@@ -61,6 +61,8 @@ class EpisodeDetailsFragmentsViewModel @Inject constructor(
         episodeDataModel?.seasonNumber ?: 0,
         episodeDataModel?.episodeNumber ?: 0
     )
+
+    val collectedEpisodes = episodeDetailsActionButtonsRepository.collectedEpisodes
 
     fun filterCast(showGuestStars: Boolean) = viewModelScope.launch {
         castToggleChannel.send(showGuestStars)
@@ -136,6 +138,26 @@ class EpisodeDetailsFragmentsViewModel @Inject constructor(
             )
         }
 
+    fun addToCollection(episode: TmEpisode) = viewModelScope.launch {
+        eventChannel.send(
+            Event.AddToCollectionEvent(
+                episodeDetailsActionButtonsRepository.addToCollection(
+                    episode
+                )
+            )
+        )
+    }
+
+    fun removeFromCollection(episodeTraktId: Int) = viewModelScope.launch {
+        eventChannel.send(
+            Event.RemoveFromCollectionEvent(
+                episodeDetailsActionButtonsRepository.removeFromCollection(
+                    episodeTraktId
+                )
+            )
+        )
+    }
+
     sealed class Event {
         data class AddRatingsEvent(
             val syncResponse: Resource<Pair<SyncResponse, Int>>,
@@ -154,6 +176,9 @@ class EpisodeDetailsFragmentsViewModel @Inject constructor(
         data class AddListEntryEvent(val addListEntryResponse: Resource<SyncResponse>) : Event()
         data class RemoveListEntryEvent(val removeListEntryResponse: Resource<SyncResponse?>) :
             Event()
+
+        data class AddToCollectionEvent(val syncResponse: Resource<SyncResponse>) : Event()
+        data class RemoveFromCollectionEvent(val syncResponse: Resource<SyncResponse>) : Event()
     }
 
 }

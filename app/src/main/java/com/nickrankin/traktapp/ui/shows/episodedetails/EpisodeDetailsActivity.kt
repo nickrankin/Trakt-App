@@ -89,7 +89,6 @@ class EpisodeDetailsActivity : BaseActivity(), OnNavigateToShow, SwipeRefreshLay
         getEpisode()
 //        getEvents()
 
-
     }
 
     private fun dismissEipsodeNotifications() {
@@ -117,6 +116,7 @@ class EpisodeDetailsActivity : BaseActivity(), OnNavigateToShow, SwipeRefreshLay
 
 
     }
+
 
     private fun getShow() {
         lifecycleScope.launchWhenStarted {

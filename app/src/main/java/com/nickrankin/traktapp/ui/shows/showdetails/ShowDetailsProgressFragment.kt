@@ -9,7 +9,6 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
 import androidx.cardview.widget.CardView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -20,20 +19,21 @@ import com.nickrankin.traktapp.databinding.ShowDetailsProgressFragmentBinding
 import com.nickrankin.traktapp.helper.calculateProgress
 import com.nickrankin.traktapp.model.datamodel.SeasonDataModel
 import com.nickrankin.traktapp.model.shows.ShowDetailsFragmentsViewModel
+import com.nickrankin.traktapp.ui.IOnStatistcsRefreshListener
 import com.nickrankin.traktapp.ui.shows.SeasonEpisodesActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.flow.internal.ChannelFlow
 
 private const val TAG = "HERE"
 @AndroidEntryPoint
-class ShowDetailsProgressFragment: Fragment() {
+class ShowDetailsProgressFragment: Fragment(), IOnStatistcsRefreshListener {
     private lateinit var bindings: ShowDetailsProgressFragmentBinding
 
     private val viewModel: ShowDetailsFragmentsViewModel by activityViewModels()
     private lateinit var progressCardview: CardView
     private lateinit var progressItemContainer: LinearLayout
+    private lateinit var progressBar: ProgressBar
 
     private val allSeasonsToggleChannel = Channel<Boolean>()
     private val allSeasonsToggled = allSeasonsToggleChannel.receiveAsFlow()
@@ -66,19 +66,14 @@ class ShowDetailsProgressFragment: Fragment() {
     }
     
     private fun getProgress() {
-        val progressBar = bindings.showdetailsprogressfragmentLoadingProgressbar
+        progressBar = bindings.showdetailsprogressfragmentLoadingProgressbar
 
         lifecycleScope.launchWhenStarted { 
             viewModel.overallSeasonStats().collectLatest { seasonData ->
                 progressItemContainer.removeAllViews()
 
-                // If watched episode data is refreshing, seasonData will possibly return empty for a period until that shows data is refreshed, for consistency show progressbar until season information retrieved
-                if(seasonData.isEmpty()) {
-                    progressBar.visibility = View.VISIBLE
-                } else {
-                    progressBar.visibility = View.GONE
-                }
-                
+                allSeasonsToggleChannel.send(false)
+
                 var totalEpisodes = 0
                 var totalWatched = 0
                 
@@ -87,11 +82,11 @@ class ShowDetailsProgressFragment: Fragment() {
                     totalWatched += stats.completed
                 }
 
-                val overappProgressPercentage = calculateProgress(totalWatched.toDouble(), totalEpisodes.toDouble())
+                val overallProgressPercentage = calculateProgress(totalWatched.toDouble(), totalEpisodes.toDouble())
 
                 bindings.showdetailsprogressfragmentOverview.apply {
-                    showdetailsprogressfragmentProgressTitle.text = "Overall progress ($overappProgressPercentage%)"
-                    showdetailsprogressfragmentProgressbar.progress = overappProgressPercentage
+                    showdetailsprogressfragmentProgressTitle.text = "Overall progress ($overallProgressPercentage%)"
+                    showdetailsprogressfragmentProgressbar.progress = overallProgressPercentage
                 }
 
                 seasonData.map { seasonStat ->
@@ -142,6 +137,17 @@ class ShowDetailsProgressFragment: Fragment() {
 
         return progressView
     }
+
+    override fun onRefresh(isRefreshing: Boolean) {
+        if(this.isAdded && isRefreshing) {
+            progressBar.visibility = View.VISIBLE
+            progressBar.bringToFront()
+        } else {
+            progressBar.visibility = View.GONE
+        }
+
+    }
+
 
     companion object {
         fun newInstance() = ShowDetailsProgressFragment()

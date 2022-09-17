@@ -1,5 +1,6 @@
 package com.nickrankin.traktapp.api.services.trakt
 
+import com.nickrankin.traktapp.api.services.trakt.model.CollectedBaseEpisode
 import com.uwetrottmann.trakt5.entities.*
 import com.uwetrottmann.trakt5.enums.Extended
 import com.uwetrottmann.trakt5.enums.RatingsFilter
@@ -42,6 +43,11 @@ interface TmSync {
     suspend fun collectionShows(
         @Query(value = "extended", encoded = true) extended: Extended
     ): List<BaseShow>
+
+    @GET("sync/collection/episodes")
+    suspend fun collectionEpisodes(
+        @Query(value = "extended", encoded = true) extended: Extended?
+    ): List<CollectedBaseEpisode>
 
     /**
      * **OAuth Required**

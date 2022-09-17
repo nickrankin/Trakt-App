@@ -7,6 +7,7 @@ import androidx.paging.cachedIn
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.repo.movies.watched.WatchedMoviesRepository
 import com.nickrankin.traktapp.repo.shows.watched.WatchedEpisodesRepository
+import com.nickrankin.traktapp.repo.stats.MovieStatsRepository
 import com.nickrankin.traktapp.repo.stats.StatsRepository
 import com.uwetrottmann.trakt5.entities.SyncItems
 import com.uwetrottmann.trakt5.entities.SyncResponse
@@ -19,13 +20,13 @@ import javax.inject.Inject
 
 private const val TAG = "WatchedMoviesViewModel"
 @HiltViewModel
-class WatchedMoviesViewModel @Inject constructor(private val repository: WatchedMoviesRepository, private val statsRepository: StatsRepository): ViewModel() {
+class WatchedMoviesViewModel @Inject constructor(private val repository: WatchedMoviesRepository, private val movieStatsRepository: MovieStatsRepository): ViewModel() {
 
     private val refreshEventChannel = Channel<Boolean>()
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
 
-    val ratedMoviesStats = statsRepository.ratedMoviesStats
-    val collectedMoviesStats = statsRepository.collectedMoviesStats
+    val ratedMoviesStats = movieStatsRepository.ratedMoviesStats
+    val collectedMoviesStats = movieStatsRepository.collectedMoviesStats
 
     private val eventsChannel = Channel<Event>()
     val events = eventsChannel.receiveAsFlow()
@@ -49,7 +50,7 @@ class WatchedMoviesViewModel @Inject constructor(private val repository: Watched
     fun onRefresh() {
         viewModelScope.launch {
             refreshEventChannel.send(true)
-            statsRepository.refreshWatchedMovies()
+            movieStatsRepository.refreshWatchedMovies()
         }
     }
 

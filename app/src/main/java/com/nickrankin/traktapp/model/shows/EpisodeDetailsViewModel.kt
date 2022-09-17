@@ -17,6 +17,7 @@ import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsActionBut
 import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsOverviewRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
+import com.nickrankin.traktapp.repo.stats.EpisodesStatsRepository
 import com.nickrankin.traktapp.repo.stats.StatsRepository
 import com.nickrankin.traktapp.services.helper.StatsWorkRefreshHelper
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
@@ -37,9 +38,10 @@ private const val TAG = "EpisodeDetailsViewModel"
 @HiltViewModel
 class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: SavedStateHandle,
                                                   private val showDetailsRepository: ShowDetailsRepository,
+                                                  private val episodeDetailsActionButtonsRepository: EpisodeDetailsActionButtonsRepository,
                                                   private val repository: EpisodeDetailsRepository,
                                                   private val listsRepository: TraktListsRepository,
-                                                  private val statsRepository: StatsRepository,
+                                                  private val episodesStatsRepository: EpisodesStatsRepository,
                                                   private val statsWorkRefreshHelper: StatsWorkRefreshHelper,
 private val episodeRatingsRepository: EpisodeRatingsRepository): ViewModel() {
 
@@ -59,7 +61,7 @@ private val episodeRatingsRepository: EpisodeRatingsRepository): ViewModel() {
         repository.getEpisodes(episodeDataModel?.showTraktId ?: 0, episodeDataModel?.tmdbId, episodeDataModel?.seasonNumber ?: -1, episodeDataModel?.episodeNumber ?: -1, shouldRefresh)
     }
 
-    val watchedEpisodeStats = statsRepository.watchedEpisodeStats
+    val watchedEpisodeStats = episodesStatsRepository.watchedEpisodeStats
 
 //    fun removeWatchedHistoryItem(syncItems: SyncItems) = viewModelScope.launch { eventChannel.send(Event.DeleteWatchedHistoryItem(repository.removeWatchedEpisode(syncItems))) }
 
@@ -70,6 +72,8 @@ private val episodeRatingsRepository: EpisodeRatingsRepository): ViewModel() {
             refreshEventChannel.send(false)
 
             repository.getCast(episodeDataModel, false)
+            episodeDetailsActionButtonsRepository.refreshCollectedEpisodes(false)
+
             listsRepository.getListsAndEntries(false)
         }
     }
@@ -83,6 +87,7 @@ private val episodeRatingsRepository: EpisodeRatingsRepository): ViewModel() {
             listsRepository.getListsAndEntries(true)
 
             statsWorkRefreshHelper.refreshShowStats()
+            episodeDetailsActionButtonsRepository.refreshCollectedEpisodes(true)
         }
     }
 

@@ -9,12 +9,13 @@ import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.movies.MoviesDatabase
 import com.nickrankin.traktapp.dao.movies.model.WatchedMovie
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.repo.stats.MovieStatsRepository
 import com.nickrankin.traktapp.repo.stats.StatsRepository
 import com.uwetrottmann.trakt5.entities.*
 import javax.inject.Inject
 
 private const val TAG = "WatchedEpisodesReposito"
-class WatchedMoviesRepository @Inject constructor(private val traktApi: TraktApi, private val sharedPreferences: SharedPreferences, private val moviesDatabase: MoviesDatabase, private val statsRepository: StatsRepository) {
+class WatchedMoviesRepository @Inject constructor(private val traktApi: TraktApi, private val sharedPreferences: SharedPreferences, private val moviesDatabase: MoviesDatabase, private val movieStatsRepository: MovieStatsRepository) {
 
     private val watchedMoviesDao = moviesDatabase.watchedMoviesDao()
 
@@ -42,7 +43,7 @@ class WatchedMoviesRepository @Inject constructor(private val traktApi: TraktApi
             }
 
             // Refresh watched stats
-            statsRepository.refreshWatchedMovies()
+            movieStatsRepository.refreshWatchedMovies()
 
             Resource.Success(response)
 

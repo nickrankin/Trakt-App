@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.nickrankin.traktapp.dao.show.model.CollectedShow
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.repo.shows.collected.CollectedShowsRepository
+import com.nickrankin.traktapp.repo.stats.ShowStatsRepository
 import com.nickrankin.traktapp.repo.stats.StatsRepository
 import com.uwetrottmann.trakt5.entities.SyncResponse
 import com.uwetrottmann.trakt5.enums.SortBy
@@ -17,7 +18,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class CollectedShowsViewModel @Inject constructor(val repository: CollectedShowsRepository, private val statsRepository: StatsRepository): ViewModel() {
+class CollectedShowsViewModel @Inject constructor(val repository: CollectedShowsRepository, private val showStatsRepository: ShowStatsRepository): ViewModel() {
 
     private val sortingToggleChannel = Channel<String>()
     private val sortingToggle = sortingToggleChannel.receiveAsFlow()
@@ -105,7 +106,7 @@ class CollectedShowsViewModel @Inject constructor(val repository: CollectedShows
         viewModelScope.launch {
             launch {
                 showRefreshEventChannel.send(true)
-                statsRepository.refreshCollectedShows()
+                showStatsRepository.refreshCollectedShows()
             }
         }
     }

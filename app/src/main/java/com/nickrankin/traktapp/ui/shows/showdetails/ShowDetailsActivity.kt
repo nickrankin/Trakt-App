@@ -15,6 +15,7 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import androidx.work.WorkInfo
 import com.bumptech.glide.RequestManager
 import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.appbar.AppBarLayout
@@ -33,6 +34,7 @@ import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
+import com.nickrankin.traktapp.ui.IOnStatistcsRefreshListener
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.shows.OnNavigateToEpisode
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
@@ -173,7 +175,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
                         }
 
                         showErrorSnackbarRetryButton(showResource.error, bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer) {
-                            viewModel.onRefresh()
+                            onRefresh()
                         }
 
                     }
@@ -189,7 +191,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
         showDetailsProgressFragment = ShowDetailsProgressFragment.newInstance()
 
         supportFragmentManager.beginTransaction()
-            .replace(
+            .add(
                 bindings.showdetailsactivityInner.showdetailsactivityButtonsFragmentContainer.id,
                 showActionButtonsFragment,
                 FRAGMENT_ACTION_BUTTONS
@@ -202,7 +204,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
         } else if(supportFragmentManager.findFragmentByTag(FRAGMENT_OVERVIEW_TAG) == null) {
             // Fragment not added yet, so add it
             supportFragmentManager.beginTransaction()
-                .replace(
+                .add(
                     bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer.id,
                     showDetailsOverviewFragment,
                     FRAGMENT_OVERVIEW_TAG
@@ -211,7 +213,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
         } else {
             // Replace Fragment with Overview Fragment
             supportFragmentManager.beginTransaction()
-                .replace(
+                .add(
                     bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer.id,
                     showDetailsOverviewFragment,
                     FRAGMENT_OVERVIEW_TAG
@@ -400,7 +402,37 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
     }
 
     override fun onRefresh() {
-        viewModel.onRefresh()
+        viewModel.onRefresh(showStatsRefreshWorkInfo = {workInfo ->
+            try {
+                val progressFragment = showDetailsProgressFragment as IOnStatistcsRefreshListener
+
+                workInfo.observe(this) { workInfoData ->
+                    when(workInfoData.state) {
+                        WorkInfo.State.ENQUEUED -> {
+                            progressFragment.onRefresh(true)
+                        }
+                        WorkInfo.State.RUNNING -> {
+                            progressFragment.onRefresh(true)
+
+                        }
+                        WorkInfo.State.SUCCEEDED -> {
+                            progressFragment.onRefresh(false)
+
+                        }
+                        WorkInfo.State.FAILED -> {
+                            progressFragment.onRefresh(false)
+
+                        }
+                        else -> {
+                            progressFragment.onRefresh(false)
+
+                        }
+                    }
+                }
+            } catch(cce: ClassCastException) {
+                Log.e(TAG, "onRefresh: Cannot cast ${showDetailsProgressFragment.javaClass.name} to IOnStatistcsRefreshListener", )
+            }
+        })
     }
 
     private fun handleTrailer(videos: Videos?) {
@@ -698,7 +730,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
         when (tab?.position) {
             0 -> {
                 supportFragmentManager.beginTransaction()
-                    .replace(
+                    .add(
                         bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer.id,
                         showDetailsOverviewFragment,
                         FRAGMENT_OVERVIEW_TAG
@@ -709,7 +741,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
             }
             1 -> {
                 supportFragmentManager.beginTransaction()
-                    .replace(
+                    .add(
                         bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer.id,
                         showDetailsSeasonsFragment,
                         FRAGMENT_SEASONS_TAG
@@ -720,7 +752,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
             }
             2 -> {
                 supportFragmentManager.beginTransaction()
-                    .replace(
+                    .add(
                         bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer.id,
                         showDetailsProgressFragment,
                         FRAGMENT_PROGRESS_TAG
@@ -737,7 +769,41 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
     }
 
     override fun onTabUnselected(tab: TabLayout.Tab?) {
+        when (tab?.position) {
+            0 -> {
+                supportFragmentManager.beginTransaction()
+                    .remove(
+                        supportFragmentManager.findFragmentByTag(FRAGMENT_OVERVIEW_TAG)!!
+                    )
+                    .commit()
 
+                Log.d(TAG, "onTabSelected: Tab Overview selected")
+            }
+            1 -> {
+                supportFragmentManager.beginTransaction()
+                    .remove(
+                        supportFragmentManager.findFragmentByTag(FRAGMENT_SEASONS_TAG)!!
+                    )
+                    .commit()
+
+
+                Log.d(TAG, "onTabSelected: Tab Seasons selected")
+            }
+            2 -> {
+
+                supportFragmentManager.beginTransaction()
+                    .remove(
+                        supportFragmentManager.findFragmentByTag(FRAGMENT_PROGRESS_TAG)!!
+                    )
+                    .commit()
+
+                Log.d(TAG, "onTabSelected: Tab Progress selected")
+            }
+            else -> {
+
+                Log.d(TAG, "onTabSelected: Tab Unknown (${tab?.position}) selected")
+            }
+        }
     }
 
     override fun onTabReselected(tab: TabLayout.Tab?) {

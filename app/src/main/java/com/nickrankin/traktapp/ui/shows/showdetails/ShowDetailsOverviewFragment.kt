@@ -15,6 +15,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.work.WorkInfo
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.adapter.credits.ShowCastCreditsAdapter
 import com.nickrankin.traktapp.dao.credits.ShowCastPerson
@@ -22,6 +23,7 @@ import com.nickrankin.traktapp.databinding.ShowDetailsOverviewFragmentBinding
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.shows.ShowDetailsFragmentsViewModel
 import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
+import com.nickrankin.traktapp.ui.IOnStatistcsRefreshListener
 import com.nickrankin.traktapp.ui.person.PersonActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -131,7 +133,6 @@ class ShowDetailsOverviewFragment : Fragment() {
         castRecyclerView.layoutManager = layoutManager
         castRecyclerView.adapter = showCastCreditsAdapter
     }
-
 
     companion object {
         const val OVERVIEW_KEY = "overview_key"

@@ -9,6 +9,7 @@ import com.nickrankin.traktapp.dao.movies.model.TmMovie
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.repo.movies.watched.WatchedMoviesRepository
+import com.nickrankin.traktapp.repo.stats.MovieStatsRepository
 import com.nickrankin.traktapp.repo.stats.StatsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.trakt5.entities.*
@@ -18,7 +19,7 @@ import org.threeten.bp.OffsetDateTime
 import javax.inject.Inject
 
 private const val TAG = "MovieDetailsActionButto"
-class MovieDetailsActionButtonRepository @Inject constructor(private val traktApi: TraktApi, private val sharedPreferences: SharedPreferences, private val statsRepository: StatsRepository, private val listsDatabase: TraktListsDatabase, private val moviesDatabase: MoviesDatabase) {
+class MovieDetailsActionButtonRepository @Inject constructor(private val traktApi: TraktApi, private val sharedPreferences: SharedPreferences, private val movieStatsRepository: MovieStatsRepository, private val listsDatabase: TraktListsDatabase, private val moviesDatabase: MoviesDatabase) {
     private val watchedMoviesDao = moviesDatabase.watchedMoviesDao()
     private val watchedMoviesStatsDao = moviesDatabase.watchedMoviesStatsDao()
     private val listEntryDao = listsDatabase.listEntryDao()
@@ -74,7 +75,7 @@ class MovieDetailsActionButtonRepository @Inject constructor(private val traktAp
                 watchedMoviesDao.getWatchedMovies().invalidate()
 
                 // Refresh the WatchedStats
-                statsRepository.refreshWatchedMovies()
+                movieStatsRepository.refreshWatchedMovies()
             }
 
             Resource.Success(response)

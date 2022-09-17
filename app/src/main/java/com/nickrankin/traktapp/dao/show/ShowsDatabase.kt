@@ -15,6 +15,7 @@ import com.nickrankin.traktapp.dao.stats.model.*
 @Database(
     entities = [ShowCalendarEntry::class,
         CollectedShow::class,
+        CollectedEpisode::class,
         WatchedEpisode::class,
         WatchedEpisodePageKey::class,
         TmShow::class,
@@ -37,6 +38,7 @@ import com.nickrankin.traktapp.dao.stats.model.*
 abstract class ShowsDatabase : RoomDatabase() {
     abstract fun showCalendarentriesDao(): ShowCalendarEntryDao
     abstract fun collectedShowsDao(): CollectedShowDao
+    abstract fun collectedEpisodeDao(): CollectedEpisodeDao
     abstract fun tmShowDao(): TmShowsDao
     abstract fun TmSeasonsDao(): TmSeasonsDao
     abstract fun TmEpisodesDao(): TmEpisodesDao

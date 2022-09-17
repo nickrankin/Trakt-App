@@ -66,7 +66,7 @@ class TmApplication : Application(), Configuration.Provider {
         
 
         // Uncomment to cancel all work
-        //WorkManager.getInstance(this).cancelAllWork()
+//        WorkManager.getInstance(this).cancelAllWork()
 
         // If user has enabled Upcoming Episode notifications, schedule service to refresh every 24 hours (REFRESH_INTERVAL)
         if (sharedPreferences.getBoolean("enable_traked_show_notification", false)) {

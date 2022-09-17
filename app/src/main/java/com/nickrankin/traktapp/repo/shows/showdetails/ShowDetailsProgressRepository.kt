@@ -12,6 +12,7 @@ import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.ShowDataHelper
 import com.nickrankin.traktapp.helper.networkBoundResource
 import com.nickrankin.traktapp.repo.shows.SeasonEpisodesRepository
+import com.nickrankin.traktapp.ui.IOnStatistcsRefreshListener
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.trakt5.entities.*
 import com.uwetrottmann.trakt5.enums.Extended
