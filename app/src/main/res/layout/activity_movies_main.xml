@@ -50,7 +50,7 @@
         <LinearLayout
             android:id="@+id/moviesmainactivity_container"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_below="@id/moviesmainactivity_navigation_tabs"
             android:orientation="vertical" />
 

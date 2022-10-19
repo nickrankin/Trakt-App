@@ -19,15 +19,20 @@ import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.LoadState
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.room.withTransaction
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.google.android.flexbox.FlexDirection
+import com.google.android.flexbox.FlexboxLayoutManager
+import com.google.android.flexbox.JustifyContent
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.R
+import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.adapter.search.ShowSearchLoadStateAdapter
 import com.nickrankin.traktapp.adapter.shows.*
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
@@ -126,6 +131,7 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
             }
 
             initRecycler()
+            getViewType()
 
             createAddFromCollectionDialog()
             createAddFromSearchDialog()
@@ -289,7 +295,9 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
 
     private fun initRecycler() {
         trackedShowsRecyclerView = bindings.showstrackingfragmentRecyclerview
-        val layoutManager = LinearLayoutManager(requireContext())
+
+        switchRecyclerViewLayoutManager(requireContext(), trackedShowsRecyclerView, MediaEntryBaseAdapter.VIEW_TYPE_POSTER)
+
         trackedShowsAdapter = TrackedShowsAdapter(tmdbImageLoader, callback = { trackedShowWithEpisodes ->
             val trackedShow = trackedShowWithEpisodes.trackedShow
             navigateToShow(trackedShow.trakt_id, trackedShow.tmdb_id, trackedShow.title)
@@ -303,9 +311,21 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
             upcomingEpisodesDialog.show()
         }
 
-        trackedShowsRecyclerView.layoutManager = layoutManager
         trackedShowsRecyclerView.adapter = trackedShowsAdapter
     }
+
+    private fun getViewType() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.viewType.collectLatest { viewType ->
+                trackedShowsAdapter.switchView(viewType)
+
+                switchRecyclerViewLayoutManager(requireContext(), trackedShowsRecyclerView, viewType)
+
+                trackedShowsRecyclerView.scrollToPosition(0)
+            }
+        }
+    }
+
 
     private fun createAddFromCollectionDialog() {
         val view = layoutInflater.inflate(R.layout.collected_shows_picker_dialog, null, false)
@@ -719,6 +739,11 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
                 }
 
                 viewModel.applySorting(sorting)
+            }
+            R.id.trackedfiltermenu_switch_layout -> {
+                lifecycleScope.launchWhenStarted {
+                    viewModel.switchViewType()
+                }
             }
         }
         return false

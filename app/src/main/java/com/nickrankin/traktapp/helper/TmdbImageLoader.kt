@@ -6,6 +6,7 @@ import android.util.Log
 import android.widget.ImageView
 import androidx.room.withTransaction
 import com.bumptech.glide.RequestManager
+import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.api.TmdbApi
 import com.nickrankin.traktapp.dao.images.ImagesDatabase
 import com.nickrankin.traktapp.dao.images.model.Image
@@ -53,7 +54,7 @@ class TmdbImageLoader @Inject constructor(
             val cachedPosters = imagesDao.getImage(getPrefix(imageItemType)+traktId)
 
             if (cachedPosters != null) {
-                loadImagesOnMainThread(traktId, cachedPosters, posterImageView, backdropImageView)
+                loadImagesOnMainThread(cachedPosters, imageItemType, posterImageView, backdropImageView)
             } else {
 
                 if (imageItemType == ImageItemType.EPISODE) {
@@ -67,7 +68,7 @@ class TmdbImageLoader @Inject constructor(
                         imagesDao.insert(images)
                     }
 
-                    loadImagesOnMainThread(traktId, images, posterImageView, backdropImageView)
+                    loadImagesOnMainThread(images, imageItemType, posterImageView, backdropImageView)
                 }
 
 
@@ -94,7 +95,7 @@ class TmdbImageLoader @Inject constructor(
             val cachedEpisodeImages = imagesDao.getImage(PREFIX_EPISODE+traktId)
 
             if(cachedEpisodeImages != null) {
-                loadImagesOnMainThread(traktId, cachedEpisodeImages, posterImageView, backdropImageView)
+                loadImagesOnMainThread(cachedEpisodeImages, ImageItemType.EPISODE, posterImageView, backdropImageView)
 
             } else {
                 // Check if the Show images are already cached:
@@ -114,7 +115,7 @@ class TmdbImageLoader @Inject constructor(
                         )
                     }
 
-                    loadImagesOnMainThread(traktId, episodeImages, posterImageView, backdropImageView)
+                    loadImagesOnMainThread(episodeImages, ImageItemType.EPISODE, posterImageView, backdropImageView)
 
                 } else {
                     Log.d(TAG, "loadEpisodeImages: Getting show images for TMDBID $tmbId")
@@ -142,7 +143,7 @@ class TmdbImageLoader @Inject constructor(
                         }
                     }
 
-                    loadImagesOnMainThread(traktId, episodeImages, posterImageView, backdropImageView)
+                    loadImagesOnMainThread(episodeImages, ImageItemType.EPISODE, posterImageView, backdropImageView)
                 }
             }
         }
@@ -339,8 +340,8 @@ class TmdbImageLoader @Inject constructor(
     }
 
     private fun loadImagesOnMainThread(
-        traktId: Int,
         image: Image,
+        imageItemType: ImageItemType,
         posterImageView: ImageView,
         backdropImageView: ImageView?
     ) {
@@ -348,13 +349,22 @@ class TmdbImageLoader @Inject constructor(
             if (image.poster_path != null) {
                 glide
                     .load(AppConstants.TMDB_POSTER_URL + image.poster_path)
+                    .override(120, 250)
                     .into(posterImageView)
-            }
+            } else {
+                when(imageItemType) {
+                    ImageItemType.MOVIE -> { posterImageView.setImageResource(R.drawable.ic_baseline_local_movies_24) }
+                    ImageItemType.SHOW ->  { posterImageView.setImageResource(R.drawable.ic_baseline_tv_24) }
+                    ImageItemType.EPISODE ->  { posterImageView.setImageResource(R.drawable.ic_baseline_tv_24) }
+                    ImageItemType.PERSON ->  { posterImageView.setImageResource(R.drawable.ic_baseline_person_24) }
+                }            }
 
             if (image.backdrop_path != null && backdropImageView != null) {
                 glide
                     .load(AppConstants.TMDB_POSTER_URL + image.backdrop_path)
                     .into(backdropImageView)
+            } else {
+                backdropImageView?.setImageDrawable(null)
             }
         }
     }

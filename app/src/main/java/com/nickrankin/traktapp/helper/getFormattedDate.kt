@@ -7,7 +7,7 @@ import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 import java.util.*
 
-fun getFormattedDate(date: OffsetDateTime, datePattern: String?, timePattern: String?): String {
+fun getFormattedDate(date: OffsetDateTime, datePattern: String?, timePattern: String?): String {3
     return date.atZoneSameInstant(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern(datePattern + " " + timePattern))
 }
 

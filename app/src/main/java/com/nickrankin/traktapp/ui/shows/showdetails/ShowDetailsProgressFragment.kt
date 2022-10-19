@@ -139,13 +139,14 @@ class ShowDetailsProgressFragment: Fragment(), IOnStatistcsRefreshListener {
     }
 
     override fun onRefresh(isRefreshing: Boolean) {
-        if(this.isAdded && isRefreshing) {
-            progressBar.visibility = View.VISIBLE
-            progressBar.bringToFront()
+        if(this.isAdded) {
+            if(isRefreshing) {
+                progressBar.visibility = View.VISIBLE
+                progressBar.bringToFront()
+            }
         } else {
             progressBar.visibility = View.GONE
         }
-
     }
 
 

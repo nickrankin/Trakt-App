@@ -10,6 +10,7 @@ import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.networkBoundResource
+import com.nickrankin.traktapp.repo.movies.watched.WatchedMoviesRemoteMediator
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.trakt5.entities.HistoryEntry
 import com.uwetrottmann.trakt5.entities.SyncItems
@@ -29,7 +30,7 @@ class WatchedEpisodesRepository @Inject constructor(private val traktApi: TraktA
 
     @OptIn(ExperimentalPagingApi::class)
     fun watchedEpisodes(shouldRefresh: Boolean) = Pager(
-        config = PagingConfig(8),
+        config = PagingConfig(pageSize = WatchedEpisodesRemoteMediator.PAGE_LIMIT, initialLoadSize =  WatchedMoviesRemoteMediator.PAGE_LIMIT*3),
         remoteMediator = WatchedEpisodesRemoteMediator(traktApi, shouldRefresh, showsDatabase, sharedPreferences)
     ) {
         showsDatabase.watchedEpisodesDao().getWatchedEpisodes()

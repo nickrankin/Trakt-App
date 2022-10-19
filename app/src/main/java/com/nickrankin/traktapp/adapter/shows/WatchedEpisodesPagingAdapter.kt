@@ -1,74 +1,63 @@
 package com.nickrankin.traktapp.adapter.shows
 
-import android.annotation.SuppressLint
 import android.content.SharedPreferences
-import android.graphics.drawable.InsetDrawable
-import android.os.Build
-import android.util.Log
-import android.util.TypedValue
-import android.view.LayoutInflater
-import android.view.MenuItem
 import android.view.View
-import android.view.ViewGroup
-import androidx.appcompat.view.menu.MenuBuilder
-import androidx.appcompat.widget.PopupMenu
-import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import at.blogc.android.views.ExpandableTextView
-import com.bumptech.glide.RequestManager
-import com.nickrankin.traktapp.R
-import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
+import com.nickrankin.traktapp.adapter.AdaptorActionControls
+import com.nickrankin.traktapp.adapter.MediaEntryBasePagingAdapter
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisodeAndStats
-import com.nickrankin.traktapp.databinding.WatchedEpisodeEntryListItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
-import com.nickrankin.traktapp.helper.ImageItemType
 import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.helper.getFormattedDate
-import org.threeten.bp.ZoneId
-import org.threeten.bp.format.DateTimeFormatter
 
 private const val TAG = "WatchedEpisodesPagingAd"
-class WatchedEpisodesPagingAdapter(private val sharedPreferences: SharedPreferences, private val tmdbImageLoader: TmdbImageLoader, private val callback: (selectedShow: WatchedEpisodeAndStats?, action: Int) -> Unit): PagingDataAdapter<WatchedEpisodeAndStats, WatchedEpisodesPagingAdapter.WatchedEpisodeViewHolder>(COMPARATOR) {
+class WatchedEpisodesPagingAdapter(controls: AdaptorActionControls<WatchedEpisodeAndStats>, private val sharedPreferences: SharedPreferences, private val tmdbImageLoader: TmdbImageLoader): MediaEntryBasePagingAdapter<WatchedEpisodeAndStats>(controls, COMPARATOR) {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): WatchedEpisodeViewHolder {
-        return WatchedEpisodeViewHolder(WatchedEpisodeEntryListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
-    }
-
-    override fun onBindViewHolder(holder: WatchedEpisodeViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        super.onBindViewHolder(holder, position)
         val currentItem = getItem(position)
 
-        holder.bindings.apply {
-            // clear poster value to prevent flickering overlapping
-            watchedentryitemPoster.setImageDrawable(null)
-            watchedentryitemBackdrop.setImageDrawable(null)
+        when(holder) {
+            is PosterViewHolder -> {
+                holder.bindings.apply {
+                    itemTitle.text = "${currentItem?.watchedEpisode?.show_title} (S${currentItem?.watchedEpisode?.episode_season}E${currentItem?.watchedEpisode?.episode_number})"
 
-            watchedentryitemTitle.text = currentItem?.watchedEpisode?.episode_title
-            watchedentryitemShowTitle.text = currentItem?.watchedEpisode?.show_title
-            watchedentryitemSeasonEpisodeNumber.text = "Season ${currentItem?.watchedEpisode?.episode_season}, Episode ${currentItem?.watchedEpisode?.episode_number}"
+                    tmdbImageLoader.loadEpisodeImages(currentItem?.watchedEpisode?.episode_trakt_id ?: 0, currentItem?.watchedEpisode?.show_tmdb_id ?: 0, currentItem?.watchedEpisode?.show_trakt_id ?: 0,
+                        currentItem?.watchedEpisode?.episode_season, currentItem?.watchedEpisode?.episode_number, currentItem?.watchedEpisode?.show_title ?: "", currentItem?.watchedEpisode?.language, true, itemPoster, null)
 
-
-            if(currentItem?.watchedEpisode?.watched_at != null) {
-                watchedentryitemWatchedDate.text = "Watched: ${getFormattedDate(currentItem.watchedEpisode.watched_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))}"
-
+                    if(currentItem?.watchedEpisode?.watched_at != null) {
+                        itemTimestamp.visibility = View.VISIBLE
+                        itemTimestamp.text = "Watched: ${getFormattedDate(currentItem.watchedEpisode.watched_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))}"
+                    }
+                }
             }
+            is CardViewHolder -> {
+                holder.bindings.apply {
+
+                    itemTitle.text = currentItem?.watchedEpisode?.episode_title
+                    itemSubTitle.visibility = View.VISIBLE
+                    itemSubTitle.text = "${currentItem?.watchedEpisode?.show_title} - (S${currentItem?.watchedEpisode?.episode_season}E${currentItem?.watchedEpisode?.episode_number})"
+
+                    itemOverview.text = currentItem?.watchedEpisode?.episode_overview
 
 
-            tmdbImageLoader.loadEpisodeImages(currentItem?.watchedEpisode?.episode_trakt_id ?: 0, currentItem?.watchedEpisode?.show_tmdb_id ?: 0, currentItem?.watchedEpisode?.show_trakt_id ?: 0,
-                currentItem?.watchedEpisode?.episode_season, currentItem?.watchedEpisode?.episode_number, currentItem?.watchedEpisode?.show_title ?: "", currentItem?.watchedEpisode?.language, true, watchedentryitemPoster, watchedentryitemBackdrop)
+                    if(currentItem?.watchedEpisode?.watched_at != null) {
+                        itemWatchedDate.visibility = View.VISIBLE
+                        itemWatchedDate.text = "Watched: ${getFormattedDate(currentItem.watchedEpisode.watched_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))}"
+                    }
 
-            watchedentryitemOverview.setOnClickListener { v ->
-                val expandableTextView = v as ExpandableTextView
 
-                expandableTextView.toggle()
+                    tmdbImageLoader.loadEpisodeImages(currentItem?.watchedEpisode?.episode_trakt_id ?: 0, currentItem?.watchedEpisode?.show_tmdb_id ?: 0, currentItem?.watchedEpisode?.show_trakt_id ?: 0,
+                        currentItem?.watchedEpisode?.episode_season, currentItem?.watchedEpisode?.episode_number, currentItem?.watchedEpisode?.show_title ?: "", currentItem?.watchedEpisode?.language, true, itemPoster, itemBackdropImageview)
+
+                }
             }
-
-            root.setOnClickListener { callback(currentItem, ACTION_NAVIGATE_EPISODE) }
         }
 
-    }
 
-    inner class WatchedEpisodeViewHolder(val bindings: WatchedEpisodeEntryListItemBinding): RecyclerView.ViewHolder(bindings.root)
+
+    }
 
     companion object {
         const val ACTION_NAVIGATE_SHOW = 0

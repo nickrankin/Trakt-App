@@ -3,21 +3,26 @@ package com.nickrankin.traktapp.ui.movies
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.ProgressBar
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.google.android.flexbox.FlexDirection
+import com.google.android.flexbox.FlexboxLayoutManager
+import com.google.android.flexbox.JustifyContent
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.R
+import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.adapter.movies.TrendingMoviesAdaptor
 import com.nickrankin.traktapp.databinding.FragmentTrendingMoviesBinding
 import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.helper.switchRecyclerViewLayoutManager
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.movies.TrendingMoviesViewModel
 import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
@@ -52,6 +57,7 @@ class TrendingMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setHasOptionsMenu(true)
 
         swipeLayout = bindings.trendingmoviesfragmentSwipeLayout
         swipeLayout.setOnRefreshListener(this)
@@ -61,7 +67,15 @@ class TrendingMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
         updateTitle("Trending Movies")
 
         initRecycler()
+        getViewType()
+
         getTrendingMovies()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        inflater.inflate(R.menu.collected_filter_menu, menu)
+        super.onCreateOptionsMenu(menu, inflater)
+
     }
 
     private fun getTrendingMovies() {
@@ -113,7 +127,7 @@ class TrendingMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
     private fun initRecycler() {
         recyclerView = bindings.trendingmoviesfragmentRecyclerview
 
-        val lm = LinearLayoutManager(requireContext())
+        switchRecyclerViewLayoutManager(requireContext(), recyclerView, MediaEntryBaseAdapter.VIEW_TYPE_POSTER)
 
         adapter = TrendingMoviesAdaptor(tmdbPosterImageLoader, callback = { trendingMovie ->
             val intent = Intent(requireContext(), MovieDetailsActivity::class.java)
@@ -129,8 +143,36 @@ class TrendingMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
 
         })
 
-        recyclerView.layoutManager = lm
         recyclerView.adapter = adapter
+    }
+
+    private fun getViewType() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.viewType.collectLatest { viewType ->
+                adapter.switchView(viewType)
+
+                switchRecyclerViewLayoutManager(requireContext(), recyclerView, viewType)
+
+
+                recyclerView.scrollToPosition(0)
+            }
+        }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+
+        when(item.itemId) {
+            R.id.collectedfiltermenu_switch_layout -> {
+                lifecycleScope.launchWhenStarted {
+                    viewModel.switchViewType()
+                }
+            }
+            else -> {
+                Log.e(TAG, "onOptionsItemSelected: Invalid menu item ${item.itemId}", )
+            }
+        }
+
+        return false
     }
 
     override fun onStart() {

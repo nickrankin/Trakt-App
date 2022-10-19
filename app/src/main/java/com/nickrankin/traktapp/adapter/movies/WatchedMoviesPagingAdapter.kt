@@ -10,6 +10,8 @@ import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.LinearLayout
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.appcompat.widget.PopupMenu
 import androidx.paging.PagingDataAdapter
@@ -18,6 +20,8 @@ import androidx.recyclerview.widget.RecyclerView
 import at.blogc.android.views.ExpandableTextView
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.R
+import com.nickrankin.traktapp.adapter.AdaptorActionControls
+import com.nickrankin.traktapp.adapter.MediaEntryBasePagingAdapter
 import com.nickrankin.traktapp.adapter.shows.ICON_MARGIN
 import com.nickrankin.traktapp.dao.movies.model.WatchedMovie
 import com.nickrankin.traktapp.dao.movies.model.WatchedMovieAndStats
@@ -27,62 +31,84 @@ import com.nickrankin.traktapp.databinding.WatchedMovieEntryListItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.ImageItemType
 import com.nickrankin.traktapp.helper.TmdbImageLoader
+import com.nickrankin.traktapp.helper.getFormattedDate
 import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 
 private const val TAG = "WatchedEpisodesPagingAd"
-class WatchedMoviesPagingAdapter(private val sharedPreferences: SharedPreferences, private val tmdbImageLoader: TmdbImageLoader,
-                                 private val callback: (selectedMovie: WatchedMovie?, action: Int) -> Unit): PagingDataAdapter<WatchedMovieAndStats, WatchedMoviesPagingAdapter.WatchedMovieViewHolder>(COMPARATOR) {
+class WatchedMoviesPagingAdapter(controls: AdaptorActionControls<WatchedMovieAndStats>, private val sharedPreferences: SharedPreferences, private val glide: RequestManager, private val tmdbImageLoader: TmdbImageLoader): MediaEntryBasePagingAdapter<WatchedMovieAndStats>(controls, COMPARATOR) {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): WatchedMovieViewHolder {
-        return WatchedMovieViewHolder(WatchedMovieEntryListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
-    }
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        super.onBindViewHolder(holder, holder.absoluteAdapterPosition)
 
-    override fun onBindViewHolder(holder: WatchedMovieViewHolder, position: Int) {
-        val currentItem = getItem(position)
+        val currentItem = getItem(holder.absoluteAdapterPosition)
 
         val traktId = currentItem?.watchedMovie?.trakt_id ?: 0
 
-        holder.bindings.apply {
-            // clear poster value to prevent flickering overlapping
-            watchedentryitemPoster.setImageDrawable(null)
+        when(holder) {
+            is CardViewHolder -> {
+                holder.bindings.apply {
 
-            // The ExpandingTextView should be collapsed always unless explicitly toggled. This is needed due to the recycling of the Views
-            watchedentryitemOverview.collapse()
+                    itemTitle.text = currentItem?.watchedMovie?.title
+                    itemOverview.text = currentItem?.watchedMovie?.overview
+                    if(currentItem?.watchedMovie?.watched_at != null) {
+                        itemWatchedDate.text = "Watched: " + getFormattedDate(currentItem.watchedMovie.watched_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)+ " ", sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))
+                    }
+                    tmdbImageLoader.loadImages(currentItem?.watchedMovie?.trakt_id ?: 0, ImageItemType.MOVIE,currentItem?.watchedMovie?.tmdb_id ?: 0,  currentItem?.watchedMovie?.title, null, currentItem?.watchedMovie?.language,true, itemPoster, itemBackdropImageview)
 
-            watchedentryitemTitle.text = currentItem?.watchedMovie?.title
-            watchedentryitemOverview.text = currentItem?.watchedMovie?.overview
-            watchedentryitemWatchedDate.text = "Watched: " + currentItem?.watchedMovie?.watched_at?.atZoneSameInstant(
-                ZoneId.systemDefault())?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)+ " " + sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT)))
+                    val ratingStat = currentItem?.ratedMovieStats
 
-            tmdbImageLoader.loadImages(currentItem?.watchedMovie?.trakt_id ?: 0, ImageItemType.MOVIE,currentItem?.watchedMovie?.tmdb_id ?: 0,  currentItem?.watchedMovie?.title, null, currentItem?.watchedMovie?.language,true, watchedentryitemPoster, watchedentryitemBackdropImageview)
-
-            val ratingStat = currentItem?.ratedMovieStats
-
-            if(ratingStat != null) {
-                watchedentryitemRating.visibility = View.VISIBLE
-                watchedentryitemRating.text = "You rated: ${ratingStat.rating}"
-            } else {
-                watchedentryitemRating.visibility = View.GONE
+//                    if(ratingStat != null) {
+//                        watchedentryitemRating.visibility = View.VISIBLE
+//                        watchedentryitemRating.text = "You rated: ${ratingStat.rating}"
+//                    } else {
+//                        watchedentryitemRating.visibility = View.GONE
+//                    }
+                }
 
             }
+            is PosterViewHolder -> {
+                holder.bindings.apply {
+                    itemTitle.text = currentItem?.watchedMovie?.title
 
-            watchedentryitemOverview.setOnClickListener {
-                (it as ExpandableTextView).apply {
-                    toggle()
+                    if(controls?.buttonIconResource != null) {
+                        itemIcon.visibility = View.VISIBLE
+                        itemIcon.setImageDrawable(controls.buttonIconResource)
+
+                    }
+
+                    if(currentItem?.watchedMovie?.watched_at != null) {
+                        itemTimestamp.visibility = View.VISIBLE
+                        itemTimestamp.text = getFormattedDate(currentItem.watchedMovie.watched_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)+ " ", sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))
+                    }
+
+                    tmdbImageLoader.loadImages(currentItem?.watchedMovie?.trakt_id ?: 0, ImageItemType.MOVIE,currentItem?.watchedMovie?.tmdb_id ?: 0,  currentItem?.watchedMovie?.title, null, currentItem?.watchedMovie?.language,true, itemPoster, null)
+
                 }
             }
-
-            root.setOnClickListener { callback(currentItem?.watchedMovie, ACTION_NAVIGATE_MOVIE) }
-
-            watchedentryitemRemovePlayBtn.setOnClickListener { callback(currentItem?.watchedMovie, ACTION_REMOVE_HISTORY) }
+            else -> {
+                Log.e(TAG, "onBindViewHolder: Invalid ViewHolder ${holder.javaClass.name}", )
+            }
         }
-
     }
-
-
-
-    inner class WatchedMovieViewHolder(val bindings: WatchedMovieEntryListItemBinding): RecyclerView.ViewHolder(bindings.root)
+//
+//    override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
+////        super.onViewRecycled(holder)
+//        Log.e(TAG, "onViewRecycled: Recyclered $holder", )
+//    }
+//
+//
+//
+//    override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
+//        super.onViewDetachedFromWindow(holder)
+//
+//        glide.clear(holder.itemView.findViewById<ImageView>(R.id.item_poster))
+//
+//        //(holder as MediaEntryBasePagingAdapter<*>.CardViewHolder).bindings = null
+//
+//
+//       // Log.e(TAG, "onViewDetachedFromWindow: Detached ${(holder as MediaEntryBasePagingAdapter<*>.PosterViewHolder).bindings.itemTitle.text} at pos ${holder.absoluteAdapterPosition}", )
+//    }
 
     companion object {
         const val ACTION_NAVIGATE_MOVIE = 0

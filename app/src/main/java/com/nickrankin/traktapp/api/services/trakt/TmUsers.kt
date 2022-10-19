@@ -271,7 +271,7 @@ interface TmUsers {
         @Path("type") type: HistoryType,
         @Query("page") page: Int,
         @Query("limit") limit: Int,
-        @Query(value = "extended", encoded = true) extended: Extended,
+        @Query(value = "extended", encoded = true) extended: Extended?,
         @Query("start_at") startAt: OffsetDateTime?,
         @Query("end_at") endAt: OffsetDateTime?
     ): List<HistoryEntry>

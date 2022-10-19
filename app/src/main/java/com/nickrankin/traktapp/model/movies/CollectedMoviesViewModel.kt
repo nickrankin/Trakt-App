@@ -3,9 +3,15 @@ package com.nickrankin.traktapp.model.movies
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
+import com.nickrankin.traktapp.adapter.movies.CollectedMoviesAdapter
 import com.nickrankin.traktapp.dao.movies.model.CollectedMovie
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.model.BaseViewModel
+import com.nickrankin.traktapp.model.ViewSwitcherViewModel
+import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
 import com.nickrankin.traktapp.repo.movies.collected.CollectedMoviesRepository
+import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsActionButtonsRepository
 import com.nickrankin.traktapp.repo.stats.MovieStatsRepository
 import com.nickrankin.traktapp.repo.stats.StatsRepository
 import com.uwetrottmann.trakt5.enums.SortBy
@@ -18,14 +24,10 @@ import javax.inject.Inject
 
 private const val TAG = "CollectedMoviesViewMode"
 @HiltViewModel
-class CollectedMoviesViewModel @Inject constructor(private val repository: CollectedMoviesRepository, private val movieStatsRepository: MovieStatsRepository): ViewModel() {
+class CollectedMoviesViewModel @Inject constructor(private val repository: CollectedMoviesRepository, private val movieStatsRepository: MovieStatsRepository): ViewSwitcherViewModel() {
 
     private val sortingChangeChannel = Channel<String>()
     private val sortingChange = sortingChangeChannel.receiveAsFlow()
-        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
-
-    private val refreshEventChannel = Channel<Boolean>()
-    private val refreshEvent = refreshEventChannel.receiveAsFlow()
         .shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
     private var currentSorting = SORT_COLLECTED_AT
@@ -89,15 +91,11 @@ class CollectedMoviesViewModel @Inject constructor(private val repository: Colle
         }
     }
 
-    fun onStart() {
-        viewModelScope.launch {
-            refreshEventChannel.send(false)
-        }
-    }
+    suspend fun deleteCollectedMovie(traktId: Int) = repository.removeCollectedMovie(traktId)
 
-    fun onRefresh() {
+    override fun onRefresh() {
+        super.onRefresh()
         viewModelScope.launch {
-            refreshEventChannel.send(true)
             movieStatsRepository.refreshCollectedMovieStats()
         }
     }

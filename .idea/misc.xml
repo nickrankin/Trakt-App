@@ -13,6 +13,9 @@
         <entry key="app/src/main/res/drawable/ic_baseline_calendar_month_24.xml" value="0.5515" />
         <entry key="app/src/main/res/drawable/ic_baseline_expand_circle_down_24.xml" value="0.5205" />
         <entry key="app/src/main/res/drawable/ic_baseline_filter_list_24.xml" value="0.4995" />
+        <entry key="app/src/main/res/drawable/ic_baseline_play_circle_24.xml" value="0.6185" />
+        <entry key="app/src/main/res/drawable/ic_baseline_remove_red_eye_24.xml" value="0.6185" />
+        <entry key="app/src/main/res/drawable/ic_baseline_replay_24.xml" value="0.6185" />
         <entry key="app/src/main/res/drawable/ic_baseline_star_rate_24.xml" value="0.5515" />
         <entry key="app/src/main/res/drawable/ic_baseline_visibility_off_24.xml" value="0.4995" />
         <entry key="app/src/main/res/drawable/ic_home_black_24dp.xml" value="0.4995" />
@@ -99,6 +102,9 @@
         <entry key="app/src/main/res/layout/tracked_show_list_item.xml" value="0.5927083333333333" />
         <entry key="app/src/main/res/layout/trakt_list_item.xml" value="0.590625" />
         <entry key="app/src/main/res/layout/trending_movie_entry_list_item.xml" value="0.5911458333333334" />
+        <entry key="app/src/main/res/layout/view_card_item.xml" value="0.4142796066695169" />
+        <entry key="app/src/main/res/layout/view_card_layout.xml" value="0.4313809320222317" />
+        <entry key="app/src/main/res/layout/view_poster_item.xml" value="0.4322359982898675" />
         <entry key="app/src/main/res/layout/watched_button_layout.xml" value="0.5234375" />
         <entry key="app/src/main/res/layout/watched_episode_entry_list_item.xml" value="0.4365942028985507" />
         <entry key="app/src/main/res/layout/watched_history_item_layout.xml" value="0.5645833333333333" />
@@ -106,12 +112,14 @@
         <entry key="app/src/main/res/menu/bottom_nav_menu.xml" value="0.58125" />
         <entry key="app/src/main/res/menu/calendar_shows_filter_menu.xml" value="0.48489583333333336" />
         <entry key="app/src/main/res/menu/collected_filter_menu.xml" value="0.5786458333333333" />
+        <entry key="app/src/main/res/menu/collected_popup_menu.xml" value="0.6934587430525866" />
         <entry key="app/src/main/res/menu/collected_shows_popup_menu.xml" value="0.5151041666666667" />
         <entry key="app/src/main/res/menu/entity_details_menu.xml" value="0.5479166666666667" />
         <entry key="app/src/main/res/menu/main_menu.xml" value="0.5442708333333334" />
         <entry key="app/src/main/res/menu/nav_drawer.xml" value="0.5927083333333333" />
         <entry key="app/src/main/res/menu/settings_menu.xml" value="0.5234375" />
         <entry key="app/src/main/res/menu/show_tracking_menu.xml" value="0.5911458333333334" />
+        <entry key="app/src/main/res/menu/suggested_popup_menu.xml" value="0.5113296280461735" />
         <entry key="app/src/main/res/menu/tracked_filter_menu.xml" value="0.5927083333333333" />
         <entry key="app/src/main/res/menu/upcoming_shows_popup_menu.xml" value="0.6067708333333334" />
         <entry key="app/src/main/res/menu/watched_movies_popup_menu.xml" value="0.5588541666666667" />

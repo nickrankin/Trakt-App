@@ -4,18 +4,20 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
+import com.google.android.flexbox.FlexDirection
+import com.google.android.flexbox.FlexboxLayoutManager
+import com.google.android.flexbox.JustifyContent
 import com.nickrankin.traktapp.adapter.shows.RecommendedShowsAdapter
 import com.nickrankin.traktapp.databinding.FragmentShowsRecommendedBinding
 import com.nickrankin.traktapp.model.shows.RecommendedShowsViewModel
@@ -23,6 +25,9 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.R
+import com.nickrankin.traktapp.adapter.AdaptorActionControls
+import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.ui.auth.AuthActivity
@@ -40,7 +45,6 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
 
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
     private lateinit var progressBar: ProgressBar
-    private lateinit var layoutManager: LinearLayoutManager
     private lateinit var adapter: RecommendedShowsAdapter
     private lateinit var recyclerView: RecyclerView
 
@@ -52,6 +56,8 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        setHasOptionsMenu(true)
 
         swipeRefreshLayout = bindings.fragmentreccomendedshowsSwipeLayout
         swipeRefreshLayout.setOnRefreshListener(this)
@@ -69,64 +75,60 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
         }
 
         initRecycler()
+        getViewType()
+
         getSuggestedShows()
         getEvents()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        inflater.inflate(R.menu.collected_filter_menu, menu)
+        super.onCreateOptionsMenu(menu, inflater)
+
     }
 
     private fun initRecycler() {
         recyclerView = bindings.fragmentreccomendedshowsRecyclerview
 
-        layoutManager = LinearLayoutManager(requireContext())
+        switchRecyclerViewLayoutManager(requireContext(), recyclerView, MediaEntryBaseAdapter.VIEW_TYPE_POSTER)
 
-        adapter = RecommendedShowsAdapter(tmdbImageLoader, callback = { selectedShow, action, pos ->
-
-            when(action) {
-                RecommendedShowsAdapter.ACTION_VIEW -> {
-                    navigateToShow(
-                        selectedShow?.ids?.trakt ?: 0,
-                        selectedShow?.ids?.tmdb ?: 0,
-                        selectedShow?.title)
-                }
-                RecommendedShowsAdapter.ACTION_REMOVE -> {
-                    deleteRecommendation(selectedShow, pos)
-                }
-                else -> {
-                    navigateToShow(
-                        selectedShow?.ids?.trakt ?: 0,
-                        selectedShow?.ids?.tmdb ?: 0,
-                        selectedShow?.title)
+        adapter = RecommendedShowsAdapter(tmdbImageLoader,
+            AdaptorActionControls(
+            context?.getDrawable(R.drawable.ic_baseline_do_disturb_24), "Not Interested", false, R.menu.suggested_popup_menu,
+            entrySelectedCallback = {selectedItem ->
+                navigateToShow(
+                    selectedItem.ids?.trakt ?: 0,
+                    selectedItem.ids?.tmdb ?: 0,
+                    selectedItem.title)
+            },
+            buttonClickedCallback = { selectedShow -> 
+                deleteRecommendation(selectedShow)
+            },
+            menuItemSelectedCallback = { selectedShow, menuItem ->
+                when(menuItem) {
+                    R.id.suggestedpopupmenu_dismiss_suggestion -> {
+                        deleteRecommendation(selectedShow)
+                    }
+                    else -> {
+                        Log.e(TAG, "initRecycler: Invalid menu item $menuItem", )
+                    }
                 }
             }
-        })
+        ))
 
-        recyclerView.layoutManager = layoutManager
         recyclerView.adapter = adapter
     }
 
-    private fun deleteRecommendation(show: Show?, position: Int) {
-        if(show == null) {
-            return
+    private fun getViewType() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.viewType.collectLatest { viewType ->
+                adapter.switchView(viewType)
+
+                switchRecyclerViewLayoutManager(requireContext(), recyclerView, viewType)
+
+                recyclerView.scrollToPosition(0)
+            }
         }
-
-        val alertDialog = AlertDialog.Builder(requireContext())
-            .setTitle("Remove recommendation ${show.title}?")
-            .setMessage("Are you sure you want to remove recommendation ${show.title}?")
-            .setPositiveButton("Yes", DialogInterface.OnClickListener { dialogInterface, i ->
-                viewModel.removeFromSuggestions(show.ids?.trakt?.toString() ?: "")
-
-                val listCopy: MutableList<Show> = mutableListOf()
-                listCopy.addAll(adapter.currentList)
-                listCopy.removeAt(position)
-                adapter.submitList(listCopy)
-
-                dialogInterface.dismiss()
-            })
-            .setNegativeButton("No", DialogInterface.OnClickListener { dialogInterface, i ->
-                dialogInterface.dismiss()
-            })
-            .create()
-
-        alertDialog.show()
     }
 
     private fun getSuggestedShows() {
@@ -142,7 +144,9 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
                         }
 
                         progressBar.visibility = View.GONE
-                        adapter.submitList(data.data)
+
+                        // Create a new list to allow ListAdapters AsyncListDiffer checks to run https://stackoverflow.com/questions/69715381/diffutil-not-refreshing-view-in-observer-call-android-kotlin
+                        adapter.submitList(data.data?.toMutableList())
                     }
                     is Resource.Error -> {
                         if(swipeRefreshLayout.isRefreshing) {
@@ -166,6 +170,29 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
             }
         }
     }
+
+    private fun deleteRecommendation(show: Show?) {
+        if(show == null) {
+            return
+        }
+
+        val alertDialog = AlertDialog.Builder(requireContext())
+            .setTitle("Remove recommendation ${show.title}?")
+            .setMessage("Are you sure you want to remove recommendation ${show.title}?")
+            .setPositiveButton("Yes", DialogInterface.OnClickListener { dialogInterface, i ->
+                viewModel.removeFromSuggestions(show)
+
+
+                dialogInterface.dismiss()
+            })
+            .setNegativeButton("No", DialogInterface.OnClickListener { dialogInterface, i ->
+                dialogInterface.dismiss()
+            })
+            .create()
+
+        alertDialog.show()
+    }
+
 
     private fun getEvents() {
         lifecycleScope.launchWhenStarted {
@@ -195,10 +222,19 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
 
                     }
                     is RecommendedShowsViewModel.Event.RemoveSuggestionEvent -> {
-                        if(!event.removedSuccessfully) {
-                            event.t?.printStackTrace()
-                            displayMessageToast("Failed to remove suggestion. Error: ${event.t?.localizedMessage }", Toast.LENGTH_LONG)
-                        }
+                        when(event.removedSuccessfully) {
+                            is Resource.Loading -> {
+                                // Unused
+                            }
+                            is Resource.Success -> {
+                                // Unused
+                            }
+                            is Resource.Error -> {
+                                event.removedSuccessfully.error?.printStackTrace()
+                                displayMessageToast("Failed to remove suggestion. Error: ${event.removedSuccessfully.error?.localizedMessage }", Toast.LENGTH_LONG)
+                            }
+
+                            }
                     }
                 }
             }
@@ -238,6 +274,21 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
         // Inflate the layout for this fragment
         bindings = FragmentShowsRecommendedBinding.inflate(inflater)
         return bindings.root
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId) {
+            R.id.collectedfiltermenu_switch_layout -> {
+
+                lifecycleScope.launchWhenStarted {
+                    viewModel.switchViewType()
+                }
+            }
+            else -> {
+                Log.e(TAG, "onOptionsItemSelected: Invalid menu option ${item.itemId}", )
+            }
+        }
+        return false
     }
 
     companion object {

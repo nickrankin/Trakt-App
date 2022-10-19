@@ -2,57 +2,45 @@ package com.nickrankin.traktapp.ui.shows
 
 import android.content.DialogInterface
 import android.content.Intent
-import android.content.SharedPreferences
-import android.graphics.Canvas
-import android.graphics.Typeface
 import android.os.Bundle
-import android.os.CountDownTimer
 import android.util.Log
-import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.LoadState
-import androidx.paging.PagingSource
-import androidx.paging.RemoteMediator
-import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
-import com.google.android.material.snackbar.Snackbar
 import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.R
+import com.nickrankin.traktapp.adapter.AdaptorActionControls
+import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.adapter.shows.WatchedEpisodesLoadStateAdapter
 import com.nickrankin.traktapp.adapter.shows.WatchedEpisodesPagingAdapter
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
+import com.nickrankin.traktapp.dao.show.model.WatchedEpisodeAndStats
 import com.nickrankin.traktapp.databinding.FragmentWatchingBinding
 import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.shows.WatchedEpisodesViewModel
 import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
-import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
-import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.uwetrottmann.trakt5.entities.SyncItems
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 import javax.inject.Inject
 
 private const val TAG = "WatchingFragment"
 @AndroidEntryPoint
-class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, OnNavigateToShow, OnNavigateToEpisode {
+class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, OnNavigateToShow {
     
     private val viewModel by activityViewModels<WatchedEpisodesViewModel>()
 
@@ -60,7 +48,6 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
     private lateinit var swipeLayout: SwipeRefreshLayout
     private lateinit var progressBar: ProgressBar
     private lateinit var recyclerView: RecyclerView
-    private lateinit var layoutManager: LinearLayoutManager
     private lateinit var adapter: WatchedEpisodesPagingAdapter
 
     @Inject
@@ -82,6 +69,8 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
         swipeLayout = bindings.showwatchingfragmentSwipeRefreshLayout
         swipeLayout.setOnRefreshListener(this)
 
+        setHasOptionsMenu(true)
+
         progressBar = bindings.showwatchingfragmentProgressbar
 
         updateTitle("Watched Episodes")
@@ -89,11 +78,19 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
         initRecycler()
         collectEvents()
 
+        getViewState()
+
         if(!isLoggedIn) {
             handleLoggedOutState(this.id)
         }
 
         collectEpisodes()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        inflater.inflate(R.menu.collected_filter_menu, menu)
+        super.onCreateOptionsMenu(menu, inflater)
+
     }
 
     private fun collectEpisodes() {
@@ -145,31 +142,34 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
 
     private fun initRecycler() {
         recyclerView = bindings.showwatchingfragmentRecyclerview
-        layoutManager = LinearLayoutManager(context)
-        adapter = WatchedEpisodesPagingAdapter(sharedPreferences, tmdbImageLoader, callback = {selectedEpisodeAndStats, action ->
 
-            val selectedEpisode = selectedEpisodeAndStats?.watchedEpisode
+        switchRecyclerViewLayoutManager(requireContext(), recyclerView, MediaEntryBaseAdapter.VIEW_TYPE_POSTER)
 
-            when(action) {
-                WatchedEpisodesPagingAdapter.ACTION_NAVIGATE_EPISODE -> {
-                    navigateToEpisode(selectedEpisode?.show_trakt_id ?: 0,selectedEpisode?.show_tmdb_id, selectedEpisode?.episode_season ?: 0, selectedEpisode?.episode_number ?: 0, selectedEpisode?.language ?: "en")
+        adapter = WatchedEpisodesPagingAdapter(AdaptorActionControls(context?.getDrawable(R.drawable.ic_baseline_remove_red_eye_24),
+            "Remove This Play", true,
+            R.menu.watched_shows_popup_menu, entrySelectedCallback = { selectedEpisode ->
+                navigateToEpisode(selectedEpisode.watchedEpisode)
 
+            }, buttonClickedCallback = {selectedEpisode ->
+                removeFromWatchedHistory(selectedEpisode.watchedEpisode)
+            }, menuItemSelectedCallback = {selectedEpisode, menuSelected ->
+                when(menuSelected) {
+                    R.id.watchedshowspopup_nav_show -> {
+                        navigateToShow(selectedEpisode.watchedEpisode.show_trakt_id ?: 0, selectedEpisode.watchedEpisode.show_tmdb_id, selectedEpisode.watchedEpisode.show_title)
+
+                    }
+                    R.id.watchedshowspopup_nav_episode -> {
+                        navigateToEpisode(selectedEpisode.watchedEpisode)
+
+                    }
+                    R.id.watchedshowspopup_remove_show -> {
+                        removeFromWatchedHistory(selectedEpisode.watchedEpisode)
+                    }
+                    else -> {
+                        Log.e(TAG, "initRecycler: Invalid menu id $menuSelected", )
+                    }
                 }
-
-                WatchedEpisodesPagingAdapter.ACTION_NAVIGATE_SHOW -> {
-                    navigateToShow(selectedEpisode?.show_trakt_id ?: 0, selectedEpisode?.show_tmdb_id, selectedEpisode?.show_title)
-                }
-
-                WatchedEpisodesPagingAdapter.ACTION_REMOVE_HISTORY -> {
-                    removeFromWatchedHistory(selectedEpisode)
-                }
-
-                else -> {
-                    navigateToEpisode(selectedEpisode?.show_trakt_id ?: 0,selectedEpisode?.show_tmdb_id, selectedEpisode?.episode_season ?: 0, selectedEpisode?.episode_number ?: 0, selectedEpisode?.language ?: "en")
-                }
-            }
-        })
-        recyclerView.layoutManager = layoutManager
+            }),sharedPreferences, tmdbImageLoader)
 
         recyclerView.adapter = adapter.withLoadStateHeaderAndFooter(
             header = WatchedEpisodesLoadStateAdapter(adapter),
@@ -203,16 +203,20 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
         startActivity(intent)
     }
 
-    override fun navigateToEpisode(showTraktId: Int, showTmdbId: Int?, seasonNumber: Int, episodeNumber: Int, language: String?) {
+    private fun navigateToEpisode(selectedEpisode: WatchedEpisode?) {
+        if(selectedEpisode == null) {
+            Log.e(TAG, "navigateToEpisode: Selected Episode cannot be null", )
+            return
+        }
         val intent = Intent(context, EpisodeDetailsActivity::class.java)
 
         intent.putExtra(EpisodeDetailsActivity.EPISODE_DATA_KEY,
             EpisodeDataModel(
-                showTraktId,
-                showTmdbId,
-                seasonNumber,
-                episodeNumber,
-                language
+                selectedEpisode.show_trakt_id ?: 0,
+                selectedEpisode.show_tmdb_id,
+                selectedEpisode.episode_season ?: 0,
+                selectedEpisode.episode_number ?: 0,
+                selectedEpisode.language ?: "en"
             )
         )
 
@@ -254,6 +258,30 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
             //https://developer.android.com/reference/kotlin/androidx/paging/PagingDataAdapter#refresh()
             viewModel.onRefresh()
             //adapter.refresh()
+        }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId) {
+            R.id.collectedfiltermenu_switch_layout -> {
+                lifecycleScope.launchWhenStarted {
+                    viewModel.switchViewType()
+                }
+            }
+        }
+        return false
+    }
+
+    private fun getViewState() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.viewType.collectLatest { viewState ->
+                adapter.switchView(viewState)
+
+                switchRecyclerViewLayoutManager(requireContext(), recyclerView, viewState)
+
+                recyclerView.scrollToPosition(0)
+                adapter.notifyDataSetChanged()
+            }
         }
     }
 

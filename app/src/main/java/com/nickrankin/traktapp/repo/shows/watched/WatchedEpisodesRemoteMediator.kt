@@ -115,7 +115,7 @@ class WatchedEpisodesRemoteMediator(
                     UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "null")),
                     HistoryType.EPISODES,
                     page,
-                    15,
+                    PAGE_LIMIT,
                     Extended.FULL,
                     OffsetDateTime.now().minusYears(99),
                     OffsetDateTime.now()
@@ -211,6 +211,7 @@ class WatchedEpisodesRemoteMediator(
     }
     
     companion object {
+        const val PAGE_LIMIT = 25
         const val WATCHED_EPISODES_LAST_REFRESHED_KEY = "watched_episodes_last_refreshed"
         const val WATCHED_EPISODES_FORCE_REFRESH_KEY = "force_refresh_watched_episodes"
     }

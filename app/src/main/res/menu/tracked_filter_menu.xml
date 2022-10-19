@@ -18,6 +18,12 @@
             <item
                 android:id="@+id/trackedfiltermenu_tracked_at"
                 android:title="Tracked At" />
+
         </menu>
     </item>
+    <item
+        android:id="@+id/trackedfiltermenu_switch_layout"
+        android:title="Switch Layout"
+        android:icon="@drawable/ic_baseline_remove_red_eye_24"
+        app:showAsAction="ifRoom" />
 </menu>

@@ -36,7 +36,6 @@ class TraktApi(
         synchronized(this) {
             if (okHttpClient == null) {
                 val builder = OkHttpClient.Builder()
-                    .eventListener(OkHttpPerformanceEventListener())
                     .retryOnConnectionFailure(true)
                     .pingInterval(8, TimeUnit.SECONDS)
                     .connectTimeout(9, TimeUnit.SECONDS)
@@ -44,6 +43,7 @@ class TraktApi(
                     .writeTimeout(7, TimeUnit.SECONDS)
                     .connectionPool(ConnectionPool(1, 25, TimeUnit.SECONDS))
                 if (loggingOn) {
+                    builder.eventListener(OkHttpPerformanceEventListener())
                     builder.addInterceptor(getLogger())
                 }
                 setOkHttpClientDefaults(builder)

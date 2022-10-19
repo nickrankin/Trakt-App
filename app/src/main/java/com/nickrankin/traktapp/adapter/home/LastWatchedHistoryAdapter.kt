@@ -13,8 +13,7 @@ import com.nickrankin.traktapp.dao.movies.model.WatchedMovie
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
 import com.nickrankin.traktapp.dao.stats.model.WatchedEpisodeStats
 import com.nickrankin.traktapp.dao.stats.model.WatchedMoviesStats
-import com.nickrankin.traktapp.databinding.HistoryPosterItemBinding
-import com.nickrankin.traktapp.databinding.MoviePosterItemBinding
+import com.nickrankin.traktapp.databinding.ViewPosterItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.ImageItemType
 import com.nickrankin.traktapp.helper.TmdbImageLoader
@@ -39,7 +38,7 @@ class LastWatchedHistoryAdapter<T>(
         viewType: Int
     ): LastWatchedHistoryAdapter<T>.WatchedHistoryVH {
         return WatchedHistoryVH(
-            HistoryPosterItemBinding.inflate(
+            ViewPosterItemBinding.inflate(
                 LayoutInflater.from(
                     parent.context
                 ), parent, false
@@ -55,11 +54,11 @@ class LastWatchedHistoryAdapter<T>(
 
             when (currentItem) {
                 is WatchedMoviesStats -> {
-                    watcheditemTimestamp.text = "Watched: " + currentItem.last_watched_at?.atZoneSameInstant(
+                    itemTimestamp.text = "Watched: " + currentItem.last_watched_at?.atZoneSameInstant(
                         ZoneId.systemDefault())?.format(
                         DateTimeFormatter.ofPattern(AppConstants.DEFAULT_DATE_TIME_FORMAT))
 
-                    movieitemTitle.text = currentItem.title
+                    itemTitle.text = currentItem.title
                     tmdbImageLoader.loadImages(
                         currentItem.trakt_id,
                         ImageItemType.MOVIE,
@@ -68,15 +67,17 @@ class LastWatchedHistoryAdapter<T>(
                         null,
                         null,
                         true,
-                        movieitemPoster,
+                        itemPoster,
                         null
                     )
                 }
 
                 is WatchedEpisodeStats -> {
-                    movieitemTitle.text = "Season ${currentItem.season} Episode ${currentItem.episode}"
+                    itemTitle.text = "Season ${currentItem.season} Episode ${currentItem.episode}"
 
-                    watcheditemTimestamp.text = "Watched: " + currentItem.last_watched_at?.atZoneSameInstant(
+                    itemTimestamp.visibility = View.VISIBLE
+
+                    itemTimestamp.text = "Watched: " + currentItem.last_watched_at?.atZoneSameInstant(
                         ZoneId.systemDefault())?.format(
                         DateTimeFormatter.ofPattern(AppConstants.DEFAULT_DATE_TIME_FORMAT))
 
@@ -88,7 +89,7 @@ class LastWatchedHistoryAdapter<T>(
                         null,
                         null,
                         true,
-                        movieitemPoster,
+                        itemPoster,
                         null
                     )
 
@@ -101,7 +102,7 @@ class LastWatchedHistoryAdapter<T>(
         }
     }
 
-    inner class WatchedHistoryVH(val bindings: HistoryPosterItemBinding) :
+    inner class WatchedHistoryVH(val bindings: ViewPosterItemBinding) :
         BaseViewHolder(bindings.root)
 
     // Workaround to support variable height Cast Person elements in the horizontal RecyclerView.

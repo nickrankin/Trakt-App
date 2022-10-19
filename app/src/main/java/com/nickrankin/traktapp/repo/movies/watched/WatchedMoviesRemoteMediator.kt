@@ -42,6 +42,8 @@ class WatchedMoviesRemoteMediator(
 ) : RemoteMediator<Int, WatchedMovieAndStats>() {
     val watchedMoviesDao = moviesDatabase.watchedMoviesDao()
     private val remoteKeyDao = moviesDatabase.watchedMoviePageKeyDao()
+    private val watchedMovies: MutableList<WatchedMovie> = mutableListOf()
+
     override suspend fun initialize(): InitializeAction {
         return when {
             shouldRefresh -> {
@@ -104,9 +106,9 @@ class WatchedMoviesRemoteMediator(
             }
             
             if(loadType == LoadType.REFRESH) {
-//                watchedMoviesMediatorDatabase.withTransaction {
-//                    watchedMoviesDao.deleteAllMovies()
-//                }
+                moviesDatabase.withTransaction {
+                    watchedMoviesDao.deleteAllMovies()
+                }
                 // Save last refresh date and reset the FORCED refresh flag
                 sharedPreferences.edit()
                     .putString(WATCHED_MOVIES_LAST_REFRESHED_KEY, OffsetDateTime.now().toString())
@@ -114,13 +116,13 @@ class WatchedMoviesRemoteMediator(
                     .apply()
             }
 
-            val data = convertHistoryEntries(
+            var data = convertHistoryEntries(
                 traktApi.tmUsers().history(
                     UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "null")),
                     HistoryType.MOVIES,
                     page,
-                    15,
-                    Extended.FULL,
+                    PAGE_LIMIT,
+                    null,
                     null,
                     null
                 )
@@ -136,11 +138,15 @@ class WatchedMoviesRemoteMediator(
             }
 
             moviesDatabase.withTransaction {
+                Log.e(TAG, "load: Begin Insrt", )
                 remoteKeyDao.insert(keys)
                 watchedMoviesDao.insert(data)
+
+                Log.e(TAG, "load: End Insrt", )
+
+                data = emptyList()
+
             }
-
-
 
             return MediatorResult.Success(endOfPaginationReached = endOfPaginationReached)
         } catch (e: IOException) {
@@ -192,8 +198,7 @@ class WatchedMoviesRemoteMediator(
 
 
     private fun convertHistoryEntries(historyEntries: List<HistoryEntry>): List<WatchedMovie> {
-        val watchedMovies: MutableList<WatchedMovie> = mutableListOf()
-
+        watchedMovies.clear()
         historyEntries.map { entry ->
             watchedMovies.add(
                 WatchedMovie(
@@ -211,6 +216,7 @@ class WatchedMoviesRemoteMediator(
     }
     
     companion object {
+        const val PAGE_LIMIT = 25
         const val WATCHED_MOVIES_LAST_REFRESHED_KEY = "watched_movies_last_refreshed"
         const val WATCHED_MOVIES_FORCE_REFRESH_KEY = "force_refresh_watched_movies"
     }

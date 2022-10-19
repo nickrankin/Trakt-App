@@ -2,8 +2,11 @@ package com.nickrankin.traktapp.model.auth.shows
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.dao.show.model.CollectedShow
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.model.BaseViewModel
+import com.nickrankin.traktapp.model.ViewSwitcherViewModel
 import com.nickrankin.traktapp.repo.shows.collected.CollectedShowsRepository
 import com.nickrankin.traktapp.repo.stats.ShowStatsRepository
 import com.nickrankin.traktapp.repo.stats.StatsRepository
@@ -18,14 +21,10 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class CollectedShowsViewModel @Inject constructor(val repository: CollectedShowsRepository, private val showStatsRepository: ShowStatsRepository): ViewModel() {
+class CollectedShowsViewModel @Inject constructor(val repository: CollectedShowsRepository, private val showStatsRepository: ShowStatsRepository): ViewSwitcherViewModel() {
 
     private val sortingToggleChannel = Channel<String>()
     private val sortingToggle = sortingToggleChannel.receiveAsFlow()
-        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
-
-    private val showRefreshEventChannel = Channel<Boolean>()
-    private val showRefreshEvent = showRefreshEventChannel.receiveAsFlow()
         .shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
     private val eventChannel = Channel<Event>()
@@ -40,7 +39,7 @@ class CollectedShowsViewModel @Inject constructor(val repository: CollectedShows
     }
 
     @ExperimentalCoroutinesApi
-    val collectedShows = showRefreshEvent.flatMapLatest { shouldRefresh ->
+    val collectedShows = refreshEvent.flatMapLatest { shouldRefresh ->
         sortingToggle.flatMapLatest { sortBy ->
             repository.getCollectedShows(shouldRefresh).map { collectedShows ->
                 if(collectedShows is Resource.Success) {
@@ -71,7 +70,6 @@ class CollectedShowsViewModel @Inject constructor(val repository: CollectedShows
                 }
             }
         }
-
     }
 
     fun sortShows(sortBy: String) {
@@ -90,26 +88,16 @@ class CollectedShowsViewModel @Inject constructor(val repository: CollectedShows
         }
     }
 
+    override fun onRefresh() {
+        super.onRefresh()
+
+        viewModelScope.launch {
+
+        }
+    }
+
     fun deleteShowFromCollection(collectedShow: CollectedShow) = viewModelScope.launch { eventChannel.send(Event.DELETE_COLLECTION_EVENT(repository.removeFromCollection(collectedShow))) }
 
-
-    fun onStart() {
-        viewModelScope.launch {
-            launch {
-                showRefreshEventChannel.send(false)
-            }
-
-        }
-    }
-
-    fun onRefresh() {
-        viewModelScope.launch {
-            launch {
-                showRefreshEventChannel.send(true)
-                showStatsRepository.refreshCollectedShows()
-            }
-        }
-    }
 
     sealed class Event {
         data class DELETE_COLLECTION_EVENT(val syncResponse: Resource<SyncResponse>): Event()

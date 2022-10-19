@@ -7,17 +7,23 @@ import android.view.*
 import android.widget.*
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
+import com.google.android.flexbox.FlexDirection
+import com.google.android.flexbox.FlexboxLayoutManager
+import com.google.android.flexbox.JustifyContent
 import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.R
+import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.adapter.shows.ShowCalendarEntriesAdapter
 import com.nickrankin.traktapp.databinding.FragmentShowsOverviewBinding
 import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.TmdbImageLoader
+import com.nickrankin.traktapp.helper.switchRecyclerViewLayoutManager
 import com.nickrankin.traktapp.model.auth.shows.ShowsOverviewViewModel
 import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
@@ -45,8 +51,6 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
     private lateinit var messageContainer: TextView
 
     private lateinit var adapter: ShowCalendarEntriesAdapter
-
-    private lateinit var layoutManager: LinearLayoutManager
 
     private val viewModel by activityViewModels<ShowsOverviewViewModel>()
     
@@ -82,6 +86,7 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
         }
 
         setupRecyclerView()
+        getViewType()
         getMyShows()
 
     }
@@ -153,7 +158,8 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
 
     private fun setupRecyclerView() {
         recyclerView = bindings.showsoverviewfragmentRecyclerview
-        layoutManager = LinearLayoutManager(context)
+
+        switchRecyclerViewLayoutManager(requireContext(), recyclerView, MediaEntryBaseAdapter.VIEW_TYPE_POSTER)
 
         adapter = ShowCalendarEntriesAdapter(sharedPreferences, tmdbImageLoader, callback = { calendarEntry, action ->
             when(action) {
@@ -167,7 +173,7 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
                     viewModel.setShowHiddenState(calendarEntry.show_tmdb_id, !calendarEntry.hidden)
 
                     // Force refresh of list
-                    viewModel.onReload()
+                    viewModel.onRefresh()
 
                 }
 
@@ -177,7 +183,6 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
             }
         })
 
-        recyclerView.layoutManager = layoutManager
         recyclerView.adapter = adapter
 
     }
@@ -215,11 +220,29 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
         when(item.itemId) {
             R.id.calendarshowsmenu_show_hidden -> {
                 viewModel.showHiddenEntries(true)
-                viewModel.onReload()
+                viewModel.onRefresh()
+            }
+            R.id.calendarshowsmenu_switch_layout -> {
+                lifecycleScope.launchWhenStarted {
+                    viewModel.switchViewType()
+                }
             }
         }
 
         return false
+    }
+
+    private fun  getViewType() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.viewType.collectLatest { viewType ->
+                adapter.switchView(viewType)
+
+                switchRecyclerViewLayoutManager(requireContext(), recyclerView, viewType)
+
+
+                recyclerView.scrollToPosition(0)
+            }
+        }
     }
 
 
@@ -229,7 +252,7 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
 
         if(isLoggedIn) {
             viewModel.showHiddenEntries(false)
-            viewModel.onReload()
+            viewModel.onRefresh()
         }
     }
 

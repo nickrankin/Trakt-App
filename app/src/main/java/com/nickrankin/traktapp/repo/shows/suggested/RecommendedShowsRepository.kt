@@ -11,7 +11,7 @@ import com.uwetrottmann.trakt5.entities.SyncItems
 import com.uwetrottmann.trakt5.entities.SyncResponse
 import com.uwetrottmann.trakt5.enums.Extended
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.*
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
@@ -20,27 +20,40 @@ const val START_PAGE_INDEX = 1
 const val LIMIT = 50
 private const val TAG = "RecommendedShowsPagingS"
 class RecommendedShowsRepository @Inject constructor(private val traktApi: TraktApi) {
+    private val suggestedShowsList: MutableList<Show> = mutableListOf()
+    private val _suggestedShowsStateFlow: MutableStateFlow<Resource<List<Show>>> = MutableStateFlow(Resource.Loading())
+    private val suggestShowsFlow = _suggestedShowsStateFlow.asStateFlow()
 
-    private var suggestedShows: List<Show> = listOf()
 
-    suspend fun getSuggestedShows(shouldRefresh: Boolean) = flow {
-        emit(Resource.Loading())
-        if(!shouldRefresh && suggestedShows.isNotEmpty()) {
-            Log.d(TAG, "getSuggestedShows: Returning cached shows")
-            emit(Resource.Success(suggestedShows))
-        } else {
+    suspend fun getSuggestedShows(shouldRefresh: Boolean): Flow<Resource<List<Show>>> {
+        Log.d(TAG, "getSuggestedShows: Loading")
+
+        if(shouldRefresh || suggestedShowsList.isEmpty()) {
+            _suggestedShowsStateFlow.update { it -> Resource.Loading() }
+
             Log.d(TAG, "getSuggestedShows: Getting shows from Trakt ShouldRefresh $shouldRefresh")
             try {
                 val response = traktApi.tmRecommendations().shows(
                     START_PAGE_INDEX, LIMIT, Extended.FULL)
 
-                suggestedShows = response
+                suggestedShowsList.clear()
+                suggestedShowsList.addAll(response)
 
-                emit(Resource.Success(response))
+                _suggestedShowsStateFlow.update { Resource.Success(suggestedShowsList) }
+
             } catch (t: Throwable) {
-                emit(Resource.Error(t, null))
+                _suggestedShowsStateFlow.update { Resource.Error(t, suggestedShowsList) }
+
             }
+        } else {
+            _suggestedShowsStateFlow.update { Resource.Success(suggestedShowsList) }
+
         }
+
+
+//        }
+
+        return suggestShowsFlow
     }
 
 
@@ -53,17 +66,18 @@ class RecommendedShowsRepository @Inject constructor(private val traktApi: Trakt
         }
     }
 
-    suspend fun removeSuggestion(traktId: String): Pair<Boolean, Throwable?> {
+    suspend fun removeSuggestion(show: Show): Resource<Boolean> {
         return try {
-            val response = traktApi.tmRecommendations().dismissShow(traktId)
+            // Perform the removal
+            traktApi.tmRecommendations().dismissShow(show.ids?.trakt?.toString())
+            suggestedShowsList.remove(show)
 
-            Pair(true, null)
+            _suggestedShowsStateFlow.update { Resource.Success(suggestedShowsList) }
+
+            Resource.Success(true)
         } catch(t: Throwable) {
-            Pair(false, t)
+            Resource.Error(t, false)
+
         }
     }
-
-
-
-
 }

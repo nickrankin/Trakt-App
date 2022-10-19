@@ -9,12 +9,18 @@ import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
+import com.google.android.flexbox.FlexDirection
+import com.google.android.flexbox.FlexWrap
+import com.google.android.flexbox.FlexboxLayoutManager
+import com.google.android.flexbox.JustifyContent
 import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.R
+import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.adapter.shows.CollectedShowsAdapter
 import com.nickrankin.traktapp.dao.show.model.CollectedShow
 import com.nickrankin.traktapp.databinding.FragmentCollectedShowsBinding
@@ -38,7 +44,6 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
     private lateinit var messageContainer: TextView
 
     private lateinit var recyclerView: RecyclerView
-    private lateinit var layoutManager: LinearLayoutManager
     private lateinit var adapter: CollectedShowsAdapter
 
     private var scrollToTop = true
@@ -85,6 +90,8 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
             handleLoggedOutState()
         }
         initRecycler()
+        getViewState()
+
         handleEvents()
 
     }
@@ -195,7 +202,8 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
     private fun initRecycler() {
         recyclerView = bindings.collectedshowsfragmentRecyclerview
 
-        layoutManager = LinearLayoutManager(context)
+        switchRecyclerViewLayoutManager(requireContext(), recyclerView, MediaEntryBaseAdapter.VIEW_TYPE_POSTER)
+
         adapter = CollectedShowsAdapter(
             sharedPreferences,
             glide,
@@ -213,7 +221,6 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
 
             })
 
-        recyclerView.layoutManager = layoutManager
         recyclerView.adapter = adapter
     }
 
@@ -269,11 +276,30 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
             R.id.collectedfiltermenu_collected_at -> {
                 scrollToTop = true
                 viewModel.sortShows(CollectedShowsViewModel.SORT_COLLECT_AT)
+            }
+            R.id.collectedfiltermenu_switch_layout -> {
+                lifecycleScope.launchWhenStarted {
+                    viewModel.switchViewType()
 
+                    recyclerView.scrollToPosition(0)
+                }
             }
         }
 
         return false
+    }
+
+    private fun getViewState() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.viewType.collectLatest { viewState ->
+                adapter.switchView(viewState)
+
+                switchRecyclerViewLayoutManager(requireContext(), recyclerView, viewState)
+
+                recyclerView.scrollToPosition(0)
+
+            }
+        }
     }
 
     override fun onResume() {

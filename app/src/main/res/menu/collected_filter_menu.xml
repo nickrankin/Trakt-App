@@ -16,4 +16,10 @@
                 android:title="Year" />
         </menu>
     </item>
+
+    <item
+        android:id="@+id/collectedfiltermenu_switch_layout"
+        android:icon="@drawable/ic_baseline_remove_red_eye_24"
+        android:title="Switch Layout"
+        app:showAsAction="ifRoom" />
 </menu>

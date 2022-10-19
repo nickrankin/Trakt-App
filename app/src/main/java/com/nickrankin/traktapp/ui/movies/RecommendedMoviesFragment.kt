@@ -4,18 +4,18 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.R
+import com.nickrankin.traktapp.adapter.AdaptorActionControls
+import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.adapter.movies.ReccomendedMoviesAdaptor
 import com.nickrankin.traktapp.databinding.FragmentRecommendedMoviesBinding
 import com.nickrankin.traktapp.helper.*
@@ -55,6 +55,7 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setHasOptionsMenu(true)
 
         swipeLayout = bindings.recommendedmoviesfragmentSwipeLayout
         swipeLayout.setOnRefreshListener(this)
@@ -64,6 +65,7 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
         updateTitle("Suggested Movies")
 
         initRecyclerView()
+        getViewType()
 
         if(!isLoggedIn) {
             handleLoggedOutState(this.id)
@@ -71,6 +73,11 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
 
         getRecommendedMovies()
         getEvents()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        inflater.inflate(R.menu.collected_filter_menu, menu)
+        super.onCreateOptionsMenu(menu, inflater)
     }
 
     private fun getRecommendedMovies() {
@@ -97,7 +104,10 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
                             bindings.recommendedmoviesfragmentRecyclerview.visibility = View.VISIBLE
                             bindings.recommendedmoviesfragmentMessageContainer.visibility = View.GONE
 
-                            adapter.submitList(recommendedMoviesResource.data)
+                            if(recommendedMoviesResource.data != null) {
+                                adapter.submitList(recommendedMoviesResource.data!!.toMutableList())
+                            }
+
                         } else {
                             bindings.recommendedmoviesfragmentRecyclerview.visibility = View.GONE
                             bindings.recommendedmoviesfragmentMessageContainer.visibility = View.VISIBLE
@@ -165,26 +175,73 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
     private fun initRecyclerView() {
         recyclerView = bindings.recommendedmoviesfragmentRecyclerview
 
-        val lm = LinearLayoutManager(requireContext())
 
-        adapter = ReccomendedMoviesAdaptor(tmdbPosterImageLoader, callback = { pos, action, movie ->
+        switchRecyclerViewLayoutManager(requireContext(), recyclerView, MediaEntryBaseAdapter.VIEW_TYPE_POSTER)
 
-            when (action) {
-                ReccomendedMoviesAdaptor.ACTION_VIEW -> {
-                    navigateToMovie(movie)
+        adapter = ReccomendedMoviesAdaptor(tmdbPosterImageLoader,
+            AdaptorActionControls(
+                context?.getDrawable(R.drawable.ic_baseline_do_disturb_24),
+                "Not Interested",
+                false,
+                R.menu.suggested_popup_menu,
+                entrySelectedCallback = { selectedItem ->
+                    navigateToMovie(selectedItem)
+                },
+                buttonClickedCallback = { selectedItem ->
+                    getWarningAlertDialog(selectedItem)
+                        .show()
+                },
+                menuItemSelectedCallback = {selectedItem, menuId ->
+                    when(menuId) {
+                        R.id.suggestedpopupmenu_dismiss_suggestion -> {
+                            getWarningAlertDialog(selectedItem)
+                                .show()
+                        }
+                    }
                 }
-                ReccomendedMoviesAdaptor.ACTION_REMOVE -> {
-                    deleteSuggestion(pos, movie)
-                }
-                else -> {
-                    navigateToMovie(movie)
-                }
-            }
-        })
+            ))
 
-        recyclerView.layoutManager = lm
         recyclerView.adapter = adapter
 
+    }
+
+    private fun getWarningAlertDialog(movie: Movie): AlertDialog {
+        return AlertDialog.Builder(requireContext())
+            .setTitle("Remove ${movie.title} from Suggestions?")
+            .setMessage("Are you sure you want to remove ${movie.title} from your suggestions?")
+            .setPositiveButton("Yes", DialogInterface.OnClickListener { dialogInterface, i ->
+                viewModel.removeRecommendedMovie(movie)
+                dialogInterface.dismiss()
+            })
+            .setNegativeButton("No", DialogInterface.OnClickListener { dialogInterface, i -> dialogInterface.dismiss() })
+            .create()
+    }
+
+    private fun getViewType() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.viewType.collectLatest { viewType ->
+                adapter.switchView(viewType)
+
+                switchRecyclerViewLayoutManager(requireContext(), recyclerView, viewType)
+
+
+                recyclerView.scrollToPosition(0)
+            }
+        }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId) {
+            R.id.collectedfiltermenu_switch_layout -> {
+                lifecycleScope.launchWhenStarted {
+                    viewModel.switchViewType()
+                }
+            }
+            else -> {
+                Log.e(TAG, "onOptionsItemSelected: Invalid menu item ${item.itemId}", )
+            }
+        }
+        return false
     }
 
     private fun navigateToMovie(movie: Movie?) {
@@ -214,10 +271,7 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
             .setTitle("Delete suggestion ${movie.title}")
             .setMessage("Would you like to remove suggestion of ${movie.title}?")
             .setPositiveButton("Yes", DialogInterface.OnClickListener { dialogInterface, i ->
-                viewModel.removeRecommendedMovie(movie.ids?.trakt ?: 0)
-
-                // Should really be called after success remove event
-                removeAdapterItemAtPosition(position)
+                viewModel.removeRecommendedMovie(movie)
 
                 dialogInterface.dismiss()
             })
@@ -227,14 +281,6 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
             .create()
 
         alertDialog.show()
-    }
-
-    private fun removeAdapterItemAtPosition(pos: Int) {
-        val listCopy: MutableList<Movie> = mutableListOf()
-        listCopy.addAll(adapter.currentList)
-        listCopy.removeAt(pos)
-
-        adapter.submitList(listCopy)
     }
 
     override fun onStart() {

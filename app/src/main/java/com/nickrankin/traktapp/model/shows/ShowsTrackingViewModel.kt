@@ -25,10 +25,6 @@ class ShowsTrackingViewModel @Inject constructor(
     override val traktApi: TraktApi
 ) : SearchViewModel(traktApi) {
 
-    private val refreshEventChannel = Channel<Boolean>()
-    private val refreshEvent = refreshEventChannel.receiveAsFlow()
-        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
-
     private val filterTextChannel = Channel<String>()
     private val filterText = filterTextChannel.receiveAsFlow()
 
@@ -167,16 +163,8 @@ class ShowsTrackingViewModel @Inject constructor(
 
     suspend fun removeExpiredTrackedEpisodes(showTraktId: Int) = showsTrackingRepository.removeExpiredTrackedShows(showTraktId)
 
-    fun onStart() {
-        viewModelScope.launch {
-            refreshEventChannel.send(false)
-        }
-    }
-
-    fun onRefresh() {
-        viewModelScope.launch {
-            refreshEventChannel.send(true)
-        }
+    override fun onRefresh() {
+        super.onRefresh()
         refreshTrackedShows()
     }
 

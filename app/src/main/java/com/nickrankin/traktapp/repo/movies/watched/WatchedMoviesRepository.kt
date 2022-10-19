@@ -21,7 +21,7 @@ class WatchedMoviesRepository @Inject constructor(private val traktApi: TraktApi
 
     @OptIn(ExperimentalPagingApi::class)
     fun watchedMovies(shouldRefresh: Boolean) = Pager(
-        config = PagingConfig(8),
+        config = PagingConfig(pageSize = WatchedMoviesRemoteMediator.PAGE_LIMIT, initialLoadSize =  WatchedMoviesRemoteMediator.PAGE_LIMIT*3),
         remoteMediator = WatchedMoviesRemoteMediator(traktApi, shouldRefresh, moviesDatabase, sharedPreferences)
     ) {
         watchedMoviesDao.getWatchedMovies()

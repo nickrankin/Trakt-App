@@ -2,12 +2,9 @@ package com.nickrankin.traktapp.ui.movies.watched
 
 import android.content.DialogInterface
 import android.content.Intent
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -15,13 +12,26 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.LoadState
 import androidx.paging.map
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.bumptech.glide.RequestManager
+import com.google.android.flexbox.FlexDirection
+import com.google.android.flexbox.FlexWrap
+import com.google.android.flexbox.FlexboxLayoutManager
+import com.google.android.flexbox.JustifyContent
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.R
+import com.nickrankin.traktapp.adapter.AdaptorActionControls
+import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
+import com.nickrankin.traktapp.adapter.MediaEntryBasePagingAdapter
 import com.nickrankin.traktapp.adapter.movies.WatchedMoviesLoadStateAdapter
 import com.nickrankin.traktapp.adapter.movies.WatchedMoviesPagingAdapter
+//import com.nickrankin.traktapp.adapter.movies.WatchedMoviesPagingAdapter
 import com.nickrankin.traktapp.dao.movies.model.WatchedMovie
+import com.nickrankin.traktapp.dao.movies.model.WatchedMovieAndStats
 import com.nickrankin.traktapp.databinding.FragmentWatchedMoviesBinding
 import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
@@ -44,8 +54,10 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
     private lateinit var swipeLayout: SwipeRefreshLayout
     private lateinit var progressBar: ProgressBar
     private lateinit var recyclerView: RecyclerView
-    private lateinit var layoutManager: LinearLayoutManager
-    private lateinit var adapter: WatchedMoviesPagingAdapter
+    private lateinit var adapter: MediaEntryBasePagingAdapter<WatchedMovieAndStats>
+
+    @Inject
+    lateinit var glide: RequestManager
 
     @Inject
     lateinit var tmdbPosterImageLoader: TmdbImageLoader
@@ -61,6 +73,8 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        setHasOptionsMenu(true)
 
         swipeLayout = bindings.moviewatchingfragmentSwipeRefreshLayout
         progressBar = bindings.moviewatchingfragmentProgressbar
@@ -78,17 +92,22 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
         }
         getEvents()
         getWatchedMovies()
+        getViewTypeState()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+
+        inflater.inflate(R.menu.collected_filter_menu, menu)
+
     }
 
     private fun getWatchedMovies() {
         lifecycleScope.launchWhenStarted {
 
             viewModel.watchedMovies.collectLatest { latestData ->
+                Log.e(TAG, "getWatchedMovies: Triggered ${System.currentTimeMillis()}", )
                 
-                latestData.map {
-                    Log.e(TAG, "getWatchedMovies: ${it.watchedMovie.title}", )
-                }
-
                 progressBar.visibility = View.GONE
 
                 if(swipeLayout.isRefreshing) {
@@ -146,23 +165,26 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
 
     private fun initRecycler() {
         recyclerView = bindings.moviewatchingfragmentRecyclerview
-        layoutManager = LinearLayoutManager(context)
-        adapter = WatchedMoviesPagingAdapter(sharedPreferences, tmdbPosterImageLoader, callback = {selectedMovie, action ->
 
-            when(action) {
-                WatchedMoviesPagingAdapter.ACTION_NAVIGATE_MOVIE -> {
-                    navigateToMovie(selectedMovie)
-                }
-                WatchedMoviesPagingAdapter.ACTION_REMOVE_HISTORY -> {
-                    handleWatchedHistoryDeletion(selectedMovie)
-                }
-                else -> {
-                    navigateToMovie(selectedMovie)
-                }
-            }
-        })
+        switchRecyclerViewLayoutManager(requireContext(), recyclerView, MediaEntryBasePagingAdapter.VIEW_TYPE_POSTER)
 
-        recyclerView.layoutManager = layoutManager
+        adapter = WatchedMoviesPagingAdapter(AdaptorActionControls(context?.getDrawable(R.drawable.ic_baseline_remove_red_eye_24),
+            "Remove This Play", false, 
+            R.menu.watched_popup_menu, entrySelectedCallback = { selectedMovie ->
+                navigateToMovie(selectedMovie.watchedMovie)
+
+            }, buttonClickedCallback = {selectedMovie ->
+                handleWatchedHistoryDeletion(selectedMovie.watchedMovie)
+            }, menuItemSelectedCallback = {selectedMovie, menuSelected -> 
+                when(menuSelected) {
+                    R.id.watchedpopupmenu_remove -> {
+                        handleWatchedHistoryDeletion(selectedMovie.watchedMovie)
+                    } 
+                    else -> {
+                        Log.e(TAG, "initRecycler: Invalid menu id $menuSelected", )
+                    }
+                }
+            }), sharedPreferences, glide, tmdbPosterImageLoader)
 
         recyclerView.adapter = adapter.withLoadStateHeaderAndFooter(
             header = WatchedMoviesLoadStateAdapter(adapter),
@@ -236,6 +258,33 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
 
     override fun onRefresh() {
         viewModel.onRefresh()
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.collectedfiltermenu_switch_layout -> {
+                lifecycleScope.launchWhenStarted {
+                    viewModel.switchViewType()
+                }
+            }
+        }
+
+        return false
+    }
+
+    private fun getViewTypeState() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.viewType.collectLatest { viewType ->
+
+                adapter.switchView(viewType)
+
+                switchRecyclerViewLayoutManager(requireContext(), recyclerView, viewType)
+
+                recyclerView.scrollToPosition(0)
+
+                adapter.notifyDataSetChanged()
+            }
+        }
     }
 
     companion object {

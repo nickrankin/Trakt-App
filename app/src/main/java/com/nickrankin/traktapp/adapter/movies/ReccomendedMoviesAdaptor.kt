@@ -1,5 +1,6 @@
 package com.nickrankin.traktapp.adapter.movies
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,48 +9,48 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import at.blogc.android.views.ExpandableTextView
 import com.bumptech.glide.RequestManager
+import com.nickrankin.traktapp.adapter.AdaptorActionControls
+import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.databinding.ReccomendedShowEntryListItemBinding
 import com.nickrankin.traktapp.helper.ImageItemType
 import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.uwetrottmann.trakt5.entities.Movie
 
-class ReccomendedMoviesAdaptor(private val tmdbImageLoader: TmdbImageLoader, private val callback: (pos: Int, action: Int, results: Movie?) -> Unit): ListAdapter<Movie, ReccomendedMoviesAdaptor.ViewHolder>(
-    COMPARATOR) {
+private const val TAG = "ReccomendedMoviesAdapto"
+class ReccomendedMoviesAdaptor(private val tmdbImageLoader: TmdbImageLoader, adapterControls: AdaptorActionControls<Movie>,): MediaEntryBaseAdapter<Movie>(
+    adapterControls, COMPARATOR) {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        return ViewHolder(ReccomendedShowEntryListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
-    }
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        super.onBindViewHolder(holder, position)
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val currentItem = getItem(position)
 
-        holder.bindings.apply {
-            collectedentryitemPoster.setImageDrawable(null)
+        when(holder) {
+            is MediaEntryBaseAdapter<*>.CardViewHolder -> {
+                holder.bindings.apply {
+                    itemTitle.text = currentItem?.title
+                    itemWatchedDate.visibility = View.GONE
+                    itemOverview.text = currentItem?.overview
 
-            collectedentryitemTitle.text = currentItem?.title
-            collectedentryitemCollectedDate.visibility = View.GONE
-            collectedentryitemOverview.text = currentItem?.overview
-
-            tmdbImageLoader.loadImages(currentItem?.ids?.trakt ?: 0, ImageItemType.MOVIE,currentItem?.ids?.tmdb ?: 0,  currentItem.title, null, currentItem.language, true, collectedentryitemPoster, collectedentryitemBackdrop)
-
-            collectedentryitemOverview.setOnClickListener { v ->
-                val expandingTextView = v as ExpandableTextView
-
-                expandingTextView.toggle()
+                    tmdbImageLoader.loadImages(currentItem?.ids?.trakt ?: 0, ImageItemType.MOVIE,currentItem?.ids?.tmdb ?: 0,  currentItem.title, null, currentItem.language, true, itemPoster, itemBackdropImageview)
+                }
             }
+            is MediaEntryBaseAdapter<*>.PosterViewHolder -> {
+                holder.bindings.apply {
+                    itemTitle.text = currentItem?.title
+                    itemTimestamp.visibility = View.GONE
 
+                    tmdbImageLoader.loadImages(currentItem?.ids?.trakt ?: 0, ImageItemType.MOVIE,currentItem?.ids?.tmdb ?: 0,  currentItem.title, null, currentItem.language, true, itemPoster, null)
 
-            root.setOnClickListener {
-                callback(position, ACTION_VIEW, currentItem)
+                }
             }
-
-            collectedentryitemRemovePlayBtn.setOnClickListener {
-                callback(position, ACTION_REMOVE, currentItem)
+            else -> {
+                Log.e(TAG, "onBindViewHolder: Invalid ViewHolder ${holder.javaClass.name}", )
             }
         }
-    }
 
-    inner class ViewHolder(val bindings: ReccomendedShowEntryListItemBinding): RecyclerView.ViewHolder(bindings.root)
+
+    }
 
     companion object {
         const val ACTION_VIEW = 0

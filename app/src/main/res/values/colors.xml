@@ -11,5 +11,6 @@
     <color name="dark_green">#09af00</color>
     <color name="red">#ff0000</color>
     <color name="blue">#1e77f0</color>
+    <color name="opaque_background_black">#CC000000</color>
 
 </resources>

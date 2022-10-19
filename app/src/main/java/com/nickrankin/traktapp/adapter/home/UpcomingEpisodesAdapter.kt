@@ -10,8 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.flexbox.AlignItems
 import com.google.android.flexbox.FlexboxLayoutManager
 import com.nickrankin.traktapp.dao.calendars.model.ShowCalendarEntry
-import com.nickrankin.traktapp.databinding.HistoryPosterItemBinding
-import com.nickrankin.traktapp.databinding.MoviePosterItemBinding
+import com.nickrankin.traktapp.databinding.ViewPosterItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.ImageItemType
 import com.nickrankin.traktapp.helper.TmdbImageLoader
@@ -34,7 +33,7 @@ class UpcomingEpisodesAdapter(
         viewType: Int
     ): UpcomingEpisodesAdapter.WatchedHistoryVH {
         return WatchedHistoryVH(
-            HistoryPosterItemBinding.inflate(
+            ViewPosterItemBinding.inflate(
                 LayoutInflater.from(
                     parent.context
                 ), parent, false
@@ -46,9 +45,11 @@ class UpcomingEpisodesAdapter(
         val currentItem = getItem(position)
 
         holder.bindings.apply {
-            watcheditemTimestamp.text = "Airing: ${convertToHumanReadableTime(currentItem.first_aired)}"
 
-                    movieitemTitle.text = "${currentItem?.episode_title} (${currentItem.show_title})"
+            itemTimestamp.visibility = View.VISIBLE
+            itemTimestamp.text = "Airing: ${convertToHumanReadableTime(currentItem.first_aired)}"
+
+                    itemTitle.text = "${currentItem?.episode_title} (${currentItem.show_title})"
 
                     tmdbImageLoader.loadImages(
                         currentItem.show_trakt_id,
@@ -58,7 +59,7 @@ class UpcomingEpisodesAdapter(
                         null,
                         currentItem.language,
                         true,
-                        movieitemPoster,
+                        itemPoster,
                         null
                     )
 
@@ -69,7 +70,7 @@ class UpcomingEpisodesAdapter(
         }
     }
 
-    inner class WatchedHistoryVH(val bindings: HistoryPosterItemBinding) :
+    inner class WatchedHistoryVH(val bindings: ViewPosterItemBinding) :
         BaseViewHolder(bindings.root)
 
     // Workaround to support variable height Cast Person elements in the horizontal RecyclerView.

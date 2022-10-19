@@ -1,11 +1,16 @@
 package com.nickrankin.traktapp.ui.movies.collected
 
+import android.content.DialogInterface
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.*
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
@@ -14,11 +19,14 @@ import com.google.android.flexbox.FlexboxLayoutManager
 import com.google.android.flexbox.JustifyContent
 import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.R
+import com.nickrankin.traktapp.adapter.AdaptorActionControls
+import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.adapter.movies.CollectedMoviesAdapter
 import com.nickrankin.traktapp.databinding.FragmentCollectedMoviesBinding
 import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.helper.switchRecyclerViewLayoutManager
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.movies.CollectedMoviesViewModel
 import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
@@ -37,6 +45,8 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: CollectedMoviesAdapter
+
+    private var currentViewType = MediaEntryBaseAdapter.VIEW_TYPE_POSTER
 
     @Inject
     lateinit var glide: RequestManager
@@ -72,6 +82,7 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
         initRecycler()
 
         getCollectedMovies()
+        getViewTypeState()
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -147,28 +158,49 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
     private fun initRecycler() {
         recyclerView = bindings.collectedmoviesfragmentRecyclerview
 
-        val lm = FlexboxLayoutManager(requireContext())
+        switchRecyclerViewLayoutManager(requireContext(), recyclerView, MediaEntryBaseAdapter.VIEW_TYPE_POSTER)
 
-        lm.flexDirection = FlexDirection.ROW
-        lm.justifyContent = JustifyContent.SPACE_EVENLY
-
-
-        adapter = CollectedMoviesAdapter(glide, tmdbImageLoader, callback = { movie, type ->
-            val intent = Intent(requireContext(), MovieDetailsActivity::class.java)
-            intent.putExtra(
-                MovieDetailsActivity.MOVIE_DATA_KEY,
-                MovieDataModel(
-                    movie.trakt_id,
-                    movie.tmdb_id,
-                    movie.title,
-                    movie.release_date?.year
+        adapter = CollectedMoviesAdapter(tmdbImageLoader, sharedPreferences,
+        AdaptorActionControls(context?.getDrawable(R.drawable.ic_baseline_delete_forever_24), "REmove from Collection", false, R.menu.collected_popup_menu,
+            entrySelectedCallback = {selectedItem ->
+                val intent = Intent(requireContext(), MovieDetailsActivity::class.java)
+                intent.putExtra(
+                    MovieDetailsActivity.MOVIE_DATA_KEY,
+                    MovieDataModel(
+                        selectedItem.trakt_id,
+                        selectedItem.tmdb_id,
+                        selectedItem.title,
+                        selectedItem.release_date?.year
+                    )
                 )
-            )
 
-            startActivity(intent)
-        })
+                startActivity(intent)
+            },
+            buttonClickedCallback = { selectedMovie -> Toast.makeText(requireContext(), "Deleted ${selectedMovie.title}", Toast.LENGTH_SHORT).show() },
+            menuItemSelectedCallback = { selectedMovie, menuItem ->
+                when(menuItem) {
+                    R.id.collectedpopupmenu_delete -> {
+AlertDialog.Builder(requireContext())
+                            .setTitle("Do you want to delete ${selectedMovie.title}")
+                            .setMessage("Really remove ${selectedMovie.title} from your collection?")
+                            .setPositiveButton("Yes", DialogInterface.OnClickListener { dialogInterface, i ->
+                                lifecycleScope.launchWhenStarted {
+                                    viewModel.deleteCollectedMovie(selectedMovie.trakt_id)
 
-        recyclerView.layoutManager = lm
+                                }
+                            })
+                            .setNegativeButton("No", DialogInterface.OnClickListener { dialogInterface, i -> dialogInterface.dismiss() })
+                            .create()
+                            .show()
+
+                        Log.e(TAG, "initRecycler: Deleted ${selectedMovie.title} ok!!111", )
+                    }
+                    else -> {
+                        Log.e(TAG, "initRecycler: Invalid menu $menuItem", )
+                    }
+                }
+            })
+        )
 
         recyclerView.adapter = adapter
     }
@@ -195,9 +227,30 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
             R.id.collectedfiltermenu_year -> {
                 viewModel.sortMovies(CollectedMoviesViewModel.SORT_YEAR)
             }
+            R.id.collectedfiltermenu_switch_layout -> {
+                lifecycleScope.launchWhenStarted {
+                    viewModel.switchViewType()
+                }
+            }
         }
 
         return false
+    }
+
+
+    private fun getViewTypeState() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.viewType.collectLatest { viewType ->
+                adapter.switchView(viewType)
+
+                switchRecyclerViewLayoutManager(requireContext(), recyclerView, viewType)
+
+
+                recyclerView.scrollToPosition(0)
+
+                adapter.notifyDataSetChanged()
+            }
+        }
     }
 
     companion object {
