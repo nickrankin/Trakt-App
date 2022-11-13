@@ -32,6 +32,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.R
+import com.nickrankin.traktapp.adapter.AdaptorActionControls
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.adapter.search.ShowSearchLoadStateAdapter
 import com.nickrankin.traktapp.adapter.shows.*
@@ -52,10 +53,7 @@ import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.uwetrottmann.trakt5.entities.SearchResult
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChangedBy
-import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.*
 import org.threeten.bp.OffsetDateTime
 import javax.inject.Inject
 
@@ -86,8 +84,6 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
 
     private lateinit var upcomingEpisodesRecyclerView: RecyclerView
     private lateinit var upcomingEpisodesAdapter: TrackedEpisodesAdapter
-
-    private lateinit var sorting: Sorting
 
 //    // for testing
     @Inject
@@ -160,25 +156,46 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
 
     private fun getTrackedShows() {
         lifecycleScope.launchWhenStarted {
-            viewModel.trackedShows.collectLatest { trackedShows ->
-                if(swipeRefreshLayout.isRefreshing) {
-                    swipeRefreshLayout.isRefreshing = false
-                }
+            viewModel.trackedShows.collectLatest { trackedShowsResource ->
 
-                if (trackedShows.isNotEmpty()) {
-                    bindings.showstrackingfragmentErrorText.visibility = View.GONE
-                    trackedShowsRecyclerView.visibility = View.VISIBLE
+                when(trackedShowsResource) {
+                    is Resource.Loading -> {
+                        Log.d(TAG, "getTrackedShows: Loading Tracked Shows")
+                    }
+                    is Resource.Success -> {
+                        val trackedShows = trackedShowsResource.data
+                        Log.d(TAG, "getTrackedShows: Loaded ${trackedShows?.size} tracked shows")
 
-                    trackedShowsAdapter.submitList(trackedShows) {
-                        trackedShowsRecyclerView.scrollToPosition(0)
+                        if(swipeRefreshLayout.isRefreshing) {
+                            swipeRefreshLayout.isRefreshing = false
+                        }
+
+                        bindings.showstrackingfragmentErrorText.visibility = View.GONE
+                        trackedShowsRecyclerView.visibility = View.VISIBLE
+
+
+                        if (trackedShows?.isNotEmpty() == true) {
+                            trackedShowsAdapter.submitList(trackedShows) {
+                                trackedShowsRecyclerView.scrollToPosition(0)
+                            }
+                        } else {
+                            bindings.showstrackingfragmentErrorText.visibility = View.VISIBLE
+                            bindings.showstrackingfragmentErrorText.text =
+                                "You have not tracked any shows yet! Why not add some?"
+                        }
                     }
 
+                    is Resource.Error -> {
+                        if(swipeRefreshLayout.isRefreshing) {
+                            swipeRefreshLayout.isRefreshing = false
+                        }
 
-                } else {
-                    bindings.showstrackingfragmentErrorText.visibility = View.VISIBLE
-                    bindings.showstrackingfragmentErrorText.text =
-                        "You have not tracked any shows yet! Why not add some?"
+                        Log.e(TAG, "getTrackedShows: Error loading Tracked Shows, ${trackedShowsResource.error?.message}", )
+                    }
                 }
+
+
+
             }
         }
     }
@@ -197,7 +214,7 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
 
                 when(event) {
                     is ShowsTrackingViewModel.Event.UpdateTrackedEpisodeDataEvent -> {
-                        val show = event.episodesResource.data?.keys?.first()
+                        val show = event.episodesResource.data
 
                         if(event.episodesResource is Resource.Success) {
                             Log.d(TAG, "getEvents: Tracking was successful")
@@ -211,38 +228,6 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
                             // Notify the user
                             displayMessageToast("An error occurred refreshing tracked show ${show?.name ?: "Unknown"} Episodes. ${exception?.localizedMessage} Please try again later.", Toast.LENGTH_LONG)
 
-                        }
-                    }
-                    is ShowsTrackingViewModel.Event.RefreshTrackedEpisodeDataEvent -> {
-                        if(swipeRefreshLayout.isRefreshing) {
-                            swipeRefreshLayout.isRefreshing = false
-                        }
-
-                        if(event.trackedEpisodes is Resource.Success) {
-                            Log.d(TAG, "getEvents: Successfully refreshed Tracked Episodes")
-                        } else if(event.trackedEpisodes is Resource.Error) {
-                            val exception = event.trackedEpisodes.error
-                            displayMessageToast("Error refreshing tracked eposides ${exception?.localizedMessage}", Toast.LENGTH_LONG)
-
-                            Log.e(TAG, "getEvents: Error refreshing tracked eposides ${exception?.localizedMessage} ", )
-
-                            exception?.printStackTrace()
-                        }
-                    }
-                    is ShowsTrackingViewModel.Event.RefreshAllTrackedShowsDataEvent -> {
-                        if(swipeRefreshLayout.isRefreshing) {
-                            swipeRefreshLayout.isRefreshing = false
-                        }
-
-                        if(event.successResource is Resource.Success) {
-                            Log.d(TAG, "getEvents: Successfully refreshed Tracked Episodes")
-                        } else if(event.successResource is Resource.Error) {
-                            val exception = event.successResource.error
-                            displayMessageToast("Error refreshing tracked eposides ${exception?.localizedMessage}", Toast.LENGTH_LONG)
-
-                            Log.e(TAG, "getEvents: Error refreshing tracked eposides ${exception?.localizedMessage} ", )
-
-                            exception?.printStackTrace()
                         }
                     }
                 }
@@ -298,18 +283,45 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
 
         switchRecyclerViewLayoutManager(requireContext(), trackedShowsRecyclerView, MediaEntryBaseAdapter.VIEW_TYPE_POSTER)
 
-        trackedShowsAdapter = TrackedShowsAdapter(tmdbImageLoader, callback = { trackedShowWithEpisodes ->
-            val trackedShow = trackedShowWithEpisodes.trackedShow
-            navigateToShow(trackedShow.trakt_id, trackedShow.tmdb_id, trackedShow.title)
-        }) { showTitle, upcomingEpisodes ->
-            upcomingEpisodesDialog.setTitle("Upcoming episodes for $showTitle")
-            upcomingEpisodesAdapter.submitList(emptyList())
-            upcomingEpisodesAdapter.submitList(upcomingEpisodes.filter {
-                // Only show episodes which are airing after current time
-                it?.airs_date?.isAfter(OffsetDateTime.now()) ?: false
-            })
-            upcomingEpisodesDialog.show()
-        }
+        trackedShowsAdapter = TrackedShowsAdapter(
+            controls = AdaptorActionControls(
+                context?.getDrawable(R.drawable.ic_baseline_live_tv_24), "Upcoming Episodes", false, R.menu.shows_tracking_popup_menu,
+                entrySelectedCallback = {selectedItem ->
+//                    navigateToShow(
+//                        selectedItem.ids?.trakt ?: 0,
+//                        selectedItem.ids?.tmdb ?: 0,
+//                        selectedItem.title)
+                },
+                buttonClickedCallback = { selectedShow ->
+//                    deleteRecommendation(selectedShow)
+                },
+                menuItemSelectedCallback = { selectedShow, menuItem ->
+                    when(menuItem) {
+                        R.id.suggestedpopupmenu_dismiss_suggestion -> {
+//                            deleteRecommendation(selectedShow)
+                        }
+                        else -> {
+                            Log.e(TAG, "initRecycler: Invalid menu item $menuItem", )
+                        }
+                    }
+                }
+            ),
+            tmdbImageLoader = tmdbImageLoader
+        )
+
+
+//        , callback = { trackedShowWithEpisodes ->
+//            val trackedShow = trackedShowWithEpisodes.trackedShow
+//            navigateToShow(trackedShow.trakt_id, trackedShow.tmdb_id, trackedShow.title)
+//        }) { showTitle, upcomingEpisodes ->
+//            upcomingEpisodesDialog.setTitle("Upcoming episodes for $showTitle")
+//            upcomingEpisodesAdapter.submitList(emptyList())
+//            upcomingEpisodesAdapter.submitList(upcomingEpisodes.filter {
+//                // Only show episodes which are airing after current time
+//                it?.airs_date?.isAfter(OffsetDateTime.now()) ?: false
+//            })
+//            upcomingEpisodesDialog.show()
+//        }
 
         trackedShowsRecyclerView.adapter = trackedShowsAdapter
     }
@@ -510,7 +522,7 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
     }
 
     private fun getUpcomingEpisodes(showTraktId: Int) {
-        val response = viewModel.getUpcomingEpisodes(showTraktId)
+        viewModel.getUpcomingEpisodesPerShow(showTraktId)
     }
 
     private fun setupViewSwipeBehaviour() {
@@ -689,56 +701,16 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
             R.id.trackedfiltermenu_upcoming -> {
-                sorting = if(sorting.sortBy == Sorting.SORT_BY_NEXT_AIRING) {
-                    if(sorting.sortHow == Sorting.SORT_ORDER_DESC) {
-                        Sorting(Sorting.SORT_BY_NEXT_AIRING, Sorting.SORT_ORDER_ASC)
-                    } else {
-                        Sorting(Sorting.SORT_BY_NEXT_AIRING, Sorting.SORT_ORDER_DESC)
-                    }
-                } else {
-                    Sorting(Sorting.SORT_BY_NEXT_AIRING, Sorting.SORT_ORDER_DESC)
-                }
-
-                viewModel.applySorting(sorting)
+                    viewModel.applySorting(ShowsTrackingViewModel.SORT_BY_NEXT_AIRING)
             }
             R.id.trackedfiltermenu_title -> {
-                sorting = if(sorting.sortBy == Sorting.SORT_BY_TITLE) {
-                    if(sorting.sortHow == Sorting.SORT_ORDER_DESC) {
-                        Sorting(Sorting.SORT_BY_TITLE, Sorting.SORT_ORDER_ASC)
-                    } else {
-                        Sorting(Sorting.SORT_BY_TITLE, Sorting.SORT_ORDER_DESC)
-                    }
-                } else {
-                    Sorting(Sorting.SORT_BY_TITLE, Sorting.SORT_ORDER_DESC)
-                }
-
-                viewModel.applySorting(sorting)
+                    viewModel.applySorting(ISortable.SORT_BY_TITLE)
             }
             R.id.trackedfiltermenu_year -> {
-                sorting = if(sorting.sortBy == Sorting.SORT_BY_YEAR) {
-                    if(sorting.sortHow == Sorting.SORT_ORDER_DESC) {
-                        Sorting(Sorting.SORT_BY_YEAR, Sorting.SORT_ORDER_ASC)
-                    } else {
-                        Sorting(Sorting.SORT_BY_YEAR, Sorting.SORT_ORDER_DESC)
-                    }
-                } else {
-                    Sorting(Sorting.SORT_BY_YEAR, Sorting.SORT_ORDER_DESC)
-                }
-
-                viewModel.applySorting(sorting)
+                viewModel.applySorting(ISortable.SORT_BY_YEAR)
             }
             R.id.trackedfiltermenu_tracked_at -> {
-                sorting = if(sorting.sortBy == Sorting.SORT_BY_TRACKED_AT) {
-                    if(sorting.sortHow == Sorting.SORT_ORDER_DESC) {
-                        Sorting(Sorting.SORT_BY_TRACKED_AT, Sorting.SORT_ORDER_ASC)
-                    } else {
-                        Sorting(Sorting.SORT_BY_TRACKED_AT, Sorting.SORT_ORDER_DESC)
-                    }
-                } else {
-                    Sorting(Sorting.SORT_BY_TRACKED_AT, Sorting.SORT_ORDER_DESC)
-                }
-
-                viewModel.applySorting(sorting)
+                viewModel.applySorting(ShowsTrackingViewModel.SORT_BY_TRACKED_AT)
             }
             R.id.trackedfiltermenu_switch_layout -> {
                 lifecycleScope.launchWhenStarted {
@@ -756,10 +728,6 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
     override fun onStart() {
         super.onStart()
         viewModel.onStart()
-
-        //Initialize default sorting
-        sorting = Sorting(Sorting.SORT_BY_NEXT_AIRING, Sorting.SORT_ORDER_DESC)
-        viewModel.applySorting(sorting)
     }
 
     override fun onRefresh() {

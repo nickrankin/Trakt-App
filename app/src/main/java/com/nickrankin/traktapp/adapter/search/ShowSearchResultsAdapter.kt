@@ -38,7 +38,7 @@ class ShowSearchResultsAdapter(private val tmdbImageLoader: TmdbImageLoader, pri
                     collectedentryitemCollectedDate.visibility = View.GONE
                     collectedentryitemOverview.text = currentSearchItem.movie?.overview
 
-                    tmdbImageLoader.loadImages(currentSearchItem.movie?.ids?.trakt ?: 0, ImageItemType.MOVIE, currentSearchItem.movie?.ids?.tmdb ?: 0, currentSearchItem.movie?.title ?: "", currentSearchItem.movie?.year, currentSearchItem.movie?.language, false, collectedentryitemPoster, collectedentryitemBackdrop)
+                    tmdbImageLoader.loadImages(currentSearchItem.movie?.ids?.trakt ?: 0, ImageItemType.MOVIE, currentSearchItem.movie?.ids?.tmdb ?: 0, currentSearchItem.movie?.title ?: "", currentSearchItem.movie?.language, false, collectedentryitemPoster, collectedentryitemBackdrop, false)
 
                     root.setOnClickListener {
                         callback(currentSearchItem)
@@ -61,7 +61,7 @@ class ShowSearchResultsAdapter(private val tmdbImageLoader: TmdbImageLoader, pri
                     collectedentryitemCollectedDate.visibility = View.GONE
                     collectedentryitemOverview.text = currentSearchItem.show?.overview
 
-                    tmdbImageLoader.loadImages(currentSearchItem.show?.ids?.trakt ?: 0, ImageItemType.SHOW, currentSearchItem.show?.ids?.tmdb ?: 0, currentSearchItem.show?.title ?: "", currentSearchItem.show?.year, currentSearchItem.show?.language, false, collectedentryitemPoster, collectedentryitemBackdrop)
+                    tmdbImageLoader.loadImages(currentSearchItem.show?.ids?.trakt ?: 0, ImageItemType.SHOW, currentSearchItem.show?.ids?.tmdb ?: 0, currentSearchItem.show?.title ?: "", currentSearchItem.show?.language, false, collectedentryitemPoster, collectedentryitemBackdrop, false)
 
                     root.setOnClickListener {
                         callback(currentSearchItem)

@@ -10,14 +10,9 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
-import com.google.android.flexbox.FlexDirection
-import com.google.android.flexbox.FlexboxLayoutManager
-import com.google.android.flexbox.JustifyContent
 import com.nickrankin.traktapp.adapter.shows.RecommendedShowsAdapter
 import com.nickrankin.traktapp.databinding.FragmentShowsRecommendedBinding
 import com.nickrankin.traktapp.model.shows.RecommendedShowsViewModel
@@ -82,7 +77,9 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        inflater.inflate(R.menu.collected_filter_menu, menu)
+        inflater.inflate(R.menu.recommended_filter_menu, menu)
+
+        inflater.inflate(R.menu.layout_switcher_menu, menu)
         super.onCreateOptionsMenu(menu, inflater)
 
     }
@@ -146,7 +143,9 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
                         progressBar.visibility = View.GONE
 
                         // Create a new list to allow ListAdapters AsyncListDiffer checks to run https://stackoverflow.com/questions/69715381/diffutil-not-refreshing-view-in-observer-call-android-kotlin
-                        adapter.submitList(data.data?.toMutableList())
+                        adapter.submitList(data.data?.toMutableList()) {
+                            recyclerView.scrollToPosition(0)
+                        }
                     }
                     is Resource.Error -> {
                         if(swipeRefreshLayout.isRefreshing) {
@@ -278,8 +277,16 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
-            R.id.collectedfiltermenu_switch_layout -> {
-
+            R.id.reccomendedfiltermenu_title -> {
+                viewModel.applySorting(ISortable.SORT_BY_TITLE)
+            }
+            R.id.reccomendedfiltermenu_year -> {
+                viewModel.applySorting(ISortable.SORT_BY_YEAR)
+            }
+            R.id.reccomendedfiltermenu_recommended_at -> {
+                viewModel.applySorting(RecommendedShowsViewModel.RECOMMENDED_AT_SORT_BY)
+            }
+            R.id.menu_switch_layout -> {
                 lifecycleScope.launchWhenStarted {
                     viewModel.switchViewType()
                 }

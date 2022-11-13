@@ -160,22 +160,6 @@ Fusce laoreet ut quam nec sodales. Donec in vulputate neque, id commodo sem. Mau
 
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/item_menu"
-            android:layout_width="22dp"
-            android:layout_height="30dp"
-            android:layout_alignEnd="@id/item_title"
-            android:paddingStart="7dp"
-            android:textSize="20sp"
-            android:text="@string/vertical_ellipsis"
-            android:visibility="visible"
-            tools:visibility="visible"
-            android:layout_marginEnd="8dp"
-
-            app:layout_constraintTop_toBottomOf="@id/item_overview"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"/>
-
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </com.google.android.material.card.MaterialCardView>

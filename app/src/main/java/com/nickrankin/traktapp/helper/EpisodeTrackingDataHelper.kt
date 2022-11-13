@@ -27,21 +27,19 @@ class EpisodeTrackingDataHelper @Inject constructor(
     private val trackedShowDao = showsDatabase.trackedShowDao()
     private val trackedEpisodeDao = showsDatabase.trackedEpisodeDao()
 
-    suspend fun refreshUpComingEpisodesForAllShows(): Resource<Boolean> {
+    suspend fun refreshUpComingEpisodesForAllShows(): List<TrackedEpisode> {
         Log.d(TAG, "refreshUpComingEpisodesForAllShows: Refreshing all shows")
         val trackedShows = trackedShowDao.getTrackedShows().first()
+        val trackedEpisodes: MutableList<TrackedEpisode> = mutableListOf()
 
-        trackedShows.map { trackedShow ->
-            Log.d(TAG, "refreshUpComingEpisodesForAllShows: Refresh called for Show ${trackedShow.title}")
-                Log.d(TAG, "refreshUpComingEpisodesForAllShows: Refreshing Show episodes ${trackedShow.title}")
-                refreshUpcomingEpisodesforShow(trackedShow.trakt_id)
-        }
+            trackedShows.map { trackedShow ->
+                trackedEpisodes.addAll(getTrackedEpisodesPerShow(trackedShow.trakt_id))
+            }
 
-        return Resource.Success(true)
+        return trackedEpisodes
     }
 
-    suspend fun refreshUpcomingEpisodesforShow(showTraktId: Int): Resource<Map<TmShow?, List<TrackedEpisode?>>> {
-        return try {
+    suspend fun getTrackedEpisodesPerShow(showTraktId: Int): List<TrackedEpisode> {
             // Get show info
             val show = showDataHelper.getShow(showTraktId)
 
@@ -60,22 +58,30 @@ class EpisodeTrackingDataHelper @Inject constructor(
 
             Log.d(
                 TAG,
-                "storeUpcomingEpisodes: Got ${upcomingEpisodesResponse.size} Upcoming Episodes"
+                "storeUpcomingEpisodes: Got ${upcomingEpisodesResponse.size} Upcoming Episodes for ${show?.name}"
             )
             val trackedEpisodes = buildTrackedEpisodes(show, upcomingEpisodesResponse)
 
-            // Update Tracked Episodes db
-            showsDatabase.withTransaction {
-                trackedEpisodeDao.insert(trackedEpisodes)
-            }
-
             // Schedule alarms for these episodes
             scheduleAlarms(trackedEpisodes)
+            return trackedEpisodes
+    }
 
-            Resource.Success(mapOf(Pair(show, trackedEpisodes)))
-        } catch (e: Throwable) {
-            Resource.Error(e, null)
+    suspend fun refreshUpcomingEpisodesPerShow(showTraktId: Int): Resource<TmShow?> {
+        return try {
+            val show = showDataHelper.getShow(showTraktId)
+
+            val showEpisodes = getTrackedEpisodesPerShow(showTraktId)
+
+            showsDatabase.withTransaction {
+                trackedEpisodeDao.insert(showEpisodes)
+            }
+
+            Resource.Success(show)
+        } catch(t: Throwable) {
+            Resource.Error(t, null)
         }
+
     }
 
     suspend fun cancelTrackingPerShow(traktShowId: Int) {

@@ -88,7 +88,7 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        inflater.inflate(R.menu.collected_filter_menu, menu)
+        inflater.inflate(R.menu.layout_switcher_menu, menu)
         super.onCreateOptionsMenu(menu, inflater)
 
     }
@@ -263,7 +263,7 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
-            R.id.collectedfiltermenu_switch_layout -> {
+            R.id.menu_switch_layout -> {
                 lifecycleScope.launchWhenStarted {
                     viewModel.switchViewType()
                 }

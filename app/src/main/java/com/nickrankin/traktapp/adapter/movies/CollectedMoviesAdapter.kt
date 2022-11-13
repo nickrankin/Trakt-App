@@ -51,11 +51,11 @@ class CollectedMoviesAdapter(private val tmdbImageLoader: TmdbImageLoader,
                         ImageItemType.MOVIE,
                         currentItem.tmdb_id,
                         currentItem.title,
-                        null,
                         currentItem.language,
                         true,
                         itemPoster,
-                        null)
+                        null,
+                    false)
 
                 }
             }
@@ -78,17 +78,34 @@ class CollectedMoviesAdapter(private val tmdbImageLoader: TmdbImageLoader,
                         ImageItemType.MOVIE,
                         currentItem.tmdb_id,
                         currentItem.title,
-                        null,
                         currentItem.language,
                         true,
                         itemPoster,
-                        itemBackdropImageview)
+                        itemBackdropImageview,
+                    false)
                 }
             }
             else -> {
                 Log.e(TAG, "onBindViewHolder: Invalid ViewHolder ${holder.javaClass.name}", )
             }
         }
+    }
+
+    override fun reloadImages(
+        selectedItem: CollectedMovie,
+        posterImageView: ImageView,
+        backdropImageView: ImageView?
+    ) {
+        tmdbImageLoader.loadImages(
+            selectedItem.trakt_id,
+            ImageItemType.MOVIE,
+            selectedItem.tmdb_id,
+            selectedItem.title,
+            selectedItem.language,
+            true,
+            posterImageView,
+            backdropImageView,
+            true)
     }
 
     companion object {

@@ -4,9 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.dao.show.model.CollectedShow
+import com.nickrankin.traktapp.helper.ISortable
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.BaseViewModel
 import com.nickrankin.traktapp.model.ViewSwitcherViewModel
+import com.nickrankin.traktapp.model.shows.ShowsTrackingViewModel
 import com.nickrankin.traktapp.repo.shows.collected.CollectedShowsRepository
 import com.nickrankin.traktapp.repo.stats.ShowStatsRepository
 import com.nickrankin.traktapp.repo.stats.StatsRepository
@@ -21,92 +23,84 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class CollectedShowsViewModel @Inject constructor(val repository: CollectedShowsRepository, private val showStatsRepository: ShowStatsRepository): ViewSwitcherViewModel() {
-
-    private val sortingToggleChannel = Channel<String>()
-    private val sortingToggle = sortingToggleChannel.receiveAsFlow()
-        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
+class CollectedShowsViewModel @Inject constructor(val repository: CollectedShowsRepository, private val showStatsRepository: ShowStatsRepository): ViewSwitcherViewModel(), ISortable<CollectedShow> {
 
     private val eventChannel = Channel<Event>()
     val events = eventChannel.receiveAsFlow()
 
-    private var sortBy = SORT_COLLECT_AT
-    private var sortHow = SortHow.ASC
-
-    init {
-        // Initial sort
-        sortShows(SORT_COLLECT_AT)
-    }
+    private val sortingChannel = Channel<ISortable.Sorting>()
+    private val sorting = sortingChannel.receiveAsFlow()
+        .stateIn(viewModelScope, SharingStarted.Lazily, ISortable.Sorting(SORT_COLLECT_AT, ISortable.SORT_ORDER_DESC))
 
     @ExperimentalCoroutinesApi
     val collectedShows = refreshEvent.flatMapLatest { shouldRefresh ->
-        sortingToggle.flatMapLatest { sortBy ->
-            repository.getCollectedShows(shouldRefresh).map { collectedShows ->
-                if(collectedShows is Resource.Success) {
-                    var sortedShows = collectedShows.data
+        sorting.flatMapLatest { sorting ->
+            repository.getCollectedShows(shouldRefresh).map { collectedShowsResource ->
 
-                    sortedShows = when(sortBy) {
-                        SORT_TITLE -> {
-                            sortedShows?.sortedBy { it.show_title }
-                        }
-                        SORT_COLLECT_AT -> {
-                            sortedShows?.sortedBy { it.collected_at }
-                        }
-                        SORT_YEAR -> {
-                            sortedShows?.sortedBy { it.airedDate }
-                        }
-                        else -> {
-                            sortedShows?.sortedBy { it.show_title }
-                        }
-                    }
-
-                    if(sortHow == SortHow.DESC) {
-                        sortedShows = sortedShows?.reversed()
-                    }
-
-                    Resource.Success(sortedShows)
-                } else {
-                    collectedShows
+                if(collectedShowsResource is Resource.Success) {
+                    collectedShowsResource.data = sortList(collectedShowsResource.data ?: emptyList(), sorting)
                 }
+
+                collectedShowsResource
             }
-        }
-    }
-
-    fun sortShows(sortBy: String) {
-        if(this.sortBy == sortBy) {
-            if(sortHow == SortHow.DESC) {
-                sortHow = SortHow.ASC
-            } else {
-                sortHow = SortHow.DESC
-            }
-        }
-
-        this.sortBy = sortBy
-
-        viewModelScope.launch {
-            sortingToggleChannel.send(sortBy)
-        }
-    }
-
-    override fun onRefresh() {
-        super.onRefresh()
-
-        viewModelScope.launch {
-
         }
     }
 
     fun deleteShowFromCollection(collectedShow: CollectedShow) = viewModelScope.launch { eventChannel.send(Event.DELETE_COLLECTION_EVENT(repository.removeFromCollection(collectedShow))) }
 
+    override fun applySorting(sortBy: String) {
+        viewModelScope.launch {
+            updateSorting(sorting.value, sortingChannel, sortBy)
+        }
+    }
+
+    override fun sortList(
+        list: List<CollectedShow>,
+        sorting: ISortable.Sorting
+    ): List<CollectedShow> {
+        val sortBy = sorting.sortBy
+        val sortHow = sorting.sortHow
+
+        return when (sortBy) {
+            ISortable.SORT_BY_TITLE -> {
+                val sortedShows = list.sortedBy { it.show_title }
+
+                if (sortHow == ISortable.SORT_ORDER_DESC) {
+                    sortedShows.reversed()
+                } else {
+                    sortedShows
+                }
+            }
+            ISortable.SORT_BY_YEAR -> {
+                val sortedShows = list.sortedBy { it.airedDate }
+
+                if (sortHow == ISortable.SORT_ORDER_DESC) {
+                    sortedShows.reversed()
+                } else {
+                    sortedShows
+                }
+            }
+            SORT_COLLECT_AT -> {
+                val sortedShows = list.sortedBy { it.collected_at }
+
+                if (sortHow == ISortable.SORT_ORDER_DESC) {
+                    sortedShows.reversed()
+                } else {
+                    sortedShows
+                }
+            }
+            else -> {
+                list.sortedBy { it.show_title }
+            }
+        }
+    }
 
     sealed class Event {
         data class DELETE_COLLECTION_EVENT(val syncResponse: Resource<SyncResponse>): Event()
     }
 
     companion object {
-        const val SORT_TITLE = "title"
         const val SORT_COLLECT_AT = "collected_at"
-        const val SORT_YEAR = "first_aired"
     }
 
 }

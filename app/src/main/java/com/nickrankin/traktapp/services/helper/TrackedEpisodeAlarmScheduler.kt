@@ -88,6 +88,6 @@ class TrackedEpisodeAlarmScheduler(private val context: Context, private val ala
         val intent = Intent(context, EpisodeNotificationReceiver::class.java)
         intent.putExtra(EpisodeNotificationReceiver.TRAKT_ID_KEY, episodeTraktId)
 
-        return PendingIntent.getBroadcast(context, episodeTraktId, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+        return PendingIntent.getBroadcast(context, episodeTraktId, intent, PendingIntent.FLAG_IMMUTABLE)
     }
 }

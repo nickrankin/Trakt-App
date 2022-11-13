@@ -5,7 +5,9 @@ import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.show.model.TrackedShow
+import com.nickrankin.traktapp.dao.show.model.TrackedShowWithEpisodes
 import com.nickrankin.traktapp.helper.EpisodeTrackingDataHelper
+import com.nickrankin.traktapp.helper.networkBoundResource
 import com.nickrankin.traktapp.services.helper.TrackedEpisodeAlarmScheduler
 import javax.inject.Inject
 
@@ -18,12 +20,31 @@ class ShowsTrackingRepository @Inject constructor(
     private val showsDatabase: ShowsDatabase,
     private val episodeTrackingDataHelper: EpisodeTrackingDataHelper) {
     private val trackedShowDao = showsDatabase.trackedShowDao()
+    private val trackedEpisodeDao = showsDatabase.trackedEpisodeDao()
 
-    fun getTrackedShows() = trackedShowDao.getTrackedShowsWithShow()
+
+    suspend fun getTrackedShows(shouldFetch: Boolean) = networkBoundResource(
+        query = {
+            trackedShowDao.getTrackedShowsWithShow()
+        },
+        fetch = {
+            episodeTrackingDataHelper.refreshUpComingEpisodesForAllShows()
+        },
+        shouldFetch = {trackedShows ->
+            trackedShows.isEmpty() || shouldFetch
+        },
+        saveFetchResult = { trackedEpisodes ->
+
+            showsDatabase.withTransaction {
+                trackedEpisodeDao.deleteAllEpisodesForNotification()
+                trackedEpisodeDao.insert(trackedEpisodes)
+            }
+        }
+    )
 
     suspend fun refreshAllShowsTrackingData() = episodeTrackingDataHelper.refreshUpComingEpisodesForAllShows()
 
-    suspend fun refreshUpcomingEpisodes(showTraktId: Int) = episodeTrackingDataHelper.refreshUpcomingEpisodesforShow(showTraktId)
+    suspend fun refreshUpcomingEpisodesPerShow(showTraktId: Int) = episodeTrackingDataHelper.refreshUpcomingEpisodesPerShow(showTraktId)
 
     suspend fun insertTrackedShow(trackedShow: TrackedShow) {
         showsDatabase.withTransaction {

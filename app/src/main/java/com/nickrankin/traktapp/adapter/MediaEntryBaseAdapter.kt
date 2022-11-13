@@ -1,17 +1,26 @@
 package com.nickrankin.traktapp.adapter
 
+import android.graphics.drawable.InsetDrawable
+import android.os.Build
 import android.util.Log
+import android.util.TypedValue
 import android.view.LayoutInflater
+import android.view.MenuInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.PopupMenu
+import android.widget.ImageView
 import androidx.annotation.MenuRes
+import androidx.appcompat.view.menu.MenuBuilder
+import androidx.appcompat.widget.PopupMenu
 import androidx.recyclerview.widget.*
+import com.nickrankin.traktapp.R
+import com.nickrankin.traktapp.adapter.shows.ICON_MARGIN
 import com.nickrankin.traktapp.databinding.ViewCardItemBinding
 import com.nickrankin.traktapp.databinding.ViewPosterItemBinding
+import com.nickrankin.traktapp.helper.TmdbImageLoader
 
 private const val TAG = "MediaEntryBaseAdapter"
-abstract class MediaEntryBaseAdapter<T> constructor(protected val controls: AdaptorActionControls<T>?, diffCallback: DiffUtil.ItemCallback<T>): ListAdapter<T, RecyclerView.ViewHolder>(diffCallback) {
+abstract class MediaEntryBaseAdapter<T> constructor(private val controls: AdaptorActionControls<T>?, diffCallback: DiffUtil.ItemCallback<T>): ListAdapter<T, RecyclerView.ViewHolder>(diffCallback) {
 
     private var currentViewType = VIEW_TYPE_POSTER
 
@@ -48,20 +57,23 @@ abstract class MediaEntryBaseAdapter<T> constructor(protected val controls: Adap
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val item = getItem(holder.absoluteAdapterPosition)
         when(holder) {
             is MediaEntryBaseAdapter<*>.PosterViewHolder -> {
                 holder.bindings.apply {
                     if(controls != null) {
 
                         holder.itemView.setOnClickListener {
-                            controls.entrySelectedCallback(getItem(holder.absoluteAdapterPosition))
+                            controls.entrySelectedCallback(item)
                         }
 
                         if (controls.menuResource != null) {
-                            itemMenu.visibility = View.VISIBLE
+//                            itemMenu.visibility = View.VISIBLE
 
-                            itemMenu.setOnClickListener {
-                                showMenu(getItem(holder.absoluteAdapterPosition), itemMenu)
+                            root.setOnLongClickListener {
+                                showMenu(item, root, itemPoster, null)
+
+                                true
                             }
                         }
                     }
@@ -77,14 +89,12 @@ abstract class MediaEntryBaseAdapter<T> constructor(protected val controls: Adap
                             controls.entrySelectedCallback(getItem(holder.absoluteAdapterPosition))
                         }
 
-                        if(controls.showMenuOnCardView) {
-                            itemMenu.setOnClickListener {
-                                showMenu(getItem(holder.absoluteAdapterPosition), itemMenu)
+                            root.setOnLongClickListener {
+                                showMenu(item, root, itemPoster, itemBackdropImageview)
 
+                                true
                             }
-                        } else {
-                            itemMenu.visibility = View.GONE
-                        }
+
 
                         if(controls.buttonText != null) {
                             buttonControl.visibility = View.VISIBLE
@@ -108,18 +118,49 @@ abstract class MediaEntryBaseAdapter<T> constructor(protected val controls: Adap
         }
     }
 
-    private fun showMenu(selectedItem: T, v: View) {
+    private fun showMenu(selectedItem: T, v: View, posterImageView: ImageView, backdropImageView: ImageView?) {
         if(controls?.menuResource == null) {
             return
         }
 
         val popup = PopupMenu(v.context!!, v)
+
+        // Inflate both BaseMenu resource items and the provided menu resource
         popup.menuInflater.inflate(controls.menuResource, popup.menu)
+        popup.menuInflater.inflate(R.menu.base_popup_menu, popup.menu)
+
+        if(popup.menu is MenuBuilder) {
+            val menuBuilder = popup.menu as MenuBuilder
+            menuBuilder.setOptionalIconsVisible(true)
+
+            for(item in menuBuilder.visibleItems) {
+                val iconMarginPx =
+                    TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP, ICON_MARGIN.toFloat(), v.context!!.resources.displayMetrics)
+                        .toInt()
+                if (item.icon != null) {
+                    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
+                        item.icon = InsetDrawable(item.icon, iconMarginPx, 0, iconMarginPx,0)
+                    } else {
+                        item.icon =
+                            object : InsetDrawable(item.icon, iconMarginPx, 0, iconMarginPx, 0) {
+                                override fun getIntrinsicWidth(): Int {
+                                    return intrinsicHeight + iconMarginPx + iconMarginPx
+                                }
+                            }
+                    }
+                }
+            }
+        }
 
         popup.setOnMenuItemClickListener { menuItem ->
-            // Respond to menu item click.
-            controls.menuItemSelectedCallback(selectedItem, menuItem.itemId)
-
+            
+            if(menuItem.itemId == R.id.popupmenu_refresh_image) {
+                reloadImages(selectedItem, posterImageView, backdropImageView)
+            } else {
+                // Respond to menu item click.
+                controls.menuItemSelectedCallback(selectedItem, menuItem.itemId)
+            }
             true
         }
 
@@ -130,6 +171,8 @@ abstract class MediaEntryBaseAdapter<T> constructor(protected val controls: Adap
         // Show the popup menu.
         popup.show()
     }
+
+    abstract fun reloadImages(selectedItem: T, posterImageView: ImageView, backdropImageView: ImageView?)
 
     override fun getItemViewType(position: Int): Int {
         return currentViewType

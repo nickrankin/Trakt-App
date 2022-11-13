@@ -76,7 +76,8 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        inflater.inflate(R.menu.collected_filter_menu, menu)
+        inflater.inflate(R.menu.recommended_filter_menu, menu)
+        inflater.inflate(R.menu.layout_switcher_menu, menu)
         super.onCreateOptionsMenu(menu, inflater)
     }
 
@@ -105,7 +106,9 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
                             bindings.recommendedmoviesfragmentMessageContainer.visibility = View.GONE
 
                             if(recommendedMoviesResource.data != null) {
-                                adapter.submitList(recommendedMoviesResource.data!!.toMutableList())
+                                adapter.submitList(recommendedMoviesResource.data!!.toMutableList()) {
+                                    recyclerView.scrollToPosition(0)
+                                }
                             }
 
                         } else {
@@ -232,7 +235,16 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
-            R.id.collectedfiltermenu_switch_layout -> {
+            R.id.reccomendedfiltermenu_title -> {
+                viewModel.applySorting(ISortable.SORT_BY_TITLE)
+            }
+            R.id.reccomendedfiltermenu_year -> {
+                viewModel.applySorting(ISortable.SORT_BY_YEAR)
+            }
+            R.id.reccomendedfiltermenu_recommended_at -> {
+                viewModel.applySorting(RecommendedMoviesViewModel.SORT_BY_LAST_SUGGESTED)
+            }
+            R.id.menu_switch_layout -> {
                 lifecycleScope.launchWhenStarted {
                     viewModel.switchViewType()
                 }

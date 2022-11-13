@@ -23,10 +23,7 @@ import com.nickrankin.traktapp.adapter.AdaptorActionControls
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.adapter.movies.CollectedMoviesAdapter
 import com.nickrankin.traktapp.databinding.FragmentCollectedMoviesBinding
-import com.nickrankin.traktapp.helper.IHandleError
-import com.nickrankin.traktapp.helper.TmdbImageLoader
-import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.helper.switchRecyclerViewLayoutManager
+import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.movies.CollectedMoviesViewModel
 import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
@@ -89,6 +86,7 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
         super.onCreateOptionsMenu(menu, inflater)
 
         inflater.inflate(R.menu.collected_filter_menu, menu)
+        inflater.inflate(R.menu.layout_switcher_menu, menu)
 
     }
 
@@ -113,7 +111,9 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
                             bindings.collectedmoviesfragmentMainGroup.visibility = View.VISIBLE
                             bindings.collectedmoviesfragmentMessageContainer.visibility = View.GONE
 
-                            adapter.submitList(collectedMoviesResource.data)
+                            adapter.submitList(collectedMoviesResource.data) {
+                                recyclerView.scrollToPosition(0)
+                            }
                         } else {
                             handleNoResults()
                             adapter.submitList(collectedMoviesResource.data)
@@ -218,16 +218,16 @@ AlertDialog.Builder(requireContext())
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.collectedfiltermenu_title -> {
-                viewModel.sortMovies(CollectedMoviesViewModel.SORT_TITLE)
+                viewModel.applySorting(ISortable.SORT_BY_TITLE)
             }
             R.id.collectedfiltermenu_collected_at -> {
-                viewModel.sortMovies(CollectedMoviesViewModel.SORT_COLLECTED_AT)
+                viewModel.applySorting(CollectedMoviesViewModel.SORT_COLLECTED_AT)
 
             }
             R.id.collectedfiltermenu_year -> {
-                viewModel.sortMovies(CollectedMoviesViewModel.SORT_YEAR)
+                viewModel.applySorting(ISortable.SORT_BY_YEAR)
             }
-            R.id.collectedfiltermenu_switch_layout -> {
+            R.id.menu_switch_layout -> {
                 lifecycleScope.launchWhenStarted {
                     viewModel.switchViewType()
                 }

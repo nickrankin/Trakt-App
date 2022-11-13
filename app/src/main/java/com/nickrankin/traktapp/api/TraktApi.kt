@@ -38,9 +38,9 @@ class TraktApi(
                 val builder = OkHttpClient.Builder()
                     .retryOnConnectionFailure(true)
                     .pingInterval(8, TimeUnit.SECONDS)
-                    .connectTimeout(9, TimeUnit.SECONDS)
-                    .readTimeout(7, TimeUnit.SECONDS)
-                    .writeTimeout(7, TimeUnit.SECONDS)
+                    .connectTimeout(25, TimeUnit.SECONDS)
+                    .readTimeout(25, TimeUnit.SECONDS)
+                    .writeTimeout(25, TimeUnit.SECONDS)
                     .connectionPool(ConnectionPool(1, 25, TimeUnit.SECONDS))
                 if (loggingOn) {
                     builder.eventListener(OkHttpPerformanceEventListener())

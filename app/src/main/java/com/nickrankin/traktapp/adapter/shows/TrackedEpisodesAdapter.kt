@@ -19,6 +19,7 @@ class TrackedEpisodesAdapter(private val sharedPreferences: SharedPreferences, p
     }
 
     override fun onBindViewHolder(holder: TrackedEpisodesViewHolder, position: Int) {
+
         val currentEpisode = getItem(position)
 
             holder.bindings.apply {

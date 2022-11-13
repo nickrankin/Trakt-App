@@ -36,10 +36,10 @@ class CharacterPosterAdapter constructor(private val glide: RequestManager, priv
                         ImageItemType.MOVIE,
                         currentItem.tmdb_id,
                         currentItem.title,
-                        currentItem.year,
                         null,
                         true, characterposterlayoutPoster,
-                        null
+                        null,
+                        false
                     )
 
                     characterposterlayoutCharacter.text = currentItem.character
@@ -54,10 +54,10 @@ class CharacterPosterAdapter constructor(private val glide: RequestManager, priv
                         ImageItemType.SHOW,
                         currentItem.tmdb_id,
                         currentItem.title,
-                        currentItem.year,
                         null,
                         true, characterposterlayoutPoster,
-                        null
+                        null,
+                        false
                     )
 
                     characterposterlayoutCharacter.text = currentItem.character
@@ -72,6 +72,8 @@ class CharacterPosterAdapter constructor(private val glide: RequestManager, priv
             callback(currentItem)
         }
     }
+
+
 
     inner class CharacterVH(val bindings: LayoutCharacterPosterItemBinding): RecyclerView.ViewHolder(bindings.root)
 

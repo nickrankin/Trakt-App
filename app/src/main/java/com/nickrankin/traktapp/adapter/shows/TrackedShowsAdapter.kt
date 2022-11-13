@@ -5,12 +5,16 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.ImageView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import at.blogc.android.views.ExpandableTextView
 import com.bumptech.glide.RequestManager
+import com.google.android.material.button.MaterialButton
 import com.nickrankin.traktapp.R
+import com.nickrankin.traktapp.adapter.AdaptorActionControls
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.dao.show.model.TrackedEpisode
 import com.nickrankin.traktapp.dao.show.model.TrackedShowWithEpisodes
@@ -22,10 +26,11 @@ import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 
 private const val TAG = "TrackedShowsAdapter"
-class TrackedShowsAdapter(private val tmdbImageLoader: TmdbImageLoader, private val callback: (trackedShow: TrackedShowWithEpisodes) -> Unit, private val upcomingEpisodesCallback: (showTitle: String?, episodes: List<TrackedEpisode?>) -> Unit): MediaEntryBaseAdapter<TrackedShowWithEpisodes>(
-    null, COMPARATOR) {
+class TrackedShowsAdapter(val controls: AdaptorActionControls<TrackedShowWithEpisodes>, private val tmdbImageLoader: TmdbImageLoader): MediaEntryBaseAdapter<TrackedShowWithEpisodes>(
+    controls, COMPARATOR) {
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        super.onBindViewHolder(holder, holder.absoluteAdapterPosition)
         val selectedShow = getItem(position)
 
         when(holder) {
@@ -41,23 +46,8 @@ class TrackedShowsAdapter(private val tmdbImageLoader: TmdbImageLoader, private 
                         DateTimeFormatter.ofPattern("dd/MM/YYYY"))
 
 
-                    tmdbImageLoader.loadImages(selectedShow.trackedShow.trakt_id, ImageItemType.SHOW, selectedShow.trackedShow.tmdb_id, selectedShow.trackedShow.title ?: "", null, selectedShow.trackedShow.language,true, itemPoster, null)
+                    tmdbImageLoader.loadImages(selectedShow.trackedShow.trakt_id, ImageItemType.SHOW, selectedShow.trackedShow.tmdb_id, selectedShow.trackedShow.title ?: "", selectedShow.trackedShow.language,true, itemPoster, null, false)
 
-//                    if(selectedShow.episodes.isNotEmpty()) {
-//                        trackedshowitemUpcomingEpisodes.visibility = View.VISIBLE
-//
-//                        trackedshowitemUpcomingEpisodes.text = "Airing Soon (${selectedShow.episodes?.size})"
-//
-//                        trackedshowitemUpcomingEpisodes.setOnClickListener {
-//                            upcomingEpisodesCallback(selectedShow.trackedShow.title, selectedShow.episodes)
-//                        }
-//                    } else {
-//                        trackedshowitemUpcomingEpisodes.visibility = View.GONE
-//                    }
-
-                    root.setOnClickListener {
-                        callback(selectedShow)
-                    }
                 }
             }
             is MediaEntryBaseAdapter<*>.CardViewHolder -> {
@@ -71,32 +61,38 @@ class TrackedShowsAdapter(private val tmdbImageLoader: TmdbImageLoader, private 
 
                     itemOverview.text = selectedShow.trackedShow.overview
 
-                    tmdbImageLoader.loadImages(selectedShow.trackedShow.trakt_id, ImageItemType.SHOW, selectedShow.trackedShow.tmdb_id, selectedShow.trackedShow.title ?: "", null, selectedShow.trackedShow.language,true, itemPoster, itemBackdropImageview)
+                    tmdbImageLoader.loadImages(selectedShow.trackedShow.trakt_id, ImageItemType.SHOW, selectedShow.trackedShow.tmdb_id, selectedShow.trackedShow.title ?: "", selectedShow.trackedShow.language,true, itemPoster, itemBackdropImageview, false)
 
-//                    if(selectedShow.episodes.isNotEmpty()) {
-//                        trackedshowitemUpcomingEpisodes.visibility = View.VISIBLE
-//
-//                        trackedshowitemUpcomingEpisodes.text = "Airing Soon (${selectedShow.episodes?.size})"
-//
-//                        trackedshowitemUpcomingEpisodes.setOnClickListener {
-//                            upcomingEpisodesCallback(selectedShow.trackedShow.title, selectedShow.episodes)
-//                        }
-//                    } else {
-//                        trackedshowitemUpcomingEpisodes.visibility = View.GONE
-//                    }
+                    updateUpcomingUpisodesCount(selectedShow, buttonControl)
 
-                    root.setOnClickListener {
-                        callback(selectedShow)
-                    }
+
                 }
             }
             else -> {
                 Log.e(TAG, "onBindViewHolder: Invalid ViewHolder ${holder.javaClass.name}", )
             }
         }
+    }
 
+    private fun updateUpcomingUpisodesCount(trackedShowWithEpisodes: TrackedShowWithEpisodes, upcomingEpisodesButton: MaterialButton) {
+        Log.d(TAG, "updateUpcomingUpisodesCount: Show ${trackedShowWithEpisodes.trackedShow.title} has ${trackedShowWithEpisodes.episodes?.size} upcoming episodes")
+        val totalUpcoming = trackedShowWithEpisodes.episodes.size
 
+        if(totalUpcoming > 0) {
+            upcomingEpisodesButton.visibility = View.VISIBLE
+            upcomingEpisodesButton.text = "${upcomingEpisodesButton.text} ($totalUpcoming)"
 
+        } else {
+            upcomingEpisodesButton.visibility = View.GONE
+        }
+    }
+
+    override fun reloadImages(
+        selectedItem: TrackedShowWithEpisodes,
+        posterImageView: ImageView,
+        backdropImageView: ImageView?
+    ) {
+        tmdbImageLoader.loadImages(selectedItem.trackedShow.trakt_id, ImageItemType.SHOW, selectedItem.trackedShow.tmdb_id, selectedItem.trackedShow.title ?: "", selectedItem.trackedShow.language,true, posterImageView, backdropImageView, true)
     }
 
     companion object {

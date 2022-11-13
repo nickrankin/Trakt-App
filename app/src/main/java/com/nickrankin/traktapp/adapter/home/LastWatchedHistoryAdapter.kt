@@ -65,10 +65,10 @@ class LastWatchedHistoryAdapter<T>(
                         currentItem.tmdb_id,
                         currentItem.title,
                         null,
-                        null,
                         true,
                         itemPoster,
-                        null
+                        null,
+                        false
                     )
                 }
 
@@ -87,10 +87,10 @@ class LastWatchedHistoryAdapter<T>(
                         currentItem.show_tmdb_id,
                         currentItem.show_title,
                         null,
-                        null,
                         true,
                         itemPoster,
-                        null
+                        null,
+                        false
                     )
 
                 }

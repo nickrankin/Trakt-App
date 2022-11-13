@@ -10,6 +10,7 @@ import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.appcompat.widget.PopupMenu
 import androidx.recyclerview.widget.DiffUtil
@@ -17,6 +18,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.R
+import com.nickrankin.traktapp.adapter.AdaptorActionControls
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.dao.show.model.CollectedShow
 import com.nickrankin.traktapp.databinding.CollectedShowEntryListItemBinding
@@ -30,14 +32,14 @@ import org.threeten.bp.format.DateTimeFormatter
 private const val TAG = "CollectedShowsAdapter"
 const val ICON_MARGIN = 2
 
-class CollectedShowsAdapter(
+class CollectedShowsAdapter(controls: AdaptorActionControls<CollectedShow>,
     private val sharedPreferences: SharedPreferences,
     private val glide: RequestManager,
-    private val tmdbImageLoader: TmdbImageLoader,
-    private val callback: (selectedShow: CollectedShow, action: Int, position: Int) -> Unit
-) : MediaEntryBaseAdapter<CollectedShow>(
-    null, COMPARATOR) {
+    private val tmdbImageLoader: TmdbImageLoader) : MediaEntryBaseAdapter<CollectedShow>(
+    controls, COMPARATOR) {
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        super.onBindViewHolder(holder, holder.absoluteAdapterPosition)
+
         val currentItem = getItem(position)
 
 
@@ -57,15 +59,11 @@ class CollectedShowsAdapter(
                         ImageItemType.SHOW,
                         currentItem.show_tmdb_id,
                         currentItem.show_title,
-                        null,
                         currentItem.language,
                         true,
                         itemPoster,
-                        null)
-
-                    root.setOnClickListener {
-                        callback(currentItem, ACTION_NAVIGATE_SHOW, position)
-                    }
+                        null,
+                    false)
                 }
 
 
@@ -97,15 +95,11 @@ class CollectedShowsAdapter(
                         ImageItemType.SHOW,
                         currentItem.show_tmdb_id,
                         currentItem.show_title,
-                        null,
                         currentItem.language,
                         true,
                         itemPoster,
-                        itemBackdropImageview)
-
-                    root.setOnClickListener {
-                        callback(currentItem, ACTION_NAVIGATE_SHOW, position)
-                    }
+                        itemBackdropImageview,
+                    false)
                 }
 
 
@@ -115,8 +109,23 @@ class CollectedShowsAdapter(
                 throw  RuntimeException("Invalid ViewHolder ${holder.javaClass.name}")
             }
         }
+    }
 
-
+    override fun reloadImages(
+        selectedItem: CollectedShow,
+        posterImageView: ImageView,
+        backdropImageView: ImageView?
+    ) {
+        tmdbImageLoader.loadImages(
+            selectedItem.show_trakt_id,
+            ImageItemType.SHOW,
+            selectedItem.show_tmdb_id,
+            selectedItem.show_title,
+            selectedItem.language,
+            true,
+            posterImageView,
+            backdropImageView,
+            true)
     }
 
     companion object {

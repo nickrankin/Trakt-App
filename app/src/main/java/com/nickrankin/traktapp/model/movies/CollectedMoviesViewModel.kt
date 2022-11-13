@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.adapter.movies.CollectedMoviesAdapter
 import com.nickrankin.traktapp.dao.movies.model.CollectedMovie
+import com.nickrankin.traktapp.helper.ISortable
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.BaseViewModel
 import com.nickrankin.traktapp.model.ViewSwitcherViewModel
@@ -24,70 +25,70 @@ import javax.inject.Inject
 
 private const val TAG = "CollectedMoviesViewMode"
 @HiltViewModel
-class CollectedMoviesViewModel @Inject constructor(private val repository: CollectedMoviesRepository, private val movieStatsRepository: MovieStatsRepository): ViewSwitcherViewModel() {
+class CollectedMoviesViewModel @Inject constructor(private val repository: CollectedMoviesRepository, private val movieStatsRepository: MovieStatsRepository): ViewSwitcherViewModel(), ISortable<CollectedMovie> {
 
-    private val sortingChangeChannel = Channel<String>()
+    private val sortingChangeChannel = Channel<ISortable.Sorting>()
     private val sortingChange = sortingChangeChannel.receiveAsFlow()
-        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
-
-    private var currentSorting = SORT_COLLECTED_AT
-    private var sortHow = SortHow.ASC
-
-    init {
-        // Initially sort movies by collected at
-        sortMovies(SORT_COLLECTED_AT)
-    }
-
+        .stateIn(viewModelScope, SharingStarted.Lazily, ISortable.Sorting(SORT_COLLECTED_AT, ISortable.SORT_ORDER_DESC))
 
     val collectedMovies = refreshEvent.flatMapLatest { shouldRefresh ->
         sortingChange.flatMapLatest { sortBy ->
             repository.getCollectedMovies(shouldRefresh)
                 .map { resource ->
                 if(resource is Resource.Success) {
-                    var sortedData = resource.data
 
-                    sortedData = when(sortBy) {
-                        SORT_TITLE -> {
-                            sortedData?.sortedBy { it.title }
-                        }
-                        SORT_COLLECTED_AT -> {
-                            sortedData?.sortedBy { it.collected_at }
-                        }
-                        SORT_YEAR -> {
-                            sortedData?.sortedBy { it.release_date }
-                        }
-                        else -> {
-                            sortedData?.sortedBy { it.collected_at }
-                        }
-                    }
+                    resource.data = sortList(resource.data ?: emptyList(), sortBy)
 
-                    if(sortHow == SortHow.DESC) {
-                        sortedData = sortedData?.reversed()
-                    }
-
-                    Resource.Success(sortedData)
-                } else {
-                    resource
                 }
+                    resource
             }
         }
     }
 
-    fun sortMovies(sortBy: String) {
-        // If user chooses the same sorting by, reverse the sorting..
-        if(this.currentSorting == sortBy) {
-            if(sortHow == SortHow.DESC) {
-                this.sortHow = SortHow.ASC
-            } else {
-                this.sortHow = SortHow.DESC
-            }
-        }
-
-        // Keep track current sorting in the ViewModel
-        this.currentSorting = sortBy
-
+    override fun applySorting(sortBy: String) {
         viewModelScope.launch {
-            sortingChangeChannel.send(sortBy)
+            updateSorting(sortingChange.value, sortingChangeChannel, sortBy)
+        }
+    }
+
+    override fun sortList(
+        list: List<CollectedMovie>,
+        sorting: ISortable.Sorting
+    ): List<CollectedMovie> {
+        val sortBy = sorting.sortBy
+        val sortHow = sorting.sortHow
+
+        return when (sortBy) {
+            ISortable.SORT_BY_TITLE -> {
+                val sortedShows = list.sortedBy { it.title }
+
+                if (sortHow == ISortable.SORT_ORDER_DESC) {
+                    sortedShows.reversed()
+                } else {
+                    sortedShows
+                }
+            }
+            ISortable.SORT_BY_YEAR -> {
+                val sortedShows = list.sortedBy { it.release_date }
+
+                if (sortHow == ISortable.SORT_ORDER_DESC) {
+                    sortedShows.reversed()
+                } else {
+                    sortedShows
+                }
+            }
+            SORT_COLLECTED_AT -> {
+                val sortedShows = list.sortedBy { it.collected_at }
+
+                if (sortHow == ISortable.SORT_ORDER_DESC) {
+                    sortedShows.reversed()
+                } else {
+                    sortedShows
+                }
+            }
+            else -> {
+                list.sortedBy { it.title }
+            }
         }
     }
 
@@ -101,8 +102,6 @@ class CollectedMoviesViewModel @Inject constructor(private val repository: Colle
     }
 
     companion object {
-        const val SORT_TITLE = "title"
         const val SORT_COLLECTED_AT = "collected_at"
-        const val SORT_YEAR = "year"
     }
 }

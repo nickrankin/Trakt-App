@@ -20,6 +20,7 @@ import com.google.android.flexbox.FlexboxLayoutManager
 import com.google.android.flexbox.JustifyContent
 import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.R
+import com.nickrankin.traktapp.adapter.AdaptorActionControls
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.adapter.shows.CollectedShowsAdapter
 import com.nickrankin.traktapp.dao.show.model.CollectedShow
@@ -37,7 +38,7 @@ import javax.inject.Inject
 private const val TAG = "CollectedShowsFragment"
 
 @AndroidEntryPoint
-class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, OnNavigateToShow {
+class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
     private lateinit var bindings: FragmentCollectedShowsBinding
     private lateinit var swipeLayout: SwipeRefreshLayout
     private lateinit var progressBar: ProgressBar
@@ -45,8 +46,6 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: CollectedShowsAdapter
-
-    private var scrollToTop = true
 
     @Inject
     lateinit var tmdbImageLoader: TmdbImageLoader
@@ -113,6 +112,7 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         inflater.inflate(R.menu.collected_filter_menu, menu)
+        inflater.inflate(R.menu.layout_switcher_menu, menu)
         super.onCreateOptionsMenu(menu, inflater)
 
     }
@@ -137,11 +137,7 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
                     if (data?.isNotEmpty() == true) {
 
                         adapter.submitList(data) {
-                            if (scrollToTop) {
-                                recyclerView.scrollToPosition(0)
-
-                                scrollToTop = false
-                            }
+                            recyclerView.scrollToPosition(0)
                         }
 
                     } else {
@@ -205,47 +201,49 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
         switchRecyclerViewLayoutManager(requireContext(), recyclerView, MediaEntryBaseAdapter.VIEW_TYPE_POSTER)
 
         adapter = CollectedShowsAdapter(
-            sharedPreferences,
-            glide,
-            tmdbImageLoader,
-            callback = { show, action, pos ->
+            AdaptorActionControls(
+            context?.getDrawable(R.drawable.ic_baseline_delete_forever_24), "Remove from Collection", false, R.menu.collected_popup_menu,
+            entrySelectedCallback = {selectedItem ->
+                navigateToShow(selectedItem)
 
-                when (action) {
-                    CollectedShowsAdapter.ACTION_NAVIGATE_SHOW -> {
-                        navigateToShow(show.show_trakt_id, show.show_tmdb_id, show.show_title)
+            },
+            buttonClickedCallback = { selectedShow ->
+                removeFromCollection(selectedShow)
+
+            },
+            menuItemSelectedCallback = { selectedShow, menuItem ->
+                when(menuItem) {
+                    R.id.collectedpopupmenu_delete -> {
+                        removeFromCollection(selectedShow)
                     }
-                    CollectedShowsAdapter.ACTION_REMOVE_COLLECTION -> {
-                        removeFromCollection(show, pos)
+                    else -> {
+                        Log.e(TAG, "initRecycler: Invalid menu item $menuItem", )
                     }
                 }
-
-            })
+            }),
+            sharedPreferences,
+            glide,
+            tmdbImageLoader)
 
         recyclerView.adapter = adapter
     }
 
-    override fun navigateToShow(traktId: Int, tmdbId: Int?, title: String?) {
+    private fun navigateToShow(collectedShow: CollectedShow) {
         val intent = Intent(requireActivity(), ShowDetailsActivity::class.java)
         intent.putExtra(ShowDetailsActivity.SHOW_DATA_KEY,
             ShowDataModel(
-                traktId, tmdbId, title
+                collectedShow.show_trakt_id, collectedShow.show_tmdb_id, collectedShow.show_title
             )
         )
         startActivity(intent)
     }
 
-    private fun removeFromCollection(collectedShow: CollectedShow, position: Int) {
+    private fun removeFromCollection(collectedShow: CollectedShow) {
         val alertDialog = AlertDialog.Builder(requireContext())
             .setTitle("Delete ${collectedShow.show_title} from Collection?")
             .setMessage("Are you sure you want to delete ${collectedShow.show_title} from your Trakt Collection?")
             .setPositiveButton("Yes") { dialogInterface, i ->
                 viewModel.deleteShowFromCollection(collectedShow)
-                val listCopy: MutableList<CollectedShow> = mutableListOf()
-                    listCopy.addAll(adapter.currentList)
-
-                listCopy.removeAt(position)
-
-                adapter.submitList(listCopy)
 
                 dialogInterface.dismiss()
             }
@@ -266,18 +264,17 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.collectedfiltermenu_title -> {
-                scrollToTop = true
-                viewModel.sortShows(CollectedShowsViewModel.SORT_TITLE)
+                viewModel.applySorting(ISortable.SORT_BY_TITLE)
             }
             R.id.collectedfiltermenu_year -> {
-                scrollToTop = true
-                viewModel.sortShows(CollectedShowsViewModel.SORT_YEAR)
+                viewModel.applySorting(ISortable.SORT_BY_YEAR)
+
             }
             R.id.collectedfiltermenu_collected_at -> {
-                scrollToTop = true
-                viewModel.sortShows(CollectedShowsViewModel.SORT_COLLECT_AT)
+                viewModel.applySorting(CollectedShowsViewModel.SORT_COLLECT_AT)
+
             }
-            R.id.collectedfiltermenu_switch_layout -> {
+            R.id.menu_switch_layout -> {
                 lifecycleScope.launchWhenStarted {
                     viewModel.switchViewType()
 
@@ -312,7 +309,6 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
 
     override fun onRefresh() {
         if (isLoggedIn) {
-            scrollToTop = true
             viewModel.onRefresh()
         }
     }

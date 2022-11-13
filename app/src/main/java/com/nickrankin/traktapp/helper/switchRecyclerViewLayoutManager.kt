@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.nickrankin.traktapp.adapter.MediaEntryBasePagingAdapter
-
+private const val DEFAULT_POSTER_WIDTH = 170
 fun switchRecyclerViewLayoutManager(context: Context, recyclerView: RecyclerView, viewType: Int) {
     var lm: GridLayoutManager? = null
 
@@ -14,7 +14,7 @@ fun switchRecyclerViewLayoutManager(context: Context, recyclerView: RecyclerView
             val screenWidthDp = displayMetrics?.widthPixels?.div(displayMetrics.density)
 
             if (screenWidthDp != null) {
-                lm = GridLayoutManager(context, (screenWidthDp / 120).toInt())
+                lm = GridLayoutManager(context, (screenWidthDp / DEFAULT_POSTER_WIDTH).toInt())
             } else {
                 GridLayoutManager(context, 1)
             }

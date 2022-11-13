@@ -8,12 +8,13 @@
         app:showAsAction="always">
         <menu>
             <item
-                android:id="@+id/collectedfiltermenu_title"
-                android:title="Title" />
+                android:id="@+id/reccomendedfiltermenu_recommended_at"
+                android:title="Last Recommended" />
             <item
-                android:id="@+id/collectedfiltermenu_collected_at"
-                android:title="Collected At" />
-            <item android:id="@+id/collectedfiltermenu_year"
+                android:id="@+id/reccomendedfiltermenu_title"
+                android:title="Title" />
+
+            <item android:id="@+id/reccomendedfiltermenu_year"
                 android:title="Year" />
         </menu>
     </item>

@@ -3,6 +3,7 @@ package com.nickrankin.traktapp.adapter.movies
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -30,7 +31,7 @@ class TrendingMoviesAdaptor(private val tmdbImageLoader: TmdbImageLoader, privat
                     itemWatchedDate.text = "${currentItem?.watchers ?: 0} watching this right now"
                     itemOverview.text = currentItem.movie?.overview
 
-                    tmdbImageLoader.loadImages(currentItem.movie?.ids?.trakt ?: 0, ImageItemType.MOVIE, currentItem.movie?.ids?.tmdb ?: 0,  currentItem.movie?.title, null, currentItem?.movie?.language, true, itemPoster, itemBackdropImageview)
+                    tmdbImageLoader.loadImages(currentItem.movie?.ids?.trakt ?: 0, ImageItemType.MOVIE, currentItem.movie?.ids?.tmdb ?: 0,  currentItem.movie?.title, currentItem?.movie?.language, true, itemPoster, itemBackdropImageview, false)
 
                     root.setOnClickListener {
                         callback(currentItem)
@@ -46,7 +47,7 @@ class TrendingMoviesAdaptor(private val tmdbImageLoader: TmdbImageLoader, privat
                     itemIcon.setImageResource(R.drawable.ic_baseline_people_24)
 
                     itemTimestamp.text = "${currentItem?.watchers ?: 0} watching this now"
-                    tmdbImageLoader.loadImages(currentItem.movie?.ids?.trakt ?: 0, ImageItemType.MOVIE, currentItem.movie?.ids?.tmdb ?: 0,  currentItem.movie?.title, null, currentItem?.movie?.language, true, itemPoster, null)
+                    tmdbImageLoader.loadImages(currentItem.movie?.ids?.trakt ?: 0, ImageItemType.MOVIE, currentItem.movie?.ids?.tmdb ?: 0,  currentItem.movie?.title, currentItem?.movie?.language, true, itemPoster, null, false)
 
                     root.setOnClickListener {
                         callback(currentItem)
@@ -54,8 +55,14 @@ class TrendingMoviesAdaptor(private val tmdbImageLoader: TmdbImageLoader, privat
                 }
             }
         }
+    }
 
-
+    override fun reloadImages(
+        selectedItem: TrendingMovie,
+        posterImageView: ImageView,
+        backdropImageView: ImageView?
+    ) {
+        tmdbImageLoader.loadImages(selectedItem.movie?.ids?.trakt ?: 0, ImageItemType.MOVIE, selectedItem.movie?.ids?.tmdb ?: 0,  selectedItem.movie?.title, selectedItem?.movie?.language, true, posterImageView, backdropImageView, true)
     }
 
     companion object {

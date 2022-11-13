@@ -2,5 +2,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/suggestedpopupmenu_dismiss_suggestion"
+        android:icon="@drawable/ic_baseline_do_disturb_24"
         android:title="Not Interested" />
+
 </menu>

@@ -7,22 +7,14 @@ import android.view.*
 import android.widget.ProgressBar
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.google.android.flexbox.FlexDirection
-import com.google.android.flexbox.FlexboxLayoutManager
-import com.google.android.flexbox.JustifyContent
 import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.adapter.movies.TrendingMoviesAdaptor
 import com.nickrankin.traktapp.databinding.FragmentTrendingMoviesBinding
-import com.nickrankin.traktapp.helper.IHandleError
-import com.nickrankin.traktapp.helper.TmdbImageLoader
-import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.helper.switchRecyclerViewLayoutManager
+import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.movies.TrendingMoviesViewModel
 import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
@@ -73,7 +65,8 @@ class TrendingMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        inflater.inflate(R.menu.collected_filter_menu, menu)
+        inflater.inflate(R.menu.trending_filter_menu, menu)
+        inflater.inflate(R.menu.layout_switcher_menu, menu)
         super.onCreateOptionsMenu(menu, inflater)
 
     }
@@ -98,7 +91,9 @@ class TrendingMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
                             swipeLayout.isRefreshing = false
                         }
 
-                        adapter.submitList(trendingMoviesResource.data)
+                        adapter.submitList(trendingMoviesResource.data) {
+                            recyclerView.scrollToPosition(0)
+                        }
                     }
 
                     is Resource.Error -> {
@@ -162,10 +157,19 @@ class TrendingMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
 
         when(item.itemId) {
-            R.id.collectedfiltermenu_switch_layout -> {
+            R.id.menu_switch_layout -> {
                 lifecycleScope.launchWhenStarted {
                     viewModel.switchViewType()
                 }
+            }
+            R.id.trendingfiltermenu_title -> {
+                viewModel.applySorting(ISortable.SORT_BY_TITLE)
+            }
+            R.id.trendingfiltermenu_year -> {
+                viewModel.applySorting(ISortable.SORT_BY_YEAR)
+            }
+            R.id.trendingfiltermenu_watchers -> {
+                viewModel.applySorting(TrendingMoviesViewModel.TOTAL_WATCHING_SORT_BY)
             }
             else -> {
                 Log.e(TAG, "onOptionsItemSelected: Invalid menu item ${item.itemId}", )

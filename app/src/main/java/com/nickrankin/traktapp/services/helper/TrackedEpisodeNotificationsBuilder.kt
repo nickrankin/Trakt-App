@@ -122,7 +122,7 @@ class TrackedEpisodeNotificationsBuilder(private val context: Context) {
 
         return TaskStackBuilder.create(context).run {
             addNextIntentWithParentStack(intent)
-            getPendingIntent(trackedEpisode.trakt_id, PendingIntent.FLAG_CANCEL_CURRENT)
+            getPendingIntent(trackedEpisode.trakt_id, PendingIntent.FLAG_IMMUTABLE)
         }
     }
 
@@ -132,7 +132,7 @@ class TrackedEpisodeNotificationsBuilder(private val context: Context) {
         val intent = Intent(context, CancelShowTrackingNotificationReceiver::class.java)
         intent.putExtra(DISMISSED_TRAKT_EPISODE_NOTIFICATION_ID, trackedEpisode.trakt_id)
 
-        return PendingIntent.getBroadcast(context, trackedEpisode.trakt_id, intent, 0)
+        return PendingIntent.getBroadcast(context, trackedEpisode.trakt_id, intent, PendingIntent.FLAG_IMMUTABLE)
     }
 
 

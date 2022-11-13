@@ -4,6 +4,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.PopupMenu
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -34,7 +35,7 @@ class RecommendedShowsAdapter(private val tmdbImageLoader: TmdbImageLoader, cont
                     itemWatchedDate.visibility = View.GONE
                     itemOverview.text = currentItem?.overview
 
-                    tmdbImageLoader.loadImages(currentItem?.ids?.trakt ?: 0, ImageItemType.SHOW,currentItem?.ids?.tmdb ?: 0,currentItem?.title ?: "", currentItem?.year, currentItem.language, true, itemPoster, itemBackdropImageview)
+                    tmdbImageLoader.loadImages(currentItem?.ids?.trakt ?: 0, ImageItemType.SHOW,currentItem?.ids?.tmdb ?: 0,currentItem?.title ?: "", currentItem.language, true, itemPoster, itemBackdropImageview, false)
                 }
             }
             is MediaEntryBaseAdapter<*>.PosterViewHolder -> {
@@ -42,7 +43,7 @@ class RecommendedShowsAdapter(private val tmdbImageLoader: TmdbImageLoader, cont
                     itemTitle.text = currentItem?.title
                     itemTimestamp.visibility = View.GONE
 
-                    tmdbImageLoader.loadImages(currentItem?.ids?.trakt ?: 0, ImageItemType.SHOW,currentItem?.ids?.tmdb ?: 0,currentItem?.title ?: "", currentItem?.year, currentItem.language, true, itemPoster, null)
+                    tmdbImageLoader.loadImages(currentItem?.ids?.trakt ?: 0, ImageItemType.SHOW,currentItem?.ids?.tmdb ?: 0,currentItem?.title ?: "", currentItem.language, true, itemPoster, null, false)
 
                 }
             }
@@ -50,6 +51,14 @@ class RecommendedShowsAdapter(private val tmdbImageLoader: TmdbImageLoader, cont
                 Log.e(TAG, "onBindViewHolder: Error invalid ViewHolder ${holder.javaClass.name}", )
             }
         }
+    }
+
+    override fun reloadImages(
+        selectedItem: Show,
+        posterImageView: ImageView,
+        backdropImageView: ImageView?
+    ) {
+        tmdbImageLoader.loadImages(selectedItem?.ids?.trakt ?: 0, ImageItemType.SHOW,selectedItem?.ids?.tmdb ?: 0,selectedItem?.title ?: "", selectedItem.language, true, posterImageView, backdropImageView, true)
 
     }
 

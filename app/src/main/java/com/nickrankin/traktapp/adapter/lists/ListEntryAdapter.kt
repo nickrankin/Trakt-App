@@ -111,11 +111,11 @@ class ListEntryAdapter constructor(
                         ImageItemType.MOVIE,
                         currentItem.movie?.tmdb_id,
                         currentItem.movie?.title,
-                        null,
                         currentItem.movie?.language,
                         true,
                         movieentryPoster,
-                    movieentryBackdrop)
+                    movieentryBackdrop,
+                    false)
 
                     root.setOnClickListener {
                         callback(
@@ -166,11 +166,11 @@ class ListEntryAdapter constructor(
                         ImageItemType.SHOW,
                         currentItem.show?.tmdb_id,
                         currentItem.show?.title ?: "",
-                        null,
                         currentItem.show?.language,
                         true,
                         showentryPoster,
-                    showentryBackdrop)
+                    showentryBackdrop,
+                    false)
 
 
                     root.setOnClickListener {
@@ -223,7 +223,8 @@ class ListEntryAdapter constructor(
                         currentItem.episode?.language,
                         true,
                         episodeentryPoster,
-                    episodeentryBackdrop)
+                    episodeentryBackdrop,
+                    false)
 
 
                     episodeentryOverview.setOnClickListener {

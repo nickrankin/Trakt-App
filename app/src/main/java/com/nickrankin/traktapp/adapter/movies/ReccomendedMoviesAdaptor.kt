@@ -4,6 +4,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -32,7 +33,7 @@ class ReccomendedMoviesAdaptor(private val tmdbImageLoader: TmdbImageLoader, ada
                     itemWatchedDate.visibility = View.GONE
                     itemOverview.text = currentItem?.overview
 
-                    tmdbImageLoader.loadImages(currentItem?.ids?.trakt ?: 0, ImageItemType.MOVIE,currentItem?.ids?.tmdb ?: 0,  currentItem.title, null, currentItem.language, true, itemPoster, itemBackdropImageview)
+                    tmdbImageLoader.loadImages(currentItem?.ids?.trakt ?: 0, ImageItemType.MOVIE,currentItem?.ids?.tmdb ?: 0,  currentItem.title, currentItem.language, true, itemPoster, itemBackdropImageview, false)
                 }
             }
             is MediaEntryBaseAdapter<*>.PosterViewHolder -> {
@@ -40,7 +41,7 @@ class ReccomendedMoviesAdaptor(private val tmdbImageLoader: TmdbImageLoader, ada
                     itemTitle.text = currentItem?.title
                     itemTimestamp.visibility = View.GONE
 
-                    tmdbImageLoader.loadImages(currentItem?.ids?.trakt ?: 0, ImageItemType.MOVIE,currentItem?.ids?.tmdb ?: 0,  currentItem.title, null, currentItem.language, true, itemPoster, null)
+                    tmdbImageLoader.loadImages(currentItem?.ids?.trakt ?: 0, ImageItemType.MOVIE,currentItem?.ids?.tmdb ?: 0,  currentItem.title, currentItem.language, true, itemPoster, null, false)
 
                 }
             }
@@ -49,6 +50,14 @@ class ReccomendedMoviesAdaptor(private val tmdbImageLoader: TmdbImageLoader, ada
             }
         }
 
+    }
+
+    override fun reloadImages(
+        selectedItem: Movie,
+        posterImageView: ImageView,
+        backdropImageView: ImageView?
+    ) {
+        tmdbImageLoader.loadImages(selectedItem?.ids?.trakt ?: 0, ImageItemType.MOVIE,selectedItem?.ids?.tmdb ?: 0,  selectedItem.title, selectedItem.language, true, posterImageView, backdropImageView, true)
 
     }
 

@@ -44,18 +44,20 @@ class TmdbImageLoader @Inject constructor(
         imageItemType: ImageItemType,
         tmbId: Int?,
         title: String?,
-        year: Int?,
         originalLanguage: String?,
         shouldCache: Boolean,
         posterImageView: ImageView,
-        backdropImageView: ImageView?
+        backdropImageView: ImageView?,
+        forceRefresh: Boolean
     ) {
         scope.launch {
             val cachedPosters = imagesDao.getImage(getPrefix(imageItemType)+traktId)
 
-            if (cachedPosters != null) {
+            if (cachedPosters != null && !forceRefresh) {
+                //Log.d(TAG, "loadImages: Loading images from cache for $traktId // $title")
                 loadImagesOnMainThread(cachedPosters, imageItemType, posterImageView, backdropImageView)
             } else {
+                Log.d(TAG, "loadImages: Refreshing images for $traktId // $title")
 
                 if (imageItemType == ImageItemType.EPISODE) {
                     throw RuntimeException("For episodes, use loadEpisodeImages() method")
@@ -86,7 +88,8 @@ class TmdbImageLoader @Inject constructor(
         originalLanguage: String?,
         shouldCache: Boolean,
         posterImageView: ImageView,
-        backdropImageView: ImageView?
+        backdropImageView: ImageView?,
+        shouldRefresh: Boolean
     ) {
         // Episodes are a special item type, as episodes may have Still shots we should load. An episode image should include a still for backdrop, and the shows poster.
 
@@ -94,10 +97,13 @@ class TmdbImageLoader @Inject constructor(
             // See if we have Episode images, if not get them:
             val cachedEpisodeImages = imagesDao.getImage(PREFIX_EPISODE+traktId)
 
-            if(cachedEpisodeImages != null) {
+            if(cachedEpisodeImages != null && !shouldRefresh) {
+                //Log.d(TAG, "loadEpisodeImages: Loading image from cache $traktId - $showTitle")
                 loadImagesOnMainThread(cachedEpisodeImages, ImageItemType.EPISODE, posterImageView, backdropImageView)
 
             } else {
+                Log.d(TAG, "loadEpisodeImages: Loading image from cache $traktId - $showTitle")
+
                 // Check if the Show images are already cached:
                 val cachedShowImages = imagesDao.getImage(PREFIX_SHOW+showTraktId)
 
@@ -349,7 +355,7 @@ class TmdbImageLoader @Inject constructor(
             if (image.poster_path != null) {
                 glide
                     .load(AppConstants.TMDB_POSTER_URL + image.poster_path)
-                    .override(120, 250)
+                    .override(180, 250)
                     .into(posterImageView)
             } else {
                 when(imageItemType) {

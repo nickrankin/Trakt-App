@@ -54,7 +54,7 @@ class WatchedMoviesPagingAdapter(controls: AdaptorActionControls<WatchedMovieAnd
                     if(currentItem?.watchedMovie?.watched_at != null) {
                         itemWatchedDate.text = "Watched: " + getFormattedDate(currentItem.watchedMovie.watched_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)+ " ", sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))
                     }
-                    tmdbImageLoader.loadImages(currentItem?.watchedMovie?.trakt_id ?: 0, ImageItemType.MOVIE,currentItem?.watchedMovie?.tmdb_id ?: 0,  currentItem?.watchedMovie?.title, null, currentItem?.watchedMovie?.language,true, itemPoster, itemBackdropImageview)
+                    tmdbImageLoader.loadImages(currentItem?.watchedMovie?.trakt_id ?: 0, ImageItemType.MOVIE,currentItem?.watchedMovie?.tmdb_id ?: 0,  currentItem?.watchedMovie?.title, currentItem?.watchedMovie?.language,true, itemPoster, itemBackdropImageview, false)
 
                     val ratingStat = currentItem?.ratedMovieStats
 
@@ -82,7 +82,7 @@ class WatchedMoviesPagingAdapter(controls: AdaptorActionControls<WatchedMovieAnd
                         itemTimestamp.text = getFormattedDate(currentItem.watchedMovie.watched_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)+ " ", sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))
                     }
 
-                    tmdbImageLoader.loadImages(currentItem?.watchedMovie?.trakt_id ?: 0, ImageItemType.MOVIE,currentItem?.watchedMovie?.tmdb_id ?: 0,  currentItem?.watchedMovie?.title, null, currentItem?.watchedMovie?.language,true, itemPoster, null)
+                    tmdbImageLoader.loadImages(currentItem?.watchedMovie?.trakt_id ?: 0, ImageItemType.MOVIE,currentItem?.watchedMovie?.tmdb_id ?: 0,  currentItem?.watchedMovie?.title, currentItem?.watchedMovie?.language,true, itemPoster, null, false)
 
                 }
             }
@@ -109,6 +109,14 @@ class WatchedMoviesPagingAdapter(controls: AdaptorActionControls<WatchedMovieAnd
 //
 //       // Log.e(TAG, "onViewDetachedFromWindow: Detached ${(holder as MediaEntryBasePagingAdapter<*>.PosterViewHolder).bindings.itemTitle.text} at pos ${holder.absoluteAdapterPosition}", )
 //    }
+
+    override fun reloadImages(
+        selectedItem: WatchedMovieAndStats,
+        posterImageView: ImageView,
+        backdropImageView: ImageView?
+    ) {
+        tmdbImageLoader.loadImages(selectedItem?.watchedMovie?.trakt_id ?: 0, ImageItemType.MOVIE,selectedItem?.watchedMovie?.tmdb_id ?: 0,  selectedItem?.watchedMovie?.title, selectedItem?.watchedMovie?.language,true, posterImageView, backdropImageView, true)
+    }
 
     companion object {
         const val ACTION_NAVIGATE_MOVIE = 0

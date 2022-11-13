@@ -2,6 +2,7 @@ package com.nickrankin.traktapp.adapter.shows
 
 import android.content.SharedPreferences
 import android.view.View
+import android.widget.ImageView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.nickrankin.traktapp.adapter.AdaptorActionControls
@@ -24,7 +25,7 @@ class WatchedEpisodesPagingAdapter(controls: AdaptorActionControls<WatchedEpisod
                     itemTitle.text = "${currentItem?.watchedEpisode?.show_title} (S${currentItem?.watchedEpisode?.episode_season}E${currentItem?.watchedEpisode?.episode_number})"
 
                     tmdbImageLoader.loadEpisodeImages(currentItem?.watchedEpisode?.episode_trakt_id ?: 0, currentItem?.watchedEpisode?.show_tmdb_id ?: 0, currentItem?.watchedEpisode?.show_trakt_id ?: 0,
-                        currentItem?.watchedEpisode?.episode_season, currentItem?.watchedEpisode?.episode_number, currentItem?.watchedEpisode?.show_title ?: "", currentItem?.watchedEpisode?.language, true, itemPoster, null)
+                        currentItem?.watchedEpisode?.episode_season, currentItem?.watchedEpisode?.episode_number, currentItem?.watchedEpisode?.show_title ?: "", currentItem?.watchedEpisode?.language, true, itemPoster, null, false)
 
                     if(currentItem?.watchedEpisode?.watched_at != null) {
                         itemTimestamp.visibility = View.VISIBLE
@@ -49,14 +50,20 @@ class WatchedEpisodesPagingAdapter(controls: AdaptorActionControls<WatchedEpisod
 
 
                     tmdbImageLoader.loadEpisodeImages(currentItem?.watchedEpisode?.episode_trakt_id ?: 0, currentItem?.watchedEpisode?.show_tmdb_id ?: 0, currentItem?.watchedEpisode?.show_trakt_id ?: 0,
-                        currentItem?.watchedEpisode?.episode_season, currentItem?.watchedEpisode?.episode_number, currentItem?.watchedEpisode?.show_title ?: "", currentItem?.watchedEpisode?.language, true, itemPoster, itemBackdropImageview)
+                        currentItem?.watchedEpisode?.episode_season, currentItem?.watchedEpisode?.episode_number, currentItem?.watchedEpisode?.show_title ?: "", currentItem?.watchedEpisode?.language, true, itemPoster, itemBackdropImageview, false)
 
                 }
             }
         }
+    }
 
-
-
+    override fun reloadImages(
+        selectedItem: WatchedEpisodeAndStats,
+        posterImageView: ImageView,
+        backdropImageView: ImageView?
+    ) {
+        tmdbImageLoader.loadEpisodeImages(selectedItem?.watchedEpisode?.episode_trakt_id ?: 0, selectedItem?.watchedEpisode?.show_tmdb_id ?: 0, selectedItem?.watchedEpisode?.show_trakt_id ?: 0,
+            selectedItem?.watchedEpisode?.episode_season, selectedItem?.watchedEpisode?.episode_number, selectedItem?.watchedEpisode?.show_title ?: "", selectedItem?.watchedEpisode?.language, true, posterImageView, backdropImageView, true)
     }
 
     companion object {

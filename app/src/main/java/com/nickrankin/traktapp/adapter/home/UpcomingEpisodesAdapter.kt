@@ -56,11 +56,11 @@ class UpcomingEpisodesAdapter(
                         ImageItemType.SHOW,
                         currentItem.show_tmdb_id,
                         currentItem?.show_title,
-                        null,
                         currentItem.language,
                         true,
                         itemPoster,
-                        null
+                        null,
+                        false
                     )
 
 

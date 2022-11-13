@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.appcompat.widget.PopupMenu
 import androidx.recyclerview.widget.DiffUtil
@@ -51,7 +52,7 @@ class ShowCalendarEntriesAdapter @Inject constructor(private val sharedPreferenc
 
                     itemOverview.text = currentItem.episode_overview
 
-                    tmdbImageLoader.loadEpisodeImages(currentItem.episode_trakt_id, currentItem.show_tmdb_id, currentItem.show_trakt_id, currentItem.episode_season,currentItem.episode_number, currentItem?.show_title ?: "",currentItem.language,true, itemPoster, itemBackdropImageview)
+                    tmdbImageLoader.loadEpisodeImages(currentItem.episode_trakt_id, currentItem.show_tmdb_id, currentItem.show_trakt_id, currentItem.episode_season,currentItem.episode_number, currentItem?.show_title ?: "",currentItem.language,true, itemPoster, itemBackdropImageview, false)
 
                     root.setOnClickListener { callback(currentItem, ACTION_NAVIGATE_EPISODE) }
 
@@ -74,12 +75,20 @@ class ShowCalendarEntriesAdapter @Inject constructor(private val sharedPreferenc
                         itemTimestamp.text = "Airing: ${getFormattedDate(currentItem.first_aired, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))}"
                     }
 
-                    tmdbImageLoader.loadEpisodeImages(currentItem.episode_trakt_id, currentItem.show_tmdb_id, currentItem.show_trakt_id, currentItem.episode_season,currentItem.episode_number, currentItem?.show_title ?: "",currentItem.language,true, itemPoster, null)
+                    tmdbImageLoader.loadEpisodeImages(currentItem.episode_trakt_id, currentItem.show_tmdb_id, currentItem.show_trakt_id, currentItem.episode_season,currentItem.episode_number, currentItem?.show_title ?: "",currentItem.language,true, itemPoster, null, false)
 
                     root.setOnClickListener { callback(currentItem, ACTION_NAVIGATE_EPISODE) }
                 }
             }
         }
+    }
+
+    override fun reloadImages(
+        selectedItem: ShowCalendarEntry,
+        posterImageView: ImageView,
+        backdropImageView: ImageView?
+    ) {
+        tmdbImageLoader.loadEpisodeImages(selectedItem.episode_trakt_id, selectedItem.show_tmdb_id, selectedItem.show_trakt_id, selectedItem.episode_season, selectedItem.episode_number, selectedItem?.show_title ?: "", selectedItem.language,true, posterImageView, backdropImageView, true)
     }
 
     companion object {
