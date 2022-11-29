@@ -21,7 +21,6 @@ import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.Response
 import com.nickrankin.traktapp.helper.getSyncResponse
-import com.nickrankin.traktapp.model.movies.MovieDetailsFragmentsViewModel
 import com.nickrankin.traktapp.model.movies.MovieDetailsViewModel
 import com.nickrankin.traktapp.ui.dialog.RatingPickerFragment
 import com.nickrankin.traktmanager.ui.dialoguifragments.WatchedDatePickerFragment
@@ -38,7 +37,7 @@ private const val TAG = "ShowDetailsActionButton"
 @AndroidEntryPoint
 class MovieDetailsActionButtonsFragment : BaseFragment() {
 
-    private val viewModel: MovieDetailsFragmentsViewModel by activityViewModels()
+    private val viewModel: MovieDetailsViewModel by activityViewModels()
 
     private lateinit var bindings: ActionButtonsFragmentBinding
 
@@ -76,31 +75,40 @@ class MovieDetailsActionButtonsFragment : BaseFragment() {
 
     fun initFragment() {
         lifecycleScope.launchWhenStarted {
-            viewModel.movie.collectLatest { movie ->
-                if(movie != null) {
-                    if (isLoggedIn) {
+            viewModel.movie.collectLatest { movieResource ->
 
-                        setupAddHistoryButton(movie)
+                when(movieResource) {
+                    is Resource.Loading -> {
 
-                        // Dialogs
-                        initAddToCollectionDialogs(movie)
-                        initRatingsDialog(movie)
-
-                        // Buttons
-                        setupCheckinButton(movie)
-                        setupAddListsButton(movie)
-
-                        // Get Data
-                        getRatings(movie)
-                        getCollectedStatus(movie)
-                        getEvents(movie)
                     }
+                    is Resource.Success -> {
+                        val movie = movieResource.data
+                        if(movie != null) {
+                            if (isLoggedIn) {
+
+                                setupAddHistoryButton(movie)
+
+                                // Dialogs
+                                initAddToCollectionDialogs(movie)
+                                initRatingsDialog(movie)
+
+                                // Buttons
+                                setupCheckinButton(movie)
+                                setupAddListsButton(movie)
+
+                                // Get Data
+                                getRatings(movie)
+                                getCollectedStatus(movie)
+                                getEvents(movie)
+                            }
+                        }
+                    }
+                    is Resource.Error -> TODO()
+
                 }
+
             }
         }
-
-
-
     }
 
     private fun setupAddListsButton(tmMovie: TmMovie) {
@@ -265,7 +273,6 @@ class MovieDetailsActionButtonsFragment : BaseFragment() {
         ratingDialog = RatingPickerFragment(callback = { newRating ->
             Log.d(TAG, "initDialogs: Updating rating with $newRating")
             bindings.actionbuttonRate.isEnabled = false
-            bindings.actionButtonRateProgressbar.visibility = View.VISIBLE
 
             if (newRating != -1) {
                 Log.d(TAG, "Calling viewModel.updateRating")
@@ -299,10 +306,7 @@ class MovieDetailsActionButtonsFragment : BaseFragment() {
 
                                 // If we find current movie in list, checkbox should be ticked
                                 checkbox.isChecked = listWithEntries.entries.find {
-                                    Log.d(
-                                        TAG,
-                                        "setupListsDialog: List Entry TraktId: ${it?.list_entry_trakt_id} TRAKT ID: ${movie.trakt_id}"
-                                    )
+
                                     it?.list_entry_trakt_id == movie.trakt_id
                                 } != null
 
@@ -331,7 +335,7 @@ class MovieDetailsActionButtonsFragment : BaseFragment() {
         lifecycleScope.launchWhenStarted {
             viewModel.events.collectLatest { event ->
                 when (event) {
-                    is MovieDetailsFragmentsViewModel.Event.AddListEntryEvent -> {
+                    is MovieDetailsViewModel.Event.AddListEntryEvent -> {
                         val syncResponseResource = event.addListEntryResponse
 
                         when (syncResponseResource) {
@@ -370,7 +374,7 @@ class MovieDetailsActionButtonsFragment : BaseFragment() {
                         }
 
                     }
-                    is MovieDetailsFragmentsViewModel.Event.RemoveListEntryEvent -> {
+                    is MovieDetailsViewModel.Event.RemoveListEntryEvent -> {
                         val syncResponseResource = event.removeListEntryResponse
 
                         when (syncResponseResource) {
@@ -410,7 +414,7 @@ class MovieDetailsActionButtonsFragment : BaseFragment() {
                             }
                         }
                     }
-                    is MovieDetailsFragmentsViewModel.Event.AddToHistoryEvent -> {
+                    is MovieDetailsViewModel.Event.AddToHistoryEvent -> {
                         val syncResponseResource = event.addHistoryResponse
 
                         when (syncResponseResource) {
@@ -449,7 +453,7 @@ class MovieDetailsActionButtonsFragment : BaseFragment() {
 
                     }
 
-                    is MovieDetailsFragmentsViewModel.Event.CheckinEvent -> {
+                    is MovieDetailsViewModel.Event.CheckinEvent -> {
                         when (event.movieCheckinResponse) {
                             is Resource.Success -> {
                                 displayMessageToast(
@@ -485,7 +489,7 @@ class MovieDetailsActionButtonsFragment : BaseFragment() {
 
                         }
                     }
-                    is MovieDetailsFragmentsViewModel.Event.AddRatingEvent -> {
+                    is MovieDetailsViewModel.Event.AddRatingEvent -> {
 
                         when (val syncResponseResource = event.syncResponse) {
                             is Resource.Success -> {
@@ -532,7 +536,7 @@ class MovieDetailsActionButtonsFragment : BaseFragment() {
 
                         }
                     }
-                    is MovieDetailsFragmentsViewModel.Event.DeleteRatingEvent -> {
+                    is MovieDetailsViewModel.Event.DeleteRatingEvent -> {
                         val syncResponseResource = event.syncResponse
 
                         bindings.actionbuttonRate.isEnabled = true
@@ -567,7 +571,7 @@ class MovieDetailsActionButtonsFragment : BaseFragment() {
                         }
                     }
 
-                    is MovieDetailsFragmentsViewModel.Event.AddToCollectionEvent -> {
+                    is MovieDetailsViewModel.Event.AddToCollectionEvent -> {
                         val syncResponseResource = event.syncResponse
 
                         if (syncResponseResource is Resource.Success) {
@@ -605,7 +609,7 @@ class MovieDetailsActionButtonsFragment : BaseFragment() {
                         }
                     }
 
-                    is MovieDetailsFragmentsViewModel.Event.RemoveFromCollectionEvent -> {
+                    is MovieDetailsViewModel.Event.RemoveFromCollectionEvent -> {
                         val syncResponseResource = event.syncResponse
 
                         if (syncResponseResource is Resource.Success) {

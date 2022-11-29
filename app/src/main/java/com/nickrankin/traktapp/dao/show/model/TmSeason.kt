@@ -6,6 +6,8 @@ import com.uwetrottmann.tmdb2.entities.Credits
 import com.uwetrottmann.tmdb2.entities.Images
 import com.uwetrottmann.tmdb2.entities.TvSeasonExternalIds
 import com.uwetrottmann.tmdb2.entities.Videos
+import org.threeten.bp.LocalDate
+import org.threeten.bp.OffsetDateTime
 import java.util.*
 
 @Entity(tableName = "seasons")
@@ -18,11 +20,9 @@ data class TmSeason(
     val language: String?,
     val name: String,
     val overview: String?,
-    val credits: Credits?,
-    val externalIds: TvSeasonExternalIds?,
     val images: Images?,
     val videos: Videos?,
-    val air_date: Date?,
+    val air_date: OffsetDateTime?,
     val episode_count: Int,
     val season_number: Int,
     val poster_path: String?,

@@ -13,6 +13,7 @@ import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.images.ImagesDatabase
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.helper.TmdbImageLoader
+import com.nickrankin.traktapp.helper.TmdbToTraktIdHelper
 import com.nickrankin.traktapp.services.helper.TrackedEpisodeAlarmScheduler
 import com.nickrankin.traktapp.services.helper.TrackedEpisodeNotificationsBuilder
 import com.uwetrottmann.trakt5.entities.UserSlug
@@ -91,5 +92,11 @@ object ApiModules {
     @Provides
     fun provideWorkManager(@ApplicationContext context: Context): WorkManager {
         return WorkManager.getInstance(context)
+    }
+
+    @Singleton
+    @Provides
+    fun provideTmdbIdToTraktIdHelper(traktApi: TraktApi): TmdbToTraktIdHelper {
+        return TmdbToTraktIdHelper(traktApi)
     }
 }

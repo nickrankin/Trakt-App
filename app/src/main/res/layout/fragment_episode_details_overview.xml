@@ -67,15 +67,28 @@
         app:layout_constraintTop_toBottomOf="@id/episodedetailsoverview_cast_title"
         app:layout_constraintStart_toEndOf="@id/showdetailsactivity_cast_regular_button" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/episodedetailsoverview_cast_recycler"
+    <FrameLayout
+        android:id="@+id/showdetailsactivity_cast_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:nestedScrollingEnabled="false"
-        android:layout_marginBottom="8dp"
         app:layout_constraintStart_toStartOf="@id/episodedetailsoverview_overview"
         app:layout_constraintEnd_toEndOf="@id/episodedetailsoverview_overview"
-        app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_cast_regular_button" />
+        app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_cast_regular_button">
+        <ProgressBar
+            android:id="@+id/showdetailsactivity_cast_progressbar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"/>
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/episodedetailsoverview_cast_recycler"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false"
+            android:layout_marginBottom="8dp"
+            />
+    </FrameLayout>
+
+
 
     <androidx.constraintlayout.widget.Group
         android:id="@+id/episodedetailsoverview_main_group"
@@ -83,7 +96,7 @@
         android:layout_height="wrap_content"
         android:visibility="gone"
         tools:visibility="visible"
-        app:constraint_referenced_ids="episodedetailsoverview_overview, episodedetailsoverview_cast_recycler,showdetailsactivity_cast_guest_button,showdetailsactivity_cast_regular_button,episodedetailsoverview_cast_title" />
+        app:constraint_referenced_ids="episodedetailsoverview_overview, showdetailsactivity_cast_container,showdetailsactivity_cast_guest_button,showdetailsactivity_cast_regular_button,episodedetailsoverview_cast_title" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

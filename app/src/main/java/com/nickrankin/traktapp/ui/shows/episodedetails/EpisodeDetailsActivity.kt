@@ -33,6 +33,7 @@ import com.uwetrottmann.trakt5.entities.SyncItems
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import org.apache.commons.lang3.time.DateFormatUtils
+import org.threeten.bp.format.DateTimeFormatter
 import javax.inject.Inject
 
 private const val TAG = "EpisodeDetailsActivity"
@@ -87,7 +88,7 @@ class EpisodeDetailsActivity : BaseActivity(), OnNavigateToShow, SwipeRefreshLay
 
         getShow()
         getEpisode()
-//        getEvents()
+        getEvents()
 
     }
 
@@ -125,10 +126,8 @@ class EpisodeDetailsActivity : BaseActivity(), OnNavigateToShow, SwipeRefreshLay
 
                 when (showResource) {
                     is Resource.Loading -> {
-                        Log.d(TAG, "collectShow: Loading show..")
                     }
                     is Resource.Success -> {
-                        Log.d(TAG, "collectShow: Got show! ${showResource.data}")
                         displayShow(show)
 
                         if(isLoggedIn) {
@@ -164,7 +163,6 @@ class EpisodeDetailsActivity : BaseActivity(), OnNavigateToShow, SwipeRefreshLay
                 when (episodeResource) {
                     is Resource.Loading -> {
                         toggleProgressBar(true)
-                        Log.d(TAG, "collectEpisode: Loading Episode...")
                     }
                     is Resource.Success -> {
                         toggleProgressBar(false)
@@ -233,37 +231,39 @@ class EpisodeDetailsActivity : BaseActivity(), OnNavigateToShow, SwipeRefreshLay
         }
     }
 
-//    private fun getEvents() {
-//        lifecycleScope.launchWhenStarted {
-//            viewModel.events.collectLatest { event ->
-//                when(event) {
-//                    is EpisodeDetailsViewModel.Event.DeleteWatchedHistoryItem -> {
-//                        val eventResource = event.syncResponse
-//
-//                        if(eventResource is Resource.Success) {
-//                            val syncResponse = eventResource.data
-//
-//                            if(syncResponse?.deleted?.episodes ?: 0 > 0) {
-//                                displayMessageToast("Successfully removed play", Toast.LENGTH_SHORT)
-//                            } else {
-//                                displayMessageToast("Didn't remove play", Toast.LENGTH_SHORT)
-//                            }
-//
-//                        } else if (eventResource is Resource.Error) {
-//                            showErrorMessageToast(event.syncResponse.error, "Error deleting watched history item")
-//                        }
-//                    }
-//                    is EpisodeDetailsViewModel.Event.AddCheckinEvent -> TODO()
-//                    is EpisodeDetailsViewModel.Event.AddListEntryEvent -> TODO()
-//                    is EpisodeDetailsViewModel.Event.AddRatingsEvent -> TODO()
-//                    is EpisodeDetailsViewModel.Event.AddToWatchedHistoryEvent -> TODO()
-//                    is EpisodeDetailsViewModel.Event.CancelCheckinEvent -> TODO()
-//                    is EpisodeDetailsViewModel.Event.DeleteRatingsEvent -> TODO()
-//                    is EpisodeDetailsViewModel.Event.RemoveListEntryEvent -> TODO()
-//                }
-//            }
-//        }
-//    }
+    private fun getEvents() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.events.collectLatest { event ->
+                when(event) {
+                    is EpisodeDetailsViewModel.Event.DeleteWatchedHistoryItem -> {
+                        val eventResource = event.syncResponse
+
+                        if(eventResource is Resource.Success) {
+                            val syncResponse = eventResource.data
+
+                            if(syncResponse?.deleted?.episodes ?: 0 > 0) {
+                                displayMessageToast("Successfully removed play", Toast.LENGTH_SHORT)
+                            } else {
+                                displayMessageToast("Didn't remove play", Toast.LENGTH_SHORT)
+                            }
+
+                        } else if (eventResource is Resource.Error) {
+                            showErrorMessageToast(event.syncResponse.error, "Error deleting watched history item")
+                        }
+                    }
+                    is EpisodeDetailsViewModel.Event.AddCheckinEvent -> TODO()
+                    is EpisodeDetailsViewModel.Event.AddListEntryEvent -> TODO()
+                    is EpisodeDetailsViewModel.Event.AddRatingsEvent -> TODO()
+                    is EpisodeDetailsViewModel.Event.AddToWatchedHistoryEvent -> TODO()
+                    is EpisodeDetailsViewModel.Event.CancelCheckinEvent -> TODO()
+                    is EpisodeDetailsViewModel.Event.DeleteRatingsEvent -> TODO()
+                    is EpisodeDetailsViewModel.Event.RemoveListEntryEvent -> TODO()
+                    is EpisodeDetailsViewModel.Event.AddToCollectionEvent -> TODO()
+                    is EpisodeDetailsViewModel.Event.RemoveFromCollectionEvent -> TODO()
+                }
+            }
+        }
+    }
 
     private fun displayShow(show: TmShow?) {
         bindings.episodedetailsactivityInner.apply {
@@ -311,13 +311,16 @@ class EpisodeDetailsActivity : BaseActivity(), OnNavigateToShow, SwipeRefreshLay
             if (episode.air_date != null) {
                 bindings.episodedetailsactivityInner.episodedetailsactivityFirstAired.visibility = View.VISIBLE
 
-                episodedetailsactivityFirstAired.text = "Aired: " + DateFormatUtils.format(
-                    episode.air_date,
-                    sharedPreferences.getString(
-                        "date_format",
-                        AppConstants.DEFAULT_DATE_TIME_FORMAT
+                episodedetailsactivityFirstAired.text = "Aired: ${
+                    episode.air_date.format(
+                        DateTimeFormatter.ofPattern(
+                            sharedPreferences.getString(
+                                "date_format",
+                                AppConstants.DEFAULT_DATE_TIME_FORMAT
+                            )
+                        )
                     )
-                )
+                }"
             }
 
             if(episode.trakt_rating != 0.0) {

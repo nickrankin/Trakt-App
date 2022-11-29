@@ -102,13 +102,7 @@ class CollectedMoviesRepository @Inject constructor(private val traktApi: TraktA
         }
         return try {
             val response = traktApi.tmSync().addItemsToCollection(syncItems)
-            val releaseDate = movie.release_date
 
-            var releaseDateLocalDate: LocalDate? = null
-
-            if(releaseDate != null) {
-                releaseDateLocalDate = Instant.ofEpochMilli(releaseDate.time).atZone(ZoneId.systemDefault()).toLocalDate()
-            }
 
             moviesDatabase.withTransaction {
                 collectedMoviesDao.insert(
@@ -122,7 +116,7 @@ class CollectedMoviesRepository @Inject constructor(private val traktApi: TraktA
                             null,
                             0,
                             movie.overview,
-                            releaseDateLocalDate,
+                            movie.release_date,
                             movie.runtime,
                             movie.title
                         )

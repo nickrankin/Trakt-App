@@ -25,6 +25,8 @@ import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import org.apache.commons.lang3.time.DateFormatUtils
+import org.threeten.bp.OffsetDateTime
+import org.threeten.bp.format.DateTimeFormatter
 import javax.inject.Inject
 
 private const val SELECTED_SEASON = "selected_season"
@@ -171,11 +173,13 @@ class SeasonEpisodesActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListe
 
             if (season.air_date != null) {
                 bindings.seasonepisodeactivitySeasonAired.text = "First aired ${
-                    DateFormatUtils.format(
-                        season.air_date,
-                        sharedPreferences.getString(
-                            "date_format",
-                            AppConstants.DEFAULT_DATE_TIME_FORMAT
+                    
+                    season.air_date.format(
+                        DateTimeFormatter.ofPattern(
+                            sharedPreferences.getString(
+                                "date_format",
+                                AppConstants.DEFAULT_DATE_TIME_FORMAT
+                            )
                         )
                     )
                 }"

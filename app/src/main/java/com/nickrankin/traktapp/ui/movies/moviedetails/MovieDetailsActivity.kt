@@ -1,6 +1,7 @@
 package com.nickrankin.traktapp.ui.movies.moviedetails
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Typeface
 import android.os.Bundle
 import android.util.Log
@@ -24,15 +25,20 @@ import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.movies.MovieDetailsViewModel
 import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
+import com.nickrankin.traktapp.ui.person.PersonActivity
 import com.uwetrottmann.tmdb2.entities.BaseCompany
 import com.uwetrottmann.tmdb2.entities.Country
 import com.uwetrottmann.tmdb2.entities.Genre
 import com.uwetrottmann.trakt5.entities.CrewMember
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.merge
+import org.apache.commons.lang3.StringUtils
 import javax.inject.Inject
 
 private const val ACTION_BUTTON_FRAGMENT = "action_button_fragment"
+private const val TRAKT_DIRECTOR_KEY = "Director"
+private const val TRAKT_WRITING_KEY = "Writer"
 private const val TAG = "MovieDetailsActivity"
 
 @AndroidEntryPoint
@@ -85,8 +91,12 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
                 MOVIE_DATA_KEY) == null) {
             throw RuntimeException("MovieDataModel must be passed to this Activity.")
         }
+    }
 
+    override fun onResume() {
+        super.onResume()
 
+        viewModel.resetRefreshState()
     }
 
     private fun initFragments() {
@@ -188,7 +198,7 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
         val releaseDate = tmMovie.release_date
         val imdbId = tmMovie.imdb_id
         val runtime = tmMovie.runtime
-        val directors = tmMovie.directed_by
+        val directionAndWritingPeople = tmMovie.directed_by.plus(tmMovie.written_by)
         val trailerUrl = tmMovie.trailer
         val companies = tmMovie.production_companies
         val genres = tmMovie.genres
@@ -211,12 +221,16 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
                 moviedetailsactivityTagline.text = tagline
                 moviedetailsactivityRuntime.text = "Runtime: ${calculateRuntime(runtime ?: 0)}"
 
+                val directors = directionAndWritingPeople.filter { crewMember ->
+                    Log.e(TAG, "displayMovie: crew ${crewMember?.person?.name} is job ${crewMember?.job}", )
+                    crewMember?.job?.uppercase() == TRAKT_DIRECTOR_KEY.uppercase() || crewMember?.job?.uppercase() == TRAKT_WRITING_KEY.uppercase()
+                }
+
                 if (directors.isNotEmpty()) {
                     moviedetailsactivityDirected.visibility = View.VISIBLE
 
                     displayDirectors(directors) { crewMember ->
-                        Log.e(TAG, "displayMovie: Clicked ${crewMember?.person?.name}")
-
+                        navigateToDirector(crewMember?.person?.ids?.trakt)
                     }
                 } else {
                     moviedetailsactivityDirected.visibility = View.GONE
@@ -245,7 +259,7 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
                     moviedetailsactivityFirstAired.visibility = View.GONE
                 }
 
-                if (companies.isNotEmpty()) {
+                if (companies?.isNotEmpty() == true) {
                     moviedetailsactivityCompany.visibility = View.VISIBLE
 
                     displayCompanies(companies) { baseCompany -> }
@@ -253,7 +267,7 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
                     moviedetailsactivityCompany.visibility = View.GONE
                 }
 
-                if (countries.isNotEmpty()) {
+                if (countries?.isNotEmpty() == true) {
                     moviedetailsactivityCountry.visibility = View.VISIBLE
 
                     displayCountries(countries) { country -> }
@@ -291,6 +305,19 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
         } else {
             imdbButton.visibility = View.GONE
         }
+    }
+
+    private fun navigateToDirector(traktId: Int?) {
+        if(traktId == null) {
+            Log.e(TAG, "navigateToDirector: Director hasn't got Trakt ID associatted, returning")
+
+            return
+        }
+
+        val intent = Intent(this, PersonActivity::class.java)
+        intent.putExtra(PersonActivity.PERSON_ID_KEY, traktId)
+
+        startActivity(intent)
     }
 
     private fun getPlayCount() {
@@ -357,22 +384,22 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
         // List to store a TextView for each director
         val textViews: MutableList<TextView> = mutableListOf()
 
-        crewMembers.map { director ->
+        crewMembers.map { crewMember ->
 
-            // Check if director is last entry, in this case no trailing comma ','
-            val textView: TextView = if (director != crewMembers.last()) {
-                setTextViewLayoutConfig(getTextView(layout.context, director?.person?.name + ", "))
-            } else {
-                setTextViewLayoutConfig(getTextView(layout.context, director?.person?.name ?: ""))
+                // Check if director is last entry, in this case no trailing comma ','
+                val textView: TextView = if (crewMember != crewMembers.last()) {
+                    setTextViewLayoutConfig(getTextView(layout.context, crewMember?.person?.name + ", "))
+                } else {
+                    setTextViewLayoutConfig(getTextView(layout.context, crewMember?.person?.name ?: ""))
+                }
+
+                // Director was clicked, we supply CrewMember object to callback
+                textView.setOnClickListener {
+                    callback(crewMember)
+                }
+
+                textViews.add(textView)
             }
-
-            // Director was clicked, we supply CrewMember object to callback
-            textView.setOnClickListener {
-                callback(director)
-            }
-
-            textViews.add(textView)
-        }
 
         if (textViews.size > 2) {
             val initialTextViews = truncateTextViewList(layout, textViews)
@@ -440,7 +467,7 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
         }
     }
 
-    private fun displayGenres(genres: List<Genre?>, callback: (genre: Genre?) -> Unit) {
+    private fun displayGenres(genres: List<String?>, callback: (genre: String?) -> Unit) {
         val layout = binding.moviedetailsactivityInner.moviedetailsactivityGenres
 
         // If user refreshes or rotates screen, ensure to clear existing views
@@ -460,9 +487,9 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
 
             // Check if director is last entry, in this case no trailing comma ','
             val textView: TextView = if (genre != genres.last()) {
-                setTextViewLayoutConfig(getTextView(layout.context, genre?.name + ", "))
+                setTextViewLayoutConfig(getTextView(layout.context, StringUtils.capitalize(genre) + ", "))
             } else {
-                setTextViewLayoutConfig(getTextView(layout.context, genre?.name ?: ""))
+                setTextViewLayoutConfig(getTextView(layout.context, StringUtils.capitalize(genre) ?: ""))
             }
 
             // Director was clicked, we supply CrewMember object to callback

@@ -12,11 +12,13 @@ import android.widget.ProgressBar
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexWrap
 import com.google.android.flexbox.FlexboxLayoutManager
 import com.nickrankin.traktapp.adapter.credits.CharacterPosterAdapter
+import com.nickrankin.traktapp.dao.credits.model.CreditPerson
 import com.nickrankin.traktapp.dao.credits.model.Person
 import com.nickrankin.traktapp.databinding.FragmentPersonOverviewBinding
 import com.nickrankin.traktapp.helper.*
@@ -33,7 +35,9 @@ import javax.inject.Inject
 private const val TAG = "PersonOverviewFragment"
 
 @AndroidEntryPoint
-class PersonOverviewFragment : Fragment() {
+class PersonOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
+
+    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
     private lateinit var bindings: FragmentPersonOverviewBinding
 
@@ -45,7 +49,8 @@ class PersonOverviewFragment : Fragment() {
     private lateinit var personShowsRecyclerView: RecyclerView
     private lateinit var personShowsAdapter: CharacterPosterAdapter
 
-    private lateinit var peopleCreditsFragment: PeopleCreditsFragment
+    private lateinit var persondirectedRecyclerView: RecyclerView
+    private lateinit var personDirectedAdapter: CharacterPosterAdapter
 
     private val viewModel: PersonOverviewViewModel by activityViewModels()
 
@@ -74,12 +79,16 @@ class PersonOverviewFragment : Fragment() {
 
         progressBar = bindings.personactivityProgressbar
 
+        swipeRefreshLayout = bindings.personactivitySwipeLayout
+        swipeRefreshLayout.setOnRefreshListener(this)
+
         initPersonMoviesAdapter()
         initPersonShowsAdapter()
+        initPersonDirectedAdapter()
 
         getPerson()
-        getPersonsMovies()
-        getPersonsShows()
+        getCastAppearences()
+        getCrewAppearences()
     }
 
     private fun getPerson() {
@@ -92,8 +101,14 @@ class PersonOverviewFragment : Fragment() {
                         Log.d(TAG, "getPerson: Loading person")
                     }
                     is Resource.Success -> {
+                        if(swipeRefreshLayout.isRefreshing) {
+                            swipeRefreshLayout.isRefreshing = false
+                        }
                         progressBar.visibility = View.GONE
                         displayPersonData(personResource.data)
+
+
+
                     }
                     is Resource.Error -> {
                         progressBar.visibility = View.GONE
@@ -110,27 +125,77 @@ class PersonOverviewFragment : Fragment() {
         }
     }
 
-    private fun getPersonsMovies() {
+    private fun getCrewAppearences() {
         lifecycleScope.launchWhenStarted {
-            viewModel.personMovies.collectLatest { personMoviesResource ->
-                when (personMoviesResource) {
+            viewModel.personCrew.collectLatest { personCrewResource ->
+                when(personCrewResource) {
                     is Resource.Loading -> {
-                        Log.d(TAG, "getPersonsMovies: Loading ...")
+
                     }
                     is Resource.Success -> {
-                        val movieData = personMoviesResource.data
 
-                        if ((movieData?.size ?: 0) > 6) {
-                            personMoviesAdapter.submitList(movieData?.subList(0, 6))
-                        } else {
-                            personMoviesAdapter.submitList(movieData)
+                        val directed = personCrewResource.data?.filter {
+                            it.job.uppercase() == "director".uppercase() || it.job.uppercase() == "writer"
+                        }
 
+                        if(!directed.isNullOrEmpty()) {
+                            bindings.personactivityDirectedGroup.visibility = View.VISIBLE
+                            displayCredits(directed, PeopleCreditsFragment.CREDIT_DIRECTED_KEY)
+                        }
+                    }
+                    is Resource.Error -> TODO()
+
+                }
+            }
+        }
+    }
+
+    private fun getCastAppearences() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.personCast.collectLatest { creditsResource ->
+                when (creditsResource) {
+                    is Resource.Loading -> {
+                        bindings.personactivityMovieGroup.visibility = View.GONE
+                    }
+                    is Resource.Success -> {
+                        val credits = creditsResource.data
+
+
+
+                        val movieCredits = credits?.filter { it.type == Type.MOVIE }
+
+                        if(!movieCredits.isNullOrEmpty()) {
+                            bindings.personactivityMovieGroup.visibility = View.VISIBLE
+                            displayCredits(movieCredits, PeopleCreditsFragment.CREDIT_MOVIES_KEY)
+                        }
+
+                        val showCredits = credits?.filter { it.type == Type.SHOW }
+
+                        if(!showCredits.isNullOrEmpty()) {
+                            bindings.personactivityShowGroup.visibility = View.VISIBLE
+                            displayCredits(showCredits, PeopleCreditsFragment.SHOW_CREDITS_KEY)
                         }
 
                     }
                     is Resource.Error -> {
+                        val credits = creditsResource.data
+
+                        val movieCredits = credits?.filter { it.type == Type.MOVIE }
+
+                        if(!movieCredits.isNullOrEmpty()) {
+                            bindings.personactivityMovieGroup.visibility = View.VISIBLE
+                            displayCredits(movieCredits, PeopleCreditsFragment.CREDIT_MOVIES_KEY)
+                        }
+
+                        val showCredits = credits?.filter { it.type == Type.SHOW }
+
+                        if(!showCredits.isNullOrEmpty()) {
+                            bindings.personactivityShowGroup.visibility = View.VISIBLE
+                            displayCredits(showCredits, PeopleCreditsFragment.SHOW_CREDITS_KEY)
+                        }
+
                         (activity as IHandleError).showErrorSnackbarRetryButton(
-                            personMoviesResource.error,
+                            creditsResource.error,
                             bindings.personactivitySwipeLayout
                         ) {
                             viewModel.onRefresh()
@@ -142,48 +207,74 @@ class PersonOverviewFragment : Fragment() {
         }
     }
 
-    private fun getPersonsShows() {
-        lifecycleScope.launchWhenStarted {
-            viewModel.personShows.collectLatest { personShowsResource ->
-                when (personShowsResource) {
-                    is Resource.Loading -> {
-                        Log.d(TAG, "getPersonsShows: Loading ...")
-                    }
-                    is Resource.Success -> {
-                        val showData = personShowsResource.data
+    private fun displayCredits(credits: List<CreditPerson>?, type: String) {
+        if(credits.isNullOrEmpty()) {
+            return
+        }
 
-                        if ((showData?.size ?: 0) > 6) {
-                            personShowsAdapter.submitList(showData?.subList(0, 6))
-                        } else {
-                            personShowsAdapter.submitList(showData)
-                        }
+        when(type) {
+            PeopleCreditsFragment.CREDIT_DIRECTED_KEY -> {
+                if ((credits.size) > 6) {
+                    personDirectedAdapter.submitList(credits.subList(0, 6))
+                } else {
+                    personDirectedAdapter.submitList(credits)
+                }
 
-                    }
-                    is Resource.Error -> {
-                        (activity as IHandleError).showErrorSnackbarRetryButton(
-                            personShowsResource.error,
-                            bindings.personactivitySwipeLayout
-                        ) {
-                            viewModel.onRefresh()
-                        }
-                    }
+                bindings.personactivityDirectedBtnAllMovies.setOnClickListener {
+                    viewModel.changeFilter(PeopleCreditsFragment.CREDIT_DIRECTED_KEY)
+                    showAllCredits()
+                }
+            }
+            PeopleCreditsFragment.CREDIT_MOVIES_KEY -> {
+                if ((credits.size) > 6) {
+                    personMoviesAdapter.submitList(credits.subList(0, 6))
+                } else {
+                    personMoviesAdapter.submitList(credits)
+                }
+
+                bindings.personactivityMovieBtnAllMovies.setOnClickListener {
+                    viewModel.changeFilter(PeopleCreditsFragment.CREDIT_MOVIES_KEY)
+
+                    showAllCredits()
+                }
+            }
+            PeopleCreditsFragment.SHOW_CREDITS_KEY -> {
+                if ((credits.size) > 6) {
+                    personShowsAdapter.submitList(credits.subList(0, 6))
+                } else {
+                    personShowsAdapter.submitList(credits)
+                }
+
+                bindings.personactivityShowsBtnAllShows.setOnClickListener {
+                    viewModel.changeFilter(PeopleCreditsFragment.SHOW_CREDITS_KEY)
+
+                    showAllCredits()
 
                 }
             }
+            else -> {
+                Log.e(TAG, "displayCredits:  Invalid type $type", )
+            }
         }
+
+
+
     }
 
     private fun displayPersonData(person: Person?) {
         if (person == null) {
             return
         }
+
+
+
         (activity as OnTitleChangeListener).onTitleChanged(person.name)
 
         val datesSb = StringBuilder()
 
         if (person.birthday != null) {
             datesSb.append(
-                "Born: " + getFormattedDate(
+                getFormattedDate(
                     person.birthday,
                     sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)
                         ?: "",
@@ -194,7 +285,7 @@ class PersonOverviewFragment : Fragment() {
 
         if (person.death != null) {
             datesSb.append(
-                "- " + getFormattedDate(
+                " - " + getFormattedDate(
                     person.death,
                     sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)
                         ?: "",
@@ -214,22 +305,15 @@ class PersonOverviewFragment : Fragment() {
                     .into(personactivityProfilePhoto)
             }
 
-            personactivityBirthplace.text = "Birthplace: " + person.birthplace
+            if(person.birthplace != null) {
+                personactivityBirthplace.text = "Birthplace: " + person.birthplace
+            }
 
             personactivityOverview.text = person.biography
 
             personactivityOverview.setOnClickListener {
                 personactivityOverview.toggle()
             }
-
-            personactivityMovieBtnAllMovies.setOnClickListener {
-                showAll(Type.MOVIE)
-            }
-
-            personactivityShowsBtnAllShows.setOnClickListener {
-                showAll(Type.SHOW)
-            }
-
         }
     }
 
@@ -285,43 +369,44 @@ class PersonOverviewFragment : Fragment() {
         personShowsRecyclerView.adapter = personShowsAdapter
     }
 
-    private fun showAll(type: Type) {
+    private fun initPersonDirectedAdapter() {
+        persondirectedRecyclerView = bindings.personactivityDirectedRecyclerview
 
-        peopleCreditsFragment = PeopleCreditsFragment.newInstance()
+        val lm = FlexboxLayoutManager(requireContext())
+        lm.flexDirection = FlexDirection.ROW
+        lm.flexWrap = FlexWrap.WRAP
+
+        personDirectedAdapter = CharacterPosterAdapter(glide, tmdbImageLoader) { selectedCredit ->
+            val showIntent = Intent(requireContext(), ShowDetailsActivity::class.java)
+            showIntent.putExtra(
+                ShowDetailsActivity.SHOW_DATA_KEY,
+                ShowDataModel(
+                    selectedCredit.trakt_id,
+                    selectedCredit.tmdb_id,
+                    selectedCredit.title
+                )
+            )
+
+            startActivity(showIntent)
+
+        }
+
+
+        persondirectedRecyclerView.layoutManager = lm
+        persondirectedRecyclerView.adapter = personDirectedAdapter
+    }
+
+    private fun showAllCredits() {
+
+        val peopleCreditsFragment = PeopleCreditsFragment.newInstance()
 
         val fragTransaction = activity?.supportFragmentManager?.beginTransaction()
 
-        when (type) {
-            Type.MOVIE -> {
-                val bundle = Bundle()
-                bundle.putString(
-                    PeopleCreditsFragment.CREDIT_TYPE_KEY,
-                    PeopleCreditsFragment.CREDIT_MOVIES_KEY
-                )
+        fragTransaction
+            ?.replace(this.id, peopleCreditsFragment)
+            ?.addToBackStack("pcf")
+            ?.commit()
 
-                peopleCreditsFragment.arguments = bundle
-
-                fragTransaction?.replace(this.id, peopleCreditsFragment)
-                    ?.addToBackStack("pcf")
-                    ?.commit()
-            }
-            Type.SHOW -> {
-                val bundle = Bundle()
-                bundle.putString(
-                    PeopleCreditsFragment.CREDIT_TYPE_KEY,
-                    PeopleCreditsFragment.SHOW_CREDITS_KEY
-                )
-
-                peopleCreditsFragment.arguments = bundle
-
-                fragTransaction?.replace(this.id, peopleCreditsFragment)
-                    ?.addToBackStack("pcf")
-                    ?.commit()
-            }
-            else -> {
-                Log.e(TAG, "showAll: Unsupported type ${type.name}")
-            }
-        }
     }
 
     override fun onStart() {
@@ -329,7 +414,12 @@ class PersonOverviewFragment : Fragment() {
         viewModel.onStart()
     }
 
+    override fun onRefresh() {
+        viewModel.onRefresh()
+    }
+
     companion object {
+        const val PERSON_NAME_KEY = "person_name_key"
         @JvmStatic
         fun newInstance() =
             PersonOverviewFragment()

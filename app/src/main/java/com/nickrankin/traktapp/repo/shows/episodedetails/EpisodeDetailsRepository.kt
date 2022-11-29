@@ -29,32 +29,6 @@ class EpisodeDetailsRepository @Inject constructor(
     private val personDao = creditsDatabase.personDao()
     private val showCastPeopleDao = creditsDatabase.showCastPeopleDao()
 
-    suspend fun getCast(episodeDataModel: EpisodeDataModel?, shouldRefresh: Boolean) {
-        if(episodeDataModel ==  null) {
-            return
-        }
-        val credits = showCastPeopleDao.getShowCast(episodeDataModel.showTraktId, false).first()
-
-        if(shouldRefresh || credits.isEmpty()) {
-            val creditsResponse = creditsHelper.getShowCredits(episodeDataModel.showTraktId , episodeDataModel.tmdbId)
-
-            Log.d(TAG, "refreshCast: Refreshing Credits")
-
-            creditsDatabase.withTransaction {
-                showCastPeopleDao.deleteShowCast(episodeDataModel?.showTraktId ?: 0)
-            }
-
-            showsDatabase.withTransaction {
-                creditsResponse.map { castData ->
-                    personDao.insert(castData.person)
-                    showCastPeopleDao.insert(castData.showCastPersonData)
-                }
-            }
-
-        }
-
-    }
-
     suspend fun getEpisodes(
         showTraktId: Int,
         showTmdbId: Int?,

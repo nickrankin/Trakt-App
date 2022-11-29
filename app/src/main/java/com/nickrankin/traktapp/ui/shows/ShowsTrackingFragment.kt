@@ -740,13 +740,13 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
         val testTrackingEpisodes = listOf(
             TrackedEpisode(
                 5907165,3501517,42221,42445, OffsetDateTime.now().plusSeconds(6L),
-                emptyList(),"Episode 6","Borgen",4,6,OffsetDateTime.now(),0,false
+                null,"Episode 6","Borgen",4,6,OffsetDateTime.now(),0,false
             ),
             TrackedEpisode(
-                5907167,3501519,42221,42445,OffsetDateTime.now().plusSeconds(12L),emptyList(),"Episode 7","Borgen",4,7,OffsetDateTime.now(),0,false
+                5907167,3501519,42221,42445,OffsetDateTime.now().plusSeconds(12L),null,"Episode 7","Borgen",4,7,OffsetDateTime.now(),0,false
             ),
             TrackedEpisode(
-                5907169,3501520,42221,42445,OffsetDateTime.now().plusSeconds(24L),emptyList(),"Episode 8","Borgen",4,8,OffsetDateTime.now(),0,false
+                5907169,3501520,42221,42445,OffsetDateTime.now().plusSeconds(24L),null,"Episode 8","Borgen",4,8,OffsetDateTime.now(),0,false
             )
         )
 

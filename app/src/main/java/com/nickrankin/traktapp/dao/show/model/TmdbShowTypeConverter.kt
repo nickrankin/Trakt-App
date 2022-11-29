@@ -3,6 +3,7 @@ package com.nickrankin.traktapp.dao.show.model
 import androidx.room.TypeConverter
 import com.google.gson.Gson
 import com.uwetrottmann.tmdb2.entities.*
+import com.uwetrottmann.trakt5.entities.Crew
 import org.apache.commons.lang3.time.DateFormatUtils
 import org.apache.commons.lang3.time.FastDateFormat
 import org.apache.commons.lang3.time.FastDateParser
@@ -129,26 +130,6 @@ class TmdbShowTypeConverter {
     }
 
     @TypeConverter
-    fun convertFromCrewList(crewMembers: List<CrewMember?>?): String {
-        return gson.toJson(crewMembers)
-    }
-
-    @TypeConverter
-    fun convertToCrewList(json: String): List<CrewMember?>? {
-        return gson.fromJson(json, Array<CrewMember?>::class.java).toList()
-    }
-
-    @TypeConverter
-    fun convertFromCastList(castMembers: List<CastMember>?): String {
-        return gson.toJson(castMembers)
-    }
-
-    @TypeConverter
-    fun convertToCastList(json: String): List<CastMember?>? {
-        return gson.fromJson(json, Array<CastMember?>::class.java).toList()
-    }
-
-    @TypeConverter
     fun convertFromPersons(persons: List<Person?>): String {
         return gson.toJson(persons)
     }
@@ -156,6 +137,19 @@ class TmdbShowTypeConverter {
     @TypeConverter
     fun convertToPersons(json: String): List<Person?> {
         return gson.fromJson(json, Array<Person?>::class.java).toList()
+    }
+
+    @TypeConverter
+    fun convertFromCrewMembers(crewMembers: List<com.uwetrottmann.trakt5.entities.CrewMember?>?): String {
+        return if(crewMembers == null) {
+            "[]"
+        } else
+            gson.toJson(crewMembers)
+    }
+
+    @TypeConverter
+    fun convertToCrewMembers(data: String): List<com.uwetrottmann.trakt5.entities.CrewMember?> {
+        return gson.fromJson(data, Array<com.uwetrottmann.trakt5.entities.CrewMember>::class.java).toList()
     }
 
 }

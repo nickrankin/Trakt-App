@@ -19,7 +19,6 @@ import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.Response
 import com.nickrankin.traktapp.helper.getSyncResponse
-import com.nickrankin.traktapp.model.shows.ShowDetailsFragmentsViewModel
 import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
 import com.nickrankin.traktapp.ui.dialog.RatingPickerFragment
 import com.uwetrottmann.trakt5.enums.Rating
@@ -31,7 +30,7 @@ private const val TAG = "ShowDetailsActionButton"
 @AndroidEntryPoint
 class ShowDetailsActionButtonsFragment : BaseFragment() {
 
-    private val viewModel: ShowDetailsFragmentsViewModel by activityViewModels()
+    private val viewModel: ShowDetailsViewModel by activityViewModels()
 
     private lateinit var bindings: ActionButtonsFragmentBinding
 
@@ -56,6 +55,8 @@ class ShowDetailsActionButtonsFragment : BaseFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        Log.d(TAG, "onViewCreated: Calling")
+
         if(isLoggedIn) {
             // Buttons
             setupRatingButton()
@@ -66,6 +67,8 @@ class ShowDetailsActionButtonsFragment : BaseFragment() {
             getCollectedShowStatus()
 
             initDialogs()
+
+            View.GONE
         }
     }
 
@@ -77,13 +80,28 @@ class ShowDetailsActionButtonsFragment : BaseFragment() {
     private fun initDialogs() {
 
         lifecycleScope.launchWhenStarted {
-            viewModel.show.collectLatest { show ->
-                if(show != null) {
-                    initRatingsDialog(show)
-                    initAddToCollectionDialogs(show)
-                    getRatings(show)
-                    getEvents(show)
-                    setupAddListsButton(show)
+            viewModel.show.collectLatest { showResource ->
+                when(showResource) {
+                    is Resource.Loading -> {
+
+                    }
+                    is Resource.Success -> {
+                        val show = showResource.data
+
+                        if(show != null) {
+                            initRatingsDialog(show)
+                            initAddToCollectionDialogs(show)
+                            getRatings(show)
+                            getEvents(show)
+                            setupAddListsButton(show)
+                        }
+                    }
+                    is Resource.Error -> {
+                        Log.e(TAG, "initDialogs: Error getting show ${showResource.error?.message}", )
+                        showResource.error?.printStackTrace()
+
+                    }
+
                 }
             }
         }
@@ -105,10 +123,13 @@ class ShowDetailsActionButtonsFragment : BaseFragment() {
         val ratingButton = bindings.actionbuttonRate
         ratingButton.visibility = View.VISIBLE
 
+        bindings.actionButtonRateProgressbar.visibility = View.GONE
+
         // Initial text
         bindings.actionbuttonRateText.text = " - "
 
         ratingButton.setOnClickListener {
+            bindings.actionButtonRateProgressbar.visibility = View.VISIBLE
             ratingDialog.show(requireActivity().supportFragmentManager, "rating_dialog")
         }
     }
@@ -197,7 +218,6 @@ class ShowDetailsActionButtonsFragment : BaseFragment() {
         ratingDialog = RatingPickerFragment(callback = {newRating ->
             Log.d(TAG, "initDialogs: Updating rating with $newRating")
             bindings.actionbuttonRate.isEnabled = false
-            bindings.actionButtonRateProgressbar.visibility = View.VISIBLE
 
             if(newRating != -1) {
                 Log.d(TAG, "Calling viewModel.updateRating")
@@ -215,7 +235,7 @@ class ShowDetailsActionButtonsFragment : BaseFragment() {
         lifecycleScope.launchWhenStarted {
             viewModel.events.collectLatest { event ->
                 when(event) {
-                    is ShowDetailsFragmentsViewModel.Event.AddToCollectionEvent -> {
+                    is ShowDetailsViewModel.Event.AddToCollectionEvent -> {
                         val syncResponseResource = event.syncResponse
 
                         // Disable progressbar and re-enable button
@@ -242,7 +262,7 @@ class ShowDetailsActionButtonsFragment : BaseFragment() {
                             (activity as IHandleError).showErrorMessageToast(syncResponseResource.error, "Error adding $showTitle to your collection.")
                         }
                     }
-                    is ShowDetailsFragmentsViewModel.Event.RemoveFromCollectionEvent -> {
+                    is ShowDetailsViewModel.Event.RemoveFromCollectionEvent -> {
 
                         // Reenable button and hide progressbar
                         bindings.actionbuttonAddToCollection.isEnabled = true
@@ -269,7 +289,7 @@ class ShowDetailsActionButtonsFragment : BaseFragment() {
                             (activity as IHandleError).showErrorMessageToast(syncResponseResource.error, "Error removing $showTitle from your Trakt collection!")
                         }
                     }
-                    is ShowDetailsFragmentsViewModel.Event.AddRatingEvent -> {
+                    is ShowDetailsViewModel.Event.AddRatingEvent -> {
                         val syncResponseResource = event.syncResponse
 
                         bindings.actionbuttonRate.isEnabled = true
@@ -296,7 +316,7 @@ class ShowDetailsActionButtonsFragment : BaseFragment() {
                             (activity as IHandleError).showErrorMessageToast(syncResponseResource.error, "Error rating $showTitle.")
                         }
                     }
-                    is ShowDetailsFragmentsViewModel.Event.DeleteRatingEvent -> {
+                    is ShowDetailsViewModel.Event.DeleteRatingEvent -> {
                         val syncResponseResource = event.syncResponse
 
                         bindings.actionbuttonRate.isEnabled = true
@@ -333,7 +353,6 @@ class ShowDetailsActionButtonsFragment : BaseFragment() {
     }
 
     private fun setupListsDialog(tmShow: TmShow) {
-        Log.e(TAG, "setupListsDialog: Called", )
         val layout = LinearLayout(requireContext())
         layout.orientation = LinearLayout.VERTICAL
 
@@ -354,7 +373,6 @@ class ShowDetailsActionButtonsFragment : BaseFragment() {
 
                     // If we find current movie in list, checkbox should be ticked
                     checkbox.isChecked = listWithEntries.entries.find {
-                        Log.d(TAG, "setupListsDialog: List Entry TraktId: ${it?.list_entry_trakt_id} TRAKT ID: ${tmShow.trakt_id}")
                         it?.list_entry_trakt_id == tmShow.trakt_id } != null
 
                     checkbox.setOnClickListener {

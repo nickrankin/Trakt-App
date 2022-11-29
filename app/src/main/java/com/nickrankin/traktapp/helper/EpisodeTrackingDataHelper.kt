@@ -151,7 +151,7 @@ class EpisodeTrackingDataHelper @Inject constructor(
                     show?.trakt_id ?: -1,
                     show?.tmdb_id,
                     episode.first_aired,
-                    show?.networks?.map { network -> network?.name } ?: emptyList(),
+                    show?.network,
                     episode.title,
                     show?.name ?: "",
                     episode.season ?: 0,

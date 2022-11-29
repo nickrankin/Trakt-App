@@ -2,72 +2,72 @@ package com.nickrankin.traktapp.repo.person
 
 import android.util.Log
 import androidx.room.withTransaction
-import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.credits.CreditsDatabase
 import com.nickrankin.traktapp.helper.PersonCreditsHelper
 import com.nickrankin.traktapp.helper.networkBoundResource
-import com.uwetrottmann.trakt5.enums.Type
 import javax.inject.Inject
 
 private const val TAG = "PersonRepository"
-class PersonRepository @Inject constructor(private val traktApi: TraktApi, private val personCreditsHelper: PersonCreditsHelper, private val creditsDatabase: CreditsDatabase) {
-    private val personDao = creditsDatabase.personDao()
-    private val creditCharacterPersonDao = creditsDatabase.creditCharacterPersonDao()
+class PersonRepository @Inject constructor(private val personCreditsHelper: PersonCreditsHelper, private val creditsDatabase: CreditsDatabase) {
+    private val castPersonDao = creditsDatabase.castPersonDao()
+    private val crewPersonDao = creditsDatabase.crewPersonDao()
+    private val creditsDao = creditsDatabase.personDao()
 
     fun getPerson(personTraktId: Int, shouldRefresh: Boolean) = networkBoundResource(
         query = {
-                personDao.getPerson(personTraktId)
+            creditsDao.getPerson(personTraktId)
         },
         fetch = {
             personCreditsHelper.getCredits(personTraktId)
         },
-        shouldFetch = {person ->
-            person != null || shouldRefresh
+        shouldFetch = { person ->
+            shouldRefresh || person == null
         },
-        saveFetchResult = { person ->
-            Log.d(TAG, "getPerson: Inserting person $person")
-            if(person != null) {
+        saveFetchResult = { traktPerson ->
+            
+            if(traktPerson != null) {
                 creditsDatabase.withTransaction {
-                    personDao.insert(person)
+                    creditsDao.insert(
+                        traktPerson
+                    )
                 }
+            } else {
+                Log.e(TAG, "getPerson: Person with Trakt ID $personTraktId not existing", )
+            }
+
+        }
+    )
+
+    fun getcastPersonCredits(personTraktId: Int, shouldRefresh: Boolean) = networkBoundResource(
+        query = {
+            castPersonDao.getCastPersonCredits(personTraktId)
+        },
+        fetch = {
+                personCreditsHelper.getCastPersonCredits(personTraktId)
+        },
+        shouldFetch = { castPeople ->
+            castPeople.isEmpty() || shouldRefresh
+        },
+        saveFetchResult = { castPeople ->
+            creditsDatabase.withTransaction {
+                castPersonDao.insert(castPeople)
             }
         }
     )
 
-    fun getPersonMovies(personTraktId: Int, shouldRefresh: Boolean) = networkBoundResource(
+    fun getCrewPersonCredits(personTraktId: Int, shouldRefresh: Boolean) = networkBoundResource(
         query = {
-            creditCharacterPersonDao.getPersonCredits(personTraktId, Type.MOVIE)
+            crewPersonDao.getCrewPersonCredits(personTraktId)
         },
         fetch = {
-                personCreditsHelper.getPersonMovieCredits(personTraktId)
+            personCreditsHelper.getCrewPersonCredits(personTraktId)
         },
-        shouldFetch = { movieCastPeople ->
-            movieCastPeople.isEmpty() || shouldRefresh
+        shouldFetch = { castPeople ->
+            castPeople.isEmpty() || shouldRefresh
         },
-        saveFetchResult = { movieCastPersonData ->
-
-
+        saveFetchResult = { castPeople ->
             creditsDatabase.withTransaction {
-                creditCharacterPersonDao.insert(movieCastPersonData)
-            }
-        }
-    )
-
-    fun getPersonShows(personTraktId: Int, shouldRefresh: Boolean) = networkBoundResource(
-        query = {
-            creditCharacterPersonDao.getPersonCredits(personTraktId, Type.SHOW)
-        },
-        fetch = {
-            personCreditsHelper.getPersonShowCredits(personTraktId)
-        },
-        shouldFetch = { showCast ->
-            showCast.isEmpty() || shouldRefresh
-        },
-        saveFetchResult = { showCastData ->
-
-
-            creditsDatabase.withTransaction {
-                creditCharacterPersonDao.insert(showCastData)
+                crewPersonDao.insert(castPeople)
             }
         }
     )

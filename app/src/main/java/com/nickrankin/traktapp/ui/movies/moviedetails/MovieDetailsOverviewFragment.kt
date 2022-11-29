@@ -16,7 +16,6 @@ import com.nickrankin.traktapp.adapter.credits.MovieCastCreditsAdapter
 import com.nickrankin.traktapp.dao.movies.model.TmMovie
 import com.nickrankin.traktapp.databinding.FragmentMovieDetailsOverviewBinding
 import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.model.movies.MovieDetailsFragmentsViewModel
 import com.nickrankin.traktapp.model.movies.MovieDetailsViewModel
 import com.nickrankin.traktapp.ui.person.PersonActivity
 import dagger.hilt.android.AndroidEntryPoint
@@ -29,7 +28,7 @@ private const val TAG = "MovieDetailsOverviewFra"
 class MovieDetailsOverviewFragment : Fragment() {
 
     private lateinit var bindings: FragmentMovieDetailsOverviewBinding
-    private val viewModel: MovieDetailsFragmentsViewModel by activityViewModels()
+    private val viewModel: MovieDetailsViewModel by activityViewModels()
 
     private lateinit var castRecyclerView: RecyclerView
     private lateinit var castAdapter: MovieCastCreditsAdapter
@@ -57,9 +56,20 @@ class MovieDetailsOverviewFragment : Fragment() {
 
     fun getMovie() {
         lifecycleScope.launchWhenStarted {
-            viewModel.movie.collectLatest { movie ->
-                if(movie != null) {
-                    bindMovieData(movie)
+            viewModel.movie.collectLatest { movieResource ->
+                when(movieResource) {
+                    is Resource.Loading -> {
+
+                    }
+                    is Resource.Success -> {
+                        val movie = movieResource.data
+
+                        if(movie != null) {
+                            bindMovieData(movie)
+                        }
+                    }
+                    is Resource.Error -> TODO()
+
                 }
             }
         }
@@ -67,8 +77,19 @@ class MovieDetailsOverviewFragment : Fragment() {
 
     private fun getCredits() {
         lifecycleScope.launchWhenStarted {
-            viewModel.credits.collectLatest { credits ->
-                castAdapter.submitList(credits.sortedBy { it.movieCastPersonData.ordering })
+            viewModel.credits.collectLatest { creditsResource ->
+                when(creditsResource) {
+                    is Resource.Loading -> {
+
+                    }
+                    is Resource.Success -> {
+                        val credits = creditsResource.data
+
+                        castAdapter.submitList(credits?.sortedBy { it.ordering })
+                    }
+                    is Resource.Error -> TODO()
+
+                }
             }
         }
     }
@@ -81,7 +102,7 @@ class MovieDetailsOverviewFragment : Fragment() {
 
         castAdapter = MovieCastCreditsAdapter(glide) { selectedCredit ->
             val creditIntent = Intent(requireContext(), PersonActivity::class.java)
-            creditIntent.putExtra(PersonActivity.PERSON_ID_KEY, selectedCredit.person.trakt_id)
+            creditIntent.putExtra(PersonActivity.PERSON_ID_KEY, selectedCredit.person_trakt_id)
 
             startActivity(creditIntent)
         }

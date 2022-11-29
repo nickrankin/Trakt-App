@@ -1,6 +1,5 @@
 package com.nickrankin.traktapp.model.person
 
-import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -23,20 +22,29 @@ class PersonOverviewViewModel @Inject constructor(private val savedStateHandle: 
     private val refreshEventChannel = Channel<Boolean>()
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
         .shareIn(viewModelScope, SharingStarted.Lazily, 1)
+
+    private val filterChannel = Channel<String>()
+    val filter = filterChannel.receiveAsFlow()
+        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
     
     val person = refreshEvent.flatMapLatest { shouldRefresh ->
-        Log.d(TAG, "Getting person with $personTraktId. Should Refresh: $shouldRefresh: ")
         repository.getPerson(personTraktId ?: 0, shouldRefresh)
     }
 
-    val personMovies = refreshEvent.flatMapLatest { shouldRefresh ->
-        repository.getPersonMovies(personTraktId ?: 0, shouldRefresh)
+    val personCrew = refreshEvent.flatMapLatest { shouldRefresh ->
+        repository.getCrewPersonCredits(personTraktId ?: 0, shouldRefresh)
     }
 
-    val personShows = refreshEvent.flatMapLatest { shouldRefresh ->
-        repository.getPersonShows(personTraktId ?: 0, shouldRefresh)
+    val personCast = refreshEvent.flatMapLatest { shouldRefresh ->
+        repository.getcastPersonCredits(personTraktId ?: 0, shouldRefresh)
     }
-    
+
+    fun changeFilter(newFilter: String) {
+        viewModelScope.launch {
+            filterChannel.send(newFilter)
+        }
+    }
+
     fun onStart() {
         viewModelScope.launch { 
             refreshEventChannel.send(false)

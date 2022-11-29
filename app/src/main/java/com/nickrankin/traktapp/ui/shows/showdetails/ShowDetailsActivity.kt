@@ -9,13 +9,11 @@ import android.util.TypedValue
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import androidx.work.WorkInfo
 import com.bumptech.glide.RequestManager
 import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.appbar.AppBarLayout
@@ -34,17 +32,15 @@ import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
-import com.nickrankin.traktapp.ui.IOnStatistcsRefreshListener
-import com.nickrankin.traktapp.ui.auth.AuthActivity
+import com.nickrankin.traktapp.ui.person.PersonActivity
 import com.nickrankin.traktapp.ui.shows.OnNavigateToEpisode
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
 import com.uwetrottmann.tmdb2.entities.*
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
-import org.apache.commons.lang3.time.DateFormatUtils
+import org.apache.commons.lang3.StringUtils
+import org.threeten.bp.format.DateTimeFormatter
 import javax.inject.Inject
-import kotlin.ClassCastException
-import kotlin.Exception
 
 private const val TAG = "ShowDetailsActivity"
 
@@ -67,15 +63,6 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
     private var showTraktId = 0
     private var showTmdbId: Int? = null
     private var showTitle: String? = ""
-
-    private var shouldRefreshOverviewData = false
-    private var shouldRefreshSeasonData = false
-    private var shouldRefreshProgressData = false
-
-    private lateinit var showActionButtonsFragment: ShowDetailsActionButtonsFragment
-    private lateinit var showDetailsOverviewFragment: ShowDetailsOverviewFragment
-    private lateinit var showDetailsSeasonsFragment: ShowDetailsSeasonsFragment
-    private lateinit var showDetailsProgressFragment: ShowDetailsProgressFragment
 
     private val viewModel: ShowDetailsViewModel by viewModels()
 
@@ -131,6 +118,12 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
         getShow()
     }
 
+    override fun onResume() {
+        super.onResume()
+
+        viewModel.resetRefreshState()
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         // Persist tab position in case activity gets destroy e.g device rotation
         outState.putInt(SELECT_TAB_POS, tabLayout.selectedTabPosition)
@@ -157,7 +150,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
                             toggleProgressBar(false)
                             displayShowInformation(show)
 
-                            handleExternalLinks(show.external_ids)
+                            showImdbButton(show.imdb_id)
                             handleTrailer(show.videos)
                         }
                     }
@@ -170,7 +163,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
                                 View.VISIBLE
 
                             displayShowInformation(show)
-                            handleExternalLinks(show.external_ids!!)
+                            showImdbButton(show.imdb_id)
                             handleTrailer(show.videos)
                         }
 
@@ -185,10 +178,8 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
     }
 
     private fun initFragments() {
-        showActionButtonsFragment = ShowDetailsActionButtonsFragment.newInstance()
-        showDetailsOverviewFragment = ShowDetailsOverviewFragment.newInstance()
-        showDetailsSeasonsFragment = ShowDetailsSeasonsFragment.newInstance()
-        showDetailsProgressFragment = ShowDetailsProgressFragment.newInstance()
+        val showActionButtonsFragment = ShowDetailsActionButtonsFragment.newInstance()
+
 
         supportFragmentManager.beginTransaction()
             .add(
@@ -201,21 +192,12 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
         // If device is rotated, user will see the tab that was selected, otherwise show Overview tab.
         if (selectedTab != null) {
             tabLayout.selectTab(tabLayout.getTabAt(selectedTab!!))
-        } else if(supportFragmentManager.findFragmentByTag(FRAGMENT_OVERVIEW_TAG) == null) {
-            // Fragment not added yet, so add it
-            supportFragmentManager.beginTransaction()
-                .add(
-                    bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer.id,
-                    showDetailsOverviewFragment,
-                    FRAGMENT_OVERVIEW_TAG
-                )
-                .commit()
         } else {
             // Replace Fragment with Overview Fragment
             supportFragmentManager.beginTransaction()
                 .add(
                     bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer.id,
-                    showDetailsOverviewFragment,
+                    ShowDetailsOverviewFragment.newInstance(),
                     FRAGMENT_OVERVIEW_TAG
                 )
                 .commit()
@@ -225,8 +207,6 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
 
     private fun toggleProgressBar(isRefreshing: Boolean) {
         val progressBar = bindings.showdetailsactivityInner.showdetailsactivityProgressbar
-        val actionButtonsProgressBar = showActionButtonsFragment.view?.findViewById<ProgressBar>(R.id.actionbutton_loading_progress)
-        val overviewFragmentProgressBar = showDetailsOverviewFragment.view?.findViewById<ProgressBar>(R.id.showdetailsoverview_progressbar)
 
         if (swipeRefeshLayout.isRefreshing) {
             swipeRefeshLayout.isRefreshing = false
@@ -234,13 +214,9 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
 
         if (isRefreshing) {
             progressBar.visibility = View.VISIBLE
-            actionButtonsProgressBar?.visibility = View.VISIBLE
-            overviewFragmentProgressBar?.visibility = View.VISIBLE
         }
         else {
             progressBar.visibility = View.GONE
-            actionButtonsProgressBar?.visibility = View.GONE
-            overviewFragmentProgressBar?.visibility = View.GONE
         }
 
     }
@@ -252,6 +228,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
 
         displayToolbarTitle(tmShow.name)
 
+
         if (tmShow.backdrop_path?.isNotEmpty() == true) {
             glide
                 .load(AppConstants.TMDB_POSTER_URL + tmShow.backdrop_path)
@@ -259,6 +236,21 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
         }
 
         bindings.showdetailsactivityInner.apply {
+
+            if(!tmShow.created_by.isNullOrEmpty()) {
+                showdetailsactivityDirected.visibility = View.VISIBLE
+
+                displayDirectors(tmShow.created_by) { directorClickedCallback ->
+                    lifecycleScope.launchWhenStarted {
+                        showDirector(directorClickedCallback?.person?.ids?.tmdb)
+                    }
+                }
+
+            } else {
+                showdetailsactivityDirected.visibility = View.GONE
+
+            }
+
             if (tmShow.poster_path?.isNotEmpty() == true) {
                 glide
                     .load(AppConstants.TMDB_POSTER_URL + tmShow.poster_path)
@@ -279,28 +271,26 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
             if (tmShow.first_aired != null) {
                 showdetailsactivityFirstAired.visibility = View.VISIBLE
 
-                showdetailsactivityFirstAired.text = "Premiered: " + DateFormatUtils.format(
-                    tmShow.first_aired,
-                    "dd MMM YYYY"
-                )
+                showdetailsactivityFirstAired.text = "Premiered: ${tmShow.first_aired.format(
+                    DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT))
+                ) }"
             } else {
                 showdetailsactivityFirstAired.visibility = View.GONE
-
             }
 
-            if(tmShow.networks.isNotEmpty()) {
+            if(tmShow.network != null) {
                 bindings.showdetailsactivityInner.showdetailsactivityCompany.visibility = View.VISIBLE
 
-                displayNetworks(tmShow.networks) { networkClickCallback ->
+                displayNetworks(listOf(tmShow.network)) { networkClickCallback ->
                 }
             } else {
                 bindings.showdetailsactivityInner.showdetailsactivityCompany.visibility = View.GONE
             }
 
-            if(tmShow.country.isNotEmpty()) {
+            if(tmShow.country != null) {
                 showdetailsactivityCountry.visibility = View.VISIBLE
 
-                displayCountries(tmShow.country) { countryClickCallback ->
+                displayCountries(listOf(tmShow.country)) { countryClickCallback ->
 
                 }
             } else {
@@ -316,7 +306,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
                 showdetailsactivityRuntime.visibility = View.GONE
             }
 
-            if(tmShow.genres.isNotEmpty()) {
+            if(tmShow.genres?.isNotEmpty() == true) {
                 showdetailsactivityGenres.visibility = View.VISIBLE
 
                 displayGenres(tmShow.genres) { genresClickCallback ->
@@ -324,18 +314,6 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
                 }
             } else {
                 showdetailsactivityGenres.visibility = View.GONE
-            }
-
-            if(tmShow.created_by.isNotEmpty()) {
-                showdetailsactivityDirected.visibility = View.VISIBLE
-
-                displayDirectors(tmShow.created_by) { directorClickedCallback ->
-
-                }
-
-            } else {
-                showdetailsactivityDirected.visibility = View.GONE
-
             }
 
             if(tmShow.trakt_rating != 0.0) {
@@ -349,6 +327,23 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
 
             showdetailsactivityNumEpisodes.text = "Total episodes: ${tmShow.num_episodes}"
         }
+    }
+
+    private suspend fun showDirector(directorTmdbId: Int?) {
+        if(directorTmdbId == null) {
+            Log.d(TAG, "showDirector: Director TMDB ID null, returning..")
+            return
+        }
+
+            val person = viewModel.getTraktPersonByTmdbId(directorTmdbId)
+
+            if(person != null) {
+                val intent = Intent(this, PersonActivity::class.java)
+                intent.putExtra(PersonActivity.PERSON_ID_KEY, person.ids.trakt)
+
+                startActivity(intent)
+            }
+
     }
 
     private fun displayToolbarTitle(title: String?) {
@@ -402,37 +397,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
     }
 
     override fun onRefresh() {
-        viewModel.onRefresh(showStatsRefreshWorkInfo = {workInfo ->
-            try {
-                val progressFragment = showDetailsProgressFragment as IOnStatistcsRefreshListener
-
-                workInfo.observe(this) { workInfoData ->
-                    when(workInfoData.state) {
-                        WorkInfo.State.ENQUEUED -> {
-                            progressFragment.onRefresh(true)
-                        }
-                        WorkInfo.State.RUNNING -> {
-                            progressFragment.onRefresh(true)
-
-                        }
-                        WorkInfo.State.SUCCEEDED -> {
-                            progressFragment.onRefresh(false)
-
-                        }
-                        WorkInfo.State.FAILED -> {
-                            progressFragment.onRefresh(false)
-
-                        }
-                        else -> {
-                            progressFragment.onRefresh(false)
-
-                        }
-                    }
-                }
-            } catch(cce: ClassCastException) {
-                Log.e(TAG, "onRefresh: Cannot cast ${showDetailsProgressFragment.javaClass.name} to IOnStatistcsRefreshListener", )
-            }
-        })
+        viewModel.onRefresh()
     }
 
     private fun handleTrailer(videos: Videos?) {
@@ -446,25 +411,25 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
         }
     }
 
-    private fun handleExternalLinks(externalIds: TvExternalIds?) {
-        val imdbExternalId = externalIds?.imdb_id
+    private fun showImdbButton(imdbId: String?) {
+        if(imdbId == null) {
+            bindings.showdetailsactivityInner.showdetailsactivityImdbButton.visibility = View.GONE
 
-        if (imdbExternalId != null) {
+            return
+        }
+
             val imdbButton = bindings.showdetailsactivityInner.showdetailsactivityImdbButton
             imdbButton.visibility = View.VISIBLE
 
             imdbButton.setOnClickListener {
-                ImdbNavigationHelper.navigateToImdb(this, imdbExternalId)
+                ImdbNavigationHelper.navigateToImdb(this, imdbId)
             }
 
-        } else {
-            bindings.showdetailsactivityInner.showdetailsactivityImdbButton.visibility = View.GONE
-        }
     }
 
     private fun displayDirectors(
-        people: List<Person?>,
-        callback: (person: Person?) -> Unit
+        people: List<com.uwetrottmann.trakt5.entities.CrewMember?>,
+        callback: (crewMember: com.uwetrottmann.trakt5.entities.CrewMember?) -> Unit
     ) {
         val layout = bindings.showdetailsactivityInner.showdetailsactivityDirected
 
@@ -482,9 +447,9 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
 
             // Check if director is last entry, in this case no trailing comma ','
             val textView: TextView = if (director != people.last()) {
-                setTextViewLayoutConfig(getTextView(layout.context, director?.name + ", "))
+                setTextViewLayoutConfig(getTextView(layout.context, director?.person?.name + ", "))
             } else {
-                setTextViewLayoutConfig(getTextView(layout.context, director?.name ?: ""))
+                setTextViewLayoutConfig(getTextView(layout.context, director?.person?.name ?: ""))
             }
 
             // Director was clicked, we supply CrewMember object to callback
@@ -511,8 +476,8 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
     }
 
     private fun displayNetworks(
-        networks: List<Network?>,
-        callback: (company: Network?) -> Unit
+        networks: List<String?>,
+        callback: (company: String?) -> Unit
     ) {
         val layout = bindings.showdetailsactivityInner.showdetailsactivityCompany
 
@@ -533,9 +498,9 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
 
             // Check if director is last entry, in this case no trailing comma ','
             val textView: TextView = if (network != networks.last()) {
-                setTextViewLayoutConfig(getTextView(layout.context, network?.name + ", "))
+                setTextViewLayoutConfig(getTextView(layout.context, network + ", "))
             } else {
-                setTextViewLayoutConfig(getTextView(layout.context, network?.name ?: ""))
+                setTextViewLayoutConfig(getTextView(layout.context, network ?: ""))
             }
 
             // Director was clicked, we supply CrewMember object to callback
@@ -561,7 +526,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
         }
     }
 
-    private fun displayGenres(genres: List<Genre?>, callback: (genre: Genre?) -> Unit) {
+    private fun displayGenres(genres: List<String?>, callback: (genre: String?) -> Unit) {
         val layout = bindings.showdetailsactivityInner.showdetailsactivityGenres
 
         // If user refreshes or rotates screen, ensure to clear existing views
@@ -581,9 +546,9 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
 
             // Check if director is last entry, in this case no trailing comma ','
             val textView: TextView = if (genre != genres.last()) {
-                setTextViewLayoutConfig(getTextView(layout.context, genre?.name + ", "))
+                setTextViewLayoutConfig(getTextView(layout.context, StringUtils.capitalize(genre) + ", "))
             } else {
-                setTextViewLayoutConfig(getTextView(layout.context, genre?.name ?: ""))
+                setTextViewLayoutConfig(getTextView(layout.context, StringUtils.capitalize(genre) ?: ""))
             }
 
             // Director was clicked, we supply CrewMember object to callback
@@ -727,12 +692,14 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
     }
 
     override fun onTabSelected(tab: TabLayout.Tab?) {
+        resetRefreshState()
+
         when (tab?.position) {
             0 -> {
                 supportFragmentManager.beginTransaction()
-                    .add(
+                    .replace(
                         bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer.id,
-                        showDetailsOverviewFragment,
+                        ShowDetailsOverviewFragment.newInstance(),
                         FRAGMENT_OVERVIEW_TAG
                     )
                     .commit()
@@ -741,9 +708,9 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
             }
             1 -> {
                 supportFragmentManager.beginTransaction()
-                    .add(
+                    .replace(
                         bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer.id,
-                        showDetailsSeasonsFragment,
+                        ShowDetailsSeasonsFragment.newInstance(),
                         FRAGMENT_SEASONS_TAG
                     )
                     .commit()
@@ -752,9 +719,9 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
             }
             2 -> {
                 supportFragmentManager.beginTransaction()
-                    .add(
+                    .replace(
                         bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer.id,
-                        showDetailsProgressFragment,
+                        ShowDetailsProgressFragment.newInstance(),
                         FRAGMENT_PROGRESS_TAG
                     )
                     .commit()
@@ -769,45 +736,15 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
     }
 
     override fun onTabUnselected(tab: TabLayout.Tab?) {
-        when (tab?.position) {
-            0 -> {
-                supportFragmentManager.beginTransaction()
-                    .remove(
-                        supportFragmentManager.findFragmentByTag(FRAGMENT_OVERVIEW_TAG)!!
-                    )
-                    .commit()
 
-                Log.d(TAG, "onTabSelected: Tab Overview selected")
-            }
-            1 -> {
-                supportFragmentManager.beginTransaction()
-                    .remove(
-                        supportFragmentManager.findFragmentByTag(FRAGMENT_SEASONS_TAG)!!
-                    )
-                    .commit()
-
-
-                Log.d(TAG, "onTabSelected: Tab Seasons selected")
-            }
-            2 -> {
-
-                supportFragmentManager.beginTransaction()
-                    .remove(
-                        supportFragmentManager.findFragmentByTag(FRAGMENT_PROGRESS_TAG)!!
-                    )
-                    .commit()
-
-                Log.d(TAG, "onTabSelected: Tab Progress selected")
-            }
-            else -> {
-
-                Log.d(TAG, "onTabSelected: Tab Unknown (${tab?.position}) selected")
-            }
-        }
     }
 
     override fun onTabReselected(tab: TabLayout.Tab?) {
+    }
 
+    private fun resetRefreshState() {
+        // Without this, and if user manually refresh the state (swipe refresh) any subsequent tab presses will refresh all entities.
+        viewModel.resetRefreshState()
     }
 
 

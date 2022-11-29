@@ -12,6 +12,8 @@ import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.ShowDataHelper
 import com.nickrankin.traktapp.helper.networkBoundResource
 import com.nickrankin.traktapp.repo.shows.SeasonEpisodesRepository
+import com.nickrankin.traktapp.repo.stats.EpisodesStatsRepository
+import com.nickrankin.traktapp.repo.stats.SeasonStatsRepository
 import com.nickrankin.traktapp.ui.IOnStatistcsRefreshListener
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.trakt5.entities.*
@@ -22,56 +24,40 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import org.threeten.bp.OffsetDateTime
-import java.lang.Exception
 import javax.inject.Inject
+import kotlin.Exception
 
 private const val TAG = "ShowDetailsProgressRepo"
 class ShowDetailsProgressRepository @Inject constructor(
     private val traktApi: TraktApi,
     private val showsDatabase: ShowsDatabase,
-    private  val showDataHelper: ShowDataHelper
+    private val showDataHelper: ShowDataHelper,
+    private val seasonStatsRepository: SeasonStatsRepository,
+    private val sharedPreferences: SharedPreferences
 ) {
     private val seasonStatsDao = showsDatabase.watchedSeasonStatsDao()
     private val seasonsDao = showsDatabase.TmSeasonsDao()
 
 
 
-    fun getSeasons(traktId: Int) = seasonsDao.getSeasonsForShow(traktId)
+    fun getSeasonStats(traktId: Int, tmdbId: Int?, shouldRefresh: Boolean) = networkBoundResource(
+        query = {
+            seasonStatsDao.getWatchedStatsByShow(traktId)
+        },
+        fetch = {
+            showDataHelper.getSeasons(traktId, tmdbId, null)
+        },
+        shouldFetch = { watchedSeasonStats ->
 
-    suspend fun getOverallSeasonStats(traktId: Int, tmdbId: Int?): Flow<List<WatchedSeasonStats>> {
-        val overallSeasonStats = seasonStatsDao.getWatchedStatsByShow(traktId)
-
-        // The user either has not watched any of this shows episodes yet, we need to populate the tables so he sees a list of all seasons progress
-        // For season watched stats otherwise, we use "users/{username}/watchlist/seasons" via the StatsRepository. If at least one episode is watched, we don't need to force refresh overall season stats!
-        if(overallSeasonStats.first().isNullOrEmpty()) {
-
-            val seasonsInfo = showDataHelper.getSeasons(traktId, tmdbId, null)
-
-            Log.d(TAG, "getOverallSeasonStats: Reload Season data stats. Total seasons ${seasonsInfo.size}")
-
+            shouldRefresh || watchedSeasonStats.isEmpty()
+        },
+        saveFetchResult = { seasons ->
+            Log.d(TAG, "getOverallSeasonStats: Reload Season data stats. Total seasons ${seasons.size}")
             showsDatabase.withTransaction {
-                seasonsDao.insertSeasons(seasonsInfo)
+                seasonsDao.insertSeasons(seasons)
             }
 
-            seasonsInfo.map { seasonData ->
-
-                showsDatabase.withTransaction {
-                    seasonStatsDao.insert(
-                        listOf(
-                            WatchedSeasonStats(
-                                "${traktId}S${seasonData.season_number}",
-                                traktId, seasonData.season_number ?: 0,
-                                seasonData.episode_count ?: 0,
-                                0
-                            )
-                        )
-                    )
-                }
-            }
+            seasonStatsRepository.getWatchedSeasonStatsPerShow(traktId, true)
         }
-
-        return overallSeasonStats
-    }
-
-    fun getSeasonWatchedStats(showTraktId: Int, seasonNumber: Int) = seasonStatsDao.getSeasonWatchedStats(showTraktId, seasonNumber)
+    )
 }

@@ -1,6 +1,8 @@
 package com.nickrankin.traktapp.api.services.trakt
 
+import com.nickrankin.traktapp.api.services.trakt.model.TmCredits
 import com.uwetrottmann.trakt5.entities.Comment
+import com.uwetrottmann.trakt5.entities.Credits
 import com.uwetrottmann.trakt5.entities.Episode
 import com.uwetrottmann.trakt5.entities.Ratings
 import com.uwetrottmann.trakt5.entities.Stats
@@ -57,6 +59,15 @@ interface TmEpisodes {
         @Path("season") season: Int,
         @Path("episode") episode: Int
     ): Ratings
+
+
+//    GEThttps://api.trakt.tv/shows/game-of-thrones/seasons/1/episodes/1/people
+    @GET("shows/{id}/seasons/{season}/episodes/{episode}/people")
+    suspend fun people(@Path("id") showId: String?,
+                       @Path("season") season: Int,
+                       @Path("episode") episode: Int,
+                       @Query(value = "extended", encoded = true) extended: String?
+    ): TmCredits
 
     /**
      * Returns lots of episode stats.

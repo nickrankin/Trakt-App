@@ -5,16 +5,16 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.nickrankin.traktapp.dao.credits.model.CreditCharacterPerson
-import com.nickrankin.traktapp.dao.credits.model.MovieCastPersonData
+import com.nickrankin.traktapp.dao.credits.model.TmCastPerson
 import com.nickrankin.traktapp.dao.credits.model.Person
-import com.nickrankin.traktapp.dao.credits.model.ShowCastPersonData
+import com.nickrankin.traktapp.dao.credits.model.TmCrewPerson
 
 @Database(
     entities = [Person::class,
-               ShowCastPersonData::class,
-               MovieCastPersonData::class,
-               CreditCharacterPerson::class],
+        MovieCastPerson::class,
+        ShowCastPerson::class,
+               TmCastPerson::class,
+               TmCrewPerson::class],
     version = 1,
     exportSchema = false
 )
@@ -23,7 +23,9 @@ abstract class CreditsDatabase : RoomDatabase() {
     abstract fun showCastPeopleDao(): ShowCastPeopleDao
     abstract fun movieCastPeopleDao(): MovieCastPeopleDao
     abstract fun personDao(): PersonDao
-    abstract fun creditCharacterPersonDao(): CreditCharacterPersonDao
+    abstract fun castPersonDao(): CastPersonDao
+    abstract fun crewPersonDao(): CrewPersonDao
+
     companion object {
         @Volatile
         private var INSTANCE: CreditsDatabase? = null

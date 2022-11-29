@@ -18,7 +18,6 @@ import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.Response
 import com.nickrankin.traktapp.helper.getSyncResponse
-import com.nickrankin.traktapp.model.shows.EpisodeDetailsFragmentsViewModel
 import com.nickrankin.traktapp.model.shows.EpisodeDetailsViewModel
 import com.nickrankin.traktapp.ui.dialog.RatingPickerFragment
 import com.nickrankin.traktmanager.ui.dialoguifragments.WatchedDatePickerFragment
@@ -33,7 +32,7 @@ private const val TAG = "EpisodeDetailsActionBut"
 @AndroidEntryPoint
 class EpisodeDetailsActionButtonsFragment(): BaseFragment() {
 
-    private val viewModel: EpisodeDetailsFragmentsViewModel by activityViewModels()
+    private val viewModel: EpisodeDetailsViewModel by activityViewModels()
 
     private lateinit var bindings: ActionButtonsFragmentBinding
 
@@ -64,7 +63,13 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment() {
 
     private fun getEpisode() {
         lifecycleScope.launchWhenStarted {
-            viewModel.episode.collectLatest { episode ->
+            viewModel.episode.collectLatest { episodeResource ->
+                when(episodeResource) {
+                    is Resource.Loading -> {
+
+                    }
+                    is Resource.Success -> {
+                        val episode = episodeResource.data
 
                         if(episode != null) {
                             if(isLoggedIn) {
@@ -79,6 +84,12 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment() {
                                 getEvents(episode)
                             }
                         }
+                    }
+                    is Resource.Error -> TODO()
+
+                }
+
+
             }
         }
     }
@@ -160,12 +171,16 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment() {
 
     private fun setupRatingButton(episode: TmEpisode) {
         val ratingButton = bindings.actionbuttonRate
+        val ratingProgressBar = bindings.actionButtonRateProgressbar
+
         ratingButton.visibility = View.VISIBLE
+        ratingProgressBar.visibility = View.GONE
         bindings.actionbuttonRateText.text = " - "
 
         initRatingDialog(episode)
 
         ratingButton.setOnClickListener {
+            ratingProgressBar.visibility = View.VISIBLE
             ratingPickerFragment?.show(requireActivity().supportFragmentManager, "add_rating_fragment")
 
         }
@@ -194,7 +209,7 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment() {
         lifecycleScope.launchWhenStarted {
             viewModel.events.collectLatest { event ->
                 when(event) {
-                    is EpisodeDetailsFragmentsViewModel.Event.AddCheckinEvent -> {
+                    is EpisodeDetailsViewModel.Event.AddCheckinEvent -> {
                         val checkInResponse = event.checkinResponse
                         val checkinButton = bindings.actionbuttonCheckin
                         val checkinProgressBar = bindings.actionButtonCheckinProgressbar
@@ -221,7 +236,7 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment() {
                             }
                         }
                     }
-                    is EpisodeDetailsFragmentsViewModel.Event.CancelCheckinEvent -> {
+                    is EpisodeDetailsViewModel.Event.CancelCheckinEvent -> {
                         val shouldCheckinCurrentEpisode = event.checkinCurrentEpisode
                         val response = event.cancelCheckinResult
 
@@ -244,7 +259,7 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment() {
 
                         }
                     }
-                    is EpisodeDetailsFragmentsViewModel.Event.AddToWatchedHistoryEvent -> {
+                    is EpisodeDetailsViewModel.Event.AddToWatchedHistoryEvent -> {
                         val addHistoryButton = bindings.actionbuttonAddHistory
                         val addHistoryProgressBar = bindings.actionButtonAddHistoryProgressbar
 
@@ -276,7 +291,7 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment() {
 
                         }
                     }
-                    is EpisodeDetailsFragmentsViewModel.Event.AddRatingsEvent -> {
+                    is EpisodeDetailsViewModel.Event.AddRatingsEvent -> {
                         val syncResponse = event.syncResponse.data?.first
                         val newRating = event.syncResponse.data?.second
 
@@ -301,9 +316,11 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment() {
                             (activity as IHandleError).showErrorMessageToast(event.syncResponse.error, "Error adding rating")
 
                         }
+
+                        bindings.actionButtonRateProgressbar.visibility = View.GONE
                     }
 
-                    is EpisodeDetailsFragmentsViewModel.Event.DeleteRatingsEvent -> {
+                    is EpisodeDetailsViewModel.Event.DeleteRatingsEvent -> {
                         val syncResponse = event.syncResponse.data
 
                         if(event.syncResponse is Resource.Success) {
@@ -406,7 +423,6 @@ class EpisodeDetailsActionButtonsFragment(): BaseFragment() {
 
                     // If we find current movie in list, checkbox should be ticked
                     checkbox.isChecked = listWithEntries.entries.find {
-                        Log.d(TAG, "setupListsDialog: List Entry TraktId: ${it?.list_entry_trakt_id} TRAKT ID: ${tmEpisode.episode_trakt_id}")
                         it?.list_entry_trakt_id == tmEpisode.episode_trakt_id } != null
 
                     checkbox.setOnClickListener {

@@ -21,7 +21,6 @@ import com.nickrankin.traktapp.adapter.credits.ShowCastCreditsAdapter
 import com.nickrankin.traktapp.dao.credits.ShowCastPerson
 import com.nickrankin.traktapp.databinding.ShowDetailsOverviewFragmentBinding
 import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.model.shows.ShowDetailsFragmentsViewModel
 import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
 import com.nickrankin.traktapp.ui.IOnStatistcsRefreshListener
 import com.nickrankin.traktapp.ui.person.PersonActivity
@@ -35,7 +34,7 @@ private const val TAG = "ShowDetailsOverviewFrag"
 class ShowDetailsOverviewFragment : Fragment() {
 
     private lateinit var bindings: ShowDetailsOverviewFragmentBinding
-    private val viewModel: ShowDetailsFragmentsViewModel by activityViewModels()
+    private val viewModel: ShowDetailsViewModel by activityViewModels()
 
     private lateinit var castRecyclerView: RecyclerView
     private lateinit var showCastCreditsAdapter: ShowCastCreditsAdapter
@@ -63,10 +62,25 @@ class ShowDetailsOverviewFragment : Fragment() {
 
     private fun getShow() {
         lifecycleScope.launchWhenStarted {
-            viewModel.show.collectLatest { show ->
-                if(show != null) {
-                    bindings.showdetailsoverviewOverview.text = show.overview
+            viewModel.show.collectLatest { showResource ->
+
+                when(showResource){
+                    is Resource.Loading -> {
+
+                    }
+                    is Resource.Success -> {
+                     val show = showResource.data
+
+                    if(show != null) {
+                        bindings.showdetailsoverviewOverview.text = show.overview
+                    }
+                    }
+                    is Resource.Error -> {
+                        Log.e(TAG, "getShow: Error getting show ${showResource.error?.message}", )
+                    }
+
                 }
+
             }
         }
     }
@@ -74,8 +88,20 @@ class ShowDetailsOverviewFragment : Fragment() {
     private fun getCast() {
         viewModel.filterCast(false)
         lifecycleScope.launchWhenStarted {
-            viewModel.cast.collectLatest { castMembers ->
-            displayCast(castMembers)
+            viewModel.cast.collectLatest { castMembersResource ->
+                when(castMembersResource) {
+                    is Resource.Loading -> {
+
+                    }
+                    is Resource.Success -> {
+                        displayCast(castMembersResource.data ?: emptyList())
+
+                    }
+                    is Resource.Error -> {
+                        Log.e(TAG, "getCast: Error getting cast ${castMembersResource.error?.message}", )
+                    }
+
+                }
 
 
             }
@@ -111,7 +137,7 @@ class ShowDetailsOverviewFragment : Fragment() {
         }
     }
 
-    private fun displayCast(castPersons: List<ShowCastPerson>) {
+    private fun displayCast(castPersons: List<ShowCastPerson?>) {
         val castToggeButton = bindings.showdetailsactivityCrewToggle
         showCastCreditsAdapter.submitList(castPersons)
     }
@@ -125,7 +151,7 @@ class ShowDetailsOverviewFragment : Fragment() {
 
         showCastCreditsAdapter = ShowCastCreditsAdapter(glide) { selectedCastPerson ->
             val castPersonIntent = Intent(requireContext(), PersonActivity::class.java)
-            castPersonIntent.putExtra(PersonActivity.PERSON_ID_KEY, selectedCastPerson.person.trakt_id)
+            castPersonIntent.putExtra(PersonActivity.PERSON_ID_KEY, selectedCastPerson.person_trakt_id)
 
             startActivity(castPersonIntent)
         }

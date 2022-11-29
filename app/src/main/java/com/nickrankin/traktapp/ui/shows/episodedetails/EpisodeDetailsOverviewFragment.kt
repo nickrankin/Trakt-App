@@ -18,7 +18,6 @@ import com.nickrankin.traktapp.adapter.credits.ShowCastCreditsAdapter
 import com.nickrankin.traktapp.dao.show.model.TmEpisode
 import com.nickrankin.traktapp.databinding.FragmentEpisodeDetailsOverviewBinding
 import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.model.shows.EpisodeDetailsFragmentsViewModel
 import com.nickrankin.traktapp.model.shows.EpisodeDetailsViewModel
 import com.nickrankin.traktapp.ui.person.PersonActivity
 import dagger.hilt.android.AndroidEntryPoint
@@ -31,7 +30,7 @@ private const val TAG = "MovieDetailsOverviewFr"
 class EpisodeDetailsOverviewFragment : Fragment() {
 
     private lateinit var bindings: FragmentEpisodeDetailsOverviewBinding
-    private val viewModel: EpisodeDetailsFragmentsViewModel by activityViewModels()
+    private val viewModel: EpisodeDetailsViewModel by activityViewModels()
 
     private lateinit var castRecyclerView: RecyclerView
     private lateinit var castAdapter: ShowCastCreditsAdapter
@@ -60,23 +59,50 @@ class EpisodeDetailsOverviewFragment : Fragment() {
     fun initFragment() {
 
         lifecycleScope.launchWhenStarted {
-            viewModel.episode.collectLatest { episode ->
+            viewModel.episode.collectLatest { episodeResource ->
+                when(episodeResource) {
+                    is Resource.Loading -> {
 
-                if (episode != null) {
-                    bindEpisodeData(episode)
+                    }
+                    is Resource.Success -> {
+                        if (episodeResource.data != null) {
+                            bindEpisodeData(episodeResource.data!!)
+                        }
+                    }
+                    is Resource.Error -> TODO()
+
                 }
+
+
             }
         }
 
     }
 
     private fun getCredits() {
-        viewModel.filterCast(false)
-
         lifecycleScope.launchWhenStarted {
-            viewModel.cast.collectLatest { credits ->
-                bindings.showdetailsactivityCrewToggle.visibility = View.VISIBLE
-                castAdapter.submitList(credits)
+            viewModel.cast.collectLatest { creditsResource ->
+
+                when(creditsResource) {
+                    is Resource.Loading -> {
+                        bindings.showdetailsactivityCastProgressbar.visibility = View.VISIBLE
+                    }
+                    is Resource.Success -> {
+                        bindings.showdetailsactivityCastProgressbar.visibility = View.GONE
+                        bindings.showdetailsactivityCrewToggle.visibility = View.VISIBLE
+                        castAdapter.submitList(creditsResource.data)
+
+                    }
+                    is Resource.Error -> {
+                        Log.e(TAG, "getCredits: Error loading Cast. ${creditsResource.error?.message}", )
+
+                        bindings.showdetailsactivityCastProgressbar.visibility = View.GONE
+                        if(!creditsResource.data.isNullOrEmpty()) {
+                            bindings.showdetailsactivityCrewToggle.visibility = View.VISIBLE
+                            castAdapter.submitList(creditsResource.data)
+                        }
+                    }
+                }
             }
         }
     }
@@ -93,7 +119,7 @@ class EpisodeDetailsOverviewFragment : Fragment() {
             val castPersonIntent = Intent(requireContext(), PersonActivity::class.java)
             castPersonIntent.putExtra(
                 PersonActivity.PERSON_ID_KEY,
-                selectedCastPerson.person.trakt_id
+                selectedCastPerson.person_trakt_id
             )
 
             startActivity(castPersonIntent)

@@ -22,7 +22,7 @@ class SeasonStatsRepository @Inject constructor(private val traktApi: TraktApi, 
     private val watchedSeasonStatsDao = showsDatabase.watchedSeasonStatsDao()
     private val watchedSeasonStats = watchedSeasonStatsDao.getWatchedStats()
 
-    suspend fun getWatchedSeasonStatsPerShow(showTraktId: Int, shouldRefresh: Boolean): Flow<List<WatchedSeasonStats>> {
+    suspend fun getWatchedSeasonStatsPerShow(showTraktId: Int, shouldRefresh: Boolean) {
         val showSeasonStats = watchedSeasonStatsDao.getWatchedStatsByShow(showTraktId)
 
         if(shouldRefresh || showSeasonStats.first().isEmpty()) {
@@ -42,9 +42,6 @@ class SeasonStatsRepository @Inject constructor(private val traktApi: TraktApi, 
 
             insertWatchedSeasonsStats(showTraktId, response)
         }
-
-
-        return watchedSeasonStats
     }
 
     private suspend fun insertWatchedSeasonsStats(showTraktId: Int, baseShow: BaseShow) {

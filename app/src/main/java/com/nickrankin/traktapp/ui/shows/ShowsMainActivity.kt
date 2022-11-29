@@ -64,6 +64,10 @@ class ShowsMainActivity : BaseActivity(), OnTitleChangeListener, TabLayout.OnTab
 
     }
 
+    override fun onResume() {
+        super.onResume()
+    }
+
     private fun navigateToFragment() {
 
         // Navigation triggered to a particular fragment/tab

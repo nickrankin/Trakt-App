@@ -8,6 +8,7 @@ import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.show.model.TmShow
 import com.nickrankin.traktapp.helper.PersonCreditsHelper
 import com.nickrankin.traktapp.helper.networkBoundResource
+import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.repo.shows.CreditsRepository
 import kotlinx.coroutines.flow.Flow
@@ -22,7 +23,6 @@ class ShowDetailsOverviewRepository @Inject constructor(
     private val creditsHelper: PersonCreditsHelper
 ): CreditsRepository(personCreditsHelper, showsDatabase, creditsDatabase) {
     private val showsDao = showsDatabase.tmShowDao()
-
     private val showCastPeopleDao = creditsDatabase.showCastPeopleDao()
     private val castPersonDao = creditsDatabase.personDao()
     private val showCastDao = creditsDatabase.showCastPeopleDao()
@@ -31,29 +31,61 @@ class ShowDetailsOverviewRepository @Inject constructor(
         return showsDao.getShow(showDataModel?.traktId ?: 0)
     }
 
-    fun getShowCast(traktId: Int, showGuestStars: Boolean) = showCastDao.getShowCast(traktId, showGuestStars)
+    suspend fun getCast(showDataModel: ShowDataModel?, shouldRefresh: Boolean) = networkBoundResource(
+        query = {
+            showCastPeopleDao.getShowCast(showDataModel?.traktId ?: 0)
+        },
+        fetch = {
+            creditsHelper.getShowCredits(showDataModel?.traktId ?: 0 , showDataModel?.tmdbId)
+        },
+        shouldFetch = { castPersons ->
+            shouldRefresh || castPersons.isEmpty()
 
-    suspend fun getCredits(showDataModel: ShowDataModel?, shouldRefresh: Boolean): Flow<List<ShowCastPerson>> {
-        val castMembers = showCastPeopleDao.getShowCast(showDataModel?.traktId ?: 0, false)
-
-        if(shouldRefresh || castMembers.first().isEmpty()) {
-            val castResponse = creditsHelper.getShowCredits(showDataModel?.traktId ?: -1, showDataModel?.tmdbId ?: -1)
-
-            Log.d(TAG, "getCredits: Refreshing Credits")
-
-            creditsDatabase.withTransaction {
-                showCastPeopleDao.deleteShowCast(showDataModel?.traktId ?: 0)
-            }
-
+        },
+        saveFetchResult = { showCastPersons ->
             showsDatabase.withTransaction {
-                castResponse.map { castData ->
-                    castPersonDao.insert(castData.person)
-                    showCastPeopleDao.insert(castData.showCastPersonData)
-                }
+                showCastPeopleDao.insert(showCastPersons)
             }
         }
-        return castMembers
-    }
+    )
+
+    suspend fun getEpisodeCast(episodeDataModel: EpisodeDataModel?, shouldRefresh: Boolean) = networkBoundResource(
+        query = {
+            showCastPeopleDao.getShowCast(episodeDataModel?.showTraktId ?: 0)
+        },
+        fetch = {
+            creditsHelper.getShowCredits(episodeDataModel?.showTraktId ?: 0 , episodeDataModel?.tmdbId)
+        },
+        shouldFetch = { castPersons ->
+            shouldRefresh || castPersons.isEmpty()
+
+        },
+        saveFetchResult = { showCastPersons ->
+            Log.d(TAG, "getEpisodeCast: Refreshing Episode Cast")
+            showsDatabase.withTransaction {
+                showCastPeopleDao.insert(showCastPersons)
+            }
+        }
+    )
+
+    fun getEpisodeGuestStars(episodeDataModel: EpisodeDataModel?, season: Int, number: Int, shouldRefresh: Boolean)  = networkBoundResource(
+        query = {
+            showCastDao.getShowGuestStarsCast(episodeDataModel?.showTraktId ?: 0, season, number)
+        },
+        fetch = {
+            creditsHelper.getEpisodeGuestCredits(episodeDataModel?.showTraktId ?: 0, episodeDataModel?.tmdbId ?: 0, season, number)
+        },
+        shouldFetch = { guestPersons ->
+            shouldRefresh || guestPersons.isEmpty()
+
+        },
+        saveFetchResult = { guestStars ->
+            Log.d(TAG, "getEpisodeGuestStars: Refreshing Episode Cast (got ${guestStars.size} credits)")
+            showsDatabase.withTransaction {
+                showCastDao.insert(guestStars)
+            }
+        }
+    )
 
     fun getShow(traktId: Int) = showsDao.getShow(traktId)
 

@@ -10,6 +10,8 @@ import com.nickrankin.traktapp.dao.show.model.*
 import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.uwetrottmann.trakt5.entities.*
+import com.uwetrottmann.trakt5.enums.IdType
+import com.uwetrottmann.trakt5.enums.Type
 import kotlinx.coroutines.flow.first
 import org.threeten.bp.OffsetDateTime
 import javax.inject.Inject
@@ -53,31 +55,13 @@ class ShowDetailsRepository @Inject constructor(
         saveFetchResult = { traktShow ->
             showsDatabase.withTransaction {
                 lastRefreshedShowDao.insert(LastRefreshedShow(showTraktId, OffsetDateTime.now()))
-                tmShowDao.insertShow(traktShow!!)
+
+                if(traktShow != null) {
+                    tmShowDao.insertShow(traktShow)
+                }
             }
         }
     )
-
-    suspend fun refreshSeasons(showDataModel: ShowDataModel?, shouldRefresh: Boolean) {
-        if(showDataModel == null) {
-            return
-        }
-
-        val seasons = seasonDao.getSeasonsForShow(showDataModel.traktId)
-
-        if(shouldRefresh || seasons.first().isEmpty()) {
-            Log.d(
-                TAG,
-                "refreshSeasons: Refreshing Season Data for show ${showDataModel.traktId} - ${showDataModel.showTitle}")
-
-            val seasonsResponse = showDataHelper.getSeasons(showDataModel.traktId, showDataModel.tmdbId, null)
-
-            showsDatabase.withTransaction {
-                seasonDao.deleteAllSeasonsForShow(showDataModel.traktId)
-                seasonDao.insertSeasons(seasonsResponse)
-            }
-        }
-    }
 
     companion object {
         const val SHOW_TRAKT_ID_KEY = "show_trakt_id"

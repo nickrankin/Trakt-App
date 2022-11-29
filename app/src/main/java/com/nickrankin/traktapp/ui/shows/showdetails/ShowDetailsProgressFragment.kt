@@ -16,9 +16,10 @@ import androidx.lifecycle.lifecycleScope
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.dao.stats.model.WatchedSeasonStats
 import com.nickrankin.traktapp.databinding.ShowDetailsProgressFragmentBinding
+import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.calculateProgress
 import com.nickrankin.traktapp.model.datamodel.SeasonDataModel
-import com.nickrankin.traktapp.model.shows.ShowDetailsFragmentsViewModel
+import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
 import com.nickrankin.traktapp.ui.IOnStatistcsRefreshListener
 import com.nickrankin.traktapp.ui.shows.SeasonEpisodesActivity
 import dagger.hilt.android.AndroidEntryPoint
@@ -30,7 +31,7 @@ private const val TAG = "HERE"
 class ShowDetailsProgressFragment: Fragment(), IOnStatistcsRefreshListener {
     private lateinit var bindings: ShowDetailsProgressFragmentBinding
 
-    private val viewModel: ShowDetailsFragmentsViewModel by activityViewModels()
+    private val viewModel: ShowDetailsViewModel by activityViewModels()
     private lateinit var progressCardview: CardView
     private lateinit var progressItemContainer: LinearLayout
     private lateinit var progressBar: ProgressBar
@@ -69,29 +70,44 @@ class ShowDetailsProgressFragment: Fragment(), IOnStatistcsRefreshListener {
         progressBar = bindings.showdetailsprogressfragmentLoadingProgressbar
 
         lifecycleScope.launchWhenStarted { 
-            viewModel.overallSeasonStats().collectLatest { seasonData ->
-                progressItemContainer.removeAllViews()
+            viewModel.seasonWatchedStats.collectLatest { seasonResource ->
+                when(seasonResource) {
+                    is Resource.Loading -> {
+                        progressBar.visibility = View.VISIBLE
+                    }
+                    is Resource.Success -> {
+                        progressBar.visibility = View.GONE
 
-                allSeasonsToggleChannel.send(false)
+                        val seasonData = seasonResource.data
 
-                var totalEpisodes = 0
-                var totalWatched = 0
-                
-                seasonData.map { stats ->
-                    totalEpisodes += stats.aired
-                    totalWatched += stats.completed
+                        progressItemContainer.removeAllViews()
+
+                        allSeasonsToggleChannel.send(false)
+
+                        var totalEpisodes = 0
+                        var totalWatched = 0
+
+                        seasonData?.map { stats ->
+                            totalEpisodes += stats.aired
+                            totalWatched += stats.completed
+                        }
+
+                        val overallProgressPercentage = calculateProgress(totalWatched.toDouble(), totalEpisodes.toDouble())
+
+                        bindings.showdetailsprogressfragmentOverview.apply {
+                            showdetailsprogressfragmentProgressTitle.text = "Overall progress ($overallProgressPercentage%)"
+                            showdetailsprogressfragmentProgressbar.progress = overallProgressPercentage
+                        }
+
+                        seasonData?.map { seasonStat ->
+                            progressItemContainer.addView(buildProgressItem(seasonStat))
+                        }
+
+                    }
+                    is Resource.Error -> TODO()
+
                 }
 
-                val overallProgressPercentage = calculateProgress(totalWatched.toDouble(), totalEpisodes.toDouble())
-
-                bindings.showdetailsprogressfragmentOverview.apply {
-                    showdetailsprogressfragmentProgressTitle.text = "Overall progress ($overallProgressPercentage%)"
-                    showdetailsprogressfragmentProgressbar.progress = overallProgressPercentage
-                }
-
-                seasonData.map { seasonStat ->
-                    progressItemContainer.addView(buildProgressItem(seasonStat))
-                }
 
             }
         }
@@ -139,14 +155,14 @@ class ShowDetailsProgressFragment: Fragment(), IOnStatistcsRefreshListener {
     }
 
     override fun onRefresh(isRefreshing: Boolean) {
-        if(this.isAdded) {
-            if(isRefreshing) {
-                progressBar.visibility = View.VISIBLE
-                progressBar.bringToFront()
-            }
-        } else {
-            progressBar.visibility = View.GONE
-        }
+//        if(this.isAdded) {
+//            if(isRefreshing) {
+//                progressBar.visibility = View.VISIBLE
+//                progressBar.bringToFront()
+//            }
+//        } else {
+//            progressBar.visibility = View.GONE
+//        }
     }
 
 

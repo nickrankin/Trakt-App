@@ -15,13 +15,16 @@ import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexWrap
 import com.google.android.flexbox.FlexboxLayoutManager
 import com.nickrankin.traktapp.adapter.credits.CharacterPosterAdapter
+import com.nickrankin.traktapp.dao.credits.model.CreditPerson
 import com.nickrankin.traktapp.databinding.FragmentPeopleCreditsBinding
 import com.nickrankin.traktapp.helper.IHandleError
+import com.nickrankin.traktapp.helper.OnTitleChangeListener
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.person.PeopleCreditsViewModel
+import com.nickrankin.traktapp.model.person.PersonOverviewViewModel
 import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.uwetrottmann.trakt5.enums.Type
@@ -36,10 +39,10 @@ class PeopleCreditsFragment : Fragment() {
 
     private lateinit var bindings: FragmentPeopleCreditsBinding
 
-    private val viewModel: PeopleCreditsViewModel by activityViewModels()
-
     private lateinit var creditsRecyclerView: RecyclerView
     private lateinit var adapter: CharacterPosterAdapter
+
+    private val viewModel: PersonOverviewViewModel by activityViewModels()
 
     @Inject
     lateinit var glide: RequestManager
@@ -59,81 +62,120 @@ class PeopleCreditsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         initRecycler()
 
-        val showType = arguments?.getString(CREDIT_TYPE_KEY) ?: CREDIT_MOVIES_KEY
+        getTypeFilter()
+    }
 
-        when (showType) {
-            CREDIT_MOVIES_KEY -> {
-                getMovies()
+    private fun getTypeFilter() {
+        lifecycleScope.launchWhenStarted {
+            viewModel.filter.collectLatest { filterValue ->
+                when(filterValue) {
+                    CREDIT_MOVIES_KEY -> {
+                        updateTitle("Movies")
+                        getCredits(filterValue)
+                    }
+                    SHOW_CREDITS_KEY -> {
+                        updateTitle("Shows")
+                        getCredits(filterValue)
+
+                    }
+                    CREDIT_DIRECTED_KEY -> {
+                        updateTitle("Directed/Written")
+                        getCredits(filterValue)
+                    }
+                    else -> {
+                        "Unknown"
+                    }
+                }
+
             }
-            SHOW_CREDITS_KEY -> {
-                getShows()
+        }
+    }
+
+    private fun updateTitle(toolbarTitle: String) {
+
+        lifecycleScope.launchWhenStarted {
+            viewModel.person.collectLatest { personResource ->
+                when(personResource) {
+                    is Resource.Loading -> {
+
+                    }
+                    is Resource.Success -> {
+                        (activity as OnTitleChangeListener).onTitleChanged("$toolbarTitle - ${personResource.data?.name}")
+                    }
+                    is Resource.Error -> {
+                        (activity as OnTitleChangeListener).onTitleChanged("$toolbarTitle - Unknown")
+
+                        Log.e(TAG, "displayCredits: Error getting person ${personResource.error?.localizedMessage}", )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun getCredits(type: String) {
+        when(type) {
+            CREDIT_MOVIES_KEY, SHOW_CREDITS_KEY -> {
+                lifecycleScope.launchWhenStarted {
+                    viewModel.personCast.collectLatest { castResource ->
+                        when(castResource) {
+                            is Resource.Loading -> {
+
+                            }
+                            is Resource.Success -> {
+                                if(type == CREDIT_MOVIES_KEY) {
+                                    adapter.submitList(castResource.data?.filter { it.type == Type.MOVIE })
+                                } else if (type == SHOW_CREDITS_KEY) {
+                                    adapter.submitList(castResource.data?.filter { it.type == Type.SHOW })
+                                }
+                            }
+                            is Resource.Error -> {
+                                Log.e(TAG, "getCredits: Error getting cast credits ${castResource.error?.message}", )
+                                if(!castResource.data.isNullOrEmpty()) {
+                                    if(type == CREDIT_MOVIES_KEY) {
+                                        adapter.submitList(castResource.data?.filter { it.type == Type.MOVIE })
+                                    } else if (type == SHOW_CREDITS_KEY) {
+                                        adapter.submitList(castResource.data?.filter { it.type == Type.SHOW })
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+                }
+            }
+            CREDIT_DIRECTED_KEY -> {
+                lifecycleScope.launchWhenStarted {
+                    viewModel.personCrew.collectLatest { crewResource ->
+                        when(crewResource) {
+                            is Resource.Loading -> {
+
+                            }
+                            is Resource.Success -> {
+                                adapter.submitList(crewResource.data?.filter {
+                                    it.job.uppercase() == "director".uppercase() || it.job.uppercase() == "writer"
+                                })
+                            }
+                            is Resource.Error -> {
+                                Log.e(TAG, "getCredits: Error getting crew credits ${crewResource.error?.message}", )
+
+                                if(!crewResource.data.isNullOrEmpty()) {
+                                    adapter.submitList(crewResource.data?.filter {
+                                        it.job.uppercase() == "director".uppercase() || it.job.uppercase() == "writer"
+                                    })
+                                }
+                            }
+
+                        }
+                    }
+                }
             }
             else -> {
-                Log.e(TAG, "onViewCreated: Invalid type: $showType!")
+                Log.e(TAG, "getCredits: Unknown Credits type: $type", )
             }
         }
+
     }
 
-    private fun getMovies() {
-        lifecycleScope.launchWhenStarted {
-            viewModel.movies.collectLatest { moviesCharacterResource ->
-
-                when (moviesCharacterResource) {
-                    is Resource.Loading -> {
-                        Log.d(TAG, "getMovies: Loading movies")
-                    }
-                    is Resource.Success -> {
-                        Log.d(
-                            TAG,
-                            "getMovies: Adding ${moviesCharacterResource.data?.size} movies to adapter"
-                        )
-
-                        adapter.submitList(moviesCharacterResource.data)
-                    }
-                    is Resource.Error -> {
-                        if(moviesCharacterResource.data != null) {
-                            adapter.submitList(moviesCharacterResource.data)
-                        }
-
-                        (activity as IHandleError).showErrorSnackbarRetryButton(moviesCharacterResource.error, bindings.personactivitySwipeLayout) {
-                            viewModel.onRefresh()
-                        }
-                    }
-                }
-
-            }
-        }
-    }
-
-    private fun getShows() {
-        lifecycleScope.launchWhenStarted {
-            viewModel.shows.collectLatest { showsCharacterResource ->
-
-                when (showsCharacterResource) {
-                    is Resource.Loading -> {
-                        Log.d(TAG, "getShows: Loading movies")
-                    }
-                    is Resource.Success -> {
-                        Log.d(
-                            TAG,
-                            "getShows: Adding ${showsCharacterResource.data?.size} shows to adapter"
-                        )
-
-                        adapter.submitList(showsCharacterResource.data)
-                    }
-                    is Resource.Error -> {
-                        if(showsCharacterResource.data != null) {
-                            adapter.submitList(showsCharacterResource.data)
-                        }
-
-                        (activity as IHandleError).showErrorSnackbarRetryButton(showsCharacterResource.error, bindings.personactivitySwipeLayout) {
-                            viewModel.onRefresh()
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     private fun initRecycler() {
         creditsRecyclerView = bindings.personactivityCreditsRecyclerview
@@ -182,16 +224,10 @@ class PeopleCreditsFragment : Fragment() {
         creditsRecyclerView.adapter = adapter
     }
 
-    override fun onStart() {
-        super.onStart()
-        viewModel.onStart()
-    }
-
     companion object {
-
-        const val CREDIT_TYPE_KEY = "credit_type_key"
-        const val CREDIT_MOVIES_KEY = "movies_credis_key"
+        const val CREDIT_MOVIES_KEY = "movies_credits_key"
         const val SHOW_CREDITS_KEY = "show_credits_key"
+        const val CREDIT_DIRECTED_KEY = "directed_credits_key"
 
         @JvmStatic
         fun newInstance() = PeopleCreditsFragment()

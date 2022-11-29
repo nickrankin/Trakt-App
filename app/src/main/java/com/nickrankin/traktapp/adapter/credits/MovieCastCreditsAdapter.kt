@@ -43,16 +43,16 @@ class MovieCastCreditsAdapter(private val glide: RequestManager, private val cal
 
         val currentItem = getItem(position)
         holder.bindings.apply {
-            if(currentItem.person.picture_path != null && currentItem.person.picture_path.isNotBlank()) {
+            if(currentItem.picture_path != null && currentItem.picture_path.isNotBlank()) {
                 glide
-                    .load(AppConstants.TMDB_POSTER_URL + currentItem.person.picture_path)
+                    .load(AppConstants.TMDB_POSTER_URL + currentItem.picture_path)
                     .into(credititemImage)
             } else {
                 credititemImage.setImageResource(R.drawable.ic_baseline_person_24)
             }
 
-            credititemPersonName.text = currentItem.person.name
-            credititemPersonRole.text = currentItem.movieCastPersonData.character
+            credititemPersonName.text = currentItem.name
+            credititemPersonRole.text = currentItem.character
 
             root.setOnClickListener {
                 callback(currentItem)
@@ -75,7 +75,7 @@ class MovieCastCreditsAdapter(private val glide: RequestManager, private val cal
                 oldItem: MovieCastPerson,
                 newItem: MovieCastPerson
             ): Boolean {
-                return oldItem.movieCastPersonData.person_trakt_id == newItem.movieCastPersonData.person_trakt_id
+                return oldItem.person_trakt_id == newItem.person_trakt_id
             }
         }
     }

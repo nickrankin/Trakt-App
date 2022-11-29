@@ -4,11 +4,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.person.PeopleCreditsFragment">
+    tools:context=".ui.person.PeopleCreditsFragment"
+    android:layout_margin="8dp">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/personactivity_credits_recyclerview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:padding="8dp"/>
 
 </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

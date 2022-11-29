@@ -44,35 +44,6 @@ class MovieDetailsRepository @Inject constructor(private val movieDataHelper: Mo
         }
     )
 
-    suspend fun getCredits(movieDataModel: MovieDataModel?, shouldRefresh: Boolean) {
-
-        if(movieDataModel == null) {
-            Log.d(TAG, "refreshCredits: MovieDataModel cannot be null")
-            return
-        }
-
-        val credits = movieCastPeopleDao.getMovieCast(movieDataModel.traktId)
-
-        if(shouldRefresh || credits.first().isEmpty()) {
-            val creditsResponse = personCreditsHelper.getMovieCredits(movieDataModel?.traktId ?: 0, movieDataModel?.tmdbId ?: 0)
-
-            Log.d(TAG, "getCredits: Refreshing Credits")
-
-            Log.d(TAG, "getCredits: Got ${creditsResponse.size} credits")
-
-            creditsDatabase.withTransaction {
-                creditsResponse.map { movieCastPerson ->
-                    castPersonDao.insert(movieCastPerson.person)
-
-                    movieCastPeopleDao.insert(
-                        movieCastPerson.movieCastPersonData
-                    )
-                }
-            }
-        }
-
-    }
-
     companion object {
         const val MOVIE_TRAKT_ID_KEY = "movie_trakt_id_key"
         const val MOVIE_TITLE_KEY = "movie_title_key"
