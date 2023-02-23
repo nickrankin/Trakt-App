@@ -165,7 +165,7 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
                                 )
                             }
                             is Resource.Error -> {
-                                (activity as IHandleError).showErrorMessageToast(response.error, "Error removing recommendation")
+                                (activity as IHandleError).handleError(response.error, "Error removing recommendation")
                             }
                             else -> {}
                         }
@@ -301,6 +301,8 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
     }
 
     override fun onRefresh() {
+        super.onRefresh()
+
         viewModel.onRefresh()
     }
 

@@ -14,6 +14,8 @@ interface CollectedShowDao {
     @Query("SELECT * FROM collected_shows WHERE show_trakt_id = :traktId")
     fun getCollectedShow(traktId: Int): Flow<CollectedShow?>
 
+    @Insert
+    fun insert(collectedShow: CollectedShow)
 
     @Insert
     fun insert(collectedShows: List<CollectedShow>)

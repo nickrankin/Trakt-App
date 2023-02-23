@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/listitem_cardview"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -21,34 +22,64 @@
             tools:text="My Watched Episodes"/>
 
         <TextView
-            android:id="@+id/listitem_created"
-            android:layout_width="wrap_content"
+            android:id="@+id/listitem_author"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textAppearance="?attr/textAppearanceBody2"
-            android:textColor="?android:attr/textColorSecondary"
+            android:layout_marginTop="4dp"
             app:layout_constraintTop_toBottomOf="@id/listitem_name"
             app:layout_constraintStart_toStartOf="@id/listitem_name"
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:textStyle="bold"
+            android:textColor="?android:attr/textColorSecondary"
+            tools:text="By: Nick Rankin" />
+
+        <TextView
+            android:id="@+id/listitem_created"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+
+            android:textSize="12sp"
+            app:layout_constraintStart_toStartOf="@id/listitem_name"
+            app:layout_constraintTop_toBottomOf="@id/listitem_author"
+
             tools:text="Created: 24/04/2022" />
 
         <TextView
-            android:id="@+id/listitem_count"
+            android:id="@+id/listitem_privacy"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:textAppearance="?attr/textAppearanceBody2"
-            android:textColor="?android:attr/textColorSecondary"
+            android:background="@color/blue"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            app:layout_constraintTop_toBottomOf="@id/listitem_name"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="PUBLIC" />
+
+        <TextView
+            android:id="@+id/list_item_overview"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="4dp"
             app:layout_constraintTop_toBottomOf="@id/listitem_created"
-            app:layout_constraintStart_toStartOf="@id/listitem_created"
-            app:layout_constraintBottom_toTopOf="@id/listitem_buttons"
-            tools:text="In List: 10" />
+            app:layout_constraintStart_toStartOf="@id/listitem_name"
+            app:layout_constraintEnd_toEndOf="@id/listitem_name"
+            tools:text="A list description that is very long long long long long long
+ long long long long long long long long long long long long long long long long long
+ long long long long long long long
+ long long long long long long long long long long long" />
 
         <LinearLayout
             android:id="@+id/listitem_buttons"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="8dp"
-            app:layout_constraintTop_toBottomOf="@id/listitem_count"
+            app:layout_constraintTop_toBottomOf="@id/list_item_overview"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             android:orientation="horizontal">
@@ -70,6 +101,45 @@
                 style="?attr/borderlessButtonStyle"
                 />
         </LinearLayout>
+
+        <RelativeLayout
+            android:id="@+id/list_item_number_items"
+            android:layout_width="60dp"
+            android:layout_height="67dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@id/list_item_overview"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:orientation="vertical">
+            <TextView
+                android:id="@+id/list_item_items_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="2dp"
+                android:textAlignment="center"
+                android:gravity="center"
+                android:foregroundGravity="center"
+                android:textStyle="bold"
+                android:text="Items" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:backgroundTint="@color/red"
+                app:cardCornerRadius="23dp"
+                android:layout_below="@id/list_item_items_title">
+                <TextView
+                    android:id="@+id/list_item_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    tools:text="999+"
+                    android:layout_gravity="center"/>
+
+            </com.google.android.material.card.MaterialCardView>
+        </RelativeLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

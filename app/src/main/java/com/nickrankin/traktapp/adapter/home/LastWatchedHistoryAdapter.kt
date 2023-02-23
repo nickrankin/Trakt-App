@@ -9,6 +9,8 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.flexbox.AlignItems
 import com.google.android.flexbox.FlexboxLayoutManager
+import com.nickrankin.traktapp.dao.history.model.EpisodeWatchedHistoryEntry
+import com.nickrankin.traktapp.dao.history.model.MovieWatchedHistoryEntry
 import com.nickrankin.traktapp.dao.movies.model.WatchedMovie
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
 import com.nickrankin.traktapp.dao.stats.model.WatchedEpisodeStats
@@ -22,11 +24,11 @@ import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 
 private const val TAG = "LastWatchedHistoryAdapter"
-class LastWatchedHistoryAdapter<T>(
+class LastWatchedHistoryAdapter<T: com.nickrankin.traktapp.dao.history.model.HistoryEntry>(
     private val comparator: DiffUtil.ItemCallback<T>,
     private val sharedPreferences: SharedPreferences,
     private val tmdbImageLoader: TmdbImageLoader,
-    private val callback: (item: T, action: Int, position: Int) -> Unit
+    private val callback: (item: T) -> Unit
 ) : ListAdapter<T, LastWatchedHistoryAdapter<T>.WatchedHistoryVH>(
     comparator
 ) {
@@ -51,14 +53,14 @@ class LastWatchedHistoryAdapter<T>(
 
         holder.bindings.apply {
 
+            itemTimestamp.text = "Watched: " + currentItem.watched_date?.atZoneSameInstant(
+                ZoneId.systemDefault())?.format(
+                DateTimeFormatter.ofPattern(AppConstants.DEFAULT_DATE_TIME_FORMAT))
 
-            when (currentItem) {
-                is WatchedMoviesStats -> {
-                    itemTimestamp.text = "Watched: " + currentItem.last_watched_at?.atZoneSameInstant(
-                        ZoneId.systemDefault())?.format(
-                        DateTimeFormatter.ofPattern(AppConstants.DEFAULT_DATE_TIME_FORMAT))
+            itemTitle.text = currentItem.title
 
-                    itemTitle.text = currentItem.title
+            when(currentItem) {
+                is MovieWatchedHistoryEntry -> {
                     tmdbImageLoader.loadImages(
                         currentItem.trakt_id,
                         ImageItemType.MOVIE,
@@ -71,34 +73,25 @@ class LastWatchedHistoryAdapter<T>(
                         false
                     )
                 }
-
-                is WatchedEpisodeStats -> {
-                    itemTitle.text = "Season ${currentItem.season} Episode ${currentItem.episode}"
-
-                    itemTimestamp.visibility = View.VISIBLE
-
-                    itemTimestamp.text = "Watched: " + currentItem.last_watched_at?.atZoneSameInstant(
-                        ZoneId.systemDefault())?.format(
-                        DateTimeFormatter.ofPattern(AppConstants.DEFAULT_DATE_TIME_FORMAT))
-
+                is EpisodeWatchedHistoryEntry -> {
                     tmdbImageLoader.loadImages(
-                        currentItem.show_trakt_id ?: 0,
+                        currentItem.trakt_id,
                         ImageItemType.SHOW,
                         currentItem.show_tmdb_id,
-                        currentItem.show_title,
+                        currentItem.title,
                         null,
                         true,
                         itemPoster,
                         null,
                         false
                     )
-
                 }
-                else -> {}
             }
+
             root.setOnClickListener {
-                callback(currentItem, 0, position)
+                callback(currentItem)
             }
+
         }
     }
 

@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
+import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.adapter.credits.ShowCastCreditsAdapter
 import com.nickrankin.traktapp.dao.show.model.TmEpisode
 import com.nickrankin.traktapp.databinding.FragmentEpisodeDetailsOverviewBinding
@@ -27,7 +28,7 @@ import javax.inject.Inject
 private const val TAG = "MovieDetailsOverviewFr"
 
 @AndroidEntryPoint
-class EpisodeDetailsOverviewFragment : Fragment() {
+class EpisodeDetailsOverviewFragment : BaseFragment() {
 
     private lateinit var bindings: FragmentEpisodeDetailsOverviewBinding
     private val viewModel: EpisodeDetailsViewModel by activityViewModels()
@@ -94,13 +95,14 @@ class EpisodeDetailsOverviewFragment : Fragment() {
 
                     }
                     is Resource.Error -> {
-                        Log.e(TAG, "getCredits: Error loading Cast. ${creditsResource.error?.message}", )
 
                         bindings.showdetailsactivityCastProgressbar.visibility = View.GONE
                         if(!creditsResource.data.isNullOrEmpty()) {
                             bindings.showdetailsactivityCrewToggle.visibility = View.VISIBLE
                             castAdapter.submitList(creditsResource.data)
                         }
+
+                        handleError(creditsResource.error, null)
                     }
                 }
             }

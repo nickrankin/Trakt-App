@@ -1,31 +1,19 @@
 package com.nickrankin.traktapp.adapter.shows
 
-import android.annotation.SuppressLint
 import android.content.SharedPreferences
-import android.graphics.drawable.InsetDrawable
-import android.os.Build
-import android.util.Log
-import android.util.TypedValue
-import android.view.LayoutInflater
-import android.view.MenuItem
 import android.view.View
-import android.view.ViewGroup
 import android.widget.ImageView
-import androidx.appcompat.view.menu.MenuBuilder
-import androidx.appcompat.widget.PopupMenu
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.AdaptorActionControls
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.dao.show.model.CollectedShow
-import com.nickrankin.traktapp.databinding.CollectedShowEntryListItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.ImageItemType
 import com.nickrankin.traktapp.helper.TmdbImageLoader
-import com.nickrankin.traktapp.helper.getFormattedDate
+import com.nickrankin.traktapp.helper.getFormattedDateTime
 import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 
@@ -50,7 +38,7 @@ class CollectedShowsAdapter(controls: AdaptorActionControls<CollectedShow>,
 
                     if(currentItem.collected_at != null) {
                         itemTimestamp.visibility = View.VISIBLE
-                        itemTimestamp.text = "Last collected: ${getFormattedDate(currentItem.collected_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))}"
+                        itemTimestamp.text = "Last collected: ${getFormattedDateTime(currentItem.collected_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))}"
                     }
 
 

@@ -43,7 +43,7 @@ interface TmMovies {
     @GET("movies/{id}")
     suspend fun summary(
         @Path("id") movieId: String,
-        @Query(value = "extended", encoded = true) extended: Extended
+        @Query(value = "extended", encoded = true) extended: Extended?
     ): Movie
 
     /**

@@ -10,13 +10,13 @@ import com.nickrankin.traktapp.dao.stats.model.WatchedMoviesStats
 data class WatchedEpisodeAndStats(
     @Embedded val watchedEpisode: WatchedEpisode,
     @Relation(
-        parentColumn = "show_trakt_id",
-        entityColumn = "show_trakt_id"
+        parentColumn = "episode_trakt_id",
+        entityColumn = "id"
     )
     val watchedEpisodesStats: List<WatchedEpisodeStats?>,
     @Relation(
-        parentColumn = "show_trakt_id",
-        entityColumn = "show_trakt_id"
+        parentColumn = "episode_trakt_id",
+        entityColumn = "trakt_id"
     )
     val ratedEpisodesStats: List<RatingsEpisodesStats?>
 )

@@ -7,9 +7,6 @@ import org.threeten.bp.OffsetDateTime
 
 @Entity(tableName = "stats_ratings_episodes")
 data class RatingsEpisodesStats(
-    @PrimaryKey val trakt_id: Int,
-    val show_trakt_id: Int,
-    val season: Int,
-    val episode: Int,
-    val rating: Int,
-    val rated_at: OffsetDateTime)
+    @PrimaryKey override val trakt_id: Int,
+    override val rating: Int,
+    val rated_at: OffsetDateTime): RatingStats

@@ -186,6 +186,7 @@ class TrendingMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
     }
 
     override fun onRefresh() {
+        super.onRefresh()
         viewModel.onRefresh()
     }
 

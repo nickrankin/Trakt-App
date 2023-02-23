@@ -5,18 +5,15 @@ import android.util.Log
 import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.movies.MoviesDatabase
-import com.nickrankin.traktapp.dao.stats.model.CollectedMoviesStats
+import com.nickrankin.traktapp.dao.stats.model.MoviesCollectedStats
 import com.nickrankin.traktapp.dao.stats.model.RatingsMoviesStats
 import com.nickrankin.traktapp.dao.stats.model.WatchedMoviesStats
-import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.trakt5.entities.BaseMovie
 import com.uwetrottmann.trakt5.entities.RatedMovie
 import com.uwetrottmann.trakt5.entities.UserSlug
 import com.uwetrottmann.trakt5.enums.RatingsFilter
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.receiveAsFlow
 import javax.inject.Inject
 
 private const val TAG = "MovieStatsRepository"
@@ -31,7 +28,7 @@ class MovieStatsRepository @Inject constructor(private val traktApi: TraktApi, p
     val watchedMoviesStats = watchedMoviesStatsDao.getWatchedStats()
     val ratedMoviesStats = ratingsMoviesStatsDao.getRatingsStats()
 
-    suspend fun getCollectedMovieStatsById(traktId: Int): Flow<CollectedMoviesStats?> {
+    suspend fun getCollectedMovieStatsById(traktId: Int): Flow<MoviesCollectedStats?> {
         return collectedMoviesStatsDao.getCollectedMovieStatsById(traktId)
     }
 
@@ -91,11 +88,11 @@ class MovieStatsRepository @Inject constructor(private val traktApi: TraktApi, p
     }
 
     private suspend fun insertCollectedMoviesStats(movies: List<BaseMovie>) {
-        val collectedMovieStatsList: MutableList<CollectedMoviesStats> = mutableListOf()
+        val collectedMovieStatsList: MutableList<MoviesCollectedStats> = mutableListOf()
 
         movies.map { baseMovie ->
             collectedMovieStatsList.add(
-                CollectedMoviesStats(
+                MoviesCollectedStats(
                     baseMovie.movie?.ids?.trakt ?: 0,
                     baseMovie.movie?.ids?.tmdb,
                     baseMovie.collected_at,
@@ -140,9 +137,7 @@ class MovieStatsRepository @Inject constructor(private val traktApi: TraktApi, p
             ratedMoviesStatsList.add(
                 RatingsMoviesStats(
                     ratedMovie.movie?.ids?.trakt ?: 0,
-                    ratedMovie.movie?.ids?.tmdb ?: 0,
                     ratedMovie.rating?.value ?: 0,
-                    ratedMovie.movie?.title ?: "",
                     ratedMovie.rated_at
                 )
             )

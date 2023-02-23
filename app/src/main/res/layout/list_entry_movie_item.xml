@@ -1,40 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
+    android:layout_width="170dp"
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_marginBottom="8dp"
+    android:layout_margin="8dp"
+    android:padding="12dp"
     android:clickable="true"
     android:focusable="true"
     xmlns:tools="http://schemas.android.com/tools">
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content">
 
         <ImageView
-            android:id="@+id/movieentry_backdrop"
-            android:layout_width="match_parent"
-            android:layout_height="194dp"
+            android:id="@+id/movieentry_icon"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="4dp"
             android:src="@drawable/ic_baseline_local_movies_24"
-            android:scaleType="centerCrop"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toTopOf="@id/movieentry_title_text"
             app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/movieentry_title_text"
+            app:layout_constraintBottom_toBottomOf="@id/movieentry_title_text" />
+
+        <TextView
+            android:id="@+id/movieentry_title_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textAllCaps="true"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toEndOf="@id/movieentry_icon"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toTopOf="@id/movieentry_title" />
+            app:layout_constraintBottom_toTopOf="@id/movieentry_poster_cardview"
+            android:textSize="25sp"
+            android:textStyle="bold"
+            android:text="MOVIE" />
+
 
         <com.google.android.material.card.MaterialCardView
-            android:layout_width="84dp"
-            android:layout_height="125dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginStart="16dp"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent">
+            android:id="@+id/movieentry_poster_cardview"
+            android:layout_width="170dp"
+            android:layout_height="215dp"
+            android:layout_margin="4dp"
+            app:layout_constraintTop_toBottomOf="@+id/movieentry_title_text"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/movieentry_title">
             <ImageView
                 android:id="@+id/movieentry_poster"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:scaleType="fitXY"
-                android:padding="2dp"
                 android:src="@drawable/ic_trakt_svgrepo_com"
                 />
         </com.google.android.material.card.MaterialCardView>
@@ -47,26 +64,10 @@
             android:textAllCaps="true"
             android:textSize="16sp"
             android:layout_margin="8dp"
-            app:layout_constraintTop_toBottomOf="@id/movieentry_backdrop"
+            app:layout_constraintTop_toBottomOf="@+id/movieentry_poster_cardview"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             tools:text="Jackie Brown" />
-
-        <at.blogc.android.views.ExpandableTextView
-            android:id="@+id/movieentry_overview"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:layout_marginTop="8dp"
-            android:textAppearance="?attr/textAppearanceBody2"
-            android:textColor="?android:attr/textColorSecondary"
-            android:maxLines="3"
-            android:ellipsize="end"
-            app:animation_duration="950"
-            app:layout_constraintTop_toBottomOf="@id/movieentry_title"
-            app:layout_constraintStart_toStartOf="@id/movieentry_title"
-            app:layout_constraintEnd_toEndOf="parent"
-            tools:text="This is a Movie ......" />
 
         <TextView
             android:id="@+id/movieentry_added"
@@ -77,29 +78,11 @@
             android:layout_marginBottom="8dp"
             android:textSize="11sp"
             android:textStyle="bold"
-            app:layout_constraintTop_toBottomOf="@id/movieentry_overview"
-            app:layout_constraintStart_toStartOf="@id/movieentry_overview"
-            app:layout_constraintEnd_toEndOf="@id/movieentry_overview"
-            app:layout_constraintBottom_toTopOf="@id/movieentry_buttons"
+            app:layout_constraintTop_toBottomOf="@id/movieentry_title"
+            app:layout_constraintStart_toStartOf="@id/movieentry_title"
+            app:layout_constraintEnd_toEndOf="@id/movieentry_title"
+            app:layout_constraintBottom_toBottomOf="parent"
             tools:text="Added: 21/01/2022" />
-
-        <LinearLayout
-            android:id="@+id/movieentry_buttons"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="8dp"
-            app:layout_constraintTop_toBottomOf="@id/movieentry_added"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent">
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/movieentry_delete_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                style="?attr/borderlessButtonStyle"
-                android:text="Remove"
-                app:icon="@drawable/ic_baseline_delete_forever_24" />
-        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

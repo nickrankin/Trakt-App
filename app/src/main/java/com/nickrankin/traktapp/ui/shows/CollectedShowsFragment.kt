@@ -183,10 +183,8 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
                                 )
                             }
                         } else if (event.syncResponse is Resource.Error) {
-                            displayMessageToast(
-                                "Error removing show from collection, ${event.syncResponse.error?.localizedMessage}",
-                                Toast.LENGTH_LONG
-                            )
+                            handleError(event.syncResponse.error, "Error removing show from collection, ")
+
                         }
                     }
                     else -> {}
@@ -308,6 +306,8 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
     }
 
     override fun onRefresh() {
+        super.onRefresh()
+
         if (isLoggedIn) {
             viewModel.onRefresh()
         }

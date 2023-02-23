@@ -17,7 +17,7 @@ class MovieRatingsRepository @Inject constructor(private val traktApi: TraktApi,
     private val movieRatingDao = moviesDatabase.ratedMoviesStatsDao()
     val movieRatings = movieRatingDao.getRatingsStats()
 
-    suspend fun addRating(traktId: Int, tmdbId: Int?, movieTitle: String, newRating: Int): Resource<SyncResponse> {
+    suspend fun addRating(traktId: Int, newRating: Int): Resource<SyncResponse> {
 
         val syncItems = SyncItems().apply {
             movies = listOf(
@@ -31,7 +31,7 @@ class MovieRatingsRepository @Inject constructor(private val traktApi: TraktApi,
         return try {
             val response = traktApi.tmSync().addRatings(syncItems)
 
-            val ratingStats = RatingsMoviesStats(traktId, tmdbId, newRating, movieTitle,  OffsetDateTime.now())
+            val ratingStats = RatingsMoviesStats(traktId, newRating, OffsetDateTime.now())
 
             moviesDatabase.withTransaction {
                 movieRatingDao.insert(ratingStats)

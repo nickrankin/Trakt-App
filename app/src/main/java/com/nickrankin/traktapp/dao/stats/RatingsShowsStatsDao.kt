@@ -1,6 +1,7 @@
 package com.nickrankin.traktapp.dao.stats
 
 import androidx.room.*
+import com.nickrankin.traktapp.dao.stats.model.RatingStats
 import com.nickrankin.traktapp.dao.stats.model.RatingsMoviesStats
 import com.nickrankin.traktapp.dao.stats.model.RatingsShowsStats
 import kotlinx.coroutines.flow.Flow
@@ -15,6 +16,10 @@ interface RatingsShowsStatsDao {
     @Query("SELECT * FROM stats_ratings_shows WHERE trakt_id = :traktId")
     fun getRatingsStatsById(traktId: Int): Flow<RatingsShowsStats?>
 
+    @Transaction
+    @Query("SELECT * FROM stats_ratings_shows WHERE trakt_id = :traktId")
+    fun getRatingsById(traktId: Int): Flow<RatingsShowsStats?>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(ratingsShowsStats: RatingsShowsStats)
 
@@ -27,6 +32,10 @@ interface RatingsShowsStatsDao {
 
     @Delete
     fun delete(ratingsShowsStats: RatingsShowsStats)
+
+    @Transaction
+    @Query("DELETE FROM stats_ratings_shows WHERE trakt_id = :showTraktId")
+    fun deleteRatingsStatsByShowId(showTraktId: Int)
 
     @Transaction
     @Query("DELETE FROM stats_ratings_shows")

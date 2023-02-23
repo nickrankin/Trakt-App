@@ -87,8 +87,6 @@ class TraktApi(
     override fun setOkHttpClientDefaults(builder: OkHttpClient.Builder) {
         builder.addInterceptor(TraktV2Interceptor(this))
         builder.authenticator(TraktAuthenticator(context, this))
-//        builder.authenticator(com.uwetrottmann.trakt5.TraktV2Authenticator(this))
-
     }
 
 

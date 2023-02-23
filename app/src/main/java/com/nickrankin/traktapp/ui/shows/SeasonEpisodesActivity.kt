@@ -223,7 +223,7 @@ class SeasonEpisodesActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListe
                         if (swipeLayout.isRefreshing) {
                             swipeLayout.isRefreshing = false
                         }
-                        episodesResource.error?.printStackTrace()
+                        handleError(episodesResource.error, null)
                     }
                 }
             }
@@ -350,6 +350,8 @@ class SeasonEpisodesActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListe
     }
 
     override fun onRefresh() {
+        super.onRefresh()
+
         viewModel.onRefresh()
     }
 

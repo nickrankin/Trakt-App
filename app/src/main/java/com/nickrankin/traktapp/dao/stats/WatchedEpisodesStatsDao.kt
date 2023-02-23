@@ -12,6 +12,10 @@ interface WatchedEpisodesStatsDao {
     @Query("SELECT * FROM stats_watched_episode")
     fun getWatchedStats(): Flow<List<WatchedEpisodeStats>>
 
+    @Transaction
+    @Query("SELECT * FROM stats_watched_episode ORDER BY last_watched_at DESC LIMIT 6")
+    fun getLatestWatchedStats(): Flow<List<WatchedEpisodeStats>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(watchedEpisodeStats: List<WatchedEpisodeStats>)
 

@@ -31,7 +31,7 @@ object ApiModules {
     @Singleton
     @Provides
     fun providesTraktApi(@ApplicationContext context: Context): TraktApi {
-        return TraktApi(context, true, HttpLoggingInterceptor.Level.BASIC, false)
+        return TraktApi(context, false, HttpLoggingInterceptor.Level.BASIC, false)
     }
 
     @Singleton

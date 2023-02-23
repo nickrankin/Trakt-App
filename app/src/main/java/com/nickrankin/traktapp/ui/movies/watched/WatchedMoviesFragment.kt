@@ -11,21 +11,12 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.LoadState
-import androidx.paging.map
-import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
-import com.google.android.flexbox.FlexDirection
-import com.google.android.flexbox.FlexWrap
-import com.google.android.flexbox.FlexboxLayoutManager
-import com.google.android.flexbox.JustifyContent
 import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.AdaptorActionControls
-import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.adapter.MediaEntryBasePagingAdapter
 import com.nickrankin.traktapp.adapter.movies.WatchedMoviesLoadStateAdapter
 import com.nickrankin.traktapp.adapter.movies.WatchedMoviesPagingAdapter
@@ -149,7 +140,7 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
                                 }
                             }
                             is Resource.Error -> {
-                                (activity as IHandleError).showErrorMessageToast(event.syncResponse.error, "Error removing play")
+                                (activity as IHandleError).handleError(event.syncResponse.error, "Error removing play")
                             }
                             else -> {}
 
@@ -257,6 +248,8 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
     }
 
     override fun onRefresh() {
+        super.onRefresh()
+
         viewModel.onRefresh()
     }
 

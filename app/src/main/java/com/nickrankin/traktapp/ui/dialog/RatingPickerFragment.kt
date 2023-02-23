@@ -64,11 +64,14 @@ class RatingPickerFragment(private val callback: (newRating: Int) -> Unit, var t
         }
 
         resetButton.setOnClickListener {
-            callback(-1)
+            callback(RATING_RESET)
             dialog?.dismiss()
         }
 
-        closeButton.setOnClickListener { dialog?.dismiss() }
+        closeButton.setOnClickListener {
+            callback(DIALOG_CLOSED)
+            dialog?.dismiss()
+        }
         // create the dialog from the builder then show
         return numberPickerDialogBuilder.create()
     }
@@ -80,8 +83,7 @@ class RatingPickerFragment(private val callback: (newRating: Int) -> Unit, var t
     }
 
     companion object {
-        interface OnRatingChangedListener {
-            fun onRatingChanged(newRating: Int)
-        }
+        const val RATING_RESET = -1
+        const val DIALOG_CLOSED = -2
     }
 }

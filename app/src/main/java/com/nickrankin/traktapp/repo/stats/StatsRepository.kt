@@ -24,20 +24,9 @@ private const val TAG = "StatsRepository"
 class StatsRepository @Inject constructor(
     private val traktApi: TraktApi,
     private val sharedPreferences: SharedPreferences,
-    private val moviesDatabase: MoviesDatabase,
-    private val showsDatabase: ShowsDatabase,
-private val authDatabase: AuthDatabase) {
+    private val authDatabase: AuthDatabase) {
 
     private val userStatsDao = authDatabase.userStatsDao()
-
-
-
-
-
-
-
-
-
 
     suspend fun refreshUserStats() {
         val userStats = traktApi.tmUsers().stats(UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "null") ?: "null"))
@@ -60,11 +49,5 @@ private val authDatabase: AuthDatabase) {
             )
         }
     }
-
-
-
-
-
-
 
 }

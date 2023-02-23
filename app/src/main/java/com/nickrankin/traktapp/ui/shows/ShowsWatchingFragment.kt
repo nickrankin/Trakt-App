@@ -124,10 +124,9 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
                                     displayMessageToast("Error removing play", Toast.LENGTH_LONG)
                                 }
                             }
+
                             is Resource.Error -> {
-                                syncResponseResource.error?.printStackTrace()
-                                displayMessageToast("Error removing watched Episode. ${syncResponseResource.error?.localizedMessage}", Toast.LENGTH_LONG)
-                            }
+                                handleError(syncResponseResource.error, "Error removing watched Episode. ") }
                             else -> {}
 
                         }
@@ -252,6 +251,8 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
     }
 
     override fun onRefresh() {
+        super.onRefresh()
+
         if(isLoggedIn) {
             Log.e(TAG, "onRefresh: CALLED", )
 

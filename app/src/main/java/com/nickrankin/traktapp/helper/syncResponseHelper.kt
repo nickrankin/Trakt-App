@@ -51,7 +51,6 @@ fun getSyncResponse(syncResponse: SyncResponse?, type: Type): Response {
             }
         }
         else -> {}
-
     }
 
     return response

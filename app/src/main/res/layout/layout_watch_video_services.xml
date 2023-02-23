@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:padding="8dp">
+    <TextView
+        android:id="@+id/layoutwatchvideo_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textAppearance="?attr/textAppearanceHeadline6"
+        android:text="Watch Now" />
+    <com.google.android.material.chip.Chip
+        android:id="@+id/layoutwatchvideo_trailer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:chipIcon="@drawable/ic_baseline_local_movies_24"
+        android:text="Trailer" />
+
+    <TextView
+        android:id="@+id/layoutwatchvideo_watch_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:text="Stream Now"
+        android:visibility="gone"
+        tools:visibility="visible" />
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/layoutwatchvideoservices_watch_chipgroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/layoutwatchvideo_watch_amazon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Amazon Prime"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/layoutwatchvideo_watch_apple"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Apple iTunes"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/layoutwatchvideo_watch_disney"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Disney"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/layoutwatchvideo_watch_google"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Google Play"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/layoutwatchvideo_watch_netflix"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="NetFlix"
+            android:visibility="gone"
+            tools:visibility="visible"
+            />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/layoutwatchvideo_watch_youtube"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Youtube"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+    </com.google.android.material.chip.ChipGroup>
+
+    <TextView
+        android:id="@+id/layoutwatchvideo_rent_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:text="Buy Now"
+        android:visibility="gone"
+        tools:visibility="visible" />
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/layoutwatchvideoservices_rent_chipgroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <com.google.android.material.chip.Chip
+            android:id="@+id/layoutwatchvideo_rent_amazon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Amazon Prime"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/layoutwatchvideo_rent_apple"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Apple iTunes"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/layoutwatchvideo_rent_disney"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Disney"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/layoutwatchvideo_rent_google"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Google Play"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/layoutwatchvideo_rent_netflix"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="NetFlix"
+            android:visibility="gone"
+            tools:visibility="visible"
+            />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/layoutwatchvideo_rent_youtube"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Youtube"
+            android:visibility="gone"
+            tools:visibility="visible" />
+    </com.google.android.material.chip.ChipGroup>
+    <TextView
+        android:id="@+id/layoutwatchvideo_jw_banner"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        android:textStyle="bold|italic"
+        android:text="Powered by JustWatch" />
+</LinearLayout>

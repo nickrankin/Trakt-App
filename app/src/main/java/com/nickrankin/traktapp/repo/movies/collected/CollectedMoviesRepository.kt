@@ -6,19 +6,15 @@ import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.movies.MoviesDatabase
 import com.nickrankin.traktapp.dao.movies.model.CollectedMovie
-import com.nickrankin.traktapp.dao.stats.model.CollectedMoviesStats
+import com.nickrankin.traktapp.dao.stats.model.MoviesCollectedStats
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.networkBoundResource
 import com.nickrankin.traktapp.repo.stats.StatsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.trakt5.entities.*
 import com.uwetrottmann.trakt5.enums.Extended
-import com.uwetrottmann.trakt5.enums.SortBy
 import kotlinx.coroutines.flow.first
-import org.threeten.bp.Instant
-import org.threeten.bp.LocalDate
 import org.threeten.bp.OffsetDateTime
-import org.threeten.bp.ZoneId
 import java.lang.RuntimeException
 import javax.inject.Inject
 
@@ -124,7 +120,7 @@ class CollectedMoviesRepository @Inject constructor(private val traktApi: TraktA
                 )
 
                 collectedMoviesStatsDao.insert(
-                    CollectedMoviesStats(
+                    MoviesCollectedStats(
                         movie.trakt_id,
                         movie.tmdb_id,
                         OffsetDateTime.now(),

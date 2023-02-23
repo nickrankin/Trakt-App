@@ -14,6 +14,7 @@ import com.bumptech.glide.RequestManager
 import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexWrap
 import com.google.android.flexbox.FlexboxLayoutManager
+import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.adapter.credits.CharacterPosterAdapter
 import com.nickrankin.traktapp.dao.credits.model.CreditPerson
 import com.nickrankin.traktapp.databinding.FragmentPeopleCreditsBinding
@@ -35,7 +36,7 @@ import javax.inject.Inject
 private const val TAG = "PeopleCreditsFragment"
 
 @AndroidEntryPoint
-class PeopleCreditsFragment : Fragment() {
+class PeopleCreditsFragment : BaseFragment() {
 
     private lateinit var bindings: FragmentPeopleCreditsBinding
 
@@ -91,7 +92,7 @@ class PeopleCreditsFragment : Fragment() {
         }
     }
 
-    private fun updateTitle(toolbarTitle: String) {
+    override fun updateTitle(toolbarTitle: String) {
 
         lifecycleScope.launchWhenStarted {
             viewModel.person.collectLatest { personResource ->
@@ -105,7 +106,7 @@ class PeopleCreditsFragment : Fragment() {
                     is Resource.Error -> {
                         (activity as OnTitleChangeListener).onTitleChanged("$toolbarTitle - Unknown")
 
-                        Log.e(TAG, "displayCredits: Error getting person ${personResource.error?.localizedMessage}", )
+                        handleError(personResource.error, null)
                     }
                 }
             }
@@ -129,7 +130,6 @@ class PeopleCreditsFragment : Fragment() {
                                 }
                             }
                             is Resource.Error -> {
-                                Log.e(TAG, "getCredits: Error getting cast credits ${castResource.error?.message}", )
                                 if(!castResource.data.isNullOrEmpty()) {
                                     if(type == CREDIT_MOVIES_KEY) {
                                         adapter.submitList(castResource.data?.filter { it.type == Type.MOVIE })
@@ -137,6 +137,8 @@ class PeopleCreditsFragment : Fragment() {
                                         adapter.submitList(castResource.data?.filter { it.type == Type.SHOW })
                                     }
                                 }
+
+                                handleError(castResource.error, null)
                             }
 
                         }
@@ -152,17 +154,17 @@ class PeopleCreditsFragment : Fragment() {
                             }
                             is Resource.Success -> {
                                 adapter.submitList(crewResource.data?.filter {
-                                    it.job.uppercase() == "director".uppercase() || it.job.uppercase() == "writer"
+                                    it.job.uppercase() == "director".uppercase() || it.job.uppercase() == "writer".uppercase()
                                 })
                             }
                             is Resource.Error -> {
-                                Log.e(TAG, "getCredits: Error getting crew credits ${crewResource.error?.message}", )
-
                                 if(!crewResource.data.isNullOrEmpty()) {
                                     adapter.submitList(crewResource.data?.filter {
-                                        it.job.uppercase() == "director".uppercase() || it.job.uppercase() == "writer"
+                                        it.job.uppercase() == "director".uppercase() || it.job.uppercase() == "writer".uppercase()
                                     })
                                 }
+
+                                handleError(crewResource.error, null)
                             }
 
                         }

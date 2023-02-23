@@ -10,8 +10,15 @@ interface CollectedEpisodeDao {
     @Query("SELECT * FROM collected_episodes")
     fun getCollectedEpisodes(): Flow<List<CollectedEpisode>>
 
+    @Transaction
+    @Query("SELECT * FROM collected_episodes WHERE trakt_id = :traktId")
+    fun getCollectedEpisodeById(traktId: Int): Flow<CollectedEpisode?>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(collectedEpisodes: List<CollectedEpisode>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insert(collectedEpisode: CollectedEpisode)
 
     @Update
     fun update(collectedEpisode: CollectedEpisode)

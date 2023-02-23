@@ -26,7 +26,7 @@ class ListEntryAdapter constructor(
     private val glide: RequestManager,
     private val tmdbImageLoader: TmdbImageLoader,
     private val sharedPreferences: SharedPreferences,
-    private val callback: (traktId: Int, action: String, type: Type, listEntry: TraktListEntry) -> Unit
+    private val callback: (traktId: Int?, action: String, type: Type, listEntry: TraktListEntry) -> Unit
 ) : ListAdapter<TraktListEntry, RecyclerView.ViewHolder>(COMPARATOR) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -82,13 +82,15 @@ class ListEntryAdapter constructor(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val currentItem = getItem(position)
 
+
+
         when (currentItem.entryData.type) {
-            "movie" -> {
+            Type.MOVIE -> {
                 val movieViewHolder = holder as MovieViewHolder
 
                 movieViewHolder.bindings.apply {
                     movieentryTitle.text = currentItem.movie?.title
-                    movieentryOverview.text = currentItem.movie?.overview
+//                    movieentryOverview.text = currentItem.movie?.overview
                     movieentryAdded.text = "Added ${
                         currentItem.entryData.listed_at.format(
                             DateTimeFormatter.ofPattern(
@@ -100,11 +102,6 @@ class ListEntryAdapter constructor(
                         )
                     }"
 
-                    movieentryOverview.setOnClickListener {
-                        (it as ExpandableTextView).apply {
-                            toggle()
-                        }
-                    }
 
                     tmdbImageLoader.loadImages(
                         currentItem.movie?.trakt_id ?: -1,
@@ -114,34 +111,38 @@ class ListEntryAdapter constructor(
                         currentItem.movie?.language,
                         true,
                         movieentryPoster,
-                    movieentryBackdrop,
-                    false)
+                        null,
+                        false
+                    )
 
                     root.setOnClickListener {
                         callback(
-                            currentItem.movie?.trakt_id!!,
+                            currentItem.movie?.trakt_id,
                             ACTION_VIEW,
                             Type.MOVIE,
                             currentItem
                         )
                     }
 
-                    movieentryDeleteButton.setOnClickListener {
-                        callback(
-                            currentItem.movie?.trakt_id!!,
-                            ACTION_REMOVE,
-                            Type.MOVIE,
-                            currentItem
-                        )
-                    }
+//                    movieentryDeleteButton.setOnClickListener {
+//                        callback(
+//                            currentItem.movie?.trakt_id,
+//                            ACTION_REMOVE,
+//                            Type.MOVIE,
+//                            currentItem
+//                        )
+//                    }
                 }
             }
-            "show" -> {
+            Type.SHOW -> {
                 val showViewHolder = holder as ShowViewHolder
 
                 showViewHolder.bindings.apply {
+
+                    showentryPoster.setImageDrawable(null)
+
                     showentryTitle.text = currentItem.show?.title
-                    showentryOverview.text = currentItem.show?.overview
+//                    showentryOverview.text = currentItem.show?.overview
                     showentryAdded.text = "Added ${
                         currentItem.entryData.listed_at.format(
                             DateTimeFormatter.ofPattern(
@@ -153,13 +154,6 @@ class ListEntryAdapter constructor(
                         )
                     }"
 
-                    showentryOverview.setOnClickListener {
-                        (it as ExpandableTextView).apply {
-                            toggle()
-                        }
-                    }
-
-
 
                     tmdbImageLoader.loadImages(
                         currentItem.show?.trakt_id ?: -1,
@@ -169,39 +163,40 @@ class ListEntryAdapter constructor(
                         currentItem.show?.language,
                         true,
                         showentryPoster,
-                    showentryBackdrop,
-                    false)
+                        null,
+                        false
+                    )
 
 
                     root.setOnClickListener {
                         callback(
-                            currentItem.show?.trakt_id!!,
+                            currentItem.show?.trakt_id,
                             ACTION_VIEW,
                             Type.SHOW,
                             currentItem
                         )
                     }
 
-                    showentryDeleteButton.setOnClickListener {
-                        callback(
-                            currentItem.show?.trakt_id!!,
-                            ACTION_REMOVE,
-                            Type.SHOW,
-                            currentItem
-                        )
-                    }
+//                    showentryDeleteButton.setOnClickListener {
+//                        callback(
+//                            currentItem.show?.trakt_id,
+//                            ACTION_REMOVE,
+//                            Type.SHOW,
+//                            currentItem
+//                        )
+//                    }
                 }
 
             }
-            "episode" -> {
+            Type.EPISODE -> {
                 val episodeViewHolder = holder as EpisodeViewHolder
 
                 episodeViewHolder.bindings.apply {
+
+                    episodeentryPoster.setImageDrawable(null)
                     episodeentryTitle.text =
-                        currentItem.episode?.title + " (${currentItem.episodeShow?.title})"
-                    episodeentryOverview.text = currentItem.episode?.overview
-                    episodeentrySeasonEpisode.text =
-                        "S${currentItem.episode?.season}E${currentItem.episode?.episode}"
+                        "${currentItem.episode?.title} S${currentItem.episode?.season_number}E${currentItem.episode?.episode_number} (${currentItem.episodeShow?.title})"
+
                     episodeentryAdded.text = "Added ${
                         currentItem.entryData.listed_at.format(
                             DateTimeFormatter.ofPattern(
@@ -217,57 +212,51 @@ class ListEntryAdapter constructor(
                         currentItem.episodeShow?.trakt_id ?: -1,
                         currentItem.episodeShow?.tmdb_id,
                         currentItem.episodeShow?.trakt_id ?: 0,
-                        currentItem.episode?.season,
-                        currentItem.episode?.episode,
+                        currentItem.episode?.season_number,
+                        currentItem.episode?.episode_number,
                         currentItem.episodeShow?.title ?: "",
                         currentItem.episode?.language,
                         true,
                         episodeentryPoster,
-                    episodeentryBackdrop,
-                    false)
-
-
-                    episodeentryOverview.setOnClickListener {
-                        (it as ExpandableTextView).apply {
-                            toggle()
-                        }
-                    }
+                        null,
+                        false
+                    )
 
                     root.setOnClickListener {
                         callback(
                             // Show Trakt ID, not episodes!
-                            currentItem.episodeShow?.trakt_id!!,
+                            currentItem.episodeShow?.trakt_id,
                             ACTION_VIEW,
                             Type.EPISODE,
                             currentItem
                         )
                     }
 
-                    episodeentryDeleteButton.setOnClickListener {
-                        callback(
-                            // Show Trakt ID, not episodes!
-                            currentItem.episodeShow?.trakt_id!!,
-                            ACTION_REMOVE,
-                            Type.EPISODE,
-                            currentItem
-                        )
-                    }
+//                    episodeentryDeleteButton.setOnClickListener {
+//                        callback(
+//                            // Show Trakt ID, not episodes!
+//                            currentItem.episodeShow?.trakt_id,
+//                            ACTION_REMOVE,
+//                            Type.EPISODE,
+//                            currentItem
+//                        )
+//                    }
                 }
             }
-            "person" -> {
+            Type.PERSON -> {
                 val personViewHolder = holder as PersonViewHolder
 
                 personViewHolder.bindings.apply {
-                    personentryName.text = currentItem.person?.name
-                    personentryOverview.text = currentItem.person?.bio
+                    personentryTitle.text = currentItem.person?.title
+//                    personentryOverview.text = currentItem.person?
 
-                    if (currentItem.person?.birthday != null) {
-                        personentryDob.text = "Born ${
-                            currentItem.person?.birthday?.format(
-                                DateTimeFormatter.ofPattern("dd/MM/yyyy")
-                            )
-                        }"
-                    }
+//                    if (currentItem.person?.birthday != null) {
+//                        personentryDob.text = "Born ${
+//                            currentItem.person?.birthday?.format(
+//                                DateTimeFormatter.ofPattern("dd/MM/yyyy")
+//                            )
+//                        }"
+//                    }
 
                     personentryAdded.text = "Added ${
                         currentItem.entryData.listed_at.format(
@@ -280,12 +269,6 @@ class ListEntryAdapter constructor(
                         )
                     }"
 
-                    personentryOverview.setOnClickListener {
-                        (it as ExpandableTextView).apply {
-                            toggle()
-                        }
-                    }
-
                     root.setOnClickListener {
                         callback(
                             currentItem.movie?.trakt_id!!,
@@ -297,23 +280,27 @@ class ListEntryAdapter constructor(
                 }
             }
             else -> {
-                Log.e(TAG, "onBindViewHolder: Unsupported ViewHolder type:- ${currentItem.entryData.type}!", )
+                Log.e(
+                    TAG,
+                    "onBindViewHolder: Unsupported ViewHolder type:- ${currentItem.entryData.type}!",
+                )
             }
         }
     }
 
+
     override fun getItemViewType(position: Int): Int {
         return when (getItem(position).entryData.type) {
-            "movie" -> {
+            Type.MOVIE -> {
                 TYPE_MOVIE
             }
-            "show" -> {
+            Type.SHOW -> {
                 TYPE_SHOW
             }
-            "episode" -> {
+            Type.EPISODE -> {
                 TYPE_EPISODE
             }
-            "person" -> {
+            Type.PERSON -> {
                 TYPE_PERSON
             }
             else -> {

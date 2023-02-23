@@ -8,6 +8,10 @@ import androidx.room.TypeConverters
 import com.nickrankin.traktapp.dao.calendars.ShowCalendarEntryDao
 import com.nickrankin.traktapp.dao.calendars.model.HiddenShowCalendarEntry
 import com.nickrankin.traktapp.dao.calendars.model.ShowCalendarEntry
+import com.nickrankin.traktapp.dao.history.EpisodeWatchedHistoryEntryDao
+import com.nickrankin.traktapp.dao.history.model.EpisodeWatchedHistoryEntry
+import com.nickrankin.traktapp.dao.refresh.LastRefreshedAt
+import com.nickrankin.traktapp.dao.refresh.LastRefreshedAtDao
 import com.nickrankin.traktapp.dao.show.model.*
 import com.nickrankin.traktapp.dao.stats.*
 import com.nickrankin.traktapp.dao.stats.model.*
@@ -23,14 +27,16 @@ import com.nickrankin.traktapp.dao.stats.model.*
         TmEpisode::class,
         TrackedShow::class,
         TrackedEpisode::class,
-        LastRefreshedShow::class,
         WatchedShowsStats::class,
         WatchedSeasonStats::class,
         WatchedEpisodeStats::class,
-        CollectedShowsStats::class,
+        ShowsCollectedStats::class,
+        EpisodesCollectedStats::class,
         RatingsShowsStats::class,
         RatingsEpisodesStats::class,
-        HiddenShowCalendarEntry::class],
+        HiddenShowCalendarEntry::class,
+        LastRefreshedAt::class,
+        EpisodeWatchedHistoryEntry::class],
     version = 1,
     exportSchema = false
 )
@@ -44,17 +50,22 @@ abstract class ShowsDatabase : RoomDatabase() {
     abstract fun TmEpisodesDao(): TmEpisodesDao
     abstract fun trackedShowDao(): TrackedShowDao
     abstract fun trackedEpisodeDao(): TrackedEpisodeDao
-    abstract fun lastRefreshedShowDao(): LastRefreshedShowDao
 
     abstract fun watchedEpisodesDao(): WatchedEpisodesDao
     abstract fun watchedEpisodePageKeyDao(): WatchedEpisodePageKeyDao
 
     abstract fun collectedShowsStatsDao(): CollectedShowsStatsDao
+    abstract fun collectedEpisodesStatsDao(): EpisodesCollectedStatsDao
     abstract fun ratedShowsStatsDao(): RatingsShowsStatsDao
     abstract fun ratedEpisodesStatsDao(): RatingsEpisodesStatsDao
     abstract fun watchedShowsStatsDao(): WatchedShowsStatsDao
     abstract fun watchedSeasonStatsDao(): WatchedSeasonStatsDao
     abstract fun watchedEpisodesStatsDao(): WatchedEpisodesStatsDao
+
+    abstract fun  lastRefreshedAtDao(): LastRefreshedAtDao
+
+    abstract fun episodeWatchedHistoryEntryDao(): EpisodeWatchedHistoryEntryDao
+
 
 
     companion object {

@@ -310,6 +310,33 @@ class PersonCreditsHelper @Inject constructor(
                 )
             }
 
+            traktResponse.guest_stars?.mapIndexed {
+                    index, castPerson ->
+                val person = castPerson.person
+
+
+                val traktPersonId = castPerson.person?.ids?.trakt
+                val tmdbPersonId = castPerson.person?.ids?.tmdb
+                val character = castPerson.character
+
+
+                showCreditsList.add(
+                    ShowCastPerson(
+                        "P${traktPersonId}S${showTraktId}",
+                        traktPersonId ?: 0,
+                        showTraktId,
+                        castPerson.show?.ids?.tmdb,
+                        index,
+                        character,
+                        person?.name ?: "",
+                        getTmdbCastPersonProfilePath(tmdbResponse, tmdbPersonId),
+                        true,
+                        null,
+                        null
+                    )
+                )
+            }
+
             Log.d(TAG, "getShowCredits: Returning ${showCreditsList.size}")
 
             return showCreditsList

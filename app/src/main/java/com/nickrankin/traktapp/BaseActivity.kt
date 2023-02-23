@@ -15,6 +15,7 @@ import androidx.preference.PreferenceManager
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import com.nickrankin.traktapp.helper.IHandleError
+import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.lists.TraktListsActivity
 import com.nickrankin.traktapp.ui.movies.MoviesMainActivity
@@ -33,17 +34,23 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
 
     private var searchType: String? = null
     private lateinit var searchMenuItem: MenuItem
+
+    private lateinit var application: TmApplication
     
     @Inject
     lateinit var sharedPreferences: SharedPreferences
 
     protected var isLoggedIn = false
 
+    private var errorHandled = false
+
 //    @Inject
 //    lateinit var trackedEpisodeAlarmScheduler: TrackedEpisodeAlarmScheduler
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        getTmApplication()
 
         // Load the default preferences
         PreferenceManager.setDefaultValues(this, R.xml.root_preferences, false)
@@ -58,6 +65,15 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
 //        }
 
 
+    }
+
+    private fun getTmApplication() {
+        try {
+            application = getApplication() as TmApplication
+        } catch(e: Throwable) {
+            Log.e(TAG, "getTmApplication: Error getting application", )
+            e.printStackTrace()
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -149,7 +165,6 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
         if(throwable is HttpException) {
             if(throwable.code() == 401) {
                 // Try refreshing access token...
-                handle401Error()
             } else {
                 errorMessage.append(" Web Server responded with HTTP Error Code ${throwable.code()}")
             }
@@ -165,28 +180,40 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
             .show()
     }
 
-    override fun showErrorMessageToast(throwable: Throwable?, customMessage: String) {
-        throwable?.printStackTrace()
-        val errorMessage = StringBuilder()
-        errorMessage.append(customMessage)
+    open fun onRefresh() {
+        errorHandled = false
+    }
 
-        if(throwable is HttpException) {
-            if(throwable.code() == 401) {
-                // Try refreshing access token...
-                handle401Error()
-            } else {
-                errorMessage.append(": HTTP Response code ${throwable.code()}")
+    override fun handleError(throwable: Throwable?, customMessage: String?) {
+        synchronized(this) {
+            if(!errorHandled) {
+                val errorMessage = StringBuilder()
+                if(customMessage != null) {
+                    errorMessage.append(customMessage)
+                    errorMessage.append(": ")
+                }
+
+                if(throwable is HttpException) {
+                    if(throwable.code() == 401) {
+                        // Try refreshing access token...
+                        Log.e(TAG, "handleError: 401 HTTP Code, access token refresh needed", )
+                    } else {
+                        errorMessage.append("HTTP Response code ${throwable.code()}")
+                    }
+                } else if(throwable is IOException) {
+                    errorMessage.append("Please check your network connection (${throwable.localizedMessage})")
+                } else {
+                    errorMessage.append(throwable?.localizedMessage)
+                }
+
+                Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show()
+
+                errorHandled = true
             }
-        } else if(throwable is IOException) {
-            errorMessage.append(": Please check your network connection")
-        } else {
-            errorMessage.append(throwable?.localizedMessage)
         }
 
-        Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show()
+        throwable?.printStackTrace()
+
     }
 
-    private fun handle401Error() {
-        // TODO
-    }
 }

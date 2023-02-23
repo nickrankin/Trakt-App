@@ -30,6 +30,8 @@ import com.nickrankin.traktapp.adapter.home.LastWatchedHistoryAdapter
 import com.nickrankin.traktapp.adapter.home.UpcomingEpisodesAdapter
 import com.nickrankin.traktapp.api.services.trakt.model.stats.UserStats
 import com.nickrankin.traktapp.dao.auth.model.Stats
+import com.nickrankin.traktapp.dao.history.model.EpisodeWatchedHistoryEntry
+import com.nickrankin.traktapp.dao.history.model.MovieWatchedHistoryEntry
 import com.nickrankin.traktapp.dao.stats.model.WatchedEpisodeStats
 import com.nickrankin.traktapp.dao.stats.model.WatchedMoviesStats
 import com.nickrankin.traktapp.databinding.ActivityMainBinding
@@ -74,8 +76,8 @@ class MainActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
     private lateinit var lastWatchedEpisodesRecycler: RecyclerView
 
     private lateinit var upcomingEpisodesAdapter: UpcomingEpisodesAdapter
-    private lateinit var lastWatchedMoviesAdapter: LastWatchedHistoryAdapter<WatchedMoviesStats>
-    private lateinit var lastWatchedEpisodesAdapter: LastWatchedHistoryAdapter<WatchedEpisodeStats>
+    private lateinit var lastWatchedMoviesAdapter: LastWatchedHistoryAdapter<MovieWatchedHistoryEntry>
+    private lateinit var lastWatchedEpisodesAdapter: LastWatchedHistoryAdapter<EpisodeWatchedHistoryEntry>
 
     private var isRefreshingMovies = false
     private var isRefreshingShows = false
@@ -147,11 +149,7 @@ class MainActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
                         bindUserStats(userStatsResource.data)
                     }
                     is Resource.Error -> {
-                        Log.e(
-                            TAG,
-                            "getUserStats: Error getting User Stats ${userStatsResource.error?.message}",
-                        )
-                        userStatsResource.error?.printStackTrace()
+                        handleError(userStatsResource.error, null)
                     }
                 }
             }
@@ -184,7 +182,12 @@ class MainActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
                             swipeRefreshLayout.isRefreshing = false
                         }
 
-                        upcomingEpisodes.error?.printStackTrace()
+                        bindings.homeNextAiringProgressbar.visibility = View.GONE
+
+                        upcomingEpisodesAdapter.submitList(upcomingEpisodes.data?.sortedBy { it.first_aired })
+
+                        handleError(upcomingEpisodes.error, null)
+
                     }
                 }
             }
@@ -193,34 +196,76 @@ class MainActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
 
     private fun getLastWatchedMovies() {
         lifecycleScope.launchWhenStarted {
-            viewModel.watchedMovies.collectLatest {
-                if (swipeRefreshLayout.isRefreshing) {
-                    swipeRefreshLayout.isRefreshing = false
-                }
+            viewModel.watchedMovies.collectLatest { latestMoviesResource ->
+                when(latestMoviesResource) {
+                    is Resource.Loading -> {
+                        Log.e(TAG, "getLastWatchedMovies: loading", )
+                        bindings.homeWatchedMoviesProgressbar.visibility = View.VISIBLE
 
-                // If refreshing, progressbar visibility is handled by WorkManager callbacks
-                if (!isRefreshingMovies) {
-                    bindings.homeWatchedMoviesProgressbar.visibility = View.GONE
+                    }
+                    is Resource.Success -> {
+                        Log.e(TAG, "getLastWatchedMovies: get ${latestMoviesResource.data?.size}", )
+                        bindings.homeWatchedMoviesProgressbar.visibility = View.GONE
+
+                        if (swipeRefreshLayout.isRefreshing) {
+                            swipeRefreshLayout.isRefreshing = false
+                        }
+
+                        lastWatchedMoviesAdapter.submitList(latestMoviesResource.data)
+                    }
+                    is Resource.Error -> {
+                        bindings.homeWatchedMoviesProgressbar.visibility = View.GONE
+
+                        if (swipeRefreshLayout.isRefreshing) {
+                            swipeRefreshLayout.isRefreshing = false
+                        }
+
+                        lastWatchedMoviesAdapter.submitList(latestMoviesResource.data)
+
+                        handleError(latestMoviesResource.error, null)
+                    }
 
                 }
-                Log.e(TAG, "getLastWatchedMovies: ${it.size}")
-                lastWatchedMoviesAdapter.submitList(it)
             }
         }
     }
 
     private fun getLastWatchedEpisodes() {
         lifecycleScope.launchWhenStarted {
-            viewModel.watchedEpisodes.collectLatest {
-                if (swipeRefreshLayout.isRefreshing) {
-                    swipeRefreshLayout.isRefreshing = false
+            viewModel.watchedEpisodes.collectLatest { watchedEpisodesResource ->
+
+                when(watchedEpisodesResource) {
+                    is Resource.Loading -> {
+                        bindings.homeWatchedShowsProgressbar.visibility = View.VISIBLE
+                    }
+
+                    is Resource.Success -> {
+                        if (swipeRefreshLayout.isRefreshing) {
+                            swipeRefreshLayout.isRefreshing = false
+                        }
+
+                        bindings.homeWatchedShowsProgressbar.visibility = View.GONE
+
+                        lastWatchedEpisodesAdapter.submitList(watchedEpisodesResource.data)
+
+                    }
+                    is Resource.Error -> {
+                        bindings.homeWatchedShowsProgressbar.visibility = View.GONE
+
+                        if (swipeRefreshLayout.isRefreshing) {
+                            swipeRefreshLayout.isRefreshing = false
+                        }
+
+                        bindings.homeWatchedShowsProgressbar.visibility = View.GONE
+
+                        lastWatchedEpisodesAdapter.submitList(watchedEpisodesResource.data)
+
+                        handleError(watchedEpisodesResource.error, null)
+
+                    }
+
                 }
 
-                // If refreshing, progressbar visibility is handled by WorkManager callbacks
-                if (!isRefreshingShows) {
-                    bindings.homeWatchedShowsProgressbar.visibility = View.GONE
-                }
-                lastWatchedEpisodesAdapter.submitList(it)
             }
         }
     }
@@ -235,12 +280,12 @@ class MainActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
             homeStatsMoviesCollected.text = "Collected: ${userStats.collected_movies}"
             homeStatsMoviesPlays.text = "Plays: ${userStats.played_movies}"
             homeStatsMoviesDuration.text =
-                "${calculateRuntimeWithDays(userStats.watched_movies_duration)}"
+                calculateRuntimeWithDays(userStats.watched_movies_duration)
 
             homeStatsShowsCollected.text = "Collected  ${userStats.collected_shows}"
             homeStatsShowsPlays.text = "Plays: ${userStats.played_shows}"
             homeStatsShowsDuration.text =
-                "${calculateRuntimeWithDays(userStats.watched_episodes_duration)}"
+                calculateRuntimeWithDays(userStats.watched_episodes_duration)
 
         }
     }
@@ -285,17 +330,17 @@ class MainActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
         lm.flexDirection = FlexDirection.ROW
         lm.flexWrap = FlexWrap.NOWRAP
 
-        val comparator = object : DiffUtil.ItemCallback<WatchedMoviesStats>() {
+        val comparator = object : DiffUtil.ItemCallback<MovieWatchedHistoryEntry>() {
             override fun areItemsTheSame(
-                oldItem: WatchedMoviesStats,
-                newItem: WatchedMoviesStats
+                oldItem: MovieWatchedHistoryEntry,
+                newItem: MovieWatchedHistoryEntry
             ): Boolean {
                 return oldItem == oldItem
             }
 
             override fun areContentsTheSame(
-                oldItem: WatchedMoviesStats,
-                newItem: WatchedMoviesStats
+                oldItem: MovieWatchedHistoryEntry,
+                newItem: MovieWatchedHistoryEntry
             ): Boolean {
                 return oldItem.trakt_id == newItem.trakt_id
             }
@@ -305,7 +350,7 @@ class MainActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
             comparator,
             sharedPreferences,
             tmdbImageLoader
-        ) { watchedMovie, action, position ->
+        ) { watchedMovie ->
             val intent = Intent(this, MovieDetailsActivity::class.java)
 
             intent.putExtra(
@@ -334,19 +379,19 @@ class MainActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
         lm.flexDirection = FlexDirection.ROW
         lm.flexWrap = FlexWrap.NOWRAP
 
-        val comparator = object : DiffUtil.ItemCallback<WatchedEpisodeStats>() {
+        val comparator = object : DiffUtil.ItemCallback<EpisodeWatchedHistoryEntry>() {
             override fun areItemsTheSame(
-                oldItem: WatchedEpisodeStats,
-                newItem: WatchedEpisodeStats
+                oldItem: EpisodeWatchedHistoryEntry,
+                newItem: EpisodeWatchedHistoryEntry
             ): Boolean {
                 return oldItem == oldItem
             }
 
             override fun areContentsTheSame(
-                oldItem: WatchedEpisodeStats,
-                newItem: WatchedEpisodeStats
+                oldItem: EpisodeWatchedHistoryEntry,
+                newItem: EpisodeWatchedHistoryEntry
             ): Boolean {
-                return oldItem.id == newItem.id
+                return oldItem.trakt_id == newItem.trakt_id
             }
         }
 
@@ -354,17 +399,17 @@ class MainActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
             comparator,
             sharedPreferences,
             tmdbImageLoader
-        ) { watchedEpisode, action, position ->
+        ) { watchedEpisode ->
             val intent = Intent(this, EpisodeDetailsActivity::class.java)
 
             intent.putExtra(
                 EpisodeDetailsActivity.EPISODE_DATA_KEY,
                 EpisodeDataModel(
                     watchedEpisode.show_trakt_id,
-                    watchedEpisode.show_tmdb_id,
+                    watchedEpisode.tmdb_id,
                     watchedEpisode.season,
                     watchedEpisode.episode,
-                    watchedEpisode.show_title
+                    watchedEpisode.title
                 )
             )
 
@@ -448,6 +493,8 @@ class MainActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
     }
 
     override fun onRefresh() {
+        super.onRefresh()
+
         isRefreshingMovies = true
         isRefreshingShows = true
 

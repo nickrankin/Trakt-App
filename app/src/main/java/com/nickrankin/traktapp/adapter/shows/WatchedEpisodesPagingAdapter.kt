@@ -10,7 +10,7 @@ import com.nickrankin.traktapp.adapter.MediaEntryBasePagingAdapter
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisodeAndStats
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.TmdbImageLoader
-import com.nickrankin.traktapp.helper.getFormattedDate
+import com.nickrankin.traktapp.helper.getFormattedDateTime
 
 private const val TAG = "WatchedEpisodesPagingAd"
 class WatchedEpisodesPagingAdapter(controls: AdaptorActionControls<WatchedEpisodeAndStats>, private val sharedPreferences: SharedPreferences, private val tmdbImageLoader: TmdbImageLoader): MediaEntryBasePagingAdapter<WatchedEpisodeAndStats>(controls, COMPARATOR) {
@@ -29,7 +29,7 @@ class WatchedEpisodesPagingAdapter(controls: AdaptorActionControls<WatchedEpisod
 
                     if(currentItem?.watchedEpisode?.watched_at != null) {
                         itemTimestamp.visibility = View.VISIBLE
-                        itemTimestamp.text = "Watched: ${getFormattedDate(currentItem.watchedEpisode.watched_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))}"
+                        itemTimestamp.text = "Watched: ${getFormattedDateTime(currentItem.watchedEpisode.watched_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))}"
                     }
                 }
             }
@@ -45,7 +45,7 @@ class WatchedEpisodesPagingAdapter(controls: AdaptorActionControls<WatchedEpisod
 
                     if(currentItem?.watchedEpisode?.watched_at != null) {
                         itemWatchedDate.visibility = View.VISIBLE
-                        itemWatchedDate.text = "Watched: ${getFormattedDate(currentItem.watchedEpisode.watched_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))}"
+                        itemWatchedDate.text = "Watched: ${getFormattedDateTime(currentItem.watchedEpisode.watched_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))}"
                     }
 
 

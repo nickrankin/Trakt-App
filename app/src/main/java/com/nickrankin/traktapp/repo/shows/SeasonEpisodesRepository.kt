@@ -5,23 +5,28 @@ import android.util.Log
 import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TmdbApi
 import com.nickrankin.traktapp.api.TraktApi
+import com.nickrankin.traktapp.dao.history.model.EpisodeWatchedHistoryEntry
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.show.WatchedEpisodesDao
 import com.nickrankin.traktapp.dao.show.model.TmEpisode
 import com.nickrankin.traktapp.dao.show.model.TmSeason
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
+import com.nickrankin.traktapp.dao.stats.model.RatingsEpisodesStats
 import com.nickrankin.traktapp.helper.ShowDataHelper
 import com.nickrankin.traktapp.helper.getTmdbLanguage
 import com.nickrankin.traktapp.helper.networkBoundResource
+import com.nickrankin.traktapp.repo.stats.EpisodesStatsRepository
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.tmdb2.entities.AppendToResponse
 import com.uwetrottmann.tmdb2.entities.TvEpisode
 import com.uwetrottmann.tmdb2.entities.TvSeason
 import com.uwetrottmann.tmdb2.enumerations.AppendToResponseItem
 import com.uwetrottmann.trakt5.entities.HistoryEntry
+import com.uwetrottmann.trakt5.entities.RatedEpisode
 import com.uwetrottmann.trakt5.entities.UserSlug
 import com.uwetrottmann.trakt5.enums.Extended
 import com.uwetrottmann.trakt5.enums.HistoryType
+import com.uwetrottmann.trakt5.enums.RatingsFilter
 import com.uwetrottmann.trakt5.enums.Status
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
@@ -39,12 +44,17 @@ class SeasonEpisodesRepository @Inject constructor(
     private val tmdbApi: TmdbApi,
     private val showDataHelper: ShowDataHelper,
     private val showsDatabase: ShowsDatabase,
-    private val sharedPreferences: SharedPreferences
-) {
+    private val sharedPreferences: SharedPreferences) {
+
     private val tmShowDao = showsDatabase.tmShowDao()
     private val watchedEpisodesDao = showsDatabase.watchedEpisodesDao()
     private val seasonDao = showsDatabase.TmSeasonsDao()
     private val episodesDao = showsDatabase.TmEpisodesDao()
+
+    private val episodeWatchedHistoryEntryDao = showsDatabase.episodeWatchedHistoryEntryDao()
+    private val ratingEpisodesStatsDao = showsDatabase.ratedEpisodesStatsDao()
+
+    private val userSlug = UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "null"))
 
     fun getShow(showTraktId: Int, showTmdbId: Int?, shouldRefresh: Boolean) = networkBoundResource(
         query = {
@@ -150,7 +160,7 @@ class SeasonEpisodesRepository @Inject constructor(
         episodes.map { entry ->
             watchedEpisodes.add(
                 WatchedEpisode(
-                    entry.id,
+                    entry.id ?: 0L,
                     entry.episode?.ids?.trakt ?: 0,
                     entry.episode?.ids?.tmdb ?: 0,
                     entry.show?.language,
@@ -171,6 +181,82 @@ class SeasonEpisodesRepository @Inject constructor(
 
         }
         return watchedEpisodes
+    }
+
+    suspend fun refreshShowStats(traktShowId: Int?) {
+        if(traktShowId == null) {
+            Log.e(TAG, "refreshShowStats: Trakt Show ID must not be null", )
+            return
+        }
+        Log.d(TAG, "refreshEpisodeStats: Refreshing Watched and Rating Stats")
+
+        try {
+            val episodeWatchedStatsResponse = traktApi.tmUsers().history(
+                userSlug,
+                HistoryType.SHOWS,
+                traktShowId,
+                1,
+                9999,
+                null,
+                null,
+                null
+            )
+
+            val episodeRatingsResponse = traktApi.tmUsers().ratingsEpisodes(userSlug, RatingsFilter.ALL, null, null, null)
+
+            updateEpisodeWatchedStats(episodeWatchedStatsResponse)
+            updateEpisodeRatings(episodeRatingsResponse)
+        } catch(t: Throwable) {
+            t.printStackTrace()
+        }
+    }
+
+    private suspend fun updateEpisodeRatings(ratedEpisodes: List<RatedEpisode>) {
+        Log.d(TAG, "updateEpisodeRatings: Refreshing ${ratedEpisodes.size} episodes")
+        val ratedEpisodeStats: MutableList<RatingsEpisodesStats> = mutableListOf()
+        ratedEpisodes.map { ratedEpisode ->
+            ratedEpisodeStats.add(
+                RatingsEpisodesStats(
+                    ratedEpisode.episode?.ids?.trakt ?: -1,
+                    ratedEpisode.rating?.value ?: 0,
+                    ratedEpisode.rated_at ?: OffsetDateTime.now()
+                )
+            )
+        }
+
+        showsDatabase.withTransaction {
+            ratingEpisodesStatsDao.insert(
+                ratedEpisodeStats
+            )
+        }
+    }
+
+    private suspend fun updateEpisodeWatchedStats(historyEntries: List<HistoryEntry>) {
+        Log.d(TAG, "updateEpisodeWatchedStats: Refreshing ${historyEntries.size} watched episodes")
+        val watchedHistoryEntries: MutableList<EpisodeWatchedHistoryEntry> = mutableListOf()
+        historyEntries.map { watchedEpisode ->
+            watchedHistoryEntries.add(
+                EpisodeWatchedHistoryEntry(
+                    watchedEpisode.id ?: 0L,
+                    watchedEpisode.episode?.ids?.trakt ?: -1,
+                    watchedEpisode.episode?.ids?.tmdb,
+                    watchedEpisode.episode?.title ?: "",
+                    watchedEpisode.watched_at ?: OffsetDateTime.now(),
+                    OffsetDateTime.now(),
+                    watchedEpisode.show?.ids?.trakt ?: -1,
+                    watchedEpisode.show?.ids?.tmdb,
+                    watchedEpisode.episode?.season ?: -1,
+                    watchedEpisode.episode?.number ?: -1
+
+                    )
+            )
+        }
+
+        showsDatabase.withTransaction {
+            episodeWatchedHistoryEntryDao.insert(
+                watchedHistoryEntries
+            )
+        }
     }
 
     companion object {

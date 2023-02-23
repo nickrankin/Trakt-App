@@ -34,7 +34,7 @@ interface TmUsers {
     @GET("users/{username}")
     suspend fun profile(
         @Path("username") userSlug: UserSlug,
-        @Query(value = "extended", encoded = true) extended: Extended
+        @Query(value = "extended", encoded = true) extended: Extended?
     ): User
 
     /**
@@ -126,8 +126,21 @@ interface TmUsers {
     suspend fun listItems(
         @Path("username") userSlug: UserSlug,
         @Path("id") id: String,
-        @Query(value = "extended", encoded = true) extended: Extended
+        @Query(value = "extended", encoded = true) extended: Extended?
     ): List<ListEntry>
+
+    @GET("sync/watchlist")
+    suspend fun watchList(
+        @Query(value = "extended", encoded = true) extended: Extended?
+    ): List<ListEntry>
+
+    @POST("sync/watchlist")
+    suspend fun addToWatchList(
+        @Body items: SyncItems): SyncResponse
+
+    @POST("sync/watchlist/remove")
+    suspend fun removeFromWatchList(
+        @Body items: SyncItems): SyncResponse
 
     /**
      * **OAuth Required**
@@ -270,7 +283,7 @@ interface TmUsers {
         @Path("username") userSlug: UserSlug,
         @Path("type") type: HistoryType,
         @Query("page") page: Int,
-        @Query("limit") limit: Int,
+        @Query("limit") limit: Int?,
         @Query(value = "extended", encoded = true) extended: Extended?,
         @Query("start_at") startAt: OffsetDateTime?,
         @Query("end_at") endAt: OffsetDateTime?

@@ -6,8 +6,8 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ShowCastPeopleDao {
     @Transaction
-    @Query("SELECT * FROM show_cast_person WHERE show_trakt_id = :traktId AND is_guest_star = 0 ORDER BY ordering ASC")
-    fun getShowCast(traktId: Int): Flow<List<ShowCastPerson>>
+    @Query("SELECT * FROM show_cast_person WHERE show_trakt_id = :traktId AND is_guest_star = :showGuestStars ORDER BY ordering ASC")
+    fun getShowCast(traktId: Int, showGuestStars: Boolean): Flow<List<ShowCastPerson>>
 
     @Transaction
     @Query("SELECT * FROM show_cast_person WHERE show_trakt_id = :traktId AND is_guest_star = 1 AND season = :season AND episode = :episode ORDER BY ordering ASC")

@@ -257,6 +257,8 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
     }
 
     override fun onRefresh() {
+        super.onRefresh()
+
         if(isLoggedIn) {
             viewModel.showHiddenEntries(false)
             viewModel.onRefresh()

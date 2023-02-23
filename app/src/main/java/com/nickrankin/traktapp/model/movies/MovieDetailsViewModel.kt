@@ -3,24 +3,15 @@ package com.nickrankin.traktapp.model.movies
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nickrankin.traktapp.dao.lists.model.TraktList
-import com.nickrankin.traktapp.dao.movies.model.TmMovie
-import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.dao.history.model.HistoryEntry
 import com.nickrankin.traktapp.helper.TmdbToTraktIdHelper
+import com.nickrankin.traktapp.model.ActionButtonEvent
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
-import com.nickrankin.traktapp.repo.lists.ListEntryRepository
-import com.nickrankin.traktapp.repo.lists.TraktListsRepository
-import com.nickrankin.traktapp.repo.movies.MovieDetailsActionButtonRepository
+import com.nickrankin.traktapp.repo.movies.MovieActionButtonsRepository
 import com.nickrankin.traktapp.repo.movies.MovieDetailsOverviewRepository
 import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
-import com.nickrankin.traktapp.repo.movies.collected.CollectedMoviesRepository
-import com.nickrankin.traktapp.repo.ratings.MovieRatingsRepository
-import com.nickrankin.traktapp.repo.stats.MovieStatsRepository
 import com.nickrankin.traktapp.services.helper.StatsWorkRefreshHelper
 import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
-import com.uwetrottmann.trakt5.entities.MovieCheckinResponse
-import com.uwetrottmann.trakt5.entities.SyncResponse
-import com.uwetrottmann.trakt5.enums.Type
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
@@ -28,28 +19,22 @@ import kotlinx.coroutines.launch
 import org.threeten.bp.OffsetDateTime
 import javax.inject.Inject
 
+private const val TAG = "MovieDetailsViewModel"
+
 @HiltViewModel
 class MovieDetailsViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val repository: MovieDetailsRepository,
-    private val traktListsRepository: TraktListsRepository,
-    private val statsWorkRefreshHelper: StatsWorkRefreshHelper,
-    private val movieRatingsRepository: MovieRatingsRepository,
+    private val movieActionButtonsRepository: MovieActionButtonsRepository,
     private val movieDetailsOverviewRepository: MovieDetailsOverviewRepository,
-    private val collectedMoviesRepository: CollectedMoviesRepository,
-    private val movieDetailsActionButtonRepository: MovieDetailsActionButtonRepository,
-    private val listsRepository: TraktListsRepository,
-    private val listEntryRepository: ListEntryRepository,
-    private val movieStatsRepository: MovieStatsRepository,
     private val tmdbToTraktIdHelper: TmdbToTraktIdHelper
 
 ) : ViewModel() {
     private val movieDataModel: MovieDataModel? =
         savedStateHandle.get(MovieDetailsActivity.MOVIE_DATA_KEY)
 
-    private val eventsChannel = Channel<Event>()
+    private val eventsChannel = Channel<ActionButtonEvent>()
     val events = eventsChannel.receiveAsFlow()
-        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
     private val refreshEventChannel = Channel<Boolean>()
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
@@ -60,75 +45,131 @@ class MovieDetailsViewModel @Inject constructor(
         repository.getMovieSummary(movieDataModel?.traktId ?: 0, shouldRefresh)
     }
 
-    val watchedMovieStats = movieStatsRepository.watchedMoviesStats.map { watchedMovies ->
-        watchedMovies.find { it.trakt_id == movieDataModel?.traktId ?: 0 }
+    val watchedMovieHistoryEntries = refreshEvent.flatMapLatest { shouldRefresh ->
+        movieActionButtonsRepository.getPlaybackHistory(movieDataModel?.traktId ?: 0, shouldRefresh)
+    }
+
+    val listsAndEntries = refreshEvent.flatMapLatest { shouldRefresh ->
+        movieActionButtonsRepository.getTraktListsAndItems(shouldRefresh)
     }
 
     // Overview Fragment
     val credits = refreshEvent.flatMapLatest { shouldRefresh ->
-        movieDetailsOverviewRepository.getCast(movieDataModel?.traktId ?: 0, movieDataModel?.tmdbId ?: 0, shouldRefresh)
+        movieDetailsOverviewRepository.getCast(
+            movieDataModel?.traktId ?: 0,
+            movieDataModel?.tmdbId ?: 0,
+            shouldRefresh
+        )
     }
 
-    suspend fun personTmdbIdToTrakt(tmdbId: Int) = tmdbToTraktIdHelper.getTraktPersonByTmdbId(tmdbId)
+    suspend fun personTmdbIdToTrakt(tmdbId: Int) =
+        tmdbToTraktIdHelper.getTraktPersonByTmdbId(tmdbId)
 
 
-    // Action Button Fragment
-    val listsWithEntries = listEntryRepository.listEntries
+    val collectedMovieStats = refreshEvent.flatMapLatest { shouldRefresh ->
+        movieActionButtonsRepository.getCollectedStats(movieDataModel?.traktId ?: 0, shouldRefresh)
+    }
 
+    fun addToCollection(traktId: Int) = viewModelScope.launch {
+        eventsChannel.send(
+            ActionButtonEvent.AddToCollectionEvent(movieActionButtonsRepository.addToCollection(traktId ?: 0))
+        )
+    }
 
+    fun deleteFromCollection(traktId: Int) = viewModelScope.launch {
+        eventsChannel.send(
+            ActionButtonEvent.RemoveFromCollectionEvent(
+                movieActionButtonsRepository.removeFromCollection(
+                    traktId ?: -1
+                )
+            )
+        )
+    }
 
-    suspend fun collectedMovieStats(traktId: Int) = movieStatsRepository.getCollectedMovieStatsById(traktId)
+    fun addListEntry(itemTraktId: Int, listTraktId: Int) = viewModelScope.launch {
+                movieActionButtonsRepository.addToList(
+                    itemTraktId,
+                    listTraktId
+                )
+    }
 
-    fun addToCollection(traktId: Int) = viewModelScope.launch { eventsChannel.send(Event.AddToCollectionEvent(collectedMoviesRepository.addCollectedMovie(traktId ?: 0))) }
-    fun deleteFromCollection(traktId: Int) = viewModelScope.launch { eventsChannel.send(Event.RemoveFromCollectionEvent(collectedMoviesRepository.removeCollectedMovie(traktId ?: -1))) }
+    fun removeListEntry(itemTraktId: Int, listTraktId: Int) =
+        viewModelScope.launch {
 
-    fun addListEntry(type: String, traktId: Int, traktList: TraktList) = viewModelScope.launch { eventsChannel.send(Event.AddListEntryEvent(listEntryRepository.addListEntry(type, traktId, traktList))) }
-    fun removeListEntry(listTraktId: Int, listEntryTraktId: Int, type: Type) = viewModelScope.launch { eventsChannel.send(Event.RemoveListEntryEvent(listEntryRepository.removeEntry(listTraktId, listEntryTraktId, type))) }
+                    movieActionButtonsRepository.removeFromList(
+                        itemTraktId,
+                        listTraktId
+                    )
+        }
 
-    val movieRatings = movieRatingsRepository.movieRatings
+    val movieRatings = refreshEvent.flatMapLatest { shouldRefresh ->
+        movieActionButtonsRepository.getRatings(movieDataModel?.traktId ?: 0, shouldRefresh)
+    }
 
-    fun addRating(newRating: Int, traktId: Int, tmdbId: Int?, movieTitle: String) = viewModelScope.launch { eventsChannel.send(Event.AddRatingEvent(movieRatingsRepository.addRating(traktId ?: -1, tmdbId, movieTitle, newRating), newRating)) }
+    fun addRating(newRating: Int, traktId: Int) = viewModelScope.launch {
+        eventsChannel.send(
+            ActionButtonEvent.AddRatingEvent(
+                movieActionButtonsRepository.addRating(traktId, newRating, OffsetDateTime.now()),
+                newRating
+            )
+        )
+    }
 
-    fun deleteRating(traktId: Int) = viewModelScope.launch { eventsChannel.send(Event.DeleteRatingEvent(movieRatingsRepository.deleteRating(traktId ?: -1))) }
+    fun deleteRating(traktId: Int) = viewModelScope.launch {
+        eventsChannel.send(
+            ActionButtonEvent.RemoveRatingEvent(movieActionButtonsRepository.deleteRating(traktId ?: -1))
+        )
+    }
 
-    fun checkin(traktId: Int, cancelActiveCheckins: Boolean) = viewModelScope.launch { eventsChannel.send(Event.CheckinEvent(movieDetailsActionButtonRepository.checkin(traktId, cancelActiveCheckins))) }
-    fun cancelCheckin() = viewModelScope.launch { eventsChannel.send(Event.CancelCheckinEvent(movieDetailsActionButtonRepository.cancelCheckins())) }
+    fun checkin(traktId: Int, cancelActiveCheckins: Boolean) = viewModelScope.launch {
+        eventsChannel.send(
+            ActionButtonEvent.CheckinEvent(
+                movieActionButtonsRepository.checkin(
+                    traktId,
+                    cancelActiveCheckins
+                )
+            )
+        )
+    }
 
-    fun addToWatchedHistory(movie: TmMovie, watchedDate: OffsetDateTime) = viewModelScope.launch { eventsChannel.send(Event.AddToHistoryEvent(movieDetailsActionButtonRepository.addToWatchedHistory(movie, watchedDate))) }
+    fun addToWatchedHistory(traktId: Int, watchedDate: OffsetDateTime) = viewModelScope.launch {
+        eventsChannel.send(
+            ActionButtonEvent.AddHistoryEntryEvent(
+                movieActionButtonsRepository.addToHistory(
+                    traktId,
+                    watchedDate
+                )
+            )
+        )
+    }
+
+    fun removeHistoryEntry(historyEntry: HistoryEntry) = viewModelScope.launch {
+        eventsChannel.send(
+            ActionButtonEvent.RemoveHistoryEntryEvent(
+                movieActionButtonsRepository.removeFromHistory(historyEntry.history_id)
+            )
+        )
+    }
+    suspend fun getVideoStreamingServices() =
+        repository.getVideoStreamingServices(movieDataModel?.tmdbId, movieDataModel?.movieTitle)
 
     fun onStart() {
         viewModelScope.launch {
             refreshEventChannel.send(false)
-
-            traktListsRepository.getListsAndEntries(false)
         }
     }
 
     fun onRefresh() {
         viewModelScope.launch {
             refreshEventChannel.send(true)
-            traktListsRepository.getListsAndEntries(true)
-            statsWorkRefreshHelper.refreshMovieStats()
+           // statsWorkRefreshHelper.refreshMovieStats()
 
         }
-
     }
 
     fun resetRefreshState() {
         viewModelScope.launch {
             refreshEventChannel.send(false)
         }
-    }
-
-    sealed class Event {
-        data class AddToCollectionEvent(val syncResponse: Resource<SyncResponse>): Event()
-        data class RemoveFromCollectionEvent(val syncResponse: Resource<SyncResponse>): Event()
-        data class AddRatingEvent(val syncResponse: Resource<SyncResponse>, val newRating: Int): Event()
-        data class DeleteRatingEvent(val syncResponse: Resource<SyncResponse>): Event()
-        data class CheckinEvent(val movieCheckinResponse: Resource<MovieCheckinResponse>): Event()
-        data class CancelCheckinEvent(val cancelCheckinResponse: Resource<Boolean>): Event()
-        data class AddToHistoryEvent(val addHistoryResponse: Resource<SyncResponse>): Event()
-        data class AddListEntryEvent(val addListEntryResponse: Resource<SyncResponse>): Event()
-        data class RemoveListEntryEvent(val removeListEntryResponse: Resource<SyncResponse?>): Event()
     }
 }

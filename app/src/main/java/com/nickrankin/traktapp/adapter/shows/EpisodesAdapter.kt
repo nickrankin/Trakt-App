@@ -11,12 +11,10 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.R
-import com.nickrankin.traktapp.dao.show.model.TmEpisode
 import com.nickrankin.traktapp.dao.show.model.TmEpisodeAndStats
 import com.nickrankin.traktapp.databinding.EpisodeLayoutItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
-import com.nickrankin.traktapp.helper.getFormattedDate
-import org.apache.commons.lang3.time.DateFormatUtils
+import com.nickrankin.traktapp.helper.getFormattedDateTime
 
 class EpisodesAdapter(
     private val sharedPreferences: SharedPreferences,
@@ -42,23 +40,20 @@ class EpisodesAdapter(
         val episode = currentItem.episode
 
         holder.bindings.apply {
-            val overviewExpandableTextView = episodeitemOverview
-            overviewExpandableTextView.collapse()
 
             episodeitemStillImageview.setImageResource(R.drawable.ic_baseline_live_tv_24)
             episodeitemName.text = episode.name
 
             if (episode.air_date != null) {
-                episodeitemAirDate.text = "First aired: " + getFormattedDate(
+                episodeitemAirDate.text = "First aired: " + getFormattedDateTime(
                     episode.air_date,
                     sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)!!,
                     sharedPreferences.getString("timeFormat", AppConstants.DEFAULT_TIME_FORMAT)!!
                 )
             }
 
-            if (currentItem.watchedEpisodeStats.isNotEmpty()) {
-                val currentWatchedEpisode =
-                    currentItem.watchedEpisodeStats.find { it?.season == currentItem.episode.season_number && it?.episode == currentItem.episode.episode_number }
+
+                val currentWatchedEpisode = currentItem.watchedEpisodeStats
 
                 resetWatchedText(this)
 
@@ -76,38 +71,19 @@ class EpisodesAdapter(
                         )
                     )
 
-                    if (currentWatchedEpisode.last_watched_at != null) {
-                        episodeitemWatchedStatusText.text = "Watched - Last Watched ${
-                            getFormattedDate(
-                                currentWatchedEpisode.last_watched_at!!,
-                                sharedPreferences.getString(
-                                    "date_format",
-                                    AppConstants.DEFAULT_DATE_FORMAT
-                                )!!,
-                                sharedPreferences.getString(
-                                    "time_format",
-                                    AppConstants.DEFAULT_TIME_FORMAT
-                                )!!
-                            )
-                        }"
-
-                    } else {
-                        episodeitemWatchedStatusText.text = "Watched"
-
-                    }
-
-                    if(currentItem.ratingEpisodeStats != null) {
-                        val currentRating = currentItem.ratingEpisodeStats.find { it.season == currentItem.episode.season_number && it.episode == currentItem.episode.episode_number }
-
-                        if(currentRating != null) {
-                            episodeitemRating.visibility = View.VISIBLE
-                            episodeitemRating.text = "Your rating: ${currentRating.rating}"
-                        } else {
-                            episodeitemRating.visibility = View.GONE
-                        }
-                    }
-                }
-
+                    episodeitemWatchedStatusText.text = "Watched - ${
+                        getFormattedDateTime(
+                            currentWatchedEpisode.watched_date,
+                            sharedPreferences.getString(
+                                "date_format",
+                                AppConstants.DEFAULT_DATE_FORMAT
+                            )!!,
+                            sharedPreferences.getString(
+                                "time_format",
+                                AppConstants.DEFAULT_TIME_FORMAT
+                            )!!
+                        )
+                    }"
             } else {
 
                 DrawableCompat.setTint(
@@ -124,6 +100,15 @@ class EpisodesAdapter(
                 episodeitemWatchedStatusText.text = "Unwatched"
             }
 
+            if(currentItem.ratingEpisodeStats != null) {
+                episodeitemRating.visibility = View.VISIBLE
+                episodeitemRating.text = "Your rating: ${currentItem.ratingEpisodeStats.rating}"
+            } else {
+                episodeitemRating.visibility = View.GONE
+
+            }
+
+
             episodeitemNumber.text = "Episode Number: " + episode.episode_number
 
             if (episode.still_path?.isNotEmpty() == true) {
@@ -133,10 +118,6 @@ class EpisodesAdapter(
             }
 
             episodeitemOverview.text = episode.overview
-
-            overviewExpandableTextView.setOnClickListener {
-                overviewExpandableTextView.toggle()
-            }
 
             root.setOnClickListener {
                 callback(currentItem)

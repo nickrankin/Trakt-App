@@ -2,7 +2,6 @@ package com.nickrankin.traktapp.dao.movies
 
 import androidx.paging.PagingSource
 import androidx.room.*
-import com.nickrankin.traktapp.dao.movies.model.CollectedMovie
 import com.nickrankin.traktapp.dao.movies.model.WatchedMovie
 import com.nickrankin.traktapp.dao.movies.model.WatchedMovieAndStats
 import kotlinx.coroutines.flow.Flow

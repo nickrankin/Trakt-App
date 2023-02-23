@@ -2,37 +2,39 @@ package com.nickrankin.traktapp.dao.lists.model
 
 import androidx.room.Embedded
 import androidx.room.Relation
+import com.nickrankin.traktapp.dao.base_entity.*
 
 data class TraktListEntry(
+
     @Embedded val entryData: ListEntry,
 
     @Relation(
-        parentColumn = "list_entry_trakt_id",
+        parentColumn = "item_trakt_id",
         entityColumn = "trakt_id"
     )
-    val movie: MovieEntry?,
+    val movie: MovieBaseEntity?,
 
     @Relation(
-        parentColumn = "list_entry_trakt_id",
+        parentColumn = "item_trakt_id",
         entityColumn = "trakt_id"
     )
-    val show: ShowEntry?,
+    val show: ShowBaseEntity?,
 
     @Relation(
-        parentColumn = "list_entry_trakt_id",
+        parentColumn = "item_trakt_id",
         entityColumn = "trakt_id"
     )
-    val person: PersonEntry?,
+    val person: PersonBaseEntity?,
 
     @Relation(
-        parentColumn = "list_entry_trakt_id",
+        parentColumn = "item_trakt_id",
         entityColumn = "trakt_id"
     )
-    val episode: EpisodeEntry?,
-    // An episode Entry will also have a Show
+    val episode: EpisodeBaseEnity?,
+
     @Relation(
         parentColumn = "show_trakt_id",
         entityColumn = "trakt_id"
     )
-    val episodeShow: ShowEntry?,
+    val episodeShow: ShowBaseEntity?
 )

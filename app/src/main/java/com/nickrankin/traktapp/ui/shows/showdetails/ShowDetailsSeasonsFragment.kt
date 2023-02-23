@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
+import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.adapter.shows.SeasonsAdapter
 import com.nickrankin.traktapp.dao.show.TmSeasonAndStats
 import com.nickrankin.traktapp.databinding.ShowDetailsSeasonsFragmentBinding
@@ -26,7 +27,7 @@ import javax.inject.Inject
 private const val TAG = "ShowDetailsSeasonsFragm"
 
 @AndroidEntryPoint
-class ShowDetailsSeasonsFragment() : Fragment() {
+class ShowDetailsSeasonsFragment() : BaseFragment() {
     private val viewModel: ShowDetailsViewModel by activityViewModels()
     private lateinit var bindings: ShowDetailsSeasonsFragmentBinding
 
@@ -57,7 +58,7 @@ class ShowDetailsSeasonsFragment() : Fragment() {
         seasonsRecyclerView = bindings.showdetailsseasonsRecyclerview
         val layoutManager = LinearLayoutManager(requireContext())
 
-        seasonsAdapter = SeasonsAdapter(glide, callback = { selectedSeasonData ->
+        seasonsAdapter = SeasonsAdapter(glide, false, callback = { selectedSeasonData ->
             val selectedSeason = selectedSeasonData.season
 
             navigateToSeason(
@@ -95,7 +96,7 @@ class ShowDetailsSeasonsFragment() : Fragment() {
                         }
                     }
                     is Resource.Error -> {
-                        Log.e(TAG, "getSeasons: Error loading seasons ${seasonsResource.error?.message}", )
+                        handleError(seasonsResource.error, null)
                     }
 
                 }

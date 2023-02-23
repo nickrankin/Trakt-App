@@ -2,6 +2,7 @@ package com.nickrankin.traktapp.dao.lists
 
 import androidx.room.*
 import com.nickrankin.traktapp.dao.lists.model.TraktList
+import com.nickrankin.traktapp.dao.lists.model.TraktListAndEntries
 import kotlinx.coroutines.flow.Flow
 
 @Dao

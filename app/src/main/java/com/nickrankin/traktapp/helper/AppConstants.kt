@@ -11,6 +11,8 @@ class AppConstants {
 
         const val DEFAULT_DATE_TIME_FORMAT = "dd/MM/yyyy HH:mm"
 
+        const val TMDB_MOVIE_URL = "https://www.themoviedb.org/movie/"
+        const val TMDB_SHOW_URL = "https://www.themoviedb.org/tv/"
         const val TMDB_POSTER_URL = "https://image.tmdb.org/t/p/w500"
     }
 }

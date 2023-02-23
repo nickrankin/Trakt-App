@@ -1,5 +1,6 @@
 package com.nickrankin.traktapp.adapter.credits
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,7 +15,7 @@ import com.nickrankin.traktapp.dao.credits.ShowCastPerson
 import com.nickrankin.traktapp.databinding.CreditItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
 
-
+private const val TAG = "ShowCastCreditsAdapter"
 class ShowCastCreditsAdapter(private val glide: RequestManager, private val callback: (selectedCastPerson: ShowCastPerson) -> Unit): ListAdapter<ShowCastPerson, ShowCastCreditsAdapter.CreditsViewHolder>(
     COMPARATOR) {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CreditsViewHolder {

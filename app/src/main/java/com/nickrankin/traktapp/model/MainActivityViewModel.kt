@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.work.Operation
 import androidx.work.WorkInfo
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.repo.MainActivityRepository
 import com.nickrankin.traktapp.repo.auth.AuthRepository
 import com.nickrankin.traktapp.repo.auth.shows.ShowsOverviewRepository
 import com.nickrankin.traktapp.repo.movies.watched.WatchedMoviesRepository
@@ -27,7 +28,7 @@ private const val TAG = "MainActivityViewModel"
 class MainActivityViewModel @Inject constructor(
     private val showsOverviewRepository: ShowsOverviewRepository,
     private val authRepository: AuthRepository,
-    private val movieStatsRepository: MovieStatsRepository,
+    private val mainActivityRepository: MainActivityRepository,
     private val episodesStatsRepository: EpisodesStatsRepository,
     private val statsWorkRefreshHelper: StatsWorkRefreshHelper
 ) : ViewModel() {
@@ -35,22 +36,12 @@ class MainActivityViewModel @Inject constructor(
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
         .shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
-    val watchedMovies = movieStatsRepository.watchedMoviesStats.map { watchedMovieStats ->
-        if(watchedMovieStats.isNotEmpty() || watchedMovieStats.size > 8) {
-            watchedMovieStats.sortedBy {it.last_watched_at }.reversed().subList(0, 8)
-        } else
-            watchedMovieStats.sortedBy {it.last_watched_at }.reversed()
+    val watchedMovies = refreshEvent.flatMapLatest { shouldRefresh ->
+        mainActivityRepository.getLatestMovies(shouldRefresh)
     }
 
-    val watchedEpisodes = episodesStatsRepository.watchedEpisodeStats.map { watchedEpisodesStats ->
-        if(watchedEpisodesStats.isNotEmpty() || watchedEpisodesStats.size > 8) {
-            if(watchedEpisodesStats.size > 8) {
-                watchedEpisodesStats.sortedBy {it.last_watched_at }.reversed().subList(0, 8)
-            } else {
-                watchedEpisodesStats.sortedBy {it.last_watched_at }.reversed()
-            }
-        } else
-            watchedEpisodesStats.sortedBy {it.last_watched_at }.reversed()
+    val watchedEpisodes = refreshEvent.flatMapLatest { shouldRefresh ->
+        mainActivityRepository.getLatestEpisodes(shouldRefresh)
     }
 
     val upcomingShows = refreshEvent.flatMapLatest { shouldRefresh ->
@@ -84,9 +75,9 @@ class MainActivityViewModel @Inject constructor(
     fun onRefresh(movieRefreshState: (state: LiveData<WorkInfo>) -> Unit, showRefreshState: (state: LiveData<WorkInfo>) -> Unit) {
         viewModelScope.launch {
             refreshEventChannel.send(true)
-
-            movieRefreshState(statsWorkRefreshHelper.refreshMovieStats())
-            showRefreshState(statsWorkRefreshHelper.refreshShowStats())
+//
+//            movieRefreshState(statsWorkRefreshHelper.refreshMovieStats())
+//            showRefreshState(statsWorkRefreshHelper.refreshShowStats())
         }
     }
 }

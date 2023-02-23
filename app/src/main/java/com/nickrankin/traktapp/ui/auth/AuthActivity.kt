@@ -132,7 +132,7 @@ class AuthActivity : BaseActivity(), TitleHelper {
                     finalizeLogin()
                 }
                 is Resource.Error -> {
-                    settingsResource.error?.printStackTrace()
+                    handleError(settingsResource.error, null)
                 }
             }
         }

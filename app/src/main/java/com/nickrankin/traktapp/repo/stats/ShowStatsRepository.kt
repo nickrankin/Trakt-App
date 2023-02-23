@@ -5,19 +5,15 @@ import android.util.Log
 import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
-import com.nickrankin.traktapp.dao.stats.model.CollectedShowsStats
+import com.nickrankin.traktapp.dao.stats.model.ShowsCollectedStats
 import com.nickrankin.traktapp.dao.stats.model.RatingsShowsStats
 import com.nickrankin.traktapp.dao.stats.model.WatchedEpisodeStats
 import com.nickrankin.traktapp.dao.stats.model.WatchedShowsStats
-import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.trakt5.entities.BaseShow
 import com.uwetrottmann.trakt5.entities.RatedShow
 import com.uwetrottmann.trakt5.entities.UserSlug
-import com.uwetrottmann.trakt5.enums.ProgressLastActivity
 import com.uwetrottmann.trakt5.enums.RatingsFilter
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.receiveAsFlow
 import javax.inject.Inject
 
 private const val TAG = "ShowStatsRepository"
@@ -90,26 +86,26 @@ class ShowStatsRepository @Inject constructor(private val traktApi: TraktApi, pr
     }
 
     private suspend fun insertCollectedShowsStats(shows: List<BaseShow>) {
-        val collectedShowsStatsList: MutableList<CollectedShowsStats> = mutableListOf()
+        val showsCollectedStatsList: MutableList<ShowsCollectedStats> = mutableListOf()
 
         shows.map { baseShow ->
-            collectedShowsStatsList.add(
-                CollectedShowsStats(
+            showsCollectedStatsList.add(
+                ShowsCollectedStats(
                     baseShow.show?.ids?.trakt ?: 0,
                     baseShow.show?.ids?.tmdb,
                     baseShow.last_collected_at,
+                    baseShow.show?.title ?: "",
+                    baseShow.listed_at,
                     baseShow.last_updated_at,
                     baseShow.reset_at,
                     baseShow.completed ?: 0,
-                    baseShow.show?.title ?: "",
-                    baseShow.listed_at
                 )
             )
         }
 
         showsDatabase.withTransaction {
             collectedShowsStatsDao.deleteCollectedStats()
-            collectedShowsStatsDao.insert(collectedShowsStatsList)
+            collectedShowsStatsDao.insert(showsCollectedStatsList)
         }
 
     }
@@ -146,9 +142,7 @@ class ShowStatsRepository @Inject constructor(private val traktApi: TraktApi, pr
             ratedShowsStatsList.add(
                 RatingsShowsStats(
                     ratedShow.show?.ids?.trakt ?: 0,
-                    ratedShow.show?.ids?.tmdb ?: 0,
                     ratedShow.rating?.value ?: 0,
-                    ratedShow.show?.title ?: "",
                     ratedShow.rated_at
                 )
             )

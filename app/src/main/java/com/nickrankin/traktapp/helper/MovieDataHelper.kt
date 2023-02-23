@@ -26,7 +26,7 @@ class MovieDataHelper @Inject constructor(
             val tmMovie = getTmdbData(traktMovie.ids?.tmdb)
 
         return if (tmMovie != null) {
-                getMovieDataTmdb(traktMovie, traktMovieCredits, tmMovie, traktMovieRating.rating ?: 0.0)
+                getMovieDataTmdb(traktMovie, traktMovieCredits, tmMovie, traktMovieRating.rating)
             } else {
                 // Try to find the movie
                 val foundMovie = findTmdbMovie(
@@ -45,7 +45,7 @@ class MovieDataHelper @Inject constructor(
                 if (tmdbFoundMovie != null) {
                     getMovieDataTmdb(traktMovie, traktMovieCredits, tmdbFoundMovie, traktMovieRating.rating ?: 0.0)
                 } else {
-                    getMovieDataTrakt(traktMovie, traktMovieCredits, traktMovieRating.rating ?: 0.0)
+                    getMovieDataTrakt(traktMovie, traktMovieCredits, traktMovieRating.rating)
                 }
             }
     }
@@ -61,7 +61,7 @@ class MovieDataHelper @Inject constructor(
         return foundTmdbMovie.results?.first()
     }
 
-    private fun getMovieDataTmdb(traktMovie: com.uwetrottmann.trakt5.entities.Movie, credits: Credits, tmdbMovie: Movie, traktRating: Double): TmMovie {
+    private fun getMovieDataTmdb(traktMovie: com.uwetrottmann.trakt5.entities.Movie, credits: Credits, tmdbMovie: Movie, traktRating: Double?): TmMovie {
 
         return TmMovie(
             traktMovie.ids?.trakt ?: 0,
@@ -89,7 +89,7 @@ class MovieDataHelper @Inject constructor(
     }
 
     // Fallback behaviour
-    private fun getMovieDataTrakt(traktMovie: com.uwetrottmann.trakt5.entities.Movie, credits: Credits, traktRating: Double): TmMovie {
+    private fun getMovieDataTrakt(traktMovie: com.uwetrottmann.trakt5.entities.Movie, credits: Credits, traktRating: Double?): TmMovie {
         return TmMovie(
             traktMovie.ids?.trakt ?: -1,
             null,

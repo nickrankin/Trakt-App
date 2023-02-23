@@ -4,7 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.repo.lists.ListEntryRepository
+import com.nickrankin.traktapp.repo.lists.ListsRepository
 import com.uwetrottmann.trakt5.entities.SyncResponse
 import com.uwetrottmann.trakt5.enums.Type
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ListEntryViewModel @Inject constructor(private val savedStateHandle: SavedStateHandle, private val repository: ListEntryRepository): ViewModel() {
+class ListEntryViewModel @Inject constructor(private val savedStateHandle: SavedStateHandle, private val repository: ListsRepository): ViewModel() {
     private val refreshEventChannel = Channel<Boolean>()
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
         .shareIn(viewModelScope, SharingStarted.Lazily, 1)
@@ -27,11 +27,7 @@ class ListEntryViewModel @Inject constructor(private val savedStateHandle: Saved
 
     private val listId: Int = savedStateHandle.get<Int>(LIST_ID_KEY) ?: 0
 
-    val listItems = refreshEvent.flatMapLatest { shouldRefresh ->
-        repository.getListEntries(listId, shouldRefresh)
-    }
 
-    fun removeEntry(listTraktId: Int, listEntryTraktId: Int, type: Type) = viewModelScope.launch { eventsChannel.send(Event.RemoveEntryEvent(repository.removeEntry(listTraktId, listEntryTraktId, type))) }
 
 
     fun onStart() {
@@ -52,6 +48,6 @@ class ListEntryViewModel @Inject constructor(private val savedStateHandle: Saved
     }
 
     sealed class Event {
-        data class RemoveEntryEvent(val syncResponseResource: Resource<SyncResponse?>): Event()
+        data class RemoveEntryEvent(val syncResponseResource: Resource<SyncResponse>): Event()
     }
 }

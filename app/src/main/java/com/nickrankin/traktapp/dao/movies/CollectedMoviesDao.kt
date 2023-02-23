@@ -15,6 +15,8 @@ interface CollectedMoviesDao {
     @Query("SELECT * FROM collected_movies WHERE trakt_id = :traktId")
     fun getCollectedMovie(traktId: Int): Flow<CollectedMovie?>
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insert(collectedMovie: CollectedMovie)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(collectedMovies: List<CollectedMovie>)

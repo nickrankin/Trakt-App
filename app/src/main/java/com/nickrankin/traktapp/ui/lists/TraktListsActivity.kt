@@ -2,7 +2,9 @@ package com.nickrankin.traktapp.ui.lists
 
 import android.content.DialogInterface
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
+import android.os.PersistableBundle
 import android.text.SpannableStringBuilder
 import android.util.Log
 import android.view.View
@@ -11,6 +13,7 @@ import androidx.activity.viewModels
 import androidx.annotation.ArrayRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
+import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -39,6 +42,9 @@ class TraktListsActivity : BaseActivity(), OnTitleChangeListener {
 
 
     private lateinit var bindings: ActivityTraktListsBinding
+    private val viewModel: TraktListsViewModel by viewModels()
+    private var listsFragment: ListsFragment? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,12 +57,44 @@ class TraktListsActivity : BaseActivity(), OnTitleChangeListener {
         supportActionBar?.title = "My Lists"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        setupFragment()
+        displayAllLists()
+
+        getActiveList()
     }
 
-    private fun setupFragment() {
+    private fun getActiveList() {
+
+        lifecycleScope.launchWhenStarted {
+            viewModel.activeList.collectLatest { activeListId ->
+                if(activeListId != null) {
+
+                    navigateList(activeListId)
+                } else {
+                    supportFragmentManager.popBackStack()
+
+                    displayAllLists()
+                }
+            }
+        }
+    }
+
+    private fun navigateList(traktListId: Int) {
+        val listItemsFragment = ListItemsFragment.newInstance()
+
+        val bundle = Bundle()
+
+        listItemsFragment.arguments = bundle
+        bundle.putInt(TraktListsViewModel.LIST_ID_KEY, traktListId)
+
         supportFragmentManager.beginTransaction()
-            .replace(bindings.traktlistsactivityFragmentContainer.id, ListsFragment.newInstance())
+            .replace(bindings.traktlistsactivityFragmentContainer.id, listItemsFragment)
+            .addToBackStack("list_items")
+            .commit()
+    }
+
+    private fun displayAllLists() {
+        supportFragmentManager.beginTransaction()
+            .replace(bindings.traktlistsactivityFragmentContainer.id, getListsFragment())
             .commit()
     }
 
@@ -65,8 +103,34 @@ class TraktListsActivity : BaseActivity(), OnTitleChangeListener {
     }
 
     override fun onSupportNavigateUp(): Boolean {
+        viewModel.switchList(null)
         onBackPressed()
-
         return true
+    }
+
+    private fun getListsFragment(): ListsFragment {
+        if(listsFragment == null) {
+            listsFragment = ListsFragment.newInstance()
+        }
+
+        return listsFragment!!
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        
+        listsFragment = null
+    }
+
+    override fun onBackPressed() {
+        // Need to use getId on fragment to solve configuration change bug in popBackStack method
+        // https://stackoverflow.com/questions/40834313/supportfragmentmanager-popbackstack-screen-rotation
+        if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
+            getSupportFragmentManager().popBackStack(getSupportFragmentManager()
+                .getBackStackEntryAt(0).getId(),
+                FragmentManager.POP_BACK_STACK_INCLUSIVE)
+        } else {
+            super.onBackPressed();
+        }
     }
 }

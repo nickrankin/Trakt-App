@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.work.WorkInfo
 import com.bumptech.glide.RequestManager
+import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.adapter.credits.ShowCastCreditsAdapter
 import com.nickrankin.traktapp.dao.credits.ShowCastPerson
 import com.nickrankin.traktapp.databinding.ShowDetailsOverviewFragmentBinding
@@ -31,7 +32,7 @@ import javax.inject.Inject
 private const val TAG = "ShowDetailsOverviewFrag"
 
 @AndroidEntryPoint
-class ShowDetailsOverviewFragment : Fragment() {
+class ShowDetailsOverviewFragment : BaseFragment() {
 
     private lateinit var bindings: ShowDetailsOverviewFragmentBinding
     private val viewModel: ShowDetailsViewModel by activityViewModels()
@@ -76,7 +77,7 @@ class ShowDetailsOverviewFragment : Fragment() {
                     }
                     }
                     is Resource.Error -> {
-                        Log.e(TAG, "getShow: Error getting show ${showResource.error?.message}", )
+                        handleError(showResource.error, null)
                     }
 
                 }
@@ -98,7 +99,7 @@ class ShowDetailsOverviewFragment : Fragment() {
 
                     }
                     is Resource.Error -> {
-                        Log.e(TAG, "getCast: Error getting cast ${castMembersResource.error?.message}", )
+                        handleError(castMembersResource.error, null)
                     }
 
                 }

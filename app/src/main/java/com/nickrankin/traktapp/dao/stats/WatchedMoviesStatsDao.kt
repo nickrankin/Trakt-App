@@ -12,6 +12,10 @@ interface WatchedMoviesStatsDao {
     fun getWatchedStatById(traktId: Int): Flow<WatchedMoviesStats?>
 
     @Transaction
+    @Query("SELECT * FROM stats_watched_movies ORDER BY last_watched_at DESC LIMIT 6")
+    fun getLastWatchedMovies(): Flow<WatchedMoviesStats?>
+
+    @Transaction
     @Query("SELECT * FROM stats_watched_movies")
     fun getWatchedStats(): Flow<List<WatchedMoviesStats>>
 

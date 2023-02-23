@@ -30,14 +30,14 @@ fun switchRecyclerViewLayoutManager(context: Context, recyclerView: RecyclerView
     recyclerView.layoutManager = lm
 }
 
-fun getResponsiveGridLayoutManager(context: Context, size: Int):GridLayoutManager {
+fun getResponsiveGridLayoutManager(context: Context, size: Int?):GridLayoutManager {
     var lm: GridLayoutManager? = null
 
     val displayMetrics = context.resources?.displayMetrics
     val screenWidthDp = displayMetrics?.widthPixels?.div(displayMetrics.density)
 
     if (screenWidthDp != null) {
-        lm = GridLayoutManager(context, (screenWidthDp / size).toInt())
+        lm = GridLayoutManager(context, (screenWidthDp / (size ?: DEFAULT_POSTER_WIDTH)).toInt())
     } else {
         GridLayoutManager(context, 1)
     }

@@ -3,24 +3,24 @@ package com.nickrankin.traktapp.ui.movies.moviedetails
 import android.content.Context
 import android.content.Intent
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.google.android.flexbox.FlexboxLayout
-import com.google.android.material.appbar.AppBarLayout
-import com.google.android.material.appbar.CollapsingToolbarLayout
+import com.google.android.material.chip.Chip
 import com.nickrankin.traktapp.BaseActivity
-import com.nickrankin.traktapp.R
+import com.nickrankin.traktapp.dao.credits.model.TmCrewPerson
 import com.nickrankin.traktapp.dao.movies.model.TmMovie
-import com.nickrankin.traktapp.databinding.ActivityMovieDetailsBinding
+import com.nickrankin.traktapp.databinding.ActivityMovieDetailsLayoutBinding
 import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.movies.MovieDetailsViewModel
@@ -28,14 +28,15 @@ import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
 import com.nickrankin.traktapp.ui.person.PersonActivity
 import com.uwetrottmann.tmdb2.entities.BaseCompany
 import com.uwetrottmann.tmdb2.entities.Country
-import com.uwetrottmann.tmdb2.entities.Genre
 import com.uwetrottmann.trakt5.entities.CrewMember
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.merge
 import org.apache.commons.lang3.StringUtils
+import java.util.Locale
 import javax.inject.Inject
 
+private const val DISPLAY_SIMILAR = true
+private const val DISPLAY_STREAMING_SERVICES = true
 private const val ACTION_BUTTON_FRAGMENT = "action_button_fragment"
 private const val TRAKT_DIRECTOR_KEY = "Director"
 private const val TRAKT_WRITING_KEY = "Writer"
@@ -45,19 +46,9 @@ private const val TAG = "MovieDetailsActivity"
 class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
 
     private val viewModel: MovieDetailsViewModel by viewModels()
-
-    private lateinit var binding: ActivityMovieDetailsBinding
-    private lateinit var collapsingToolbarLayout: CollapsingToolbarLayout
-    private lateinit var appBarLayout: AppBarLayout
-
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
-    private lateinit var progressBar: ProgressBar
 
-    private lateinit var movieDetailsOverviewFragment: MovieDetailsOverviewFragment
-    private lateinit var movieDetailsActionButtonsFragment: MovieDetailsActionButtonsFragment
-
-    private var movieTraktId: Int = 0
-
+    private lateinit var bindings: ActivityMovieDetailsLayoutBinding
 
     @Inject
     lateinit var glide: RequestManager
@@ -65,27 +56,23 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        binding = ActivityMovieDetailsBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        bindings = ActivityMovieDetailsLayoutBinding.inflate(layoutInflater)
+        setContentView(bindings.root)
 
-        appBarLayout = binding.moviedetailsactivityAppbarlayout
-        collapsingToolbarLayout = binding.moviedetailsactivityCollapsingToolbarLayout
 
-        swipeRefreshLayout = binding.moviedetailsactivitySwipeRefreshLayout
+        swipeRefreshLayout = bindings.moviedetailsactivitySwipeLayout
         swipeRefreshLayout.setOnRefreshListener(this)
-        progressBar = binding.moviedetailsactivityInner.moviedetailsactivityProgressbar
 
-        setSupportActionBar(binding.moviedetailsactivityToolbar)
+        setSupportActionBar(bindings.moviedetailsactivityToolbar.toolbar)
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        movieTraktId = intent.getIntExtra(MovieDetailsRepository.MOVIE_TRAKT_ID_KEY, -1)
-
-
-        initFragments()
-
         getMovie()
-        getPlayCount()
+
+        displayStreamingService()
+
+        setupCastCrewFragment()
+        setupActionButtonFragment()
 
         if(intent.extras?.containsKey(MOVIE_DATA_KEY) == false || intent.extras?.getParcelable<MovieDataModel>(
                 MOVIE_DATA_KEY) == null) {
@@ -99,29 +86,6 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
         viewModel.resetRefreshState()
     }
 
-    private fun initFragments() {
-        movieDetailsActionButtonsFragment = MovieDetailsActionButtonsFragment.newInstance()
-
-        supportFragmentManager.beginTransaction()
-            .replace(
-                binding.moviedetailsactivityInner.moviedetailsactivityButtonsFragmentContainer.id,
-                movieDetailsActionButtonsFragment,
-                ACTION_BUTTON_FRAGMENT
-            )
-            .commit()
-
-        if(isLoggedIn) {
-            movieDetailsOverviewFragment = MovieDetailsOverviewFragment.newInstance()
-
-
-            supportFragmentManager.beginTransaction()
-                .replace(
-                    binding.moviedetailsactivityInner.moviedetailsactivityFragmentContainer.id,
-                    movieDetailsOverviewFragment, "overview_fragment"
-                )
-                .commit()
-        }
-    }
 
     private fun getMovie() {
         lifecycleScope.launchWhenStarted {
@@ -130,33 +94,20 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
                 when (movieResource) {
                     is Resource.Loading -> {
 
-                        toggleFragmentProgressBar(true)
-
-                        progressBar.visibility = View.VISIBLE
-                        Log.d(TAG, "getMovie: Loading ...")
                     }
                     is Resource.Success -> {
                         val movie = movieResource.data
-                        progressBar.visibility = View.GONE
 
                         if (swipeRefreshLayout.isRefreshing) {
                             swipeRefreshLayout.isRefreshing = false
                         }
 
-                        binding.moviedetailsactivityInner.moviedetailsactivityMainGroup.visibility =
-                            View.VISIBLE
-
                         if (movie != null) {
                             displayMovie(movie)
                         }
-
-                        toggleFragmentProgressBar(false)
                     }
 
                     is Resource.Error -> {
-                        toggleFragmentProgressBar(false)
-
-                        progressBar.visibility = View.GONE
                         if (swipeRefreshLayout.isRefreshing) {
                             swipeRefreshLayout.isRefreshing = false
                         }
@@ -167,7 +118,7 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
 
                         }
 
-                        showErrorSnackbarRetryButton(movieResource.error, binding.moviedetailsactivityInner.moviedetailsactivityFragmentContainer) {
+                        showErrorSnackbarRetryButton(movieResource.error, bindings.root) {
                             viewModel.onRefresh()
                         }
 
@@ -177,14 +128,20 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
         }
     }
 
-    private fun toggleFragmentProgressBar(shouldDisplay: Boolean) {
-        if(shouldDisplay) {
-            movieDetailsActionButtonsFragment.view?.findViewById<ProgressBar>(R.id.actionbutton_loading_progress)?.visibility = View.VISIBLE
-            movieDetailsOverviewFragment.view?.findViewById<ProgressBar>(R.id.moviedetailsoverview_progressbar)?.visibility = View.VISIBLE
-        } else {
-            movieDetailsActionButtonsFragment.view?.findViewById<ProgressBar>(R.id.actionbutton_loading_progress)?.visibility = View.GONE
-            movieDetailsOverviewFragment.view?.findViewById<ProgressBar>(R.id.moviedetailsoverview_progressbar)?.visibility = View.GONE
-        }
+    private fun setupCastCrewFragment() {
+        val fragmentTransaction = supportFragmentManager.beginTransaction()
+        val castCrewFragment = MovieDetailsCastCrewFragment.newInstance()
+
+        fragmentTransaction.replace(bindings.moviedetailsactivityCastCrew.id, castCrewFragment)
+            .commit()
+    }
+
+    private fun setupActionButtonFragment() {
+        val fragmentTransaction = supportFragmentManager.beginTransaction()
+        val abFragment = MovieDetailsActionButtonsFragment.newInstance()
+
+        fragmentTransaction.replace(bindings.moviedetailsactivityActionButtons.id, abFragment)
+            .commit()
     }
 
     private fun displayMovie(tmMovie: TmMovie?) {
@@ -193,49 +150,35 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
             return
         }
 
+        displayExternalLinks(tmMovie)
+
         val title = tmMovie.title
         val tagline = tmMovie.tagline
-        val releaseDate = tmMovie.release_date
-        val imdbId = tmMovie.imdb_id
         val runtime = tmMovie.runtime
-        val directionAndWritingPeople = tmMovie.directed_by.plus(tmMovie.written_by)
-        val trailerUrl = tmMovie.trailer
         val companies = tmMovie.production_companies
-        val genres = tmMovie.genres
         val countries = tmMovie.production_countries
         val posterPath = tmMovie.poster_path
         val backdropPath = tmMovie.backdrop_path
-        val traktUserRating = tmMovie.trakt_rating
 
-        binding.apply {
+        supportActionBar?.title = title
+
+        bindings.apply {
             if (backdropPath != null && backdropPath.isNotBlank()) {
                 glide
                     .load(AppConstants.TMDB_POSTER_URL + backdropPath)
                     .into(moviedetailsactivityBackdrop)
             }
+            moviedetailsactivityTitle.text = title
+            moviedetailsactivityTagline.text = tagline
+            moviedetailsactivityOverview.text = tmMovie.overview
 
-            displayToolbarTitle(title)
+            if(countries != null) {
+                displayCountries(countries)
+            }
 
-            moviedetailsactivityInner.apply {
-                moviedetailsactivityTitle.text = title
-                moviedetailsactivityTagline.text = tagline
-                moviedetailsactivityRuntime.text = "Runtime: ${calculateRuntime(runtime ?: 0)}"
-
-                val directors = directionAndWritingPeople.filter { crewMember ->
-                    Log.e(TAG, "displayMovie: crew ${crewMember?.person?.name} is job ${crewMember?.job}", )
-                    crewMember?.job?.uppercase() == TRAKT_DIRECTOR_KEY.uppercase() || crewMember?.job?.uppercase() == TRAKT_WRITING_KEY.uppercase()
-                }
-
-                if (directors.isNotEmpty()) {
-                    moviedetailsactivityDirected.visibility = View.VISIBLE
-
-                    displayDirectors(directors) { crewMember ->
-                        navigateToDirector(crewMember?.person?.ids?.trakt)
-                    }
-                } else {
-                    moviedetailsactivityDirected.visibility = View.GONE
-                }
-
+            if(companies != null) {
+                displayCompanies(companies)
+            }
 
                 if (posterPath != null && posterPath.isNotBlank()) {
                     glide
@@ -243,73 +186,139 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
                         .into(moviedetailsactivityPoster)
                 }
 
-                if (releaseDate != null) {
-                    moviedetailsactivityFirstAired.visibility = View.VISIBLE
+            if(runtime != null) {
+                moviedetailsactivityRuntime.text = "Runtime: ${ calculateRuntime(runtime) }"
+            }
 
-                    moviedetailsactivityFirstAired.text = "Released: ${
-                        getFormattedDate(
-                            releaseDate,
-                            sharedPreferences.getString(
-                                "date_format",
-                                AppConstants.DEFAULT_DATE_FORMAT
-                            )!!, ""
-                        )
-                    }"
-                } else {
-                    moviedetailsactivityFirstAired.visibility = View.GONE
-                }
-
-                if (companies?.isNotEmpty() == true) {
-                    moviedetailsactivityCompany.visibility = View.VISIBLE
-
-                    displayCompanies(companies) { baseCompany -> }
-                } else {
-                    moviedetailsactivityCompany.visibility = View.GONE
-                }
-
-                if (countries?.isNotEmpty() == true) {
-                    moviedetailsactivityCountry.visibility = View.VISIBLE
-
-                    displayCountries(countries) { country -> }
-                } else {
-                    moviedetailsactivityCountry.visibility = View.GONE
-                }
-
-                if (genres.isNotEmpty()) {
-                    moviedetailsactivityGenres.visibility = View.VISIBLE
-
-                    displayGenres(genres) { genre -> }
-                } else {
-                    moviedetailsactivityGenres.visibility = View.GONE
-                }
-
-                if(traktUserRating != 0.0) {
-                    moviedetailsactivityTraktRating.text = "Trakt Rating: ${ "%.1f".format(traktUserRating) }"
-                }
-
-                if (trailerUrl != null) {
-                    handleTrailer(trailerUrl)
-                }
+            if(tmMovie.original_language != null) {
+                moviedetailsactivityLanguage.text = "Language: ${ Locale.Builder().setLanguage(tmMovie.original_language).build().displayLanguage }"
             }
 
         }
-        val imdbButton = binding.moviedetailsactivityInner.moviedetailsactivityImdbButton
 
-        if (imdbId != null) {
-            imdbButton.visibility = View.VISIBLE
+        if(tmMovie.release_date != null) {
+            bindings.moviedetailsactivityReleaseDate.text = "Released: ${ getFormattedDate(tmMovie.release_date, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)) }"
+        }
 
-            imdbButton.setOnClickListener {
-                ImdbNavigationHelper.navigateToImdb(this, imdbId)
-            }
+        displayGenres(tmMovie.genres)
+        displayDirectors(tmMovie.directed_by.filter { it?.job == TRAKT_DIRECTOR_KEY })
+        displayWriters(tmMovie.written_by.filter { it?.job == TRAKT_WRITING_KEY })
 
-        } else {
-            imdbButton.visibility = View.GONE
+        if(DISPLAY_SIMILAR) {
+            showSimilarMovies(tmMovie)
         }
     }
 
-    private fun navigateToDirector(traktId: Int?) {
+    private fun displayExternalLinks(movie: TmMovie) {
+        if(movie.imdb_id != null) {
+            bindings.moviedetailsactivityChipImdb.setOnClickListener {
+                ImdbNavigationHelper.navigateToImdb(this, movie.imdb_id)
+            }
+        } else {
+            bindings.moviedetailsactivityChipImdb.visibility = View.GONE
+        }
+
+        if(movie.homepage != null) {
+            bindings.moviedetailsactivityChipOfficialWebsite.setOnClickListener {
+
+                try {
+                    val i = Intent(Intent.ACTION_VIEW, Uri.parse(movie.homepage))
+                    startActivity(i)
+                } catch(e: Exception) {
+                    Toast.makeText(this, "Error loading the Movie homepage. ", Toast.LENGTH_SHORT).show()
+                    Log.e(TAG, "displayExternalLinks: Couldn't load homepage, ${e.message}", )
+                }
+            }
+        } else {
+            bindings.moviedetailsactivityChipOfficialWebsite.visibility = View.GONE
+        }
+
+        if(movie.tmdb_id != null) {
+            bindings.moviedetailsactivityChipTmdb.setOnClickListener {
+                try {
+                    val i = Intent(Intent.ACTION_VIEW, Uri.parse(AppConstants.TMDB_MOVIE_URL + movie.tmdb_id))
+                    startActivity(i)
+                } catch(e: Exception) {
+                    Log.e(TAG, "displayExternalLinks: Error loading TMDB URL: ${e.message}", )
+                    Toast.makeText(this, "Error loading TMDB URL.", Toast.LENGTH_SHORT).show()
+                }
+
+            }
+        } else {
+            bindings.moviedetailsactivityChipTmdb.visibility = View.GONE
+        }
+
+    }
+
+    private fun displayStreamingService() {
+        val movieVideoServicesFragment = MovieVideoServicesFragment()
+
+        supportFragmentManager.beginTransaction()
+            .replace(bindings.moviedetailsactivityWatch.id, movieVideoServicesFragment)
+            .commit()
+    }
+
+    private fun displayWriters(writers: List<CrewMember?>) {
+        if(writers.isEmpty()) {
+            bindings.moviedetailsactivityWrittenByTitle.visibility = View.GONE
+            bindings.moviedetailsactivityWrittenByChipgroup.visibility = View.GONE
+            return
+        } else {
+            bindings.moviedetailsactivityWrittenByTitle.visibility = View.VISIBLE
+            bindings.moviedetailsactivityWrittenByChipgroup.visibility = View.VISIBLE
+        }
+        val writersChipGroup = bindings.moviedetailsactivityWrittenByChipgroup
+        writersChipGroup.removeAllViews()
+
+        writersChipGroup.apply {
+            writers.forEach { writer ->
+                val chip = Chip(context)
+
+                chip.text = writer?.person?.name
+
+                chip.setOnClickListener {
+                    navigateToPerson(writer?.person?.ids?.trakt)
+                }
+
+                this.addView(chip)
+            }
+        }
+    }
+
+    private fun displayDirectors(directors: List<CrewMember?>) {
+        if(directors.isEmpty()) {
+            bindings.moviedetailsactivityDirectedByTitle.visibility = View.GONE
+            bindings.moviedetailsactivityDirectByChipgroup.visibility = View.GONE
+            return
+        } else {
+            bindings.moviedetailsactivityDirectedByTitle.visibility = View.VISIBLE
+            bindings.moviedetailsactivityDirectByChipgroup.visibility = View.VISIBLE
+        }
+
+        val directorsChipGroup = bindings.moviedetailsactivityDirectByChipgroup
+        directorsChipGroup.removeAllViews()
+
+        directorsChipGroup.apply {
+            directors.forEach { director ->
+                val chip = Chip(context)
+
+                    chip.text = director?.person?.name
+
+                    chip.setOnClickListener {
+                        navigateToPerson(director?.person?.ids?.trakt)
+                    }
+
+
+                this.addView(chip)
+            }
+        }
+
+
+    }
+
+    private fun navigateToPerson(traktId: Int?) {
         if(traktId == null) {
-            Log.e(TAG, "navigateToDirector: Director hasn't got Trakt ID associatted, returning")
+            Log.e(TAG, "navigateToPerson: Director hasn't got Trakt ID associatted, returning")
 
             return
         }
@@ -320,107 +329,9 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
         startActivity(intent)
     }
 
-    private fun getPlayCount() {
-        lifecycleScope.launchWhenStarted {
-            viewModel.watchedMovieStats.collectLatest { watchedMovieStats ->
-                val totalPlaysTextView =
-                    binding.moviedetailsactivityInner.moviedetailsactivityTotalPlays
-
-                val totalPlays = watchedMovieStats?.plays ?: 0
-
-                if (totalPlays == 0) {
-                    totalPlaysTextView.text = "Plays: Unwatched"
-                } else {
-                    totalPlaysTextView.text = "$totalPlays Plays"
-                }
-            }
-        }
-    }
-
-    private fun displayToolbarTitle(title: String?) {
-        // Only show the title once the toolbar is totally collapsed
-        // https://stackoverflow.com/questions/31662416/show-collapsingtoolbarlayout-title-only-when-collapsed
-        var isShow = true
-        var scrollRange = -1
-        appBarLayout.addOnOffsetChangedListener(AppBarLayout.OnOffsetChangedListener { barLayout, verticalOffset ->
-            if (scrollRange == -1) {
-                scrollRange = barLayout?.totalScrollRange!!
-            }
-            if (scrollRange + verticalOffset == 0) {
-                collapsingToolbarLayout.title = title
-                isShow = true
-            } else if (isShow) {
-                collapsingToolbarLayout.title =
-                    " " //careful there should a space between double quote otherwise it wont work
-                isShow = false
-            }
-        })
-    }
-
-    private fun handleTrailer(youtubeUrl: String?) {
-        if (youtubeUrl != null) {
-            val trailerButton = binding.moviedetailsactivityInner.moviedetailsactivityTrailer
-            trailerButton.visibility = View.VISIBLE
-
-            trailerButton.setOnClickListener {
-                VideoTrailerHelper.navigateToVideoUrl(this, youtubeUrl)
-            }
-        }
-    }
-
-    private fun displayDirectors(
-        crewMembers: List<CrewMember?>,
-        callback: (crewMember: CrewMember?) -> Unit
-    ) {
-        val layout = binding.moviedetailsactivityInner.moviedetailsactivityDirected
-
-        // If user refreshes or rotates screen, ensure to clear existing views
-        layout.removeAllViews()
-
-        Log.d(TAG, "getDirectorsViewList: Got ${crewMembers.size} crewmembers!")
-
-        layout.addView(setTextViewLayoutConfig(getTextView(layout.context, "Directed by: ")))
-
-        // List to store a TextView for each director
-        val textViews: MutableList<TextView> = mutableListOf()
-
-        crewMembers.map { crewMember ->
-
-                // Check if director is last entry, in this case no trailing comma ','
-                val textView: TextView = if (crewMember != crewMembers.last()) {
-                    setTextViewLayoutConfig(getTextView(layout.context, crewMember?.person?.name + ", "))
-                } else {
-                    setTextViewLayoutConfig(getTextView(layout.context, crewMember?.person?.name ?: ""))
-                }
-
-                // Director was clicked, we supply CrewMember object to callback
-                textView.setOnClickListener {
-                    callback(crewMember)
-                }
-
-                textViews.add(textView)
-            }
-
-        if (textViews.size > 2) {
-            val initialTextViews = truncateTextViewList(layout, textViews)
-
-            initialTextViews.map { initialTextView ->
-                layout.addView(initialTextView)
-            }
-
-
-        } else {
-            textViews.map {
-                layout.addView(it)
-            }
-        }
-    }
-
     private fun displayCompanies(
-        companies: List<BaseCompany?>,
-        callback: (company: BaseCompany?) -> Unit
-    ) {
-        val layout = binding.moviedetailsactivityInner.moviedetailsactivityCompany
+        companies: List<BaseCompany?>) {
+        val layout = bindings.moviedetailsactivityCompanies
 
         // If user refreshes or rotates screen, ensure to clear existing views
         layout.removeAllViews()
@@ -444,11 +355,6 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
                 setTextViewLayoutConfig(getTextView(layout.context, company?.name ?: ""))
             }
 
-            // Director was clicked, we supply CrewMember object to callback
-            textView.setOnClickListener {
-                callback(company)
-            }
-
             textViews.add(textView)
         }
 
@@ -467,56 +373,25 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
         }
     }
 
-    private fun displayGenres(genres: List<String?>, callback: (genre: String?) -> Unit) {
-        val layout = binding.moviedetailsactivityInner.moviedetailsactivityGenres
+    private fun displayGenres(genres: List<String?>) {
+        val genresGroup = bindings.moviedetailsactivityTagsChipgroup
+        genresGroup.removeAllViews()
 
-        // If user refreshes or rotates screen, ensure to clear existing views
-        layout.removeAllViews()
+        genres.forEach { genre ->
+            val tag = Chip(this)
+            tag.text = StringUtils.capitalize(genre)
 
-        if (genres.size > 1) {
-            layout.addView(setTextViewLayoutConfig(getTextView(layout.context, "Genres: ")))
+            tag.setOnClickListener {
+//                navigateToTag(genre)
 
-        } else {
-            layout.addView(setTextViewLayoutConfig(getTextView(layout.context, "Genre: ")))
-        }
-
-        // List to store a TextView for each director
-        val textViews: MutableList<TextView> = mutableListOf()
-
-        genres.map { genre ->
-
-            // Check if director is last entry, in this case no trailing comma ','
-            val textView: TextView = if (genre != genres.last()) {
-                setTextViewLayoutConfig(getTextView(layout.context, StringUtils.capitalize(genre) + ", "))
-            } else {
-                setTextViewLayoutConfig(getTextView(layout.context, StringUtils.capitalize(genre) ?: ""))
             }
 
-            // Director was clicked, we supply CrewMember object to callback
-            textView.setOnClickListener {
-                callback(genre)
-            }
-
-            textViews.add(textView)
-        }
-
-        if (textViews.size > 4) {
-            val initialTextViews = truncateTextViewList(layout, textViews)
-
-            initialTextViews.map { initialTextView ->
-                layout.addView(initialTextView)
-            }
-
-
-        } else {
-            textViews.map {
-                layout.addView(it)
-            }
+            genresGroup.addView(tag)
         }
     }
 
-    private fun displayCountries(countries: List<Country?>, callback: (country: Country?) -> Unit) {
-        val layout = binding.moviedetailsactivityInner.moviedetailsactivityCountry
+    private fun displayCountries(countries: List<Country?>) {
+        val layout = bindings.moviedetailsactivityCountry
 
         // If user refreshes or rotates screen, ensure to clear existing views
         layout.removeAllViews()
@@ -538,11 +413,6 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
                 setTextViewLayoutConfig(getTextView(layout.context, country?.name + ", "))
             } else {
                 setTextViewLayoutConfig(getTextView(layout.context, country?.name ?: ""))
-            }
-
-            // Director was clicked, we supply CrewMember object to callback
-            textView.setOnClickListener {
-                callback(country)
             }
 
             textViews.add(textView)
@@ -579,7 +449,7 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
         lp.setMargins(0, 8, 6, 8)
         textView.layoutParams = lp
 
-        textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+        textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
         textView.setTypeface(textView.typeface, Typeface.BOLD)
 
         return textView
@@ -620,6 +490,18 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
         return initialTextViews
     }
 
+    private fun showSimilarMovies(tmMovie: TmMovie?) {
+        if(tmMovie == null) {
+            return
+        }
+
+        val fm = supportFragmentManager
+        val similarMoviesCardView = bindings.moviedetailsactivitySimilar
+
+        fm.beginTransaction()
+            .replace(similarMoviesCardView.id, SimilarMoviesFragment.newInstance(tmMovie.tmdb_id ?: 0, tmMovie.original_language))
+            .commit()
+    }
 
 
     override fun onStart() {
@@ -628,6 +510,8 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
     }
 
     override fun onRefresh() {
+        super.onRefresh()
+
         viewModel.onRefresh()
     }
 

@@ -1,76 +1,89 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="170dp"
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_margin="8dp"
+    android:padding="12dp"
+    android:clickable="true"
+    android:focusable="true"
     xmlns:tools="http://schemas.android.com/tools">
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="4dp">
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
 
         <ImageView
-            android:id="@+id/personentry_poster"
-            android:layout_width="67dp"
-            android:layout_height="105dp"
-            android:src="@drawable/ic_trakt_svgrepo_com"
-            android:layout_margin="8dp"
-            app:layout_constraintTop_toTopOf="parent"
+            android:id="@+id/personentry_icon"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:src="@drawable/ic_baseline_person_24"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="4dp"
+            app:layout_constraintTop_toTopOf="@id/personentry_title_text"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/personentry_name" />
+            app:layout_constraintEnd_toStartOf="@id/personentry_title_text"
+            app:layout_constraintBottom_toBottomOf="@id/personentry_title_text" />
 
         <TextView
-            android:id="@+id/personentry_name"
+            android:id="@+id/personentry_title_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toEndOf="@id/personentry_icon"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/personentry_poster_cardview"
+            android:textSize="25sp"
+            android:textAllCaps="true"
+            android:textStyle="bold"
+            android:text="Person" />
+
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/personentry_poster_cardview"
+            android:layout_width="170dp"
+            android:layout_height="215dp"
+            android:layout_margin="4dp"
+            app:layout_constraintTop_toBottomOf="@+id/personentry_title_text"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/personentry_title">
+            <ImageView
+                android:id="@+id/personentry_poster"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitXY"
+                android:src="@drawable/ic_trakt_svgrepo_com"
+                />
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:id="@+id/personentry_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:textStyle="bold"
             android:textAllCaps="true"
             android:textSize="16sp"
             android:layout_margin="8dp"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toEndOf="@id/personentry_poster"
+            app:layout_constraintTop_toBottomOf="@+id/personentry_poster_cardview"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             tools:text="John Smith" />
-
-        <TextView
-            android:id="@+id/personentry_dob"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/personentry_name"
-            app:layout_constraintStart_toStartOf="@id/personentry_name"
-            app:layout_constraintEnd_toEndOf="@id/personentry_name"
-            tools:text="Born: 21/01/1982" />
-
-
-        <at.blogc.android.views.ExpandableTextView
-            android:id="@+id/personentry_overview"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
-            android:maxLines="3"
-            android:ellipsize="end"
-            app:animation_duration="950"
-            app:layout_constraintTop_toBottomOf="@id/personentry_dob"
-            app:layout_constraintStart_toStartOf="@id/personentry_name"
-            app:layout_constraintEnd_toEndOf="parent"
-            tools:text="Born in Dublin ..." />
 
         <TextView
             android:id="@+id/personentry_added"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBody2"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="8dp"
             android:textSize="11sp"
             android:textStyle="bold"
-            app:layout_constraintTop_toBottomOf="@id/personentry_overview"
-            app:layout_constraintStart_toStartOf="@id/personentry_overview"
-            app:layout_constraintEnd_toEndOf="@id/personentry_overview"
+            app:layout_constraintTop_toBottomOf="@id/personentry_title"
+            app:layout_constraintStart_toStartOf="@id/personentry_title"
+            app:layout_constraintEnd_toEndOf="@id/personentry_title"
             app:layout_constraintBottom_toBottomOf="parent"
             tools:text="Added: 21/01/2022" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>

@@ -1,16 +1,13 @@
 package com.nickrankin.traktapp.ui.lists
 
 import android.content.DialogInterface
-import android.content.Intent
 import android.os.Bundle
 import android.text.SpannableStringBuilder
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import androidx.activity.viewModels
 import androidx.annotation.ArrayRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
@@ -27,7 +24,6 @@ import com.nickrankin.traktapp.databinding.AddListLayoutBinding
 import com.nickrankin.traktapp.databinding.FragmentListsBinding
 import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.model.lists.ListEntryViewModel
 import com.nickrankin.traktapp.model.lists.TraktListsViewModel
 import com.uwetrottmann.trakt5.entities.TraktList
 import com.uwetrottmann.trakt5.enums.ListPrivacy
@@ -40,15 +36,13 @@ private const val TAG = "ListsFragment"
 @AndroidEntryPoint
 class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
-    private lateinit var bindings: FragmentListsBinding
+    private var bindings: FragmentListsBinding? = null
 
     private val viewModel: TraktListsViewModel by activityViewModels()
 
-    private lateinit var swipeLayout: SwipeRefreshLayout
     private lateinit var recyclerView: RecyclerView
     private lateinit var traktListsAdapter: TraktListsAdapter
 
-    private lateinit var progressBar: ProgressBar
     private lateinit var addListFab: FloatingActionButton
 
     private lateinit var addListDialog: AddEditListDialog
@@ -59,19 +53,17 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
     ): View {
         bindings = FragmentListsBinding.inflate(inflater)
 
-        return bindings.root
+        return bindings!!.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 
-        progressBar = bindings.traktlistsfragmentProgressbar
-
-        swipeLayout = bindings.traktlistsfragmentSwipeLayout
+        val swipeLayout = bindings!!.traktlistsfragmentSwipeLayout
         swipeLayout.setOnRefreshListener(this)
 
         initRecycler()
 
-        addListFab = bindings.traktlistsfragmentAddList
+        addListFab = bindings!!.traktlistsfragmentAddList
         createAddToListDialog()
 
         addListFab.setOnClickListener { addListDialog.add() }
@@ -86,8 +78,12 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
         getEvents()
     }
 
+
+
     private fun getLists() {
-        val messageContainerTextView = bindings.traktlistsfragmentMessageContainer
+        val progressBar = bindings!!.traktlistsfragmentProgressbar
+        val messageContainerTextView = bindings!!.traktlistsfragmentMessageContainer
+        val swipeLayout = bindings!!.traktlistsfragmentSwipeLayout
 
         lifecycleScope.launchWhenStarted {
             viewModel.lists.collectLatest { listsResource ->
@@ -95,9 +91,11 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                     is Resource.Loading -> {
                         Log.d(TAG, "getLists: Loading ...")
                         progressBar.visibility = View.VISIBLE
+                        recyclerView.visibility = View.GONE
                     }
                     is Resource.Success -> {
                         progressBar.visibility = View.GONE
+                        recyclerView.visibility = View.VISIBLE
                         if (swipeLayout.isRefreshing) {
                             swipeLayout.isRefreshing = false
                         }
@@ -140,7 +138,7 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                             messageContainerTextView.text = "You have no lists yet. Why not make one?"
                         }
 
-                        (activity as IHandleError).showErrorSnackbarRetryButton(listsResource.error, bindings.traktlistsfragmentSwipeLayout) {
+                        (activity as IHandleError).showErrorSnackbarRetryButton(listsResource.error, bindings!!.traktlistsfragmentSwipeLayout) {
                             viewModel.onRefresh()
                         }
                     }
@@ -163,7 +161,7 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                                 )
                             }
                             is Resource.Error -> {
-                                (activity as IHandleError).showErrorMessageToast(event.addedListResource.error, "Error adding list")
+                                (activity as IHandleError).handleError(event.addedListResource.error, "Error adding list")
                             }
                             else -> {}
 
@@ -178,7 +176,7 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                                 )
                             }
                             is Resource.Error -> {
-                                (activity as IHandleError).showErrorMessageToast(event.editListResource.error, "Error editing list")
+                                (activity as IHandleError).handleError(event.editListResource.error, "Error editing list")
                             }
                             else -> {}
 
@@ -193,7 +191,7 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                                 )
                             }
                             is Resource.Error -> {
-                                (activity as IHandleError).showErrorMessageToast(event.deleteListResource.error, "Error removing list")
+                                (activity as IHandleError).handleError(event.deleteListResource.error, "Error removing list")
 
                             }
                             else -> {}
@@ -207,28 +205,17 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
     }
 
     private fun initRecycler() {
-        val fragmentManager = activity!!.supportFragmentManager
-        recyclerView = bindings.traktlistsfragmentRecyclerview
+        recyclerView = bindings!!.traktlistsfragmentRecyclerview
 
         val lm = LinearLayoutManager(requireContext())
 
         traktListsAdapter = TraktListsAdapter(sharedPreferences) { action, selectedList ->
-            val listItemsFragment = ListItemsFragment.newInstance()
 
-
-            val bundle = Bundle()
-            bundle.putInt(ListEntryViewModel.LIST_ID_KEY, selectedList.trakt_id)
-            bundle.putString(ListEntryViewModel.LIST_NAME_KEY, selectedList.name)
-
-            listItemsFragment.arguments = bundle
 
 
             when (action) {
                 TraktListsAdapter.OPEN_LIST -> {
-                    fragmentManager.beginTransaction()
-                        .replace(this.id, listItemsFragment)
-                        .addToBackStack("list_items")
-                        .commit()
+                    viewModel.switchList(selectedList.trakt_id)
                 }
                 TraktListsAdapter.EDIT_LIST -> {
                     addListDialog.edit(selectedList)
@@ -237,10 +224,10 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                     deleteList(selectedList)
                 }
                 else -> {
-                    fragmentManager.beginTransaction()
-                        .replace(this.id, listItemsFragment)
-                        .addToBackStack("list_items")
-                        .commit()
+//                    fragmentManager.beginTransaction()
+//                        .replace(this.id, listItemsFragment)
+//                        .addToBackStack("list_items")
+//                        .commit()
                 }
 
             }
@@ -285,8 +272,6 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
         val listAllowCommentsSwitch: SwitchCompat = addNewListLayout.newlistAllowComments
         val listDisplayNumbersSwitch: SwitchCompat = addNewListLayout.newlistDisplayNumbers
         val listPrivacySpinner: Spinner = addNewListLayout.newlistPrivacy
-        val listSortBySpinner: Spinner = addNewListLayout.newlistSortBy
-        val listSortHowSpinner: Spinner = addNewListLayout.newlistSortHow
 
         val saveListButton: Button = addNewListLayout.newlistSave
 
@@ -294,9 +279,6 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
             setView(addNewListLayout.root)
 
             createSpinnerArrayAdapter(R.array.privacy_array, listPrivacySpinner)
-            createSpinnerArrayAdapter(R.array.sort_by, listSortBySpinner)
-            createSpinnerArrayAdapter(R.array.sort_how, listSortHowSpinner)
-
             create()
         }
 
@@ -324,19 +306,7 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
             listPrivacySpinner.setSelection(
                 getSelectedAdapterPosition(
                     listPrivacySpinner,
-                    traktList?.privacy?.name
-                )
-            )
-            listSortBySpinner.setSelection(
-                getSelectedAdapterPosition(
-                    listSortBySpinner,
-                    traktList?.sortBy?.name
-                )
-            )
-            listSortHowSpinner.setSelection(
-                getSelectedAdapterPosition(
-                    listSortHowSpinner,
-                    traktList?.sortHow?.name
+                    traktList?.privacy?.name ?: ListPrivacy.PRIVATE.name
                 )
             )
 
@@ -354,12 +324,14 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
             traktList.allow_comments = listAllowCommentsSwitch.isChecked
             traktList.display_numbers = listDisplayNumbersSwitch.isChecked
 
-
-            traktList.privacy = ListPrivacy.valueOf(listPrivacySpinner.selectedItem.toString())
-            traktList.sort_by = SortBy.valueOf(listSortBySpinner.selectedItem.toString())
-            traktList.sort_how = SortHow.valueOf(listSortHowSpinner.selectedItem.toString())
-
             if (validateFields()) {
+
+                traktList.privacy = ListPrivacy.valueOf(listPrivacySpinner.selectedItem.toString())
+                traktList.sort_by = SortBy.ADDED
+                traktList.sort_how = SortHow.DESC
+
+                addListDialog.dismiss()
+
                 if (isEdit) {
                     viewModel.editList(traktList, listSLug ?: "NULL")
                 } else {
@@ -368,7 +340,9 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                 }
             }
 
-            addListDialog.dismiss()
+
+
+
         }
 
         private fun clearFields() {
@@ -379,12 +353,10 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
             listDisplayNumbersSwitch.isActivated = false
 
             listPrivacySpinner.setSelection(0)
-            listSortBySpinner.setSelection(0)
-            listSortHowSpinner.setSelection(0)
         }
 
         private fun validateFields(): Boolean {
-            return if (listNameEditText.text.isEmpty() || listPrivacySpinner.selectedItemPosition == 0 || listSortBySpinner.selectedItemPosition == 0 || listSortHowSpinner.selectedItemPosition == 0) {
+            return if (listNameEditText.text.isEmpty() || listPrivacySpinner.selectedItemPosition == 0) {
                 Log.e(TAG, "createAddToListDialog: Validation error occurred.")
                 if (listNameEditText.text.isEmpty()) {
                     listNameEditText.error = "Enter a name for your new list!"
@@ -392,14 +364,6 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                 if (listPrivacySpinner.selectedItemPosition == 0) {
                     val selectedView: TextView = listPrivacySpinner.selectedView as TextView
                     selectedView.error = "Choose a privacy option"
-                }
-                if (listSortBySpinner.selectedItemPosition == 0) {
-                    val selectedView: TextView = listSortBySpinner.selectedView as TextView
-                    selectedView.error = "Choose a Sort By option"
-                }
-                if (listSortHowSpinner.selectedItemPosition == 0) {
-                    val selectedView: TextView = listSortHowSpinner.selectedView as TextView
-                    selectedView.error = "Choose a Sort How option"
                 }
                 false
             } else {
@@ -426,18 +390,22 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
     }
 
-
     override fun onStart() {
         super.onStart()
-
         viewModel.onStart()
     }
 
     override fun onRefresh() {
+        super.onRefresh()
+
         viewModel.onRefresh()
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
 
+        bindings = null
+    }
 
 
     companion object {

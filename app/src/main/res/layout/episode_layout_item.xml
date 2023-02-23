@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="8dp">
+    android:layout_margin="8dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -29,49 +29,51 @@
             android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
             android:textAllCaps="true"
-            android:textAppearance="?attr/textAppearanceHeadline5"
+            android:textSize="18sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/episodeitem_still_imageview"
             tools:text="Super New Episode" />
 
-        <com.google.android.flexbox.FlexboxLayout
+        <LinearLayout
             android:id="@+id/episodeitem_button_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:flexDirection="row"
-            app:flexWrap="wrap"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/episodeitem_name">
-            <TextView
-                android:id="@+id/episodeitem_air_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="8dp"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                tools:text="Aired: 01/01/1970 13:00" />
+            app:layout_constraintTop_toBottomOf="@id/episodeitem_name"
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/episodeitem_number"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_margin="8dp"
-                android:textSize="18sp"
+                android:textSize="16sp"
                 android:textStyle="bold"
                 tools:text="Episode: 1" />
+
+            <TextView
+                android:id="@+id/episodeitem_air_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                tools:text="Aired: 01/01/1970 13:00" />
+
 
             <TextView
                 android:id="@+id/episodeitem_rating"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_margin="8dp"
-                android:textSize="18sp"
+                android:layout_marginTop="4dp"
+                android:textSize="14sp"
                 android:textStyle="bold"
                 tools:text="Your Rating: 9" />
-        </com.google.android.flexbox.FlexboxLayout>
+        </LinearLayout>
 
 
 
@@ -99,7 +101,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@color/red"
-            android:textSize="14sp"
+            android:textSize="13sp"
             android:textStyle="bold"
             android:text="Unwatched"
             android:layout_marginTop="8dp"
@@ -109,20 +111,18 @@
             app:layout_constraintStart_toEndOf="@id/episodeitem_watched_status_icon"
             />
 
-        <at.blogc.android.views.ExpandableTextView
+        <TextView
             android:id="@+id/episodeitem_overview"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_margin="8dp"
             android:maxLines="3"
             android:ellipsize="end"
-            android:textSize="16sp"
+            android:textSize="13sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="@id/episodeitem_name"
-            app:layout_constraintHorizontal_bias="1.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/episodeitem_watched_status_icon"
-            app:layout_constraintVertical_bias="0.0"
             tools:text="Set in Springfield, the average American town, the show focuses on the antics and everyday adventures of the Simpson family; Homer, Marge, Bart, Lisa and Maggie, as well as a virtual cast of thousands. Since the beginning, the series has been a pop culture icon, attracting hundreds of celebrities to guest star. The show has also made name for itself in its fearless satirical take on politics, media and American life in general." />
     </androidx.constraintlayout.widget.ConstraintLayout>
 

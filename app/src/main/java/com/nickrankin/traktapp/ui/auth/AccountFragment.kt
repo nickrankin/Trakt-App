@@ -17,6 +17,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.room.withTransaction
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
+import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.MainActivity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.TmApplication
@@ -37,7 +38,7 @@ import javax.inject.Inject
 
 private const val TAG = "AccountFragment"
 @AndroidEntryPoint
-class AccountFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
+class AccountFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
     private lateinit var bindings: FragmentAccountBinding
     private lateinit var progressBar: ProgressBar
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
@@ -48,9 +49,6 @@ class AccountFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
 
     @Inject
     lateinit var authDatabase: AuthDatabase
-
-    @Inject
-    lateinit var sharedPreferences: SharedPreferences
 
     @Inject
     lateinit var glide: RequestManager
@@ -75,6 +73,12 @@ class AccountFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
         progressBar = bindings.accountfragmentProgressbar
         swipeRefreshLayout = bindings.accountfragmentSwipeLayout
         swipeRefreshLayout.setOnRefreshListener(this)
+
+        bindings.accountfragmentLogoffButton.setOnClickListener {
+            lifecycleScope.launchWhenStarted {
+                handleLogoff()
+            }
+        }
 
         lifecycleScope.launch {
             getUser()
@@ -154,16 +158,12 @@ class AccountFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
             accountfragmentGender.text = "Gender: ${authUser?.gender}"
             accountfragmentLocation.text = "Located: ${authUser?.location}"
 
-            accountfragmentLogoffButton.setOnClickListener {
-                handleLogoff()
-            }
-
             progressBar.visibility = View.GONE
 
         }
     }
 
-    private fun handleLogoff() {
+    private suspend fun handleLogoff() {
         val app = activity?.application as TmApplication
 
         AlertDialog.Builder(activity)
@@ -203,6 +203,8 @@ class AccountFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
     }
 
     override fun onRefresh() {
+        super.onRefresh()
+
         viewModel.onRefresh()
     }
 

@@ -11,18 +11,18 @@ import org.threeten.bp.OffsetDateTime
 @Entity(tableName = "lists")
 data class TraktList(
     @PrimaryKey val trakt_id: Int,
-    val list_slug: String,
+    val list_slug: String?,
     val name: String,
     val description: String?,
-    val created_at: OffsetDateTime,
+    val created_at: OffsetDateTime?,
     val updated_at: OffsetDateTime?,
     val allow_comments: Boolean,
     val comments_count: Int,
     val display_numbers: Boolean,
-    val item_count: Int,
-    val likes: Int,
+    val item_count: Int?,
+    val likes: Int?,
     val privacy: ListPrivacy,
-    val sortBy: SortBy,
-    val sortHow: SortHow,
-    val user: User
+    val sortBy: SortBy?,
+    val sortHow: SortHow?,
+    val user: User?
 )

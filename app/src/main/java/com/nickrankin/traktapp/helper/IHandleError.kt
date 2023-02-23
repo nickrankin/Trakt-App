@@ -5,5 +5,5 @@ import android.view.View
 interface IHandleError {
     fun showErrorSnackbarRetryButton(throwable: Throwable?, view: View, retryCallback: () -> Unit)
 
-    fun showErrorMessageToast(throwable: Throwable?, customMessage: String)
+    fun handleError(throwable: Throwable?, customMessage: String?)
 }

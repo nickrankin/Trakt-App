@@ -31,6 +31,6 @@ data class TmMovie(
     val runtime: Int?,
     val tagline: String?,
     val trailer: String?,
-    val trakt_rating: Double
+    val trakt_rating: Double?
 
 )

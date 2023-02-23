@@ -40,9 +40,6 @@ class EpisodeRatingsRepository @Inject constructor(private val traktApi: TraktAp
                 episodeRatingsDao.insert(
                     RatingsEpisodesStats(
                         episodeTraktId,
-                        episodeDataModel.showTraktId,
-                        episodeDataModel.seasonNumber,
-                        episodeDataModel.episodeNumber,
                         newRating,
                         OffsetDateTime.now()
                     )

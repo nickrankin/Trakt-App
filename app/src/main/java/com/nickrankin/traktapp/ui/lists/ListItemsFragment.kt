@@ -15,6 +15,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -25,10 +26,12 @@ import com.nickrankin.traktapp.adapter.lists.ListEntryAdapter
 import com.nickrankin.traktapp.databinding.FragmentListItemsBinding
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.TmdbImageLoader
+import com.nickrankin.traktapp.helper.getResponsiveGridLayoutManager
 import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.lists.ListEntryViewModel
+import com.nickrankin.traktapp.model.lists.TraktListsViewModel
 import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
@@ -42,9 +45,9 @@ private const val TAG = "ListItemsFragment"
 @AndroidEntryPoint
 class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
-    private lateinit var bindings: FragmentListItemsBinding
+    private var bindings: FragmentListItemsBinding? = null
 
-    private val viewModel: ListEntryViewModel by viewModels()
+    private val viewModel: TraktListsViewModel by activityViewModels()
 
     private lateinit var progressBar: ProgressBar
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
@@ -53,7 +56,6 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
     private lateinit var listEntryAdapter: ListEntryAdapter
 
     private var listTraktId: Int = 0
-    private lateinit var listName: String
 
     @Inject
     lateinit var glide: RequestManager
@@ -68,31 +70,51 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
         bindings = FragmentListItemsBinding.inflate(inflater)
 
-        return bindings.root
+        return bindings!!.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 
-        swipeRefreshLayout = bindings.traktlistsfragmentSwipeRefresh
+        swipeRefreshLayout = bindings!!.traktlistsfragmentSwipeRefresh
         swipeRefreshLayout.setOnRefreshListener(this)
-        progressBar = bindings.traktlistsfragmentProgressbar
+        progressBar = bindings!!.traktlistsfragmentProgressbar
 
         listTraktId = arguments?.getInt(ListEntryViewModel.LIST_ID_KEY, 0) ?: 0
-        listName = arguments?.getString(ListEntryViewModel.LIST_NAME_KEY, "Unknown List") ?: "Unknown List"
+//        listName = arguments?.getString(ListEntryViewModel.LIST_NAME_KEY, "Unknown List") ?: "Unknown List"
 
         if(!isLoggedIn) {
             handleLoggedOutState(this.id)
         }
 
-        updateTitle("$listName Entries")
+//        updateTitle("$listName Entries")
 
+        getList()
         initRecycler()
         getListEntries()
         getEvents()
     }
+    
+    private fun getList() {
+        lifecycleScope.launchWhenStarted { 
+            viewModel.list.collectLatest { listResource ->
+                when(listResource) {
+                    is Resource.Loading -> {}
+                    is Resource.Success -> {
+                        if(listResource.data != null) {
+                            updateTitle(listResource.data?.name ?: "Unknown List")
+                        }
+                    }
+                    is Resource.Error -> {
+                        handleError(listResource.error, null)
+                    }
+
+                }
+            }
+        }
+    }
 
     private fun getListEntries() {
-        val messageContainerTextView = bindings.traktlistsfragmentMessageContainer
+        val messageContainerTextView = bindings!!.traktlistsfragmentMessageContainer
 
         lifecycleScope.launch {
             viewModel.listItems.collectLatest { listEntriesData ->
@@ -118,7 +140,7 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                             messageContainerTextView.visibility = View.VISIBLE
                             recyclerView.visibility = View.GONE
 
-                            messageContainerTextView.text = "You do not have any entries in list $listName! Why not add some?"
+//                            messageContainerTextView.text = "You do not have any entries in list $listName! Why not add some?"
                         }
                         Log.d(TAG, "getListEntries: Got ${listEntriesData.data?.size} entries")
                     }
@@ -139,12 +161,10 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                             messageContainerTextView.visibility = View.VISIBLE
                             recyclerView.visibility = View.GONE
 
-                            messageContainerTextView.text = "You do not have any entries in list $listName! Why not add some?"
+//                            messageContainerTextView.text = "You do not have any entries in list $listName! Why not add some?"
                         }
 
-                        Log.e(TAG, "getListEntries: Error getting list entrties ${listEntriesData.error?.message}", )
-
-                        listEntriesData.error?.printStackTrace()
+                        handleError(listEntriesData.error, null)
                     }
                 }
             }
@@ -153,9 +173,10 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
     private fun getEvents() {
         lifecycleScope.launchWhenStarted {
-            viewModel.event.collectLatest { event ->
+            viewModel.events.collectLatest { event ->
                 when(event) {
-                    is ListEntryViewModel.Event.RemoveEntryEvent -> {
+
+                    is TraktListsViewModel.Event.RemoveEntryEvent -> {
                         val eventSyncResponseResource = event.syncResponseResource
 
                         when(eventSyncResponseResource) {
@@ -171,41 +192,50 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
                             }
                             is Resource.Error -> {
-                                displayToastMessage("getEvents: Error removing entry item ${eventSyncResponseResource.error?.localizedMessage}", Toast.LENGTH_SHORT)
-                                eventSyncResponseResource.error?.printStackTrace()
+                                handleError(eventSyncResponseResource.error, "Error removing entry item ")
                             }
                             else -> {}
 
                         }
                     }
+                    is TraktListsViewModel.Event.AddListEvent -> {}
+                    is TraktListsViewModel.Event.DeleteListEvent -> {}
+                    is TraktListsViewModel.Event.EditListEvent -> {}
                 }
             }
         }
     }
 
     private fun initRecycler() {
-        recyclerView = bindings.traktlistsfragmentRecyclerview
-        val lm = LinearLayoutManager(requireContext())
+        recyclerView = bindings!!.traktlistsfragmentRecyclerview
+        val lm = getResponsiveGridLayoutManager(requireContext(), null)
 
         listEntryAdapter = ListEntryAdapter(glide, tmdbImageLoader, sharedPreferences) { traktId, action, type,  selectedItem ->
             when(type) {
                 Type.MOVIE -> {
                     when(action) {
                         ListEntryAdapter.ACTION_VIEW -> {
-                            val movieIntent = Intent(requireContext(), MovieDetailsActivity::class.java)
-                            movieIntent.putExtra(
-                                MovieDetailsActivity.MOVIE_DATA_KEY, MovieDataModel(
-                                traktId,
-                                selectedItem.movie?.tmdb_id,
-                                selectedItem.movie?.title,
-                                selectedItem.movie?.release_date?.year ?: 0
-                            )
-                            )
+                            if(traktId != null) {
+                                val movieIntent = Intent(requireContext(), MovieDetailsActivity::class.java)
+                                movieIntent.putExtra(
+                                    MovieDetailsActivity.MOVIE_DATA_KEY, MovieDataModel(
+                                        traktId,
+                                        selectedItem.movie?.tmdb_id,
+                                        selectedItem.movie?.title,
+                                        selectedItem.movie?.first_aired?.year ?: 0
+                                    )
+                                )
 
-                            startActivity(movieIntent)
+                                startActivity(movieIntent)
+                            }
+
+
                         }
                         ListEntryAdapter.ACTION_REMOVE -> {
-                            removeListItemEntry(traktId, Type.MOVIE)
+                            if(traktId != null) {
+                                removeListItemEntry(traktId, Type.MOVIE)
+
+                            }
                         }
                     }
 
@@ -213,42 +243,59 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                 Type.SHOW -> {
                     when(action) {
                         ListEntryAdapter.ACTION_VIEW -> {
-                            val showIntent = Intent(requireContext(), ShowDetailsActivity::class.java)
-                            showIntent.putExtra(
-                                ShowDetailsActivity.SHOW_DATA_KEY,
-                                ShowDataModel(
-                                    traktId,
-                                    selectedItem.show?.tmdb_id,
-                                    selectedItem.show?.title
-                                )
-                            )
 
-                            startActivity(showIntent)
+                            if(traktId != null) {
+                                val showIntent = Intent(requireContext(), ShowDetailsActivity::class.java)
+                                showIntent.putExtra(
+                                    ShowDetailsActivity.SHOW_DATA_KEY,
+                                    ShowDataModel(
+                                        traktId,
+                                        selectedItem.show?.tmdb_id,
+                                        selectedItem.show?.title
+                                    )
+                                )
+
+                                startActivity(showIntent)
+                            }
+
+
                         }
                         ListEntryAdapter.ACTION_REMOVE -> {
-                            removeListItemEntry(traktId, Type.SHOW)
+                            if(traktId != null) {
+                                removeListItemEntry(traktId, Type.SHOW)
+
+                            }
+
                         }
                     }
                 }
                 Type.EPISODE -> {
                     when(action) {
                         ListEntryAdapter.ACTION_VIEW -> {
-                            val episodeIntent = Intent(requireContext(), EpisodeDetailsActivity::class.java)
-                            episodeIntent.putExtra(
-                                EpisodeDetailsActivity.EPISODE_DATA_KEY,
-                                EpisodeDataModel(
-                                    selectedItem.episodeShow?.trakt_id ?: 0,
-                                    selectedItem.episodeShow?.tmdb_id,
-                                    selectedItem.episode?.season ?: 0,
-                                    selectedItem.episode?.episode ?: 0,
-                                    selectedItem.show?.title
-                                )
-                            )
 
-                            startActivity(episodeIntent)
+                            if(selectedItem.episodeShow?.trakt_id != null) {
+                                val episodeIntent = Intent(requireContext(), EpisodeDetailsActivity::class.java)
+                                episodeIntent.putExtra(
+                                    EpisodeDetailsActivity.EPISODE_DATA_KEY,
+                                    EpisodeDataModel(
+                                        selectedItem.episodeShow.trakt_id,
+                                        selectedItem.episode?.tmdb_id,
+                                        selectedItem.episode?.season_number ?: 0,
+                                        selectedItem.episode?.episode_number ?: 0,
+                                        selectedItem.episodeShow.title
+                                    )
+                                )
+
+                                startActivity(episodeIntent)
+                            }
+
+
                         }
                         ListEntryAdapter.ACTION_REMOVE -> {
-                            removeListItemEntry(selectedItem.episode?.trakt_id ?: 0, Type.EPISODE)
+                            if(selectedItem.episode?.trakt_id != null) {
+                                removeListItemEntry(selectedItem.episode.trakt_id, Type.EPISODE)
+                            }
+
                         }
                     }
 
@@ -281,12 +328,19 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
     override fun onStart() {
         super.onStart()
-
         viewModel.onStart()
     }
 
     override fun onRefresh() {
+        super.onRefresh()
+
         viewModel.onRefresh()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        bindings = null
     }
 
     private fun displayToastMessage(messageText: String, length: Int) {

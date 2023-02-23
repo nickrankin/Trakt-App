@@ -11,6 +11,10 @@ interface TmSeasonsDao {
     fun getSeasonsForShow(showTraktId: Int): Flow<List<TmSeasonAndStats>>
 
     @Transaction
+    @Query("SELECT * FROM seasons WHERE show_trakt_id = :showTraktId ORDER BY season_number DESC LIMIT 1")
+    fun getLatestSeasonForShow(showTraktId: Int): Flow<List<TmSeasonAndStats>>
+
+    @Transaction
     @Query("SELECT * FROM seasons WHERE id = :id AND season_number = :seasonNumber")
     fun getSeason(id: Int, seasonNumber: Int): Flow<TmSeason?>
 

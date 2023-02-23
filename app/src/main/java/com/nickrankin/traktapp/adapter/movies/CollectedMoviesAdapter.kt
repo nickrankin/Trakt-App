@@ -1,30 +1,18 @@
 package com.nickrankin.traktapp.adapter.movies
 
 import android.content.SharedPreferences
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.bumptech.glide.RequestManager
-import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.AdaptorActionControls
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.dao.movies.model.CollectedMovie
-import com.nickrankin.traktapp.databinding.ViewCardItemBinding
-import com.nickrankin.traktapp.databinding.ViewPosterItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.ImageItemType
 import com.nickrankin.traktapp.helper.TmdbImageLoader
-import com.nickrankin.traktapp.helper.getFormattedDate
-import com.uwetrottmann.trakt5.entities.Show
+import com.nickrankin.traktapp.helper.getFormattedDateTime
 
 private const val TAG = "CollectedMoviesAdapter"
 class CollectedMoviesAdapter(private val tmdbImageLoader: TmdbImageLoader,
@@ -67,7 +55,7 @@ class CollectedMoviesAdapter(private val tmdbImageLoader: TmdbImageLoader,
                     itemTitle.text = "${currentItem.title} (${currentItem.release_date?.year ?: "unknown"})"
 
                     if(currentItem.collected_at != null) {
-                        itemWatchedDate.text = "Collected: ${getFormattedDate(currentItem.collected_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString("time_format",AppConstants.DEFAULT_TIME_FORMAT))}"
+                        itemWatchedDate.text = "Collected: ${getFormattedDateTime(currentItem.collected_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString("time_format",AppConstants.DEFAULT_TIME_FORMAT))}"
                     }
 
                     itemOverview.text = currentItem.movie_overview

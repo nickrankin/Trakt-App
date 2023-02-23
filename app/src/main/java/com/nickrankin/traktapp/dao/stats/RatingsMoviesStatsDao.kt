@@ -1,6 +1,7 @@
 package com.nickrankin.traktapp.dao.stats
 
 import androidx.room.*
+import com.nickrankin.traktapp.dao.stats.model.RatingStats
 import com.nickrankin.traktapp.dao.stats.model.RatingsMoviesStats
 import kotlinx.coroutines.flow.Flow
 
@@ -9,6 +10,10 @@ interface RatingsMoviesStatsDao {
     @Transaction
     @Query("SELECT * FROM stats_ratings_movies")
     fun getRatingsStats(): Flow<List<RatingsMoviesStats>>
+
+    @Transaction
+    @Query("SELECT * FROM stats_ratings_movies WHERE trakt_id = :movieTraktId")
+    fun getRatingsStatsPerMovie(movieTraktId: Int): Flow<RatingsMoviesStats?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(ratingsMoviesStats: RatingsMoviesStats)

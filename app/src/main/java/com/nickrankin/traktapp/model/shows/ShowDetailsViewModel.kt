@@ -4,34 +4,21 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.OutOfQuotaPolicy
-import androidx.work.WorkInfo
-import androidx.work.WorkManager
-import com.nickrankin.traktapp.dao.lists.model.TraktList
-import com.nickrankin.traktapp.dao.show.model.TmShow
-import com.nickrankin.traktapp.helper.PersonCreditsHelper
-import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.dao.history.model.HistoryEntry
 import com.nickrankin.traktapp.helper.TmdbToTraktIdHelper
+import com.nickrankin.traktapp.model.ActionButtonEvent
+import com.nickrankin.traktapp.model.ICreditsPersons
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
-import com.nickrankin.traktapp.repo.lists.ListEntryRepository
-import com.nickrankin.traktapp.repo.lists.TraktListsRepository
 import com.nickrankin.traktapp.repo.shows.SeasonEpisodesRepository
-import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsActionButtonsRepository
-import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsOverviewRepository
-import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsProgressRepository
-import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
+import com.nickrankin.traktapp.repo.shows.showdetails.*
 import com.nickrankin.traktapp.repo.stats.SeasonStatsRepository
-import com.nickrankin.traktapp.repo.stats.StatsRepository
-import com.nickrankin.traktapp.services.ShowStatsRefreshWorker
 import com.nickrankin.traktapp.services.helper.StatsWorkRefreshHelper
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
-import com.uwetrottmann.trakt5.entities.SyncResponse
-import com.uwetrottmann.trakt5.enums.Type
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import org.threeten.bp.OffsetDateTime
 import javax.inject.Inject
 
 private const val TAG = "ShowDetailsViewModel"
@@ -39,31 +26,27 @@ private const val TAG = "ShowDetailsViewModel"
 @HiltViewModel
 class ShowDetailsViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
+    private val showActionButtonsRepository: ShowActionButtonsRepsitory,
     private val repository: ShowDetailsRepository,
     private val seasonEpisodesRepository: SeasonEpisodesRepository,
     private val showDetailsOverviewRepository: ShowDetailsOverviewRepository,
-    private val listsRepository: TraktListsRepository,
     private val statsWorkRefreshHelper: StatsWorkRefreshHelper,
     private val seasonStatsRepository: SeasonStatsRepository,
-    private val listEntryRepository: ListEntryRepository,
     private val showDetailsProgressRepository: ShowDetailsProgressRepository,
-    private val showDetailsActionButtonsRepository: ShowDetailsActionButtonsRepository,
     private val tmdbToTraktIdHelper: TmdbToTraktIdHelper
-) : ViewModel() {
+) : ViewModel(), ICreditsPersons {
 
-    private val eventsChannel = Channel<Event>()
+    private val eventsChannel = Channel<ActionButtonEvent>()
     val events = eventsChannel.receiveAsFlow()
         .shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
     private val castToggleChannel = Channel<Boolean>()
     private val castToggle = castToggleChannel.receiveAsFlow()
-        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val refreshEventChannel = Channel<Boolean>()
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
         .shareIn(viewModelScope, SharingStarted.Lazily, 1)
-
-    val state = savedStateHandle
 
     val showDataModel: ShowDataModel? = savedStateHandle.get(ShowDetailsActivity.SHOW_DATA_KEY)
 
@@ -73,7 +56,7 @@ class ShowDetailsViewModel @Inject constructor(
 
     // Seasons & progress
     val seasons = refreshEvent.flatMapLatest { shouldRefresh ->
-        seasonEpisodesRepository.getSeasons(showDataModel?.traktId ?: 0, showDataModel?.tmdbId ?: 0, shouldRefresh)
+            seasonEpisodesRepository.getSeasons(showDataModel?.traktId ?: 0, showDataModel?.tmdbId ?: 0, shouldRefresh)
     }
 
     val seasonWatchedStats = refreshEvent.flatMapLatest { shouldRefresh ->
@@ -82,59 +65,126 @@ class ShowDetailsViewModel @Inject constructor(
 
 
     // Overview
-    val cast = refreshEvent.flatMapLatest { shouldRefresh ->
+    override val cast = refreshEvent.flatMapLatest { shouldRefresh ->
         castToggle.flatMapLatest { showGuestStars ->
-            showDetailsOverviewRepository.getCast(showDataModel, shouldRefresh)
+            showDetailsOverviewRepository.getCast(showDataModel?.traktId ?: 0, showDataModel?.tmdbId ?: 0, showGuestStars, shouldRefresh)
         }
     }
 
-    fun filterCast(showGuestStars: Boolean) = viewModelScope.launch {
-        castToggleChannel.send(showGuestStars)
+    override fun filterCast(showGuestStars: Boolean) {
+        viewModelScope.launch {
+            castToggleChannel.send(showGuestStars)
+        }
     }
 
     suspend fun getTraktPersonByTmdbId(tmdbId: Int) = tmdbToTraktIdHelper.getTraktPersonByTmdbId(tmdbId)
 
-    // Action Buttons
-    val listsWithEntries =  listEntryRepository.listEntries
-
-    fun getRatings(traktId: Int) = showDetailsActionButtonsRepository.getRatings(traktId)
-
-    fun addRating(tmShow: TmShow, newRating: Int) = viewModelScope.launch {
-        eventsChannel.send(Event.AddRatingEvent(showDetailsActionButtonsRepository.setRatings(tmShow, newRating, false), newRating))
+    // Action buttons
+    val playCount = refreshEvent.flatMapLatest { shouldRefresh ->
+        showActionButtonsRepository.getPlaybackHistory(showDataModel?.traktId ?: 0, shouldRefresh)
     }
 
-    fun deleteRating(tmShow: TmShow) = viewModelScope.launch { eventsChannel.send(Event.DeleteRatingEvent(showDetailsActionButtonsRepository.setRatings(tmShow, -1, true))) }
-
-    fun addToCollection(tmShow: TmShow) = viewModelScope.launch { eventsChannel.send(Event.AddToCollectionEvent(showDetailsActionButtonsRepository.addToCollection(tmShow))) }
-
-    val showsCollectedStatus = showDetailsActionButtonsRepository.getCollectedShowFlow(showDataModel?.traktId ?: -1).map { collectedShow ->
-        collectedShow != null
+    val ratings = refreshEvent.flatMapLatest { shouldRefresh ->
+        showActionButtonsRepository.getRatings(showDataModel?.traktId ?: 0, shouldRefresh)
     }
 
-    fun addListEntry(type: String, traktId: Int, traktList: TraktList) = viewModelScope.launch { eventsChannel.send(
-        Event.AddListEntryEvent(listEntryRepository.addListEntry(type, traktId, traktList))) }
-    fun removeListEntry(listTraktId: Int, listEntryTraktId: Int, type: Type) = viewModelScope.launch { eventsChannel.send(
-        Event.RemoveListEntryEvent(listEntryRepository.removeEntry(listTraktId, listEntryTraktId, type))) }
+    val collectionStatus = refreshEvent.flatMapLatest { shouldRefresh ->
+        showActionButtonsRepository.getCollectedStats(showDataModel?.traktId ?: 0, shouldRefresh)
+    }
 
-    fun removeFromCollection() = viewModelScope.launch { eventsChannel.send(Event.RemoveFromCollectionEvent(showDetailsActionButtonsRepository.removeFromCollection(showDataModel?.traktId ?: -1))) }
+    val lists = refreshEvent.flatMapLatest { shouldRefresh ->
+        showActionButtonsRepository.getTraktListsAndItems(shouldRefresh)
+    }
+
+    suspend fun showStreamingServices() = repository.getShowStreamingServices(showDataModel?.tmdbId, showDataModel?.showTitle)
+
+    fun addToCollection(traktId: Int) = viewModelScope.launch {
+        eventsChannel.send(
+            ActionButtonEvent.AddToCollectionEvent(showActionButtonsRepository.addToCollection(traktId ?: 0))
+        )
+    }
+
+    fun deleteFromCollection(traktId: Int) = viewModelScope.launch {
+        eventsChannel.send(
+            ActionButtonEvent.RemoveFromCollectionEvent(
+                showActionButtonsRepository.removeFromCollection(
+                    traktId ?: -1
+                )
+            )
+        )
+    }
+
+    fun addListEntry(itemTraktId: Int, listTraktId: Int) = viewModelScope.launch {
+        showActionButtonsRepository.addToList(
+            itemTraktId,
+            listTraktId
+        )
+    }
+
+    fun removeListEntry(itemTraktId: Int, listTraktId: Int) =
+        viewModelScope.launch {
+
+            showActionButtonsRepository.removeFromList(
+                itemTraktId,
+                listTraktId
+            )
+        }
+
+    fun addRating(newRating: Int, traktId: Int) = viewModelScope.launch {
+        eventsChannel.send(
+            ActionButtonEvent.AddRatingEvent(
+                showActionButtonsRepository.addRating(traktId, newRating, OffsetDateTime.now()),
+                newRating
+            )
+        )
+    }
+
+    fun deleteRating(traktId: Int) = viewModelScope.launch {
+        eventsChannel.send(
+            ActionButtonEvent.RemoveRatingEvent(showActionButtonsRepository.deleteRating(traktId ?: -1))
+        )
+    }
+
+    fun checkin(traktId: Int, cancelActiveCheckins: Boolean) = viewModelScope.launch {
+        eventsChannel.send(
+            ActionButtonEvent.CheckinEvent(
+                showActionButtonsRepository.checkin(
+                    traktId,
+                    cancelActiveCheckins
+                )
+            )
+        )
+    }
+
+    fun addToWatchedHistory(traktId: Int, watchedDate: OffsetDateTime) = viewModelScope.launch {
+        eventsChannel.send(
+            ActionButtonEvent.AddHistoryEntryEvent(
+                showActionButtonsRepository.addToHistory(
+                    traktId,
+                    watchedDate
+                )
+            )
+        )
+    }
+
+    fun removeHistoryEntry(historyEntry: HistoryEntry) = viewModelScope.launch {
+        eventsChannel.send(
+            ActionButtonEvent.RemoveHistoryEntryEvent(
+                showActionButtonsRepository.removeFromHistory(historyEntry.history_id)
+            )
+        )
+    }
 
     fun onStart() {
         viewModelScope.launch {
             refreshEventChannel.send(false)
-
             seasonStatsRepository.getWatchedSeasonStatsPerShow(showDataModel?.traktId ?: 0, false)
-
-            listsRepository.getListsAndEntries(false)
-
         }
     }
 
     fun onRefresh() {
         viewModelScope.launch {
             refreshEventChannel.send(true)
-
-            listsRepository.getListsAndEntries(true)
-
 
             statsWorkRefreshHelper.refreshShowStats()
         }
@@ -145,14 +195,5 @@ class ShowDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             refreshEventChannel.send(false)
         }
-    }
-
-    sealed class Event {
-        data class AddToCollectionEvent(val syncResponse: Resource<SyncResponse>): Event()
-        data class RemoveFromCollectionEvent(val syncResponse: Resource<SyncResponse>): Event()
-        data class AddRatingEvent(val syncResponse: Resource<SyncResponse>, val newRating: Int): Event()
-        data class DeleteRatingEvent(val syncResponse: Resource<SyncResponse>): Event()
-        data class AddListEntryEvent(val addListEntryResponse: Resource<SyncResponse>): Event()
-        data class RemoveListEntryEvent(val removeListEntryResponse: Resource<SyncResponse?>): Event()
     }
 }

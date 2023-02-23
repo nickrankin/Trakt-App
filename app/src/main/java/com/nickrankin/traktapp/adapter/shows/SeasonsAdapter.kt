@@ -3,10 +3,14 @@ package com.nickrankin.traktapp.adapter.shows
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewGroup.LayoutParams
+import android.widget.LinearLayout
+import androidx.core.view.setMargins
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
+import com.google.android.material.card.MaterialCardView
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.dao.show.TmSeasonAndStats
 import com.nickrankin.traktapp.dao.show.model.TmSeason
@@ -14,11 +18,22 @@ import com.nickrankin.traktapp.databinding.SeasonListEntryBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.calculateProgress
 
-class SeasonsAdapter(private val glide: RequestManager, val callback: (season: TmSeasonAndStats) -> Unit): ListAdapter<TmSeasonAndStats, SeasonsAdapter.SeasonsViewHolder>(
+class SeasonsAdapter(private val glide: RequestManager, private val fullWidth: Boolean, val callback: (season: TmSeasonAndStats) -> Unit): ListAdapter<TmSeasonAndStats, SeasonsAdapter.SeasonsViewHolder>(
     COMPARATOR) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SeasonsViewHolder {
-        return SeasonsViewHolder(SeasonListEntryBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+        val entry = SeasonListEntryBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+
+        if(fullWidth)
+        {
+            val layoutParams = LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT,1f)
+            layoutParams.setMargins(8)
+
+            (entry.root).layoutParams = layoutParams
+
+        }
+
+        return SeasonsViewHolder(entry)
     }
 
     override fun onBindViewHolder(holder: SeasonsViewHolder, position: Int) {
@@ -30,10 +45,6 @@ class SeasonsAdapter(private val glide: RequestManager, val callback: (season: T
         }
 
         holder.bindings.apply {
-            val overviewExpandableTextView = seasonitemOverview
-
-            overviewExpandableTextView.collapse()
-
             seasonitemPoster.setImageResource(R.drawable.ic_trakt_svgrepo_com)
 
             if(season.poster_path?.isNotEmpty() == true) {
@@ -62,12 +73,6 @@ class SeasonsAdapter(private val glide: RequestManager, val callback: (season: T
             } else {
                 seasonitemProgressTitle.visibility = View.GONE
                 seasonitemProgrssbar.visibility = View.GONE
-            }
-
-
-
-            overviewExpandableTextView.setOnClickListener {
-                overviewExpandableTextView.toggle()
             }
 
             root.setOnClickListener {

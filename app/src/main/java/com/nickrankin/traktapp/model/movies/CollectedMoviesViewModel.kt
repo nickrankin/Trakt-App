@@ -12,7 +12,6 @@ import com.nickrankin.traktapp.model.BaseViewModel
 import com.nickrankin.traktapp.model.ViewSwitcherViewModel
 import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
 import com.nickrankin.traktapp.repo.movies.collected.CollectedMoviesRepository
-import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsActionButtonsRepository
 import com.nickrankin.traktapp.repo.stats.MovieStatsRepository
 import com.nickrankin.traktapp.repo.stats.StatsRepository
 import com.uwetrottmann.trakt5.enums.SortBy

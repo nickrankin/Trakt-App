@@ -211,6 +211,8 @@ AlertDialog.Builder(requireContext())
     }
 
     override fun onRefresh() {
+        super.onRefresh()
+
         viewModel.onRefresh()
     }
 

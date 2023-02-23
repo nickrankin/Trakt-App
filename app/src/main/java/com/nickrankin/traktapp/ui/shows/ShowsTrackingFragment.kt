@@ -190,7 +190,7 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
                             swipeRefreshLayout.isRefreshing = false
                         }
 
-                        Log.e(TAG, "getTrackedShows: Error loading Tracked Shows, ${trackedShowsResource.error?.message}", )
+                        handleError(trackedShowsResource.error, null)
                     }
                 }
 
@@ -731,6 +731,8 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
     }
 
     override fun onRefresh() {
+        super.onRefresh()
+
         viewModel.onRefresh()
 
         //generateTestNotifications()

@@ -31,12 +31,12 @@ class ShowDetailsOverviewRepository @Inject constructor(
         return showsDao.getShow(showDataModel?.traktId ?: 0)
     }
 
-    suspend fun getCast(showDataModel: ShowDataModel?, shouldRefresh: Boolean) = networkBoundResource(
+    suspend fun getCast(showTraktId: Int, showTmdbId: Int?, showGuestStars: Boolean, shouldRefresh: Boolean) = networkBoundResource(
         query = {
-            showCastPeopleDao.getShowCast(showDataModel?.traktId ?: 0)
+            showCastPeopleDao.getShowCast(showTraktId, showGuestStars)
         },
         fetch = {
-            creditsHelper.getShowCredits(showDataModel?.traktId ?: 0 , showDataModel?.tmdbId)
+            creditsHelper.getShowCredits(showTraktId, showTmdbId)
         },
         shouldFetch = { castPersons ->
             shouldRefresh || castPersons.isEmpty()
@@ -49,9 +49,9 @@ class ShowDetailsOverviewRepository @Inject constructor(
         }
     )
 
-    suspend fun getEpisodeCast(episodeDataModel: EpisodeDataModel?, shouldRefresh: Boolean) = networkBoundResource(
+    suspend fun getEpisodeCast(episodeDataModel: EpisodeDataModel?, showGuestStars: Boolean, shouldRefresh: Boolean) = networkBoundResource(
         query = {
-            showCastPeopleDao.getShowCast(episodeDataModel?.showTraktId ?: 0)
+            showCastPeopleDao.getShowCast(episodeDataModel?.showTraktId ?: 0, showGuestStars)
         },
         fetch = {
             creditsHelper.getShowCredits(episodeDataModel?.showTraktId ?: 0 , episodeDataModel?.tmdbId)
@@ -63,27 +63,15 @@ class ShowDetailsOverviewRepository @Inject constructor(
         saveFetchResult = { showCastPersons ->
             Log.d(TAG, "getEpisodeCast: Refreshing Episode Cast")
             showsDatabase.withTransaction {
+                showCastPeopleDao.deleteShowCast(episodeDataModel?.showTraktId ?: 0)
                 showCastPeopleDao.insert(showCastPersons)
             }
-        }
-    )
 
-    fun getEpisodeGuestStars(episodeDataModel: EpisodeDataModel?, season: Int, number: Int, shouldRefresh: Boolean)  = networkBoundResource(
-        query = {
-            showCastDao.getShowGuestStarsCast(episodeDataModel?.showTraktId ?: 0, season, number)
-        },
-        fetch = {
-            creditsHelper.getEpisodeGuestCredits(episodeDataModel?.showTraktId ?: 0, episodeDataModel?.tmdbId ?: 0, season, number)
-        },
-        shouldFetch = { guestPersons ->
-            shouldRefresh || guestPersons.isEmpty()
-
-        },
-        saveFetchResult = { guestStars ->
-            Log.d(TAG, "getEpisodeGuestStars: Refreshing Episode Cast (got ${guestStars.size} credits)")
+            val guestStars = creditsHelper.getEpisodeGuestCredits(episodeDataModel?.showTraktId ?: 0, episodeDataModel?.tmdbId ?: 0, episodeDataModel?.seasonNumber ?: 0, episodeDataModel?.episodeNumber ?: 0)
             showsDatabase.withTransaction {
                 showCastDao.insert(guestStars)
             }
+
         }
     )
 

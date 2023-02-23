@@ -153,13 +153,10 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
                         }
 
                         progressBar.visibility = View.GONE
-                        Toast.makeText(
-                            requireContext(),
-                            "Error loading recommended shows from Trakt. ${data.error?.localizedMessage}",
-                            Toast.LENGTH_LONG
-                        ).show()
 
-                        (activity as IHandleError).showErrorSnackbarRetryButton(
+                        handleError(data.error, "Error loading recommended shows from Trakt. ")
+
+                        showErrorSnackbarRetryButton(
                             data.error, bindings.fragmentreccomendedshowsSwipeLayout
                         ) {
                             viewModel.onRefresh()
@@ -216,7 +213,7 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
                             }
                         } else if (syncResponseResource is Resource.Error) {
 
-                            (activity as IHandleError).showErrorMessageToast(syncResponseResource.error, "Error adding show to favourites")
+                            (activity as IHandleError).handleError(syncResponseResource.error, "Error adding show to favourites")
                         }
 
                     }
@@ -229,8 +226,7 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
                                 // Unused
                             }
                             is Resource.Error -> {
-                                event.removedSuccessfully.error?.printStackTrace()
-                                displayMessageToast("Failed to remove suggestion. Error: ${event.removedSuccessfully.error?.localizedMessage }", Toast.LENGTH_LONG)
+                                handleError(event.removedSuccessfully.error, "Failed to remove suggestion. Error: ")
                             }
 
                             }
@@ -246,6 +242,8 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
     }
 
     override fun onRefresh() {
+        super.onRefresh()
+
         viewModel.onRefresh()
     }
 

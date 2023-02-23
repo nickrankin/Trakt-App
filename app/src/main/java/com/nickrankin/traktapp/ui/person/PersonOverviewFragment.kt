@@ -17,6 +17,7 @@ import com.bumptech.glide.RequestManager
 import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexWrap
 import com.google.android.flexbox.FlexboxLayoutManager
+import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.adapter.credits.CharacterPosterAdapter
 import com.nickrankin.traktapp.dao.credits.model.CreditPerson
 import com.nickrankin.traktapp.dao.credits.model.Person
@@ -35,7 +36,7 @@ import javax.inject.Inject
 private const val TAG = "PersonOverviewFragment"
 
 @AndroidEntryPoint
-class PersonOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
+class PersonOverviewFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
@@ -57,9 +58,6 @@ class PersonOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener 
 
     @Inject
     lateinit var glide: RequestManager
-
-    @Inject
-    lateinit var sharedPreferences: SharedPreferences
 
     @Inject
     lateinit var tmdbImageLoader: TmdbImageLoader
@@ -274,7 +272,7 @@ class PersonOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener 
 
         if (person.birthday != null) {
             datesSb.append(
-                getFormattedDate(
+                getFormattedDateTime(
                     person.birthday,
                     sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)
                         ?: "",
@@ -285,7 +283,7 @@ class PersonOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener 
 
         if (person.death != null) {
             datesSb.append(
-                " - " + getFormattedDate(
+                " - " + getFormattedDateTime(
                     person.death,
                     sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)
                         ?: "",
@@ -377,17 +375,38 @@ class PersonOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener 
         lm.flexWrap = FlexWrap.WRAP
 
         personDirectedAdapter = CharacterPosterAdapter(glide, tmdbImageLoader) { selectedCredit ->
-            val showIntent = Intent(requireContext(), ShowDetailsActivity::class.java)
-            showIntent.putExtra(
-                ShowDetailsActivity.SHOW_DATA_KEY,
-                ShowDataModel(
-                    selectedCredit.trakt_id,
-                    selectedCredit.tmdb_id,
-                    selectedCredit.title
-                )
-            )
+            when(selectedCredit.type) {
+                Type.MOVIE -> {
+                    val movieIntent = Intent(requireContext(), MovieDetailsActivity::class.java)
+                    movieIntent.putExtra(
+                        MovieDetailsActivity.MOVIE_DATA_KEY,
+                        MovieDataModel(
+                            selectedCredit.trakt_id,
+                            selectedCredit.tmdb_id,
+                            selectedCredit.title,
+                            selectedCredit.year
+                        )
+                    )
+                    startActivity(movieIntent)
+                }
+                Type.SHOW -> {
+                    val showIntent = Intent(requireContext(), ShowDetailsActivity::class.java)
+                    showIntent.putExtra(
+                        ShowDetailsActivity.SHOW_DATA_KEY,
+                        ShowDataModel(
+                            selectedCredit.trakt_id,
+                            selectedCredit.tmdb_id,
+                            selectedCredit.title
+                        )
+                    )
 
-            startActivity(showIntent)
+                    startActivity(showIntent)
+                }
+                else -> {
+                    Log.e(TAG, "initPersonDirectedAdapter: Unsupported Type ${selectedCredit.type.name}")
+                }
+            }
+
 
         }
 
@@ -415,6 +434,8 @@ class PersonOverviewFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener 
     }
 
     override fun onRefresh() {
+        super.onRefresh()
+
         viewModel.onRefresh()
     }
 

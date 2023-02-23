@@ -3,6 +3,7 @@ package com.nickrankin.traktapp.ui.shows.showdetails
 import android.content.Context
 import android.content.Intent
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
@@ -16,49 +17,53 @@ import androidx.lifecycle.lifecycleScope
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.google.android.flexbox.FlexboxLayout
-import com.google.android.material.appbar.AppBarLayout
-import com.google.android.material.appbar.CollapsingToolbarLayout
-import com.google.android.material.tabs.TabLayout
+import com.google.android.material.chip.Chip
 import com.google.gson.Gson
 import com.nickrankin.traktapp.BaseActivity
 import com.nickrankin.traktapp.R
+import com.nickrankin.traktapp.dao.movies.model.TmMovie
+import com.nickrankin.traktapp.dao.show.TmSeasonAndStats
 import com.nickrankin.traktapp.dao.show.model.TmShow
 import com.nickrankin.traktapp.databinding.ActivityShowDetailsBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.ImdbNavigationHelper
 import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.helper.VideoTrailerHelper
 import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
 import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
+import com.nickrankin.traktapp.ui.movies.moviedetails.SimilarMoviesFragment
 import com.nickrankin.traktapp.ui.person.PersonActivity
 import com.nickrankin.traktapp.ui.shows.OnNavigateToEpisode
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
-import com.uwetrottmann.tmdb2.entities.*
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import org.apache.commons.lang3.StringUtils
 import org.threeten.bp.format.DateTimeFormatter
+import java.util.*
 import javax.inject.Inject
 
 private const val TAG = "ShowDetailsActivity"
 
+private const val TRAKT_DIRECTOR_KEY = "Director"
+private const val TRAKT_WRITING_KEY = "Writer"
 private const val FRAGMENT_OVERVIEW_TAG = "overview_fragment"
 private const val FRAGMENT_SEASONS_TAG = "seasons_fragment"
 private const val FRAGMENT_PROGRESS_TAG = "progress_fragment"
 private const val FRAGMENT_ACTION_BUTTONS = "action_buttons_fragment"
+private const val FRAGMENT_CREDITS = "action_buttons_fragment"
+
+private const val DISPLAY_SIMILAR = true
+private const val SHOW_STREAMING_SERVICES = true
+
 private const val SELECT_TAB_POS = "selected_tab_pos"
 
 @AndroidEntryPoint
 class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
-    SwipeRefreshLayout.OnRefreshListener, TabLayout.OnTabSelectedListener {
+    SwipeRefreshLayout.OnRefreshListener {
     private lateinit var bindings: ActivityShowDetailsBinding
 
-    private lateinit var appBarLayout: AppBarLayout
-    private lateinit var collapsingToolbarLayout: CollapsingToolbarLayout
     private lateinit var swipeRefeshLayout: SwipeRefreshLayout
-    private lateinit var tabLayout: TabLayout
 
     private var showTraktId = 0
     private var showTmdbId: Int? = null
@@ -72,8 +77,6 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
     @Inject
     lateinit var gson: Gson
 
-    private var selectedTab: Int? = null
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -81,24 +84,13 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
 
         setContentView(bindings.root)
 
-        appBarLayout = bindings.showdetailsactivityAppbarlayout
-        collapsingToolbarLayout = bindings.showdetailsactivityCollapsingToolbarLayout
-
         // Init SwipeRefreshLayout
-        swipeRefeshLayout = bindings.showdetailsactivitySwipeRefreshLayout
+        swipeRefeshLayout = bindings.showdetailsactivitySwipeLayout
         swipeRefeshLayout.setOnRefreshListener(this)
 
-        // Init TablLayout
-        tabLayout = bindings.showdetailsactivityInner.showdetailsactivityTablayout
-        tabLayout.addOnTabSelectedListener(this)
-
-        // If activity is destroyed, restore selected tab.
-        if (savedInstanceState?.containsKey(SELECT_TAB_POS) == true) {
-            selectedTab = savedInstanceState.getInt(SELECT_TAB_POS)
-        }
 
         // Action bar setup
-        setSupportActionBar(bindings.showdetailsactivityToolbar)
+        setSupportActionBar(bindings.showdetailsactivityToolbar.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         // Init variable
@@ -124,53 +116,46 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
         viewModel.resetRefreshState()
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        // Persist tab position in case activity gets destroy e.g device rotation
-        outState.putInt(SELECT_TAB_POS, tabLayout.selectedTabPosition)
-        super.onSaveInstanceState(outState)
-    }
-
     private fun getShow() {
+        val showLoadingProgressBar = bindings.showdetailsactivityProgressbar
+
         lifecycleScope.launchWhenStarted {
             viewModel.show.collectLatest { showResource ->
                 val show = showResource.data
                 when (showResource) {
                     is Resource.Loading -> {
-                        bindings.showdetailsactivityInner.showdetailsactivityMainGroup.visibility =
-                            View.GONE
-
-                        toggleProgressBar(true)
-                        Log.d(TAG, "collectShow: Show loading")
+                        // No need for 2 progressbars if swiperefresh invoked
+                        if(!swipeRefeshLayout.isRefreshing) {
+                            showLoadingProgressBar.visibility = View.VISIBLE
+                        }
                     }
                     is Resource.Success -> {
-                        bindings.showdetailsactivityInner.showdetailsactivityMainGroup.visibility =
-                            View.VISIBLE
+
 
                         if(show != null) {
-                            toggleProgressBar(false)
                             displayShowInformation(show)
-
-                            showImdbButton(show.imdb_id)
-                            handleTrailer(show.videos)
+                            displayExternalLinks(show)
                         }
+                        if(swipeRefeshLayout.isRefreshing) {
+                            swipeRefeshLayout.isRefreshing = false
+                        }
+
+                        showLoadingProgressBar.visibility = View.GONE
                     }
                     is Resource.Error -> {
-                        toggleProgressBar(false)
-
                         // If show in cache, display it cache
                         if (show != null) {
-                            bindings.showdetailsactivityInner.showdetailsactivityMainGroup.visibility =
-                                View.VISIBLE
-
                             displayShowInformation(show)
-                            showImdbButton(show.imdb_id)
-                            handleTrailer(show.videos)
                         }
 
-                        showErrorSnackbarRetryButton(showResource.error, bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer) {
+                        if(swipeRefeshLayout.isRefreshing) {
+                            swipeRefeshLayout.isRefreshing = false
+                        }
+                        showLoadingProgressBar.visibility = View.GONE
+
+                        showErrorSnackbarRetryButton(showResource.error, bindings.root) {
                             onRefresh()
                         }
-
                     }
                 }
             }
@@ -180,45 +165,15 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
     private fun initFragments() {
         val showActionButtonsFragment = ShowDetailsActionButtonsFragment.newInstance()
 
-
         supportFragmentManager.beginTransaction()
-            .add(
-                bindings.showdetailsactivityInner.showdetailsactivityButtonsFragmentContainer.id,
+            .replace(
+                bindings.showdetailsactivityActionButtons.id,
                 showActionButtonsFragment,
                 FRAGMENT_ACTION_BUTTONS
             )
+            .replace(bindings.showdetailsactivitySeason.id, ShowSeasonsFragment.newInstance())
+            .replace(bindings.showdetailsactivityCastCrew.id, ShowCreditsFragment.newInstance(), FRAGMENT_CREDITS)
             .commit()
-
-        // If device is rotated, user will see the tab that was selected, otherwise show Overview tab.
-        if (selectedTab != null) {
-            tabLayout.selectTab(tabLayout.getTabAt(selectedTab!!))
-        } else {
-            // Replace Fragment with Overview Fragment
-            supportFragmentManager.beginTransaction()
-                .add(
-                    bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer.id,
-                    ShowDetailsOverviewFragment.newInstance(),
-                    FRAGMENT_OVERVIEW_TAG
-                )
-                .commit()
-        }
-
-    }
-
-    private fun toggleProgressBar(isRefreshing: Boolean) {
-        val progressBar = bindings.showdetailsactivityInner.showdetailsactivityProgressbar
-
-        if (swipeRefeshLayout.isRefreshing) {
-            swipeRefeshLayout.isRefreshing = false
-        }
-
-        if (isRefreshing) {
-            progressBar.visibility = View.VISIBLE
-        }
-        else {
-            progressBar.visibility = View.GONE
-        }
-
     }
 
     private fun displayShowInformation(tmShow: TmShow?) {
@@ -226,7 +181,13 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
             return
         }
 
-        displayToolbarTitle(tmShow.name)
+        if(SHOW_STREAMING_SERVICES) {
+            displayStreamingServices(tmShow)
+        }
+
+        showSimilarShows(tmShow)
+
+        supportActionBar?.title = tmShow.name
 
 
         if (tmShow.backdrop_path?.isNotEmpty() == true) {
@@ -235,20 +196,32 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
                 .into(bindings.showdetailsactivityBackdrop)
         }
 
-        bindings.showdetailsactivityInner.apply {
+        bindings.apply {
+
+            showdetailsactivityNumberEpisodes.text = "Total episodes: ${tmShow.num_episodes ?:  "Unknown" }"
+
+            if(!tmShow.language.isNullOrEmpty()) {
+                showdetailsactivityLanguage.visibility = View.VISIBLE
+                showdetailsactivityLanguage.text = "Language: ${ Locale.Builder().setLanguage(tmShow.language).build().displayLanguage }"
+            } else {
+                showdetailsactivityLanguage.visibility = View.GONE
+            }
 
             if(!tmShow.created_by.isNullOrEmpty()) {
-                showdetailsactivityDirected.visibility = View.VISIBLE
+                showdetailsactivityDirectedByTitle.visibility = View.VISIBLE
 
-                displayDirectors(tmShow.created_by) { directorClickedCallback ->
-                    lifecycleScope.launchWhenStarted {
-                        showDirector(directorClickedCallback?.person?.ids?.tmdb)
-                    }
-                }
+                displayDirectors(tmShow.created_by)
 
             } else {
-                showdetailsactivityDirected.visibility = View.GONE
+                showdetailsactivityDirectedByTitle.visibility = View.GONE
+            }
 
+            if(!tmShow.written_by.isNullOrEmpty()) {
+                showdetailsactivityWrittenByTitle.visibility = View.VISIBLE
+
+                displayWriters(tmShow.written_by)
+            } else {
+                showdetailsactivityWrittenByTitle.visibility = View.GONE
             }
 
             if (tmShow.poster_path?.isNotEmpty() == true) {
@@ -258,45 +231,40 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
             }
 
             showdetailsactivityTitle.text = tmShow.name
+            showdetailsactivityOverview.text = tmShow.overview
 
             if(tmShow.status != null) {
                 showdetailsactivityStatus.visibility = View.VISIBLE
 
-                showdetailsactivityStatus.text = "Status: ${tmShow.status}"
+                showdetailsactivityStatus.text = "Status: ${ StringUtils.capitalize(tmShow.status.toString()) }"
             } else {
                 showdetailsactivityStatus.visibility = View.GONE
-
             }
 
             if (tmShow.first_aired != null) {
-                showdetailsactivityFirstAired.visibility = View.VISIBLE
+                showdetailsactivityReleaseDate.visibility = View.VISIBLE
 
-                showdetailsactivityFirstAired.text = "Premiered: ${tmShow.first_aired.format(
+                showdetailsactivityReleaseDate.text = "Premiered: ${tmShow.first_aired.format(
                     DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT))
                 ) }"
             } else {
-                showdetailsactivityFirstAired.visibility = View.GONE
+                showdetailsactivityReleaseDate.visibility = View.GONE
             }
 
             if(tmShow.network != null) {
-                bindings.showdetailsactivityInner.showdetailsactivityCompany.visibility = View.VISIBLE
 
                 displayNetworks(listOf(tmShow.network)) { networkClickCallback ->
                 }
-            } else {
-                bindings.showdetailsactivityInner.showdetailsactivityCompany.visibility = View.GONE
             }
 
             if(tmShow.country != null) {
                 showdetailsactivityCountry.visibility = View.VISIBLE
 
-                displayCountries(listOf(tmShow.country)) { countryClickCallback ->
+                showdetailsactivityCountry.text = "Country ${ Locale("", tmShow.country).displayCountry }"
 
-                }
             } else {
                 showdetailsactivityCountry.visibility = View.GONE
             }
-
 
             if (tmShow.runtime != null) {
                 showdetailsactivityRuntime.visibility = View.VISIBLE
@@ -307,63 +275,61 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
             }
 
             if(tmShow.genres?.isNotEmpty() == true) {
-                showdetailsactivityGenres.visibility = View.VISIBLE
 
                 displayGenres(tmShow.genres) { genresClickCallback ->
 
                 }
-            } else {
-                showdetailsactivityGenres.visibility = View.GONE
             }
-
-            if(tmShow.trakt_rating != 0.0) {
-                showdetailsactivityTraktRating.visibility = View.VISIBLE
-
-                showdetailsactivityTraktRating.text = "Trakt user rating ${String.format("%.1f", tmShow.trakt_rating)}"
-            } else {
-                showdetailsactivityTraktRating.visibility = View.GONE
-
-            }
-
-            showdetailsactivityNumEpisodes.text = "Total episodes: ${tmShow.num_episodes}"
         }
     }
 
-    private suspend fun showDirector(directorTmdbId: Int?) {
-        if(directorTmdbId == null) {
-            Log.d(TAG, "showDirector: Director TMDB ID null, returning..")
-            return
+    private fun displayExternalLinks(show: TmShow) {
+        if(show.imdb_id != null) {
+            bindings.showdetailsactivityChipImdb.setOnClickListener {
+                ImdbNavigationHelper.navigateToImdb(this, show.imdb_id)
+            }
+        } else {
+            bindings.showdetailsactivityChipImdb.visibility = View.GONE
         }
 
-            val person = viewModel.getTraktPersonByTmdbId(directorTmdbId)
+        if(show.homepage != null) {
+            bindings.showdetailsactivityChipOfficialWebsite.setOnClickListener {
 
-            if(person != null) {
-                val intent = Intent(this, PersonActivity::class.java)
-                intent.putExtra(PersonActivity.PERSON_ID_KEY, person.ids.trakt)
-
-                startActivity(intent)
+                try {
+                    val i = Intent(Intent.ACTION_VIEW, Uri.parse(show.homepage))
+                    startActivity(i)
+                } catch(e: Exception) {
+                    Toast.makeText(this, "Error loading the Movie homepage. ", Toast.LENGTH_SHORT).show()
+                    Log.e(TAG, "displayExternalLinks: Couldn't load homepage, ${e.message}", )
+                }
             }
+        } else {
+            bindings.showdetailsactivityChipOfficialWebsite.visibility = View.GONE
+        }
 
+        if(show.tmdb_id != null) {
+            bindings.showdetailsactivityChipTmdb.setOnClickListener {
+                try {
+                    val i = Intent(Intent.ACTION_VIEW, Uri.parse(AppConstants.TMDB_SHOW_URL + show.tmdb_id))
+                    startActivity(i)
+                } catch(e: Exception) {
+                    Log.e(TAG, "displayExternalLinks: Error loading TMDB URL: ${e.message}", )
+                    Toast.makeText(this, "Error loading TMDB URL.", Toast.LENGTH_SHORT).show()
+                }
+
+            }
+        } else {
+            bindings.showdetailsactivityChipTmdb.visibility = View.GONE
+        }
     }
 
-    private fun displayToolbarTitle(title: String?) {
-        // Only show the title once the toolbar is totally collapsed
-        // https://stackoverflow.com/questions/31662416/show-collapsingtoolbarlayout-title-only-when-collapsed
-        var isShow = true
-        var scrollRange = -1
-        appBarLayout.addOnOffsetChangedListener(AppBarLayout.OnOffsetChangedListener { barLayout, verticalOffset ->
-            if (scrollRange == -1) {
-                scrollRange = barLayout?.totalScrollRange!!
-            }
-            if (scrollRange + verticalOffset == 0) {
-                collapsingToolbarLayout.title = title
-                isShow = true
-            } else if (isShow) {
-                collapsingToolbarLayout.title =
-                    " " //careful there should a space between double quote otherwise it wont work
-                isShow = false
-            }
-        })
+    private fun displayStreamingServices(show: TmShow) {
+        lifecycleScope.launchWhenStarted {
+            supportFragmentManager.beginTransaction()
+                .replace(bindings.showdetailsactivityWatch.id, ShowVideServicesFragment())
+                .commit()
+        }
+
     }
 
     override fun navigateToEpisode(
@@ -397,80 +363,78 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
     }
 
     override fun onRefresh() {
+        super.onRefresh()
+
         viewModel.onRefresh()
+
     }
 
-    private fun handleTrailer(videos: Videos?) {
-        if (videos != null && videos.results?.isNotEmpty() == true) {
-            val trailerButton = bindings.showdetailsactivityInner.showdetailsactivityTrailer
-            trailerButton.visibility = View.VISIBLE
 
-            trailerButton.setOnClickListener {
-                VideoTrailerHelper.watchVideoTrailer(this, videos)
-            }
-        }
+    override fun onDestroy() {
+        super.onDestroy()
     }
 
-    private fun showImdbButton(imdbId: String?) {
-        if(imdbId == null) {
-            bindings.showdetailsactivityInner.showdetailsactivityImdbButton.visibility = View.GONE
+    private fun displayDirectors(people: List<com.uwetrottmann.trakt5.entities.CrewMember?>) {
 
+        Log.d(TAG, "displayDirectors: Got ${people.size} people!")
+
+        if(people.isEmpty()) {
+            bindings.showdetailsactivityDirectedByTitle.visibility = View.GONE
+            bindings.showdetailsactivityDirectByChipgroup.visibility = View.GONE
             return
+        } else {
+            bindings.showdetailsactivityDirectedByTitle.visibility = View.VISIBLE
+            bindings.showdetailsactivityDirectByChipgroup.visibility = View.VISIBLE
         }
 
-            val imdbButton = bindings.showdetailsactivityInner.showdetailsactivityImdbButton
-            imdbButton.visibility = View.VISIBLE
+        val directorsChipGroup = bindings.showdetailsactivityDirectByChipgroup
+        directorsChipGroup.removeAllViews()
 
-            imdbButton.setOnClickListener {
-                ImdbNavigationHelper.navigateToImdb(this, imdbId)
+        directorsChipGroup.apply {
+            people.forEach { director ->
+                val chip = Chip(context)
+
+                chip.text = director?.person?.name
+
+                chip.setOnClickListener {
+                    navigateToPerson(director?.person?.ids?.trakt)
+                }
+
+
+                this.addView(chip)
             }
-
+        }
     }
 
-    private fun displayDirectors(
-        people: List<com.uwetrottmann.trakt5.entities.CrewMember?>,
-        callback: (crewMember: com.uwetrottmann.trakt5.entities.CrewMember?) -> Unit
-    ) {
-        val layout = bindings.showdetailsactivityInner.showdetailsactivityDirected
+    private fun displayWriters(
+        people: List<com.uwetrottmann.trakt5.entities.CrewMember?>) {
 
-        // If user refreshes or rotates screen, ensure to clear existing views
-        layout.removeAllViews()
+        Log.d(TAG, "displayWriters: Got ${people.size} people!")
 
-        Log.d(TAG, "getDirectorsViewList: Got ${people.size} people!")
-
-        layout.addView(setTextViewLayoutConfig(getTextView(layout.context, "Directed by: ")))
-
-        // List to store a TextView for each director
-        val textViews: MutableList<TextView> = mutableListOf()
-
-        people.map { director ->
-
-            // Check if director is last entry, in this case no trailing comma ','
-            val textView: TextView = if (director != people.last()) {
-                setTextViewLayoutConfig(getTextView(layout.context, director?.person?.name + ", "))
-            } else {
-                setTextViewLayoutConfig(getTextView(layout.context, director?.person?.name ?: ""))
-            }
-
-            // Director was clicked, we supply CrewMember object to callback
-            textView.setOnClickListener {
-                callback(director)
-            }
-
-            textViews.add(textView)
+        if(people.isEmpty()) {
+            bindings.showdetailsactivityWrittenByTitle.visibility = View.GONE
+            bindings.showdetailsactivityWrittenByChipgroup.visibility = View.GONE
+            return
+        } else {
+            bindings.showdetailsactivityWrittenByTitle.visibility = View.VISIBLE
+            bindings.showdetailsactivityWrittenByChipgroup.visibility = View.VISIBLE
         }
 
-        if (textViews.size > 2) {
-            val initialTextViews = truncateTextViewList(layout, textViews)
+        val directorsChipGroup = bindings.showdetailsactivityWrittenByChipgroup
+        directorsChipGroup.removeAllViews()
 
-            initialTextViews.map { initialTextView ->
-                layout.addView(initialTextView)
-            }
+        directorsChipGroup.apply {
+            people.forEach { writer ->
+                val chip = Chip(context)
+
+                chip.text = writer?.person?.name
+
+                chip.setOnClickListener {
+                    navigateToPerson(writer?.person?.ids?.trakt)
+                }
 
 
-        } else {
-            textViews.map {
-                layout.addView(it)
+                this.addView(chip)
             }
         }
     }
@@ -479,7 +443,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
         networks: List<String?>,
         callback: (company: String?) -> Unit
     ) {
-        val layout = bindings.showdetailsactivityInner.showdetailsactivityCompany
+        val layout = bindings.showdetailsactivityCompanies
 
         // If user refreshes or rotates screen, ensure to clear existing views
         layout.removeAllViews()
@@ -527,98 +491,19 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
     }
 
     private fun displayGenres(genres: List<String?>, callback: (genre: String?) -> Unit) {
-        val layout = bindings.showdetailsactivityInner.showdetailsactivityGenres
+        val genresGroup = bindings.showdetailsactivityTagsChipgroup
+        genresGroup.removeAllViews()
 
-        // If user refreshes or rotates screen, ensure to clear existing views
-        layout.removeAllViews()
+        genres.forEach { genre ->
+            val tag = Chip(this)
+            tag.text = StringUtils.capitalize(genre)
 
-        if (genres.size > 1) {
-            layout.addView(setTextViewLayoutConfig(getTextView(layout.context, "Genres: ")))
+            tag.setOnClickListener {
+//                navigateToTag(genre)
 
-        } else {
-            layout.addView(setTextViewLayoutConfig(getTextView(layout.context, "Genre: ")))
-        }
-
-        // List to store a TextView for each director
-        val textViews: MutableList<TextView> = mutableListOf()
-
-        genres.map { genre ->
-
-            // Check if director is last entry, in this case no trailing comma ','
-            val textView: TextView = if (genre != genres.last()) {
-                setTextViewLayoutConfig(getTextView(layout.context, StringUtils.capitalize(genre) + ", "))
-            } else {
-                setTextViewLayoutConfig(getTextView(layout.context, StringUtils.capitalize(genre) ?: ""))
             }
 
-            // Director was clicked, we supply CrewMember object to callback
-            textView.setOnClickListener {
-                callback(genre)
-            }
-
-            textViews.add(textView)
-        }
-
-        if (textViews.size > 4) {
-            val initialTextViews = truncateTextViewList(layout, textViews)
-
-            initialTextViews.map { initialTextView ->
-                layout.addView(initialTextView)
-            }
-
-
-        } else {
-            textViews.map {
-                layout.addView(it)
-            }
-        }
-    }
-
-    private fun displayCountries(countries: List<String?>, callback: (country: String?) -> Unit) {
-        val layout = bindings.showdetailsactivityInner.showdetailsactivityCountry
-
-        // If user refreshes or rotates screen, ensure to clear existing views
-        layout.removeAllViews()
-
-        if (countries.size > 1) {
-            layout.addView(setTextViewLayoutConfig(getTextView(layout.context, "Countries: ")))
-
-        } else {
-            layout.addView(setTextViewLayoutConfig(getTextView(layout.context, "Country: ")))
-        }
-
-        // List to store a TextView for each director
-        val textViews: MutableList<TextView> = mutableListOf()
-
-        countries.map { country ->
-
-            // Check if director is last entry, in this case no trailing comma ','
-            val textView: TextView = if (country != countries.last()) {
-                setTextViewLayoutConfig(getTextView(layout.context, country + ", "))
-            } else {
-                setTextViewLayoutConfig(getTextView(layout.context, country ?: ""))
-            }
-
-            // Director was clicked, we supply CrewMember object to callback
-            textView.setOnClickListener {
-                callback(country)
-            }
-
-            textViews.add(textView)
-        }
-
-        if (textViews.size > 2) {
-            val initialTextViews = truncateTextViewList(layout, textViews)
-
-            initialTextViews.map { initialTextView ->
-                layout.addView(initialTextView)
-            }
-
-
-        } else {
-            textViews.map {
-                layout.addView(it)
-            }
+            genresGroup.addView(tag)
         }
     }
 
@@ -679,7 +564,6 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
         return initialTextViews
     }
 
-
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
 
         when (item.itemId) {
@@ -691,63 +575,31 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
         return false
     }
 
-    override fun onTabSelected(tab: TabLayout.Tab?) {
-        resetRefreshState()
+    private fun navigateToPerson(traktId: Int?) {
+        if(traktId == null) {
+            Log.e(TAG, "navigateToPerson: Director hasn't got Trakt ID associatted, returning")
 
-        when (tab?.position) {
-            0 -> {
-                supportFragmentManager.beginTransaction()
-                    .replace(
-                        bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer.id,
-                        ShowDetailsOverviewFragment.newInstance(),
-                        FRAGMENT_OVERVIEW_TAG
-                    )
-                    .commit()
-
-                Log.d(TAG, "onTabSelected: Tab Overview selected")
-            }
-            1 -> {
-                supportFragmentManager.beginTransaction()
-                    .replace(
-                        bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer.id,
-                        ShowDetailsSeasonsFragment.newInstance(),
-                        FRAGMENT_SEASONS_TAG
-                    )
-                    .commit()
-
-                Log.d(TAG, "onTabSelected: Tab Seasons selected")
-            }
-            2 -> {
-                supportFragmentManager.beginTransaction()
-                    .replace(
-                        bindings.showdetailsactivityInner.showdetailsactivityFragmentContainer.id,
-                        ShowDetailsProgressFragment.newInstance(),
-                        FRAGMENT_PROGRESS_TAG
-                    )
-                    .commit()
-
-                Log.d(TAG, "onTabSelected: Tab Progress selected")
-            }
-            else -> {
-
-                Log.d(TAG, "onTabSelected: Tab Unknown (${tab?.position}) selected")
-            }
+            return
         }
+
+        val intent = Intent(this, PersonActivity::class.java)
+        intent.putExtra(PersonActivity.PERSON_ID_KEY, traktId)
+
+        startActivity(intent)
     }
 
-    override fun onTabUnselected(tab: TabLayout.Tab?) {
+    private fun showSimilarShows(show: TmShow?) {
+        if(show == null || !DISPLAY_SIMILAR) {
+            return
+        }
 
+        val fm = supportFragmentManager
+        val similarShowsCardView = bindings.showdetailsactivitySimilar
+
+        fm.beginTransaction()
+            .replace(similarShowsCardView.id, SimilarShowsFragment.newInstance(show.tmdb_id ?: 0, show.language))
+            .commit()
     }
-
-    override fun onTabReselected(tab: TabLayout.Tab?) {
-    }
-
-    private fun resetRefreshState() {
-        // Without this, and if user manually refresh the state (swipe refresh) any subsequent tab presses will refresh all entities.
-        viewModel.resetRefreshState()
-    }
-
-
 
     private fun displayToastMessage(message: String, length: Int) {
         Toast.makeText(this, message, length).show()
