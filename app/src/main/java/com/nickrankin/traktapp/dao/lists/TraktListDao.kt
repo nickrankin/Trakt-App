@@ -1,6 +1,7 @@
 package com.nickrankin.traktapp.dao.lists
 
 import androidx.room.*
+import androidx.sqlite.db.SupportSQLiteQuery
 import com.nickrankin.traktapp.dao.lists.model.TraktList
 import com.nickrankin.traktapp.dao.lists.model.TraktListAndEntries
 import kotlinx.coroutines.flow.Flow
@@ -10,6 +11,9 @@ interface TraktListDao {
     @Transaction
     @Query("SELECT * FROM lists")
     fun getAllTraktLists(): Flow<List<TraktList>>
+
+    @RawQuery(observedEntities = [TraktList::class])
+    fun getSortedTraktLists(query: SupportSQLiteQuery): Flow<List<TraktList>>
 
     @Transaction
     @Query("SELECT * FROM lists WHERE trakt_id = :traktId")

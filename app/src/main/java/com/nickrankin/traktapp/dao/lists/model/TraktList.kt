@@ -22,7 +22,7 @@ data class TraktList(
     val item_count: Int?,
     val likes: Int?,
     val privacy: ListPrivacy,
-    val sortBy: SortBy?,
-    val sortHow: SortHow?,
+    var sortBy: SortBy?,
+    var sortHow: SortHow?,
     val user: User?
 )

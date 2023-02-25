@@ -4,16 +4,16 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.*
 import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -23,6 +23,8 @@ import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.lists.ListEntryAdapter
+import com.nickrankin.traktapp.dao.lists.model.TraktList
+import com.nickrankin.traktapp.dao.lists.model.TraktListEntry
 import com.nickrankin.traktapp.databinding.FragmentListItemsBinding
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.TmdbImageLoader
@@ -35,13 +37,17 @@ import com.nickrankin.traktapp.model.lists.TraktListsViewModel
 import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
+import com.uwetrottmann.trakt5.enums.SortBy
+import com.uwetrottmann.trakt5.enums.SortHow
 import com.uwetrottmann.trakt5.enums.Type
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 private const val TAG = "ListItemsFragment"
+
 @AndroidEntryPoint
 class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
@@ -54,6 +60,11 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var listEntryAdapter: ListEntryAdapter
+
+    private val _sortingLiveData = MutableLiveData<Pair<SortBy?, SortHow?>>()
+    private val sortingLiveData: LiveData<Pair<SortBy?, SortHow?>> = _sortingLiveData
+
+    private lateinit var selectedList: TraktList
 
     private var listTraktId: Int = 0
 
@@ -82,9 +93,11 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
         listTraktId = arguments?.getInt(ListEntryViewModel.LIST_ID_KEY, 0) ?: 0
 //        listName = arguments?.getString(ListEntryViewModel.LIST_NAME_KEY, "Unknown List") ?: "Unknown List"
 
-        if(!isLoggedIn) {
+        if (!isLoggedIn) {
             handleLoggedOutState(this.id)
         }
+
+        setHasOptionsMenu(true)
 
 //        updateTitle("$listName Entries")
 
@@ -93,16 +106,26 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
         getListEntries()
         getEvents()
     }
-    
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+
+        inflater.inflate(R.menu.list_items_menu, menu)
+    }
+
     private fun getList() {
-        lifecycleScope.launchWhenStarted { 
+        lifecycleScope.launchWhenStarted {
             viewModel.list.collectLatest { listResource ->
-                when(listResource) {
+                when (listResource) {
                     is Resource.Loading -> {}
                     is Resource.Success -> {
-                        if(listResource.data != null) {
+                        if (listResource.data != null) {
+                            selectedList = listResource.data!!
                             updateTitle(listResource.data?.name ?: "Unknown List")
                         }
+
+                        _sortingLiveData.value =
+                            Pair(listResource.data?.sortBy, listResource.data?.sortHow)
                     }
                     is Resource.Error -> {
                         handleError(listResource.error, null)
@@ -118,24 +141,26 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
         lifecycleScope.launch {
             viewModel.listItems.collectLatest { listEntriesData ->
-                when(listEntriesData) {
+
+                when (listEntriesData) {
                     is Resource.Loading -> {
                         progressBar.visibility = View.VISIBLE
                         Log.d(TAG, "getListEntries: Loading entires")
                     }
                     is Resource.Success -> {
                         progressBar.visibility = View.GONE
-                        if(swipeRefreshLayout.isRefreshing) {
+                        if (swipeRefreshLayout.isRefreshing) {
                             swipeRefreshLayout.isRefreshing = false
                         }
 
                         val listItems = listEntriesData.data ?: emptyList()
 
-                        if(listItems.isNotEmpty()) {
+                        if (listItems.isNotEmpty()) {
                             messageContainerTextView.visibility = View.GONE
                             recyclerView.visibility = View.VISIBLE
 
-                            listEntryAdapter.submitList(listEntriesData.data)
+                            sortAndDisplayListEntries(listEntriesData.data ?: emptyList())
+
                         } else {
                             messageContainerTextView.visibility = View.VISIBLE
                             recyclerView.visibility = View.GONE
@@ -146,13 +171,13 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                     }
                     is Resource.Error -> {
                         progressBar.visibility = View.GONE
-                        if(swipeRefreshLayout.isRefreshing) {
+                        if (swipeRefreshLayout.isRefreshing) {
                             swipeRefreshLayout.isRefreshing = false
                         }
 
                         val listItems = listEntriesData.data ?: emptyList()
 
-                        if(listItems.isNotEmpty()) {
+                        if (listItems.isNotEmpty()) {
                             messageContainerTextView.visibility = View.GONE
                             recyclerView.visibility = View.VISIBLE
 
@@ -167,32 +192,167 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                         handleError(listEntriesData.error, null)
                     }
                 }
+
             }
         }
     }
 
+    private fun sortAndDisplayListEntries(listEntries: List<TraktListEntry>) {
+        // Only update adapter when we have sorting options from the TraktList itself. We retain sortorder of lists on Trakt.tv
+        sortingLiveData.observe(viewLifecycleOwner) { sortingPair ->
+            listEntryAdapter.submitList(
+                getSortedList(
+                    listEntries,
+                    sortingPair.first,
+                    sortingPair.second
+                )
+            )
+
+        }
+    }
+
+    private fun getSortedList(
+        listItems: List<TraktListEntry>,
+        sortBy: SortBy?,
+        sortHow: SortHow?
+    ): List<TraktListEntry> {
+        // If sorting not specified, display list as is
+        if (sortBy == null || sortHow == null) {
+            return listItems
+        }
+
+        Log.d(TAG, "getSortedList: Sorting list by : $sortBy $sortHow")
+
+        return when (sortBy) {
+            SortBy.RANK -> {
+                var sortedList = listItems.sortedBy {
+                    it.entryData.rank
+                }
+
+                if(sortHow == SortHow.DESC) {
+                    sortedList = sortedList.reversed()
+                }
+
+                sortedList
+            }
+            SortBy.ADDED -> {
+                var sortedList = listItems.sortedBy {
+                    it.entryData.listed_at
+                }
+
+                if(sortHow == SortHow.DESC) {
+                    sortedList = sortedList.reversed()
+                }
+
+                sortedList
+            }
+            SortBy.TITLE -> {
+                var sortedList = listItems.sortedBy {
+                    when (it.entryData.type) {
+                        Type.MOVIE -> {
+                            it.movie?.title?.lowercase()
+                        }
+                        Type.SHOW -> {
+                            it.show?.title?.lowercase()
+                        }
+                        Type.EPISODE -> {
+                            it.episodeShow?.title!!.lowercase()
+
+                        }
+                        Type.PERSON -> {
+                            it.person?.title?.lowercase()
+
+                        }
+                        Type.LIST -> {
+                            it.entryData.type.name.lowercase()
+                        }
+                    }
+                }
+
+                if(sortHow == SortHow.DESC) {
+                    sortedList = sortedList.reversed()
+                }
+
+                sortedList
+            }
+            SortBy.RELEASED -> {
+                var sortedList = listItems.sortedBy {
+                    when (it.entryData.type) {
+                        Type.MOVIE -> {
+                            it.movie?.first_aired.toString()
+                        }
+                        Type.SHOW -> {
+                            it.show?.first_aired.toString()
+                        }
+                        Type.EPISODE -> {
+                            it.episode?.first_aired.toString()
+
+                        }
+                        Type.PERSON -> {
+                            it.person?.dob.toString()
+
+                        }
+                        Type.LIST -> {
+                            it.entryData.listed_at.toString()
+                        }
+                    }
+                }
+
+                if(sortHow == SortHow.DESC) {
+                    sortedList = sortedList.reversed()
+                }
+
+                sortedList
+            }
+            SortBy.RUNTIME -> {
+                listItems
+            }
+            SortBy.POPULARITY -> {
+                listItems
+            }
+            SortBy.PERCENTAGE -> {
+                listItems
+            }
+            SortBy.VOTES -> {
+                listItems
+            }
+            SortBy.MY_RATING -> {
+                listItems
+            }
+            SortBy.RANDOM -> {listItems}
+        }
+    }
+
+
     private fun getEvents() {
         lifecycleScope.launchWhenStarted {
             viewModel.events.collectLatest { event ->
-                when(event) {
+                when (event) {
 
                     is TraktListsViewModel.Event.RemoveEntryEvent -> {
                         val eventSyncResponseResource = event.syncResponseResource
 
-                        when(eventSyncResponseResource) {
+                        when (eventSyncResponseResource) {
                             is Resource.Success -> {
-                                val syncResponseDeletedStats = eventSyncResponseResource.data?.deleted
+                                val syncResponseDeletedStats =
+                                    eventSyncResponseResource.data?.deleted
 
-                                if(syncResponseDeletedStats != null) {
-                                    if(syncResponseDeletedStats.movies > 0 || syncResponseDeletedStats.shows > 0 || syncResponseDeletedStats.episodes > 0 || syncResponseDeletedStats.people > 0) {
-                                        displayToastMessage("Successfully removed entry from the list!", Toast.LENGTH_SHORT)
+                                if (syncResponseDeletedStats != null) {
+                                    if (syncResponseDeletedStats.movies > 0 || syncResponseDeletedStats.shows > 0 || syncResponseDeletedStats.episodes > 0 || syncResponseDeletedStats.people > 0) {
+                                        displayToastMessage(
+                                            "Successfully removed entry from the list!",
+                                            Toast.LENGTH_SHORT
+                                        )
                                     }
 
                                 }
 
                             }
                             is Resource.Error -> {
-                                handleError(eventSyncResponseResource.error, "Error removing entry item ")
+                                handleError(
+                                    eventSyncResponseResource.error,
+                                    "Error removing entry item "
+                                )
                             }
                             else -> {}
 
@@ -201,6 +361,17 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                     is TraktListsViewModel.Event.AddListEvent -> {}
                     is TraktListsViewModel.Event.DeleteListEvent -> {}
                     is TraktListsViewModel.Event.EditListEvent -> {}
+                    is TraktListsViewModel.Event.ErrorEvent -> {
+                        // Null means no error so list update successful, only show error on Throwable not being NULL
+                        if(event.error != null) {
+                            Toast.makeText(
+                                requireContext(),
+                                "Could not update the list ordering. ${event.error.localizedMessage}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+
+                    }
                 }
             }
         }
@@ -210,13 +381,18 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
         recyclerView = bindings!!.traktlistsfragmentRecyclerview
         val lm = getResponsiveGridLayoutManager(requireContext(), null)
 
-        listEntryAdapter = ListEntryAdapter(glide, tmdbImageLoader, sharedPreferences) { traktId, action, type,  selectedItem ->
-            when(type) {
+        listEntryAdapter = ListEntryAdapter(
+            glide,
+            tmdbImageLoader,
+            sharedPreferences
+        ) { traktId, action, type, selectedItem ->
+            when (type) {
                 Type.MOVIE -> {
-                    when(action) {
+                    when (action) {
                         ListEntryAdapter.ACTION_VIEW -> {
-                            if(traktId != null) {
-                                val movieIntent = Intent(requireContext(), MovieDetailsActivity::class.java)
+                            if (traktId != null) {
+                                val movieIntent =
+                                    Intent(requireContext(), MovieDetailsActivity::class.java)
                                 movieIntent.putExtra(
                                     MovieDetailsActivity.MOVIE_DATA_KEY, MovieDataModel(
                                         traktId,
@@ -232,7 +408,7 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
                         }
                         ListEntryAdapter.ACTION_REMOVE -> {
-                            if(traktId != null) {
+                            if (traktId != null) {
                                 removeListItemEntry(traktId, Type.MOVIE)
 
                             }
@@ -241,11 +417,12 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
                 }
                 Type.SHOW -> {
-                    when(action) {
+                    when (action) {
                         ListEntryAdapter.ACTION_VIEW -> {
 
-                            if(traktId != null) {
-                                val showIntent = Intent(requireContext(), ShowDetailsActivity::class.java)
+                            if (traktId != null) {
+                                val showIntent =
+                                    Intent(requireContext(), ShowDetailsActivity::class.java)
                                 showIntent.putExtra(
                                     ShowDetailsActivity.SHOW_DATA_KEY,
                                     ShowDataModel(
@@ -261,7 +438,7 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
                         }
                         ListEntryAdapter.ACTION_REMOVE -> {
-                            if(traktId != null) {
+                            if (traktId != null) {
                                 removeListItemEntry(traktId, Type.SHOW)
 
                             }
@@ -270,11 +447,12 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                     }
                 }
                 Type.EPISODE -> {
-                    when(action) {
+                    when (action) {
                         ListEntryAdapter.ACTION_VIEW -> {
 
-                            if(selectedItem.episodeShow?.trakt_id != null) {
-                                val episodeIntent = Intent(requireContext(), EpisodeDetailsActivity::class.java)
+                            if (selectedItem.episodeShow?.trakt_id != null) {
+                                val episodeIntent =
+                                    Intent(requireContext(), EpisodeDetailsActivity::class.java)
                                 episodeIntent.putExtra(
                                     EpisodeDetailsActivity.EPISODE_DATA_KEY,
                                     EpisodeDataModel(
@@ -292,7 +470,7 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
                         }
                         ListEntryAdapter.ACTION_REMOVE -> {
-                            if(selectedItem.episode?.trakt_id != null) {
+                            if (selectedItem.episode?.trakt_id != null) {
                                 removeListItemEntry(selectedItem.episode.trakt_id, Type.EPISODE)
                             }
 
@@ -324,6 +502,29 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
             .create()
 
         alertDialog.show()
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+
+        when(item.itemId) {
+            R.id.listitemsmenu_added -> {
+                viewModel.changeListOrdering(selectedList, SortBy.ADDED)
+            }
+            R.id.listitemsmenu_rank -> {
+                viewModel.changeListOrdering(selectedList, SortBy.RANK)
+
+            }
+            R.id.listitemsmenu_title -> {
+                viewModel.changeListOrdering(selectedList, SortBy.TITLE)
+
+            }
+            R.id.listitemsmenu_released -> {
+                viewModel.changeListOrdering(selectedList, SortBy.RELEASED)
+
+            }
+        }
+
+        return true
     }
 
     override fun onStart() {

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/listsmenu_sort"
+        android:icon="@drawable/ic_baseline_filter_list_24"
+        android:title="Sort"
+        app:showAsAction="always">
+        <menu>
+            <item
+                android:id="@+id/listsmenu_sort_name"
+                android:title="Name" />
+            <item
+                android:id="@+id/listsmenu_sort_numitems"
+                android:title="Number of Entries" />
+            <item
+                android:id="@+id/listsmenu_sort_created"
+                android:title="Created" />
+        </menu>
+    </item>
+
+</menu>

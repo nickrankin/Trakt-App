@@ -7,18 +7,24 @@ import android.os.Bundle
 import android.os.PersistableBundle
 import android.text.SpannableStringBuilder
 import android.util.Log
+import android.view.Menu
+import android.view.MenuInflater
 import android.view.View
 import android.widget.*
 import androidx.activity.viewModels
 import androidx.annotation.ArrayRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
+import androidx.appcompat.widget.Toolbar
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.navigation.NavigationView
+import com.google.android.material.tabs.TabLayout
 import com.nickrankin.traktapp.BaseActivity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.lists.TraktListsAdapter
@@ -45,6 +51,9 @@ class TraktListsActivity : BaseActivity(), OnTitleChangeListener {
     private val viewModel: TraktListsViewModel by viewModels()
     private var listsFragment: ListsFragment? = null
 
+    private lateinit var toolbar: Toolbar
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var navView: NavigationView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,12 +61,14 @@ class TraktListsActivity : BaseActivity(), OnTitleChangeListener {
         bindings = ActivityTraktListsBinding.inflate(layoutInflater)
         setContentView(bindings.root)
 
+        toolbar = bindings.toolbarLayout.toolbar
         setSupportActionBar(bindings.toolbarLayout.toolbar)
 
         supportActionBar?.title = "My Lists"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         displayAllLists()
+        setupDrawerLayout()
 
         getActiveList()
     }
@@ -67,16 +78,45 @@ class TraktListsActivity : BaseActivity(), OnTitleChangeListener {
         lifecycleScope.launchWhenStarted {
             viewModel.activeList.collectLatest { activeListId ->
                 if(activeListId != null) {
-
                     navigateList(activeListId)
+                    showDrawerIcon(false)
                 } else {
                     supportFragmentManager.popBackStack()
-
                     displayAllLists()
+                    showDrawerIcon(true)
+
                 }
             }
         }
     }
+
+    private fun setupDrawerLayout() {
+        setSupportActionBar(toolbar)
+
+        navView = bindings.traktlistsactivityNavView
+        drawerLayout = bindings.traktlistsactivityDrawerlayout
+
+        showDrawerIcon(true)
+
+        navView.setNavigationItemSelectedListener(this)
+    }
+
+    private fun showDrawerIcon(isEnabled: Boolean) {
+        if(isEnabled) {
+            toolbar.setNavigationIcon(R.drawable.ic_baseline_menu_24)
+
+            toolbar.setNavigationOnClickListener {
+                drawerLayout.open()
+            }
+        } else {
+            toolbar.setNavigationIcon(androidx.appcompat.R.drawable.abc_ic_ab_back_material)
+
+            toolbar.setNavigationOnClickListener {
+                onSupportNavigateUp()
+            }
+        }
+    }
+
 
     private fun navigateList(traktListId: Int) {
         val listItemsFragment = ListItemsFragment.newInstance()

@@ -4,6 +4,7 @@
     <item
         android:id="@+id/trackedfiltermenu"
         android:icon="@drawable/ic_baseline_filter_list_24"
+        android:title="Filter"
         app:showAsAction="always">
         <menu>
             <item

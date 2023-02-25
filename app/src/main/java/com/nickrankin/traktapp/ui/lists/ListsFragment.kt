@@ -4,9 +4,7 @@ import android.content.DialogInterface
 import android.os.Bundle
 import android.text.SpannableStringBuilder
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.*
 import androidx.annotation.ArrayRes
 import androidx.appcompat.app.AlertDialog
@@ -70,6 +68,8 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
         updateTitle("My Lists")
 
+        setHasOptionsMenu(true)
+
         if(!isLoggedIn) {
             handleLoggedOutState(this.id)
         }
@@ -78,7 +78,12 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
         getEvents()
     }
 
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
 
+        inflater
+            .inflate(R.menu.lists_menu, menu)
+    }
 
     private fun getLists() {
         val progressBar = bindings!!.traktlistsfragmentProgressbar
@@ -388,6 +393,27 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
             }
         }
 
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId) {
+            R.id.listsmenu_sort_created -> {
+                viewModel.changeOrdering(TraktListsViewModel.SORT_MENU_CREATED)
+            }
+            R.id.listsmenu_sort_numitems -> {
+                viewModel.changeOrdering(TraktListsViewModel.SORT_MENU_NUM_ITEMS)
+
+            }
+            R.id.listsmenu_sort_name -> {
+                viewModel.changeOrdering(TraktListsViewModel.SORT_MENU_TITLE)
+
+            }
+            else -> {
+                Log.e(TAG, "onOptionsItemSelected: Invalid menu item ${item.itemId}", )
+            }
+        }
+
+        return false
     }
 
     override fun onStart() {

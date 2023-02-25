@@ -1,22 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/traktlistsactivity_swipe_refresh"
+    android:id="@+id/traktlistsactivity_drawerlayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    tools:openDrawer="start"
     tools:context=".ui.lists.TraktListsActivity"
     android:orientation="vertical">
 
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        >
         <include
             android:id="@+id/toolbar_layout"
             layout="@layout/toolbar_layout" />
 
-        <androidx.fragment.app.FragmentContainerView
+        <LinearLayout
             android:id="@+id/traktlistsactivity_fragment_container"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="?attr/actionBarSize"
+            />
 
+    </RelativeLayout>
 
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/traktlistsactivity_nav_view"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        app:menu="@menu/nav_drawer"
+        android:layout_gravity="start" />
 
-    </LinearLayout>
+</androidx.drawerlayout.widget.DrawerLayout>

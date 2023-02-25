@@ -3,6 +3,7 @@ package com.nickrankin.traktapp.repo.lists
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.room.withTransaction
+import androidx.sqlite.db.SimpleSQLiteQuery
 import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.base_entity.EpisodeBaseEnity
 import com.nickrankin.traktapp.dao.base_entity.MovieBaseEntity
@@ -22,6 +23,8 @@ import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.trakt5.entities.*
 import com.uwetrottmann.trakt5.enums.Extended
 import com.uwetrottmann.trakt5.enums.ListPrivacy
+import com.uwetrottmann.trakt5.enums.SortBy
+import com.uwetrottmann.trakt5.enums.SortHow
 import com.uwetrottmann.trakt5.enums.Type
 import kotlinx.coroutines.flow.*
 import org.threeten.bp.OffsetDateTime
@@ -29,7 +32,12 @@ import javax.inject.Inject
 import kotlin.reflect.typeOf
 
 private const val TAG = "ListsRepository"
-class ListsRepository @Inject constructor(private val traktApi: TraktApi, private val sharedPreferences: SharedPreferences, private val listsDatabase: TraktListsDatabase) {
+
+class ListsRepository @Inject constructor(
+    private val traktApi: TraktApi,
+    private val sharedPreferences: SharedPreferences,
+    private val listsDatabase: TraktListsDatabase
+) {
     private val traktLIstsDao = listsDatabase.traktListDao()
     private val listEntryDao = listsDatabase.listEntryDao()
 
@@ -66,18 +74,20 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
             traktLIstsDao.getAllTraktLists()
         },
         fetch = {
-                traktApi.tmUsers().lists(userSlug)
+            traktApi.tmUsers().lists(userSlug)
         },
         shouldFetch = { lists ->
             shouldFetch || shouldRefresh(
-                lastRefreshedAtDao.getLastRefreshed(RefreshType.LISTS).first(), null)
+                lastRefreshedAtDao.getLastRefreshed(RefreshType.LISTS).first(), null
+            )
         },
-        saveFetchResult = {lists ->
+        saveFetchResult = { lists ->
 
             // Watch list is handled seperately. This will get both list and list items, inserting entries into db
             val watchedList = getWatchedList()
 
-            val listsToBeAdded: MutableList<com.nickrankin.traktapp.dao.lists.model.TraktList> = mutableListOf()
+            val listsToBeAdded: MutableList<com.nickrankin.traktapp.dao.lists.model.TraktList> =
+                mutableListOf()
             listsToBeAdded.add(watchedList)
             listsToBeAdded.addAll(convertLists(lists))
 
@@ -97,6 +107,97 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
         }
     )
 
+    fun getLists(sortBy: String, sortHow: String, shouldFetch: Boolean) = networkBoundResource(
+        query = {
+            val query =
+                SimpleSQLiteQuery("SELECT * FROM lists ORDER BY $sortBy COLLATE NOCASE $sortHow")
+            Log.d(TAG, "getLists: Sorting ${query.sql}",)
+            traktLIstsDao.getSortedTraktLists(query)
+        },
+        fetch = {
+            traktApi.tmUsers().lists(userSlug)
+        },
+        shouldFetch = { lists ->
+            shouldFetch || shouldRefresh(
+                lastRefreshedAtDao.getLastRefreshed(RefreshType.LISTS).first(), null
+            )
+        },
+        saveFetchResult = { lists ->
+
+            // Watch list is handled seperately. This will get both list and list items, inserting entries into db
+            val watchedList = getWatchedList()
+
+            val listsToBeAdded: MutableList<com.nickrankin.traktapp.dao.lists.model.TraktList> =
+                mutableListOf()
+            listsToBeAdded.add(watchedList)
+            listsToBeAdded.addAll(convertLists(lists))
+
+            listsDatabase.withTransaction {
+                traktLIstsDao.deleteTraktListsFromCache()
+                traktLIstsDao.insert(listsToBeAdded)
+            }
+
+            listsDatabase.withTransaction {
+                lastRefreshedAtDao.insertLastRefreshStats(
+                    LastRefreshedAt(
+                        RefreshType.LISTS,
+                        OffsetDateTime.now()
+                    )
+                )
+            }
+        }
+    )
+
+    suspend fun reorderList(
+        traktList: com.nickrankin.traktapp.dao.lists.model.TraktList,
+        newSortBy: SortBy): Throwable? {
+
+        val newSortHow = if(traktList.sortBy == newSortBy) {
+            // Sorting by same criteria, so flip the SortHow filtering
+            if(traktList.sortHow == SortHow.DESC) {
+                SortHow.ASC
+            } else {
+                SortHow.DESC
+            }
+        } else {
+            // New sort criteria specified, so retain existing SortHow
+            traktList.sortHow
+        }
+
+        // Apply the new changes to our TraktList
+        traktList.apply {
+            sortBy = newSortBy
+            sortHow = newSortHow
+        }
+
+        try {
+            // Perform the update
+            traktApi.tmUsers().updateList(userSlug, traktList.trakt_id.toString(), getUpdatedUweTraktList(traktList))
+
+            // Update the cached list
+            listsDatabase.withTransaction {
+                traktLIstsDao.update(traktList)
+            }
+
+            return null
+        } catch (t: Throwable) {
+            return t
+        }
+    }
+
+    private fun getUpdatedUweTraktList(traktList: TraktList): com.uwetrottmann.trakt5.entities.TraktList {
+        return TraktList().apply {
+            name = traktList.name
+            id(ListIds.trakt(traktList.trakt_id))
+            sort_by = traktList.sortBy
+            sort_how = traktList.sortHow
+            privacy = traktList.privacy
+            allow_comments = traktList.allow_comments
+            display_numbers = traktList.display_numbers
+            description = traktList.description
+        }
+    }
+
     fun getListById(traktListId: Int?, shouldFetch: Boolean) = networkBoundResource(
         query = {
             traktLIstsDao.getTraktList(traktListId ?: 0)
@@ -106,13 +207,15 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
         },
         shouldFetch = { lists ->
             traktListId != null && (shouldFetch || shouldRefresh(
-                lastRefreshedAtDao.getLastRefreshed(RefreshType.LISTS).first(), null))
+                lastRefreshedAtDao.getLastRefreshed(RefreshType.LISTS).first(), null
+            ))
         },
-        saveFetchResult = {lists ->
+        saveFetchResult = { lists ->
             // Watch list is handled seperately. This will get both list and list items, inserting entries into db
             val watchedList = getWatchedList()
 
-            val listsToBeAdded: MutableList<com.nickrankin.traktapp.dao.lists.model.TraktList> = mutableListOf()
+            val listsToBeAdded: MutableList<com.nickrankin.traktapp.dao.lists.model.TraktList> =
+                mutableListOf()
             listsToBeAdded.add(watchedList)
             listsToBeAdded.addAll(convertLists(lists))
 
@@ -134,10 +237,10 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
 
     fun getListEntries(traktListId: Int?, shouldFetch: Boolean) = networkBoundResource(
         query = {
-                listEntryDao.getTraktListEntriesById(traktListId ?: 0)
+            listEntryDao.getTraktListEntriesById(traktListId ?: 0)
         },
         fetch = {
-            if(traktListId == WATCHLIST_ID) {
+            if (traktListId == WATCHLIST_ID) {
                 traktApi.tmUsers().watchList(null)
             } else {
                 traktApi.tmUsers().listItems(userSlug, traktListId.toString(), Extended.FULL)
@@ -148,7 +251,7 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
         },
         saveFetchResult = { listEntries ->
 
-            if(traktListId != null) {
+            if (traktListId != null) {
                 insertListItems(traktListId, listEntries)
             }
         }
@@ -162,56 +265,79 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
         insertListItems(WATCHLIST_ID, watchlistItems)
 
         return TraktList(
-            WATCHLIST_ID, null, "Watchlist", "Movies, shows, seasons, and episodes I plan to watch.", user.joined_at, null, false, 0, false, watchlistItems.size, null, ListPrivacy.PRIVATE, null, null, user)
+            WATCHLIST_ID,
+            null,
+            "Watchlist",
+            "Movies, shows, seasons, and episodes I plan to watch.",
+            user.joined_at,
+            null,
+            false,
+            0,
+            false,
+            watchlistItems.size,
+            null,
+            ListPrivacy.PRIVATE,
+            null,
+            null,
+            user
+        )
     }
 
-    suspend fun getTraktListsAndItems(shouldFetch: Boolean): Flow<Resource<out List<Pair<com.nickrankin.traktapp.dao.lists.model.TraktList, List<TraktListEntry>>>>> = flow {
-        emit(Resource.Loading(null))
+    suspend fun getTraktListsAndItems(shouldFetch: Boolean): Flow<Resource<out List<Pair<com.nickrankin.traktapp.dao.lists.model.TraktList, List<TraktListEntry>>>>> =
+        flow {
+            emit(Resource.Loading(null))
 
-        // The lists from cache
-        val listsFromDao = traktLIstsDao.getAllTraktLists()
+            // The lists from cache
+            val listsFromDao = traktLIstsDao.getAllTraktLists()
 
-        // The List items from cache
-        val listItemsFromDao = listEntryDao.getTraktListEntries()
+            // The List items from cache
+            val listItemsFromDao = listEntryDao.getTraktListEntries()
 
-        if(shouldFetch || listsFromDao.first().isEmpty()) {
-            Log.d(TAG, "getTraktListsAndItems: Refreshing Trakt Lists and Items")
-            try {
-                // Get and Convert Trakt Lists response
-                val traktLists = convertLists(traktApi.tmUsers().lists(userSlug))
+            if (shouldFetch || listsFromDao.first().isEmpty()) {
+                Log.d(TAG, "getTraktListsAndItems: Refreshing Trakt Lists and Items")
+                try {
+                    // Get and Convert Trakt Lists response
+                    val traktLists = convertLists(traktApi.tmUsers().lists(userSlug))
 
-                listsDatabase.withTransaction {
-                    traktLIstsDao.deleteTraktListsFromCache()
-                    listEntryDao.deleteAllListEntries()
+                    listsDatabase.withTransaction {
+                        traktLIstsDao.deleteTraktListsFromCache()
+                        listEntryDao.deleteAllListEntries()
+                    }
+
+                    // Insert the lists into DB
+                    insertLists(traktLists)
+
+                    // Get and insert list items
+                    traktLists.map { traktList ->
+                        val listEntryResponse = traktApi.tmUsers()
+                            .listItems(userSlug, traktList.trakt_id.toString(), Extended.FULL)
+                        insertListItems(traktList.trakt_id, listEntryResponse)
+                    }
+                } catch (t: Throwable) {
+                    emit(Resource.Error(t, null))
                 }
+            }
 
-                // Insert the lists into DB
-                insertLists(traktLists)
+            // Each time list or list items changes, notify observers
+            val listsAndItemsflow = combine(listsFromDao, listItemsFromDao) { lists, listItems ->
+                val listsToListItemsMap: MutableMap<TraktList, List<TraktListEntry>> =
+                    mutableMapOf()
+                val listListItemPairs: MutableList<Pair<com.nickrankin.traktapp.dao.lists.model.TraktList, List<TraktListEntry>>> =
+                    mutableListOf()
 
-                // Get and insert list items
-                traktLists.map { traktList ->
-                    val listEntryResponse = traktApi.tmUsers().listItems(userSlug, traktList.trakt_id.toString(), Extended.FULL)
-                    insertListItems(traktList.trakt_id, listEntryResponse)
+                lists.map { list ->
+                    listListItemPairs.add(
+                        Pair(
+                            list,
+                            listItems.filter { it.entryData.list_trakt_id == list.trakt_id })
+                    )
+
                 }
-            }catch (t: Throwable) {
-                emit(Resource.Error(t, null))
+                Resource.Success(listListItemPairs)
             }
+
+            emitAll(listsAndItemsflow)
         }
-
-        // Each time list or list items changes, notify observers
-        val listsAndItemsflow = combine(listsFromDao, listItemsFromDao) { lists, listItems ->
-            val listsToListItemsMap: MutableMap<TraktList, List<TraktListEntry>> = mutableMapOf()
-            val listListItemPairs: MutableList<Pair<com.nickrankin.traktapp.dao.lists.model.TraktList, List<TraktListEntry>>> = mutableListOf()
-
-            lists.map { list ->
-                listListItemPairs.add(Pair(list, listItems.filter { it.entryData.list_trakt_id == list.trakt_id }))
-
-            }
-            Resource.Success(listListItemPairs)
-        }
-
-        emitAll(listsAndItemsflow)
-    }
 
     private fun convertLists(oldLists: List<com.uwetrottmann.trakt5.entities.TraktList>): List<TraktList> {
         val convertedLists: MutableList<TraktList> = mutableListOf()
@@ -351,7 +477,7 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
         return try {
             Log.d(TAG, "addToList: Adding $itemTraktId to list $listTraktId")
 
-            if(listTraktId == WATCHLIST_ID) {
+            if (listTraktId == WATCHLIST_ID) {
                 val addListResponse = traktApi.tmUsers()
                     .addToWatchList(getSyncItems(itemTraktId, type))
 
@@ -377,7 +503,7 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
         type: Type,
         syncResponse: SyncResponse?
     ) {
-        when(type) {
+        when (type) {
             Type.MOVIE -> {
                 if ((syncResponse?.added?.movies ?: 0) <= 0) {
                     Log.e(TAG, "insertListItem: Error, sync returned 0, returning")
@@ -401,10 +527,10 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
         }
 
         Log.d(TAG, "insertListItem: Inserting listitem $itemTraktId in $listTraktId")
-        
-        val listEntry = when(type) {
+
+        val listEntry = when (type) {
             Type.MOVIE -> {
-                if(listTraktId == WATCHLIST_ID) {
+                if (listTraktId == WATCHLIST_ID) {
                     traktApi.tmUsers().watchList(null)
                         .find { (it.movie?.ids?.trakt ?: 0) == itemTraktId }
                 } else {
@@ -414,7 +540,7 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
 
             }
             Type.SHOW -> {
-                if(listTraktId == WATCHLIST_ID) {
+                if (listTraktId == WATCHLIST_ID) {
                     traktApi.tmUsers().watchList(null)
                         .find { (it.show?.ids?.trakt ?: 0) == itemTraktId }
                 } else {
@@ -423,7 +549,7 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
                 }
             }
             Type.EPISODE -> {
-                if(listTraktId == WATCHLIST_ID) {
+                if (listTraktId == WATCHLIST_ID) {
                     traktApi.tmUsers().watchList(null)
                         .find { (it.episode?.ids?.trakt ?: 0) == itemTraktId }
                 } else {
@@ -432,8 +558,8 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
                 }
             }
             Type.PERSON -> {
-                if(listTraktId == WATCHLIST_ID) {
-                    Log.e(TAG, "insertListItem:  Person should not be in watch list", )
+                if (listTraktId == WATCHLIST_ID) {
+                    Log.e(TAG, "insertListItem:  Person should not be in watch list",)
                 }
                 traktApi.tmUsers().listItems(userSlug, listTraktId.toString(), Extended.FULL)
                     .find { (it.person?.ids?.trakt ?: 0) == itemTraktId }
@@ -445,7 +571,7 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
 
 
         if (listEntry == null) {
-            Log.e(TAG, "insertListItem: Listentry should not be null", )
+            Log.e(TAG, "insertListItem: Listentry should not be null",)
             return
         }
 
@@ -462,7 +588,7 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
                 )
             )
 
-            when(type) {
+            when (type) {
                 Type.MOVIE -> {
                     listEntryDao.insertMovie(
                         getMovieBaseEntity(listEntry)
@@ -485,8 +611,6 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
                 }
                 Type.LIST -> TODO()
             }
-
-
 
 
         }
@@ -546,7 +670,7 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
 
             Log.d(TAG, "removeFromList: Removing $itemTraktId from list $listTraktId")
 
-            if(listTraktId == WATCHLIST_ID) {
+            if (listTraktId == WATCHLIST_ID) {
                 val removeFromListResponse = traktApi.tmUsers()
                     .removeFromWatchList(getSyncItems(itemTraktId, type))
 
@@ -556,7 +680,11 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
             } else {
 
                 val removeFromListResponse = traktApi.tmUsers()
-                    .deleteListItems(userSlug, listTraktId.toString(), getSyncItems(itemTraktId, type))
+                    .deleteListItems(
+                        userSlug,
+                        listTraktId.toString(),
+                        getSyncItems(itemTraktId, type)
+                    )
 
                 removeListEntryFromDb(itemTraktId, listTraktId, removeFromListResponse, type)
 
@@ -568,23 +696,37 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
         }
     }
 
-    private suspend fun removeListEntryFromDb(itemTraktId: Int, listTraktId: Int, syncResponse: SyncResponse?, type: Type) {
-        when(type) {
+    private suspend fun removeListEntryFromDb(
+        itemTraktId: Int,
+        listTraktId: Int,
+        syncResponse: SyncResponse?,
+        type: Type
+    ) {
+        when (type) {
             Type.MOVIE -> {
-                if((syncResponse?.deleted?.movies ?: 0) <= 0) {
-                    Log.e(TAG, "removeListEntryFromDb: SyncResponse failed to remove content, won't modify db", )
+                if ((syncResponse?.deleted?.movies ?: 0) <= 0) {
+                    Log.e(
+                        TAG,
+                        "removeListEntryFromDb: SyncResponse failed to remove content, won't modify db",
+                    )
                     return
                 }
             }
             Type.SHOW -> {
-                if((syncResponse?.deleted?.shows ?: 0) <= 0) {
-                    Log.e(TAG, "removeListEntryFromDb: SyncResponse failed to remove content, won't modify db", )
+                if ((syncResponse?.deleted?.shows ?: 0) <= 0) {
+                    Log.e(
+                        TAG,
+                        "removeListEntryFromDb: SyncResponse failed to remove content, won't modify db",
+                    )
                     return
                 }
             }
             Type.EPISODE -> {
-                if((syncResponse?.deleted?.episodes ?: 0) <= 0) {
-                    Log.e(TAG, "removeListEntryFromDb: SyncResponse failed to remove content, won't modify db", )
+                if ((syncResponse?.deleted?.episodes ?: 0) <= 0) {
+                    Log.e(
+                        TAG,
+                        "removeListEntryFromDb: SyncResponse failed to remove content, won't modify db",
+                    )
                     return
                 }
             }
@@ -600,7 +742,7 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
 
     private fun getSyncItems(traktId: Int, type: Type): SyncItems {
         return SyncItems().apply {
-            when(type) {
+            when (type) {
                 Type.MOVIE -> {
                     movies = listOf(
                         SyncMovie().id(MovieIds.trakt(traktId))
@@ -625,7 +767,14 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
 
     suspend fun addTraktList(traktList: com.uwetrottmann.trakt5.entities.TraktList): Resource<TraktList> {
         return try {
-            val response = traktApi.tmUsers().createList(UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "NULL")), traktList)
+            val response = traktApi.tmUsers().createList(
+                UserSlug(
+                    sharedPreferences.getString(
+                        AuthActivity.USER_SLUG_KEY,
+                        "NULL"
+                    )
+                ), traktList
+            )
 
             // Need to convert the list to our dao model so we can cache it
             val convertedList = convertLists(listOf(response)).first()
@@ -636,14 +785,24 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
 
             Resource.Success(convertedList)
 
-        } catch(t: Throwable) {
+        } catch (t: Throwable) {
             Resource.Error(t, null)
         }
     }
 
-    suspend fun editTraktList(traktList: com.uwetrottmann.trakt5.entities.TraktList, listSlug: String): Resource<TraktList> {
+    suspend fun editTraktList(
+        traktList: com.uwetrottmann.trakt5.entities.TraktList,
+        listSlug: String
+    ): Resource<TraktList> {
         return try {
-            val response = traktApi.tmUsers().updateList(UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "NULL")), listSlug, traktList)
+            val response = traktApi.tmUsers().updateList(
+                UserSlug(
+                    sharedPreferences.getString(
+                        AuthActivity.USER_SLUG_KEY,
+                        "NULL"
+                    )
+                ), listSlug, traktList
+            )
 
             // Need to convert the list to our dao model so we can cache it
             val convertedList = convertLists(listOf(response)).first()
@@ -654,14 +813,21 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
 
             Resource.Success(convertedList)
 
-        } catch(t: Throwable) {
+        } catch (t: Throwable) {
             Resource.Error(t, null)
         }
     }
 
     suspend fun deleteTraktList(listTraktId: String): Resource<Boolean> {
         return try {
-            val response = traktApi.tmUsers().deleteList(UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "NULL")), listTraktId)
+            val response = traktApi.tmUsers().deleteList(
+                UserSlug(
+                    sharedPreferences.getString(
+                        AuthActivity.USER_SLUG_KEY,
+                        "NULL"
+                    )
+                ), listTraktId
+            )
 
             listsDatabase.withTransaction {
                 traktLIstsDao.deleteListById(listTraktId)
@@ -669,7 +835,7 @@ class ListsRepository @Inject constructor(private val traktApi: TraktApi, privat
 
             Resource.Success(true)
 
-        } catch(t: Throwable) {
+        } catch (t: Throwable) {
             Resource.Error(t, null)
         }
     }
