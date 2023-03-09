@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface CastPersonDao {
     @Transaction
-    @Query("SELECT * FROM cast_people WHERE person_trakt_id = :personTraktId")
+    @Query("SELECT * FROM cast_people WHERE person_trakt_id = :personTraktId ORDER BY year DESC")
     fun getCastPersonCredits(personTraktId: Int): Flow<List<TmCastPerson>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

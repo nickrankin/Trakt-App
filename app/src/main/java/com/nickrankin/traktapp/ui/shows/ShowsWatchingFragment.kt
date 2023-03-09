@@ -44,7 +44,9 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
     
     private val viewModel by activityViewModels<WatchedEpisodesViewModel>()
 
-    private lateinit var bindings: FragmentWatchingBinding
+    private var _bindings: FragmentWatchingBinding? = null
+    private val bindings get() = _bindings!!
+
     private lateinit var swipeLayout: SwipeRefreshLayout
     private lateinit var progressBar: ProgressBar
     private lateinit var recyclerView: RecyclerView
@@ -60,7 +62,7 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        bindings = FragmentWatchingBinding.inflate(inflater)
+        _bindings = FragmentWatchingBinding.inflate(inflater)
 
         return bindings.root
     }
@@ -288,6 +290,12 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
 
     private fun displayMessageToast(message: String, duration: Int) {
         Toast.makeText(requireContext(), message, duration).show()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        _bindings = null
     }
 
     companion object {

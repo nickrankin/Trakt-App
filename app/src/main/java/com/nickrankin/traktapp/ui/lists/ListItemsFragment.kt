@@ -51,7 +51,8 @@ private const val TAG = "ListItemsFragment"
 @AndroidEntryPoint
 class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
-    private var bindings: FragmentListItemsBinding? = null
+    private var _bindings: FragmentListItemsBinding? = null
+    private val bindings get() = _bindings!!
 
     private val viewModel: TraktListsViewModel by activityViewModels()
 
@@ -79,16 +80,16 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
         savedInstanceState: Bundle?
     ): View {
 
-        bindings = FragmentListItemsBinding.inflate(inflater)
+        _bindings = FragmentListItemsBinding.inflate(inflater)
 
-        return bindings!!.root
+        return bindings.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 
-        swipeRefreshLayout = bindings!!.traktlistsfragmentSwipeRefresh
+        swipeRefreshLayout = bindings.traktlistsfragmentSwipeRefresh
         swipeRefreshLayout.setOnRefreshListener(this)
-        progressBar = bindings!!.traktlistsfragmentProgressbar
+        progressBar = bindings.traktlistsfragmentProgressbar
 
         listTraktId = arguments?.getInt(ListEntryViewModel.LIST_ID_KEY, 0) ?: 0
 //        listName = arguments?.getString(ListEntryViewModel.LIST_NAME_KEY, "Unknown List") ?: "Unknown List"
@@ -137,7 +138,7 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
     }
 
     private fun getListEntries() {
-        val messageContainerTextView = bindings!!.traktlistsfragmentMessageContainer
+        val messageContainerTextView = bindings.traktlistsfragmentMessageContainer
 
         lifecycleScope.launch {
             viewModel.listItems.collectLatest { listEntriesData ->
@@ -319,7 +320,7 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
             SortBy.MY_RATING -> {
                 listItems
             }
-            SortBy.RANDOM -> {listItems}
+            SortBy.RANDOM -> { listItems.shuffled() }
         }
     }
 
@@ -520,7 +521,9 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
             }
             R.id.listitemsmenu_released -> {
                 viewModel.changeListOrdering(selectedList, SortBy.RELEASED)
-
+            }
+            R.id.listitemsmenu_random -> {
+                viewModel.changeListOrdering(selectedList, SortBy.RANDOM)
             }
         }
 
@@ -541,7 +544,7 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
     override fun onDestroyView() {
         super.onDestroyView()
 
-        bindings = null
+        _bindings = null
     }
 
     private fun displayToastMessage(messageText: String, length: Int) {

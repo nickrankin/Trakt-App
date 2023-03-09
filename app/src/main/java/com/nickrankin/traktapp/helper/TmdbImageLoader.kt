@@ -65,7 +65,7 @@ class TmdbImageLoader @Inject constructor(
                 } else {
                     val images = getTmdbImages(traktId, imageItemType, tmbId, null, null, originalLanguage)
 
-                    if (shouldCache) {
+                    if (shouldCache && !images.poster_path.isNullOrBlank()) {
                         Log.d(TAG, "loadImages: Caching images for TraktId $traktId // $title")
                         imagesDao.insert(images)
                     }
@@ -128,7 +128,7 @@ class TmdbImageLoader @Inject constructor(
                     val showImages = getTmdbImages(showTraktId, ImageItemType.SHOW, tmbId, showTitle, null, originalLanguage)
 
                     // Insert the Show images to cache
-                    if(shouldCache) {
+                    if(shouldCache && !showImages.poster_path.isNullOrBlank()) {
                         imagesDatabase.withTransaction {
                             imagesDao.insert(showImages)
                         }
@@ -141,7 +141,7 @@ class TmdbImageLoader @Inject constructor(
 
 
                     // Insert the Episode data record
-                    if(shouldCache) {
+                    if(shouldCache && !showImages.poster_path.isNullOrBlank()) {
                         imagesDatabase.withTransaction {
                             imagesDao.insert(
                                 episodeImages

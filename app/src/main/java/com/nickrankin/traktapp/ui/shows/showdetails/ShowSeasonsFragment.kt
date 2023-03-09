@@ -32,7 +32,10 @@ private const val TAG = "ShowSeasonsFragment"
 class ShowSeasonsFragment : BaseFragment() {
 
     private val viewModel: ShowDetailsViewModel by activityViewModels()
-    private lateinit var bindings: FragmentShowSeasonsBinding
+
+
+    private var _bindings: FragmentShowSeasonsBinding? = null
+    private val bindings get() = _bindings!!
 
     @Inject
     lateinit var glide: RequestManager
@@ -45,7 +48,7 @@ class ShowSeasonsFragment : BaseFragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-       bindings = FragmentShowSeasonsBinding.inflate(layoutInflater)
+       _bindings = FragmentShowSeasonsBinding.inflate(layoutInflater)
 
         return bindings.root
     }
@@ -139,6 +142,12 @@ class ShowSeasonsFragment : BaseFragment() {
         )
 
         startActivity(intent)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        _bindings = null
     }
 
     companion object {

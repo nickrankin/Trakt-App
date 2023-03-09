@@ -34,7 +34,10 @@ private const val TAG = "ShowDetailsOverviewFrag"
 @AndroidEntryPoint
 class ShowDetailsOverviewFragment : BaseFragment() {
 
-    private lateinit var bindings: ShowDetailsOverviewFragmentBinding
+    private var _bindings: ShowDetailsOverviewFragmentBinding? = null
+    private val bindings get() = _bindings!!
+
+
     private val viewModel: ShowDetailsViewModel by activityViewModels()
 
     private lateinit var castRecyclerView: RecyclerView
@@ -47,7 +50,7 @@ class ShowDetailsOverviewFragment : BaseFragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        bindings = ShowDetailsOverviewFragmentBinding.inflate(inflater)
+        _bindings = ShowDetailsOverviewFragmentBinding.inflate(inflater)
         return bindings.root
     }
 
@@ -159,6 +162,12 @@ class ShowDetailsOverviewFragment : BaseFragment() {
 
         castRecyclerView.layoutManager = layoutManager
         castRecyclerView.adapter = showCastCreditsAdapter
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        _bindings = null
     }
 
     companion object {

@@ -29,7 +29,11 @@ private const val TAG = "ShowDetailsSeasonsFragm"
 @AndroidEntryPoint
 class ShowDetailsSeasonsFragment() : BaseFragment() {
     private val viewModel: ShowDetailsViewModel by activityViewModels()
-    private lateinit var bindings: ShowDetailsSeasonsFragmentBinding
+
+    private var _bindings: ShowDetailsSeasonsFragmentBinding? = null
+    private val bindings get() = _bindings!!
+
+
 
     private lateinit var seasonsRecyclerView: RecyclerView
     private lateinit var seasonsAdapter: SeasonsAdapter
@@ -41,8 +45,9 @@ class ShowDetailsSeasonsFragment() : BaseFragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        bindings = ShowDetailsSeasonsFragmentBinding.inflate(layoutInflater)
+    ): View {
+        _bindings = ShowDetailsSeasonsFragmentBinding.inflate(layoutInflater)
+
         return bindings.root
     }
 
@@ -118,6 +123,12 @@ class ShowDetailsSeasonsFragment() : BaseFragment() {
             showTraktId, showTmdbId, seasonNumber, title))
 
         startActivity(intent)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        _bindings = null
     }
 
     companion object {

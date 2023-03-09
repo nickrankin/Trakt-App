@@ -35,7 +35,9 @@ class SimilarShowsFragment : BaseFragment() {
     @Inject
     lateinit var tmdbImageLoader: TmdbImageLoader
     
-    private lateinit var bindings: FragmentSimilarMoviesBinding
+    private var _bindings: FragmentSimilarMoviesBinding? = null
+    private val bindings get() = _bindings!!
+
     private var tmdbId: Int = 0
     private var language: String? = null
     private val viewModel: SimilarShowsViewModel by activityViewModels()
@@ -46,8 +48,8 @@ class SimilarShowsFragment : BaseFragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        bindings = FragmentSimilarMoviesBinding.inflate(inflater)
+    ): View {
+        _bindings = FragmentSimilarMoviesBinding.inflate(inflater)
         
         return bindings.root
     }
@@ -109,6 +111,12 @@ class SimilarShowsFragment : BaseFragment() {
                 Log.e(TAG, "navigateToMovie: Trakt ID is null for movie $title // TMDB ID: $tmdbId, Aborting..", )
             }
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        _bindings = null
     }
 
     companion object {

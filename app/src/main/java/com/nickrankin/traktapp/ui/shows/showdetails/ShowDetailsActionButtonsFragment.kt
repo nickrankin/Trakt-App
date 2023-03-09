@@ -45,7 +45,8 @@ class ShowDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
 
     private val viewModel: ShowDetailsViewModel by activityViewModels()
 
-    private lateinit var bindings: LayoutActionButtonsBinding
+    private var _bindings: LayoutActionButtonsBinding? = null
+    private val bindings get() = _bindings!!
 
     private val traktRatingChannel = Channel<Double?>()
 
@@ -53,7 +54,7 @@ class ShowDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        bindings = LayoutActionButtonsBinding.inflate(inflater)
+        _bindings = LayoutActionButtonsBinding.inflate(inflater)
 
         return bindings.root
     }
@@ -217,6 +218,12 @@ class ShowDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
 
     override fun removeListEntry(traktId: Int, traktList: TraktList) {
         viewModel.removeListEntry(traktId, traktList.trakt_id)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        _bindings = null
     }
 
     companion object {

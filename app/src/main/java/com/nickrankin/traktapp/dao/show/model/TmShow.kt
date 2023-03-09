@@ -17,7 +17,6 @@ data class TmShow(
     val country: String?,
     val genres: List<String?>?,
     val created_by: List<com.uwetrottmann.trakt5.entities.CrewMember>?,
-    val written_by: List<com.uwetrottmann.trakt5.entities.CrewMember>?,
     val homepage: String?,
     val status: com.uwetrottmann.trakt5.enums.Status?,
     val language: String?,

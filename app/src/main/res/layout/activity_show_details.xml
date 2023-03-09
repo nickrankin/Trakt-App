@@ -217,27 +217,19 @@
                             android:orientation="horizontal" />
 
                         <TextView
-                            android:id="@+id/showdetailsactivity_directed_by_title"
+                            android:id="@+id/showdetailsactivity_created_by_title"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:textSize="14sp"
                             android:textStyle="bold"
-                            android:text="Directed By:" />
+                            android:text="Created By:" />
 
                         <com.google.android.material.chip.ChipGroup
                             android:id="@+id/showdetailsactivity_direct_by_chipgroup"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal" />
-
-                        <TextView
-                            android:id="@+id/showdetailsactivity_written_by_title"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textSize="14sp"
-                            android:textStyle="bold"
-                            android:text="Written By:" />
 
                         <com.google.android.material.chip.ChipGroup
                             android:id="@+id/showdetailsactivity_written_by_chipgroup"

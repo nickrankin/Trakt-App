@@ -21,6 +21,9 @@
             <item
                 android:id="@+id/listitemsmenu_released"
                 android:title="Released" />
+            <item
+                android:id="@+id/listitemsmenu_random"
+                android:title="Random" />
         </menu>
     </item>
 </menu>

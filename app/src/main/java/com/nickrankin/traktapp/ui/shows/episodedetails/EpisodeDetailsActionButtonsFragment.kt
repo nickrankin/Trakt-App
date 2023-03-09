@@ -46,15 +46,16 @@ class EpisodeDetailsActionButtonsFragment() : ActionButtonsBaseFragment() {
 
     private val viewModel: EpisodeDetailsViewModel by activityViewModels()
 
-    private lateinit var bindings: LayoutActionButtonsBinding
+    private var _bindings: LayoutActionButtonsBinding? = null
+    private val bindings get() = _bindings!!
 
     private val traktRatingChannel = Channel<Double>()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        bindings = LayoutActionButtonsBinding.inflate(layoutInflater)
+    ): View {
+        _bindings = LayoutActionButtonsBinding.inflate(layoutInflater)
 
         return bindings.root
     }
@@ -239,7 +240,11 @@ class EpisodeDetailsActionButtonsFragment() : ActionButtonsBaseFragment() {
         viewModel.removeListEntry(traktId, traktList.trakt_id)
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
 
+        _bindings = null
+    }
 
     companion object {
         fun newInstance() = EpisodeDetailsActionButtonsFragment()

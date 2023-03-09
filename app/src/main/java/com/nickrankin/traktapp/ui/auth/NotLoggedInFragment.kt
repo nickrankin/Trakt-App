@@ -11,14 +11,15 @@ import com.nickrankin.traktapp.databinding.FragmentNotLoggedInBinding
 
 class NotLoggedInFragment : Fragment() {
 
-    private lateinit var bindings: FragmentNotLoggedInBinding
+    private var _bindings: FragmentNotLoggedInBinding? = null
+    private val bindings get() = _bindings!!
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
 
-        bindings = FragmentNotLoggedInBinding.inflate(inflater)
+        _bindings = FragmentNotLoggedInBinding.inflate(inflater)
 
         return bindings.root
     }
@@ -33,6 +34,12 @@ class NotLoggedInFragment : Fragment() {
 
     private fun handleAuthButtonPress() {
         startActivity(Intent(requireContext(), AuthActivity::class.java))
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        _bindings = null
     }
 
     companion object {

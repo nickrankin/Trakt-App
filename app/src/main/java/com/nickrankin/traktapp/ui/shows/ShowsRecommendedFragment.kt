@@ -34,7 +34,9 @@ private const val TAG = "ShowsRecommendedFragmen"
 
 @AndroidEntryPoint
 class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, OnNavigateToShow {
-    private lateinit var bindings: FragmentShowsRecommendedBinding
+
+    private var _bindings: FragmentShowsRecommendedBinding? = null
+    private val bindings get() = _bindings!!
 
     private val viewModel: RecommendedShowsViewModel by activityViewModels()
 
@@ -48,6 +50,15 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
 
     @Inject
     lateinit var tmdbImageLoader: TmdbImageLoader
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        // Inflate the layout for this fragment
+        _bindings = FragmentShowsRecommendedBinding.inflate(inflater)
+        return bindings.root
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -264,15 +275,6 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
         Toast.makeText(requireContext(), message, length).show()
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        bindings = FragmentShowsRecommendedBinding.inflate(inflater)
-        return bindings.root
-    }
-
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
             R.id.reccomendedfiltermenu_title -> {
@@ -294,6 +296,12 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
             }
         }
         return false
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        _bindings = null
     }
 
     companion object {

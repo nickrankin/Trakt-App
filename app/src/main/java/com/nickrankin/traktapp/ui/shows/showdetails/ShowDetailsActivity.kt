@@ -208,20 +208,12 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
             }
 
             if(!tmShow.created_by.isNullOrEmpty()) {
-                showdetailsactivityDirectedByTitle.visibility = View.VISIBLE
+                showdetailsactivityCreatedByTitle.visibility = View.VISIBLE
 
                 displayDirectors(tmShow.created_by)
 
             } else {
-                showdetailsactivityDirectedByTitle.visibility = View.GONE
-            }
-
-            if(!tmShow.written_by.isNullOrEmpty()) {
-                showdetailsactivityWrittenByTitle.visibility = View.VISIBLE
-
-                displayWriters(tmShow.written_by)
-            } else {
-                showdetailsactivityWrittenByTitle.visibility = View.GONE
+                showdetailsactivityCreatedByTitle.visibility = View.GONE
             }
 
             if (tmShow.poster_path?.isNotEmpty() == true) {
@@ -379,11 +371,11 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
         Log.d(TAG, "displayDirectors: Got ${people.size} people!")
 
         if(people.isEmpty()) {
-            bindings.showdetailsactivityDirectedByTitle.visibility = View.GONE
+            bindings.showdetailsactivityCreatedByTitle.visibility = View.GONE
             bindings.showdetailsactivityDirectByChipgroup.visibility = View.GONE
             return
         } else {
-            bindings.showdetailsactivityDirectedByTitle.visibility = View.VISIBLE
+            bindings.showdetailsactivityCreatedByTitle.visibility = View.VISIBLE
             bindings.showdetailsactivityDirectByChipgroup.visibility = View.VISIBLE
         }
 
@@ -398,39 +390,6 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
 
                 chip.setOnClickListener {
                     navigateToPerson(director?.person?.ids?.trakt)
-                }
-
-
-                this.addView(chip)
-            }
-        }
-    }
-
-    private fun displayWriters(
-        people: List<com.uwetrottmann.trakt5.entities.CrewMember?>) {
-
-        Log.d(TAG, "displayWriters: Got ${people.size} people!")
-
-        if(people.isEmpty()) {
-            bindings.showdetailsactivityWrittenByTitle.visibility = View.GONE
-            bindings.showdetailsactivityWrittenByChipgroup.visibility = View.GONE
-            return
-        } else {
-            bindings.showdetailsactivityWrittenByTitle.visibility = View.VISIBLE
-            bindings.showdetailsactivityWrittenByChipgroup.visibility = View.VISIBLE
-        }
-
-        val directorsChipGroup = bindings.showdetailsactivityWrittenByChipgroup
-        directorsChipGroup.removeAllViews()
-
-        directorsChipGroup.apply {
-            people.forEach { writer ->
-                val chip = Chip(context)
-
-                chip.text = writer?.person?.name
-
-                chip.setOnClickListener {
-                    navigateToPerson(writer?.person?.ids?.trakt)
                 }
 
 

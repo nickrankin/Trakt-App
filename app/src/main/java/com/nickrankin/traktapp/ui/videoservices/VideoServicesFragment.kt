@@ -24,13 +24,15 @@ private const val NETFLIX_URL = "https://www.netflix.com"
 private const val YOUTUBE_URL = "https://www.youtube.com"
 private const val TAG = "VideoServicesFragment"
 abstract class VideoServicesFragment() : Fragment(), OnSetVideoServiceCallback {
-    private lateinit var bindings: LayoutWatchVideoServicesBinding
+
+    private var _bindings: LayoutWatchVideoServicesBinding? = null
+    private val bindings get() = _bindings!!
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        bindings = LayoutWatchVideoServicesBinding.inflate(inflater)
+        _bindings = LayoutWatchVideoServicesBinding.inflate(inflater)
 
         // Inflate the layout for this fragment
         return bindings.root
@@ -254,6 +256,12 @@ abstract class VideoServicesFragment() : Fragment(), OnSetVideoServiceCallback {
             val trailerIntent = Intent(Intent.ACTION_VIEW, Uri.parse(trailerUrl))
             startActivity(trailerIntent)
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        _bindings = null
     }
 }
 

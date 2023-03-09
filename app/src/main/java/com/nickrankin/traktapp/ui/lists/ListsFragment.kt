@@ -34,7 +34,8 @@ private const val TAG = "ListsFragment"
 @AndroidEntryPoint
 class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
-    private var bindings: FragmentListsBinding? = null
+    private var _bindings: FragmentListsBinding? = null
+    private val bindings get() = _bindings!!
 
     private val viewModel: TraktListsViewModel by activityViewModels()
 
@@ -49,19 +50,19 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        bindings = FragmentListsBinding.inflate(inflater)
+        _bindings = FragmentListsBinding.inflate(inflater)
 
-        return bindings!!.root
+        return bindings.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 
-        val swipeLayout = bindings!!.traktlistsfragmentSwipeLayout
+        val swipeLayout = bindings.traktlistsfragmentSwipeLayout
         swipeLayout.setOnRefreshListener(this)
 
         initRecycler()
 
-        addListFab = bindings!!.traktlistsfragmentAddList
+        addListFab = bindings.traktlistsfragmentAddList
         createAddToListDialog()
 
         addListFab.setOnClickListener { addListDialog.add() }
@@ -86,9 +87,9 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
     }
 
     private fun getLists() {
-        val progressBar = bindings!!.traktlistsfragmentProgressbar
-        val messageContainerTextView = bindings!!.traktlistsfragmentMessageContainer
-        val swipeLayout = bindings!!.traktlistsfragmentSwipeLayout
+        val progressBar = bindings.traktlistsfragmentProgressbar
+        val messageContainerTextView = bindings.traktlistsfragmentMessageContainer
+        val swipeLayout = bindings.traktlistsfragmentSwipeLayout
 
         lifecycleScope.launchWhenStarted {
             viewModel.lists.collectLatest { listsResource ->
@@ -430,7 +431,7 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
     override fun onDestroyView() {
         super.onDestroyView()
 
-        bindings = null
+        _bindings = null
     }
 
 

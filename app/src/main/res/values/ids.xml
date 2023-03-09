@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="DIRECTING" type="id"/>
+    <item name="WRITING" type="id"/>
+    <item name="PRODUCING" type="id"/>
+</resources>

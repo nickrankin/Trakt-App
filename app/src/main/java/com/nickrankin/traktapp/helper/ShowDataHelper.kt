@@ -24,7 +24,7 @@ import javax.inject.Singleton
 import kotlin.Exception
 
 private const val TAG = "ShowDataHelper"
-
+private const val TRAKT_PRODUCER = "EXECUTIVE PRODUCER"
 /***
  *
  * Helper class to load Show Data from TMDB using Trakt API as a fallback.
@@ -95,8 +95,7 @@ class ShowDataHelper @Inject constructor(
             traktShow.overview ?: "",
             traktShow.country,
             traktShow.genres,
-            credits.crew?.directing,
-            credits.crew?.writing,
+            credits.crew?.production?.filter { it.job?.uppercase() == TRAKT_PRODUCER },
             traktShow.homepage,
             traktShow.status,
             traktShow.language,
@@ -128,8 +127,7 @@ class ShowDataHelper @Inject constructor(
             traktShow.overview ?: "",
             traktShow.country,
             traktShow.genres,
-            credits.crew?.directing,
-            credits.crew?.writing,
+            credits.crew?.production?.filter { it.job?.uppercase() == TRAKT_PRODUCER },
             traktShow.homepage,
             traktShow.status,
             traktShow.language,

@@ -44,7 +44,10 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
     @Inject
     lateinit var tmdbImageLoader: TmdbImageLoader
     
-    private lateinit var bindings: FragmentShowsOverviewBinding
+    private var _bindings: FragmentShowsOverviewBinding? = null
+    private val bindings get() = _bindings!!
+
+
     private lateinit var progressBar: ProgressBar
     private lateinit var refreshLayout: SwipeRefreshLayout
     private lateinit var recyclerView: RecyclerView
@@ -66,7 +69,7 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        bindings = FragmentShowsOverviewBinding.inflate(inflater)
+        _bindings = FragmentShowsOverviewBinding.inflate(inflater)
 
         return bindings.root
     }
@@ -263,6 +266,12 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
             viewModel.showHiddenEntries(false)
             viewModel.onRefresh()
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        _bindings = null
     }
         
     companion object {

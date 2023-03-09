@@ -63,7 +63,10 @@ private const val TAG = "ShowsTrackingFragment"
 class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpisode, SwipeRefreshLayout.OnRefreshListener {
 
     private val viewModel: ShowsTrackingViewModel by activityViewModels()
-    private lateinit var bindings: ShowsTrackingFragmentBinding
+
+    private var _bindings: ShowsTrackingFragmentBinding? = null
+    private val bindings get() = _bindings!!
+
     private lateinit var fab: FloatingActionButton
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
@@ -100,8 +103,8 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        bindings = ShowsTrackingFragmentBinding.inflate(layoutInflater)
+    ): View {
+        _bindings = ShowsTrackingFragmentBinding.inflate(layoutInflater)
 
         return bindings.root
     }
@@ -736,6 +739,12 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
         viewModel.onRefresh()
 
         //generateTestNotifications()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        _bindings = null
     }
 
     private fun generateTestNotifications() {

@@ -66,7 +66,7 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
 
     val episode = refreshEvent.flatMapLatest { shouldRefresh ->
         episodeNumber.flatMapLatest { episodeNumber ->
-            repository.getEpisodes(episodeDataModel?.showTraktId ?: 0, episodeDataModel?.tmdbId, episodeDataModel?.seasonNumber ?: -1, episodeNumber, shouldRefresh).map {
+            repository.getEpisodes(episodeDataModel?.showTraktId ?: 0, episodeDataModel?.showTmdbId, episodeDataModel?.seasonNumber ?: -1, episodeNumber, shouldRefresh).map {
                 if(it is Resource.Success) {
                     viewModelScope.launch {
                         episodeIdChannel.send(it.data?.episode_trakt_id ?: 0)
@@ -78,8 +78,8 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
     }
 
     val seasonEpisodes = refreshEvent.flatMapLatest { shouldRefresh ->
-        combine(episodeNumber, seasonEpisodesRepository.getSeasonEpisodes(episodeDataModel?.showTraktId ?: 0, episodeDataModel?.tmdbId, episodeDataModel?.seasonNumber ?: 0, shouldRefresh)) { e, w ->
-            Pair(e, w)
+        combine(episodeNumber, seasonEpisodesRepository.getSeasonEpisodes(episodeDataModel?.showTraktId ?: 0, episodeDataModel?.showTmdbId, episodeDataModel?.seasonNumber ?: 0, shouldRefresh)) { episodeNumber, allEpisodes ->
+            Pair(episodeNumber, allEpisodes)
         }
     }
 
@@ -102,8 +102,8 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
     }
 
     // Overview Fragment
-    override val cast = refreshEvent.flatMapLatest { shouldRefresh ->
-        castToggle.flatMapLatest { showGuestStars ->
+    override val cast = castToggle.flatMapLatest { showGuestStars ->
+        refreshEvent.flatMapLatest { shouldRefresh ->
             showDetailsOverviewRepository.getEpisodeCast(episodeDataModel, showGuestStars, shouldRefresh)
         }
     }

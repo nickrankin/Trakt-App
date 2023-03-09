@@ -39,7 +39,10 @@ private const val TAG = "CollectedShowsFragment"
 
 @AndroidEntryPoint
 class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
-    private lateinit var bindings: FragmentCollectedShowsBinding
+
+    private var _bindings: FragmentCollectedShowsBinding? = null
+    private  val bindings get() = _bindings!!
+
     private lateinit var swipeLayout: SwipeRefreshLayout
     private lateinit var progressBar: ProgressBar
     private lateinit var messageContainer: TextView
@@ -59,7 +62,7 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        bindings = FragmentCollectedShowsBinding.inflate(inflater)
+        _bindings = FragmentCollectedShowsBinding.inflate(inflater)
         swipeLayout = bindings.collectedshowsfragmentSwipeLayout
         messageContainer = bindings.collectedshowsfragmentMessageContainer
 
@@ -311,6 +314,12 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
         if (isLoggedIn) {
             viewModel.onRefresh()
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        _bindings = null
     }
 
     companion object {

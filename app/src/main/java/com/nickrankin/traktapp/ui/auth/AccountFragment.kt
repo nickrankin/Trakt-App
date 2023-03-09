@@ -39,7 +39,9 @@ import javax.inject.Inject
 private const val TAG = "AccountFragment"
 @AndroidEntryPoint
 class AccountFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
-    private lateinit var bindings: FragmentAccountBinding
+    private var _bindings: FragmentAccountBinding? = null
+    private val bindings get() = _bindings!!
+
     private lateinit var progressBar: ProgressBar
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
@@ -62,9 +64,9 @@ class AccountFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         // Inflate the layout for this fragment
-        bindings = FragmentAccountBinding.inflate(inflater)
+        _bindings = FragmentAccountBinding.inflate(inflater)
         return bindings.root
     }
 
@@ -206,6 +208,12 @@ class AccountFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
         super.onRefresh()
 
         viewModel.onRefresh()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        _bindings = null
     }
 
     companion object {

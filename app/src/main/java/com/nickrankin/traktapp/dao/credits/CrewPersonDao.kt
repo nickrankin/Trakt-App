@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface CrewPersonDao {
     @Transaction
-    @Query("SELECT * FROM crew_people WHERE person_trakt_id = :personTraktId")
+    @Query("SELECT * FROM crew_people WHERE person_trakt_id = :personTraktId ORDER BY year DESC")
     fun getCrewPersonCredits(personTraktId: Int): Flow<List<TmCrewPerson>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

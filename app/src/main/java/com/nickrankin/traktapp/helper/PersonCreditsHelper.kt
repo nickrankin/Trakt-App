@@ -5,6 +5,7 @@ import com.nickrankin.traktapp.api.TmdbApi
 import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.credits.MovieCastPerson
 import com.nickrankin.traktapp.dao.credits.ShowCastPerson
+import com.nickrankin.traktapp.dao.credits.model.CrewType
 import com.nickrankin.traktapp.dao.credits.model.TmCastPerson
 import com.nickrankin.traktapp.dao.credits.model.Person
 import com.nickrankin.traktapp.dao.credits.model.TmCrewPerson
@@ -78,39 +79,37 @@ class PersonCreditsHelper @Inject constructor(
                 traktApi.tmPeople().movieCredits(traktPersonId.toString(), null)
 
             personMovieCredits.crew?.directing?.mapIndexed { index, crewMember ->
-                movieCredits.add(
-                    TmCrewPerson(
-                        "P${traktPersonId}s${crewMember.movie?.ids?.trakt ?: 0}",
-                        traktPersonId,
-                        crewMember.movie?.ids?.trakt ?: 0,
-                        crewMember.movie?.ids?.tmdb,
-                        crewMember.movie?.title ?: "",
-                        crewMember.movie?.year,
-                        index,
-                        crewMember.person?.name,
-                        Type.MOVIE,
-                        crewMember.job
+                val directingMember = getTmCrewPerson(index, traktPersonId, crewMember,Type.MOVIE, CrewType.DIRECTING)
+
+                if(directingMember != null) {
+                    movieCredits.add(
+                        directingMember
                     )
-                )
+                }
+
+
             }
 
             personMovieCredits.crew?.writing?.mapIndexed { index, crewMember ->
-                movieCredits.add(
-                    TmCrewPerson(
-                        "P${traktPersonId}s${crewMember.movie?.ids?.trakt ?: 0}",
-                        traktPersonId,
-                        crewMember.movie?.ids?.trakt ?: 0,
-                        crewMember.movie?.ids?.tmdb,
-                        crewMember.show?.title ?: "",
-                        crewMember.movie?.year,
-                        index,
-                        crewMember.person?.name,
-                        Type.MOVIE,
-                        crewMember.job
+                val writingMember = getTmCrewPerson(index, traktPersonId, crewMember,Type.MOVIE, CrewType.WRITING)
+
+                if(writingMember != null) {
+                    movieCredits.add(
+                        writingMember
                     )
-                )
+                }
             }
 
+            personMovieCredits.crew?.production?.mapIndexed { index, crewMember ->
+                val productionMember = getTmCrewPerson(index, traktPersonId, crewMember,Type.MOVIE, CrewType.PRODUCING)
+
+                if(productionMember != null) {
+                    movieCredits.add(
+                        productionMember
+                    )
+                }
+
+            }
         } catch (t: Throwable) {
             t.printStackTrace()
         }
@@ -126,38 +125,35 @@ class PersonCreditsHelper @Inject constructor(
             val personShowCredits = traktApi.tmPeople().showCredits(traktPersonId.toString())
 
             personShowCredits.crew?.directing?.mapIndexed { index, crewMember ->
-                showCredits.add(
-                    TmCrewPerson(
-                        "P${traktPersonId}s${crewMember.show?.ids?.trakt ?: 0}",
-                        traktPersonId,
-                        crewMember.show?.ids?.trakt ?: 0,
-                        crewMember.show?.ids?.tmdb,
-                        crewMember.show?.title ?: "",
-                        crewMember.show?.year,
-                        index,
-                        crewMember.person?.name,
-                        Type.SHOW,
-                        crewMember.job
+                val directingMember = getTmCrewPerson(index, traktPersonId, crewMember, Type.SHOW, CrewType.DIRECTING)
+
+                if(directingMember != null) {
+                    showCredits.add(
+                        directingMember
                     )
-                )
+                }
+
+
             }
 
             personShowCredits.crew?.writing?.mapIndexed { index, crewMember ->
+                val writingMember = getTmCrewPerson(index, traktPersonId, crewMember, Type.SHOW, CrewType.WRITING)
 
-                showCredits.add(
-                    TmCrewPerson(
-                        "P${traktPersonId}s${crewMember.show?.ids?.trakt ?: 0}",
-                        traktPersonId,
-                        crewMember.show?.ids?.trakt ?: 0,
-                        crewMember.show?.ids?.tmdb,
-                        crewMember.show?.title ?: "",
-                        crewMember.show?.year,
-                        index,
-                        crewMember.person?.name,
-                        Type.SHOW,
-                        crewMember.job
+                if(writingMember != null) {
+                    showCredits.add(
+                        writingMember
                     )
-                )
+                }
+            }
+
+            personShowCredits.crew?.production?.mapIndexed { index, crewMember ->
+                val productionMember = getTmCrewPerson(index, traktPersonId, crewMember, Type.SHOW, CrewType.PRODUCING)
+
+                if(productionMember != null) {
+                    showCredits.add(
+                        productionMember
+                    )
+                }
             }
 
         } catch (t: Throwable) {
@@ -166,6 +162,44 @@ class PersonCreditsHelper @Inject constructor(
         Log.d(TAG, "getPersonShowCredits: Returning ${showCredits.size} Credits")
 
         return showCredits
+    }
+
+    private fun getTmCrewPerson(index: Int, personId: Int, crewMember: com.uwetrottmann.trakt5.entities.CrewMember, type: Type, crewType: CrewType): TmCrewPerson? {
+        return when(type) {
+            Type.MOVIE -> {
+                TmCrewPerson(
+                    "P${personId}s${crewMember.movie?.ids?.trakt ?: 0}",
+                    personId,
+                    crewMember.movie?.ids?.trakt ?: 0,
+                    crewMember.movie?.ids?.tmdb,
+                    crewMember.movie?.title ?: "",
+                    crewMember.movie?.year,
+                    index,
+                    crewMember.person?.name,
+                    Type.MOVIE,
+                    crewMember.job,
+                    crewType
+                )
+            }
+            Type.SHOW -> {
+                TmCrewPerson(
+                    "P${personId}s${crewMember.show?.ids?.trakt ?: 0}",
+                    personId,
+                    crewMember.show?.ids?.trakt ?: 0,
+                    crewMember.show?.ids?.tmdb,
+                    crewMember.show?.title ?: "",
+                    crewMember.show?.year,
+                    index,
+                    crewMember.person?.name,
+                    Type.SHOW,
+                    crewMember.job,
+                    crewType
+                )
+            }
+            else -> {
+                null
+            }
+        }
     }
 
     private suspend fun getCastPersonMovieCredits(traktPersonId: Int): List<TmCastPerson> {
@@ -348,12 +382,15 @@ class PersonCreditsHelper @Inject constructor(
         return emptyList()
     }
 
-    suspend fun getEpisodeGuestCredits(showTraktId: Int, showTmdbId: Int?, seasonNumber: Int, episodeNumber: Int): List<ShowCastPerson> {
+    suspend fun getEpisodeCredits(showTraktId: Int, showTmdbId: Int?, seasonNumber: Int, episodeNumber: Int): List<ShowCastPerson> {
+        Log.d(TAG, "getEpisodeGuestCredits: getting Episode Cast for show Trakt $showTraktId TMDB $showTmdbId, S$seasonNumber E$episodeNumber" )
+
+        // Get the Episode Guest stars
         try {
             val showCreditsList: MutableList<ShowCastPerson> = mutableListOf()
 
             val traktCreditsResponse = traktApi.tmEpisodes().people(showTraktId.toString(), seasonNumber, episodeNumber, "guest_stars")
-            val tmdbResponse = tmdbApi.tmTvEpisodesService().credits(showTmdbId ?: 0, seasonNumber, episodeNumber)
+            val tmdbResponse = getTmdbCredits(showTmdbId, seasonNumber, episodeNumber)
 
             traktCreditsResponse.guest_stars?.mapIndexed { index, castPerson ->
                 val person = castPerson.person
@@ -385,9 +422,19 @@ class PersonCreditsHelper @Inject constructor(
             return showCreditsList
 
         } catch(e: Exception) {
-
+            Log.e(TAG, "getEpisodeGuestCredits: Error ${e.message}", )
+            e.printStackTrace()
         }
         return emptyList()
+    }
+
+    private suspend fun getTmdbCredits(showTmdbId: Int?, seasonNumber: Int, episodeNumber: Int): Credits? {
+        return try {
+            tmdbApi.tmTvEpisodesService().credits(showTmdbId ?: 0, seasonNumber, episodeNumber)
+        } catch(e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 
     private suspend fun getTmdbCrewPersonProfilePath(tmdbResponse: Credits?, personTmdbId: Int?): String? {

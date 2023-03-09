@@ -159,10 +159,10 @@ class MainActivityRepository @Inject constructor(private val traktApi: TraktApi,
     }
 
     private fun convertEpisodeHistoryEntries(historyEntries: List<com.uwetrottmann.trakt5.entities.HistoryEntry>): List<EpisodeWatchedHistoryEntry> {
-        val movieHistoryEntries: MutableList<EpisodeWatchedHistoryEntry> = mutableListOf()
+        val episodeHistoryEntries: MutableList<EpisodeWatchedHistoryEntry> = mutableListOf()
 
         historyEntries.map { entry ->
-            movieHistoryEntries.add(
+            episodeHistoryEntries.add(
                 EpisodeWatchedHistoryEntry(
                     entry.id ?: 0L,
                     entry.episode?.ids?.trakt ?: 0,
@@ -178,6 +178,6 @@ class MainActivityRepository @Inject constructor(private val traktApi: TraktApi,
             )
         }
 
-        return movieHistoryEntries
+        return episodeHistoryEntries
     }
 }

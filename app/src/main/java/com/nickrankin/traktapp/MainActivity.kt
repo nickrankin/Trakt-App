@@ -406,7 +406,7 @@ class MainActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
                 EpisodeDetailsActivity.EPISODE_DATA_KEY,
                 EpisodeDataModel(
                     watchedEpisode.show_trakt_id,
-                    watchedEpisode.tmdb_id,
+                    watchedEpisode.show_tmdb_id,
                     watchedEpisode.season,
                     watchedEpisode.episode,
                     watchedEpisode.title

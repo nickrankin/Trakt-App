@@ -30,7 +30,9 @@ private const val TAG = "MovieDetailsOverviewFr"
 @AndroidEntryPoint
 class EpisodeDetailsOverviewFragment : BaseFragment() {
 
-    private lateinit var bindings: FragmentEpisodeDetailsOverviewBinding
+    private var _bindings: FragmentEpisodeDetailsOverviewBinding? = null
+    private val bindings get() = _bindings!!
+
     private val viewModel: EpisodeDetailsViewModel by activityViewModels()
 
     private lateinit var castRecyclerView: RecyclerView
@@ -43,7 +45,7 @@ class EpisodeDetailsOverviewFragment : BaseFragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        bindings = FragmentEpisodeDetailsOverviewBinding.inflate(inflater)
+        _bindings = FragmentEpisodeDetailsOverviewBinding.inflate(inflater)
 
         return bindings.root
     }
@@ -162,6 +164,12 @@ class EpisodeDetailsOverviewFragment : BaseFragment() {
                 viewModel.filterCast(true)
             }
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        _bindings = null
     }
 
     companion object {

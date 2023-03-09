@@ -29,7 +29,10 @@ import javax.inject.Inject
 private const val TAG = "EpisodeCreditsFragment"
 @AndroidEntryPoint
 class EpisodeCreditsFragment() : BaseFragment() {
-    private lateinit var bindings: FragmentShowCreditsBinding
+
+    private var _bindings: FragmentShowCreditsBinding? = null
+    private val bindings get() = _bindings!!
+
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: ShowCastCreditsAdapter
 
@@ -37,6 +40,16 @@ class EpisodeCreditsFragment() : BaseFragment() {
 
     @Inject
     lateinit var glide: RequestManager
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _bindings = FragmentShowCreditsBinding.inflate(layoutInflater)
+
+        return bindings.root
+
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         initRecycler()
@@ -128,15 +141,12 @@ class EpisodeCreditsFragment() : BaseFragment() {
         startActivity(intent)
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        bindings = FragmentShowCreditsBinding.inflate(layoutInflater)
+    override fun onDestroyView() {
+        super.onDestroyView()
 
-        return bindings.root
-
+        _bindings = null
     }
+
 
     companion object {
         @JvmStatic

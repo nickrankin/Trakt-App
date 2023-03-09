@@ -29,7 +29,9 @@ import kotlinx.coroutines.flow.*
 private const val TAG = "HERE"
 @AndroidEntryPoint
 class ShowDetailsProgressFragment: Fragment(), IOnStatistcsRefreshListener {
-    private lateinit var bindings: ShowDetailsProgressFragmentBinding
+
+    private var _bindings: ShowDetailsProgressFragmentBinding? = null
+    private val bindings get() = _bindings!!
 
     private val viewModel: ShowDetailsViewModel by activityViewModels()
     private lateinit var progressCardview: CardView
@@ -45,7 +47,7 @@ class ShowDetailsProgressFragment: Fragment(), IOnStatistcsRefreshListener {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        bindings = ShowDetailsProgressFragmentBinding.inflate(inflater)
+        _bindings = ShowDetailsProgressFragmentBinding.inflate(inflater)
         return bindings.root
     }
 
@@ -163,6 +165,12 @@ class ShowDetailsProgressFragment: Fragment(), IOnStatistcsRefreshListener {
 //        } else {
 //            progressBar.visibility = View.GONE
 //        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        _bindings = null
     }
 
 

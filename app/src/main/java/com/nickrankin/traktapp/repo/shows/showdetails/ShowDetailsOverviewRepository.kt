@@ -3,7 +3,6 @@ package com.nickrankin.traktapp.repo.shows.showdetails
 import android.util.Log
 import androidx.room.withTransaction
 import com.nickrankin.traktapp.dao.credits.CreditsDatabase
-import com.nickrankin.traktapp.dao.credits.ShowCastPerson
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.show.model.TmShow
 import com.nickrankin.traktapp.helper.PersonCreditsHelper
@@ -12,7 +11,6 @@ import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.repo.shows.CreditsRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 private const val TAG = "ShowDetailsOverviewRepo"
@@ -44,6 +42,7 @@ class ShowDetailsOverviewRepository @Inject constructor(
         },
         saveFetchResult = { showCastPersons ->
             showsDatabase.withTransaction {
+                showCastPeopleDao.deleteShowCast(showTraktId)
                 showCastPeopleDao.insert(showCastPersons)
             }
         }
@@ -54,24 +53,20 @@ class ShowDetailsOverviewRepository @Inject constructor(
             showCastPeopleDao.getShowCast(episodeDataModel?.showTraktId ?: 0, showGuestStars)
         },
         fetch = {
-            creditsHelper.getShowCredits(episodeDataModel?.showTraktId ?: 0 , episodeDataModel?.tmdbId)
+            Log.e(TAG, "getEpisodeCast: edm $episodeDataModel", )
+            creditsHelper.getShowCredits(episodeDataModel?.showTraktId ?: 0 , episodeDataModel?.showTmdbId)
         },
         shouldFetch = { castPersons ->
-            shouldRefresh || castPersons.isEmpty()
-
+            shouldRefresh || (castPersons.isEmpty() && !showGuestStars) || showGuestStars
         },
         saveFetchResult = { showCastPersons ->
-            Log.d(TAG, "getEpisodeCast: Refreshing Episode Cast")
-            showsDatabase.withTransaction {
-                showCastPeopleDao.deleteShowCast(episodeDataModel?.showTraktId ?: 0)
-                showCastPeopleDao.insert(showCastPersons)
-            }
+            Log.d(TAG, "getEpisodeCast: Refreshing Episode Cast for episode ${episodeDataModel?.showTraktId}")
 
-            val guestStars = creditsHelper.getEpisodeGuestCredits(episodeDataModel?.showTraktId ?: 0, episodeDataModel?.tmdbId ?: 0, episodeDataModel?.seasonNumber ?: 0, episodeDataModel?.episodeNumber ?: 0)
+            val guestStars = creditsHelper.getEpisodeCredits(episodeDataModel?.showTraktId ?: 0, episodeDataModel?.showTmdbId ?: 0, episodeDataModel?.seasonNumber ?: 0, episodeDataModel?.episodeNumber ?: 0)
             showsDatabase.withTransaction {
+                showCastDao.insert(showCastPersons)
                 showCastDao.insert(guestStars)
             }
-
         }
     )
 
