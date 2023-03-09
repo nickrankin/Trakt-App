@@ -38,7 +38,8 @@ private const val TAG = "PeopleCreditsFragment"
 @AndroidEntryPoint
 class PeopleCreditsFragment : BaseFragment() {
 
-    private lateinit var bindings: FragmentPeopleCreditsBinding
+    private var _bindings: FragmentPeopleCreditsBinding? = null
+    private val bindings get() = _bindings!!
 
     private lateinit var creditsRecyclerView: RecyclerView
     private lateinit var adapter: CharacterPosterAdapter
@@ -55,7 +56,7 @@ class PeopleCreditsFragment : BaseFragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        bindings = FragmentPeopleCreditsBinding.inflate(inflater)
+        _bindings = FragmentPeopleCreditsBinding.inflate(inflater)
 
         return bindings.root
     }
@@ -153,15 +154,17 @@ class PeopleCreditsFragment : BaseFragment() {
 
                             }
                             is Resource.Success -> {
-                                adapter.submitList(crewResource.data?.filter {
-                                    it.job.uppercase() == "director".uppercase() || it.job.uppercase() == "writer".uppercase()
-                                })
+                                adapter.submitList(crewResource.data)
+//                                    ?.filter {
+//                                    it.job.uppercase() == "director".uppercase() || it.job.uppercase() == "writer".uppercase()
+//                                })
                             }
                             is Resource.Error -> {
                                 if(!crewResource.data.isNullOrEmpty()) {
-                                    adapter.submitList(crewResource.data?.filter {
-                                        it.job.uppercase() == "director".uppercase() || it.job.uppercase() == "writer".uppercase()
-                                    })
+                                    adapter.submitList(crewResource.data)
+//                                        ?.filter {
+//                                        it.job.uppercase() == "director".uppercase() || it.job.uppercase() == "writer".uppercase()
+//                                    })
                                 }
 
                                 handleError(crewResource.error, null)
@@ -224,6 +227,12 @@ class PeopleCreditsFragment : BaseFragment() {
 
         creditsRecyclerView.layoutManager = lm
         creditsRecyclerView.adapter = adapter
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        _bindings = null
     }
 
     companion object {
