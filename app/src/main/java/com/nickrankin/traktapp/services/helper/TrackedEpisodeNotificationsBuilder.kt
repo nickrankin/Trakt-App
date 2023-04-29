@@ -16,7 +16,8 @@ import com.nickrankin.traktapp.helper.convertToHumanReadableTime
 import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
 import com.nickrankin.traktapp.services.CancelShowTrackingNotificationReceiver
-import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
+import com.nickrankin.traktapp.ui.shows.ShowsMainActivity
+import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsFragment
 import org.threeten.bp.OffsetDateTime
 import org.threeten.bp.format.DateTimeFormatter
 import java.util.*
@@ -104,9 +105,9 @@ class TrackedEpisodeNotificationsBuilder(private val context: Context) {
     }
 
     private fun getPendingIntent(trackedEpisode: TrackedEpisode): PendingIntent {
-        val intent = Intent(context, EpisodeDetailsActivity::class.java)
+        val intent = Intent(context, ShowsMainActivity::class.java)
 
-        intent.putExtra(EpisodeDetailsActivity.EPISODE_DATA_KEY,
+        intent.putExtra(EpisodeDetailsFragment.EPISODE_DATA_KEY,
             EpisodeDataModel(
                 trackedEpisode.show_trakt_id,
                 trackedEpisode.show_tmdb_id,

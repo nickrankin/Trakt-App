@@ -13,15 +13,16 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.AdaptorActionControls
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.adapter.movies.ReccomendedMoviesAdaptor
 import com.nickrankin.traktapp.databinding.FragmentRecommendedMoviesBinding
+import com.nickrankin.traktapp.databinding.FragmentSplitviewLayoutBinding
 import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.movies.RecommendedMoviesViewModel
-import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
 import com.uwetrottmann.trakt5.entities.*
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -32,9 +33,8 @@ private const val TAG = "RecommendedMoviesFragme"
 @AndroidEntryPoint
 class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
-    private lateinit var bindings: FragmentRecommendedMoviesBinding
+    private lateinit var bindings: FragmentSplitviewLayoutBinding
 
-    private lateinit var swipeLayout: SwipeRefreshLayout
     private lateinit var progressBar: ProgressBar
 
     private lateinit var recyclerView: RecyclerView
@@ -49,7 +49,7 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        bindings = FragmentRecommendedMoviesBinding.inflate(inflater)
+        bindings = FragmentSplitviewLayoutBinding.inflate(inflater)
         return bindings.root
     }
 
@@ -57,10 +57,9 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
         super.onViewCreated(view, savedInstanceState)
         setHasOptionsMenu(true)
 
-        swipeLayout = bindings.recommendedmoviesfragmentSwipeLayout
-        swipeLayout.setOnRefreshListener(this)
+        progressBar = bindings.splitviewlayoutProgressbar
 
-        progressBar = bindings.recommendedmoviesfragmentProgressbar
+        (activity as OnNavigateToEntity).enableOverviewLayout(false)
 
         updateTitle("Suggested Movies")
 
@@ -96,51 +95,47 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
                     is Resource.Success -> {
                         progressBar.visibility = View.GONE
 
-                        if (swipeLayout.isRefreshing) {
-                            swipeLayout.isRefreshing = false
-                        }
                         Log.d(TAG, "getRecommendedMovies: Got recommendations successfully")
 
                         if(recommendedMoviesResource.data != null && recommendedMoviesResource.data!!.isNotEmpty()) {
-                            bindings.recommendedmoviesfragmentRecyclerview.visibility = View.VISIBLE
-                            bindings.recommendedmoviesfragmentMessageContainer.visibility = View.GONE
+                            bindings.splitviewlayoutRecyclerview.visibility = View.VISIBLE
+                            bindings.splitviewlayoutMessageContainer.visibility = View.GONE
 
                             if(recommendedMoviesResource.data != null) {
+
                                 adapter.submitList(recommendedMoviesResource.data!!.toMutableList()) {
                                     recyclerView.scrollToPosition(0)
                                 }
                             }
 
-                        } else {
-                            bindings.recommendedmoviesfragmentRecyclerview.visibility = View.GONE
-                            bindings.recommendedmoviesfragmentMessageContainer.visibility = View.VISIBLE
 
-                            bindings.recommendedmoviesfragmentMessageContainer.text = "There are no recommended movies at this time!"
+
+                        } else {
+                            bindings.splitviewlayoutRecyclerview.visibility = View.GONE
+                            bindings.splitviewlayoutMessageContainer.visibility = View.VISIBLE
+
+                            bindings.splitviewlayoutMessageContainer.text = "There are no recommended movies at this time!"
                         }
                     }
 
                     is Resource.Error -> {
                         progressBar.visibility = View.GONE
 
-                        if (swipeLayout.isRefreshing) {
-                            swipeLayout.isRefreshing = false
-                        }
-
                         if(recommendedMoviesResource.data != null && recommendedMoviesResource.data!!.isNotEmpty()) {
-                            bindings.recommendedmoviesfragmentRecyclerview.visibility = View.VISIBLE
-                            bindings.recommendedmoviesfragmentMessageContainer.visibility = View.GONE
+                            bindings.splitviewlayoutRecyclerview.visibility = View.VISIBLE
+                            bindings.splitviewlayoutMessageContainer.visibility = View.GONE
 
                             adapter.submitList(recommendedMoviesResource.data)
                         } else {
-                            bindings.recommendedmoviesfragmentRecyclerview.visibility = View.GONE
-                            bindings.recommendedmoviesfragmentMessageContainer.visibility = View.VISIBLE
+                            bindings.splitviewlayoutRecyclerview.visibility = View.GONE
+                            bindings.splitviewlayoutMessageContainer.visibility = View.VISIBLE
 
-                            bindings.recommendedmoviesfragmentMessageContainer.text = "There are no recommended movies at this time!"
+                            bindings.splitviewlayoutMessageContainer.text = "There are no recommended movies at this time!"
                         }
 
                         (activity as IHandleError).showErrorSnackbarRetryButton(
                             recommendedMoviesResource.error,
-                            bindings.recommendedmoviesfragmentSwipeLayout
+                            bindings.root
                         ) {
                             viewModel.onRefresh()
                         }
@@ -176,7 +171,7 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
     }
 
     private fun initRecyclerView() {
-        recyclerView = bindings.recommendedmoviesfragmentRecyclerview
+        recyclerView = bindings.splitviewlayoutRecyclerview
 
 
         switchRecyclerViewLayoutManager(requireContext(), recyclerView, MediaEntryBaseAdapter.VIEW_TYPE_POSTER)
@@ -261,9 +256,7 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
             return
         }
 
-        val intent = Intent(requireContext(), MovieDetailsActivity::class.java)
-        intent.putExtra(
-            MovieDetailsActivity.MOVIE_DATA_KEY,
+        (activity as MoviesMainActivity).navigateToMovie(
             MovieDataModel(
                 movie.ids?.trakt ?: 0,
                 movie.ids?.tmdb,
@@ -271,7 +264,6 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
                 movie.year,
             )
         )
-        startActivity(intent)
     }
 
     private fun deleteSuggestion(position: Int, movie: Movie?) {

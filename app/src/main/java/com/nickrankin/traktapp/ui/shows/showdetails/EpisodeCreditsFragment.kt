@@ -14,14 +14,15 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.credits.ShowCastCreditsAdapter
 import com.nickrankin.traktapp.databinding.FragmentShowCreditsBinding
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.ICreditsPersons
+import com.nickrankin.traktapp.model.datamodel.PersonDataModel
 import com.nickrankin.traktapp.model.shows.EpisodeDetailsViewModel
 import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
-import com.nickrankin.traktapp.ui.person.PersonActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
@@ -136,9 +137,10 @@ class EpisodeCreditsFragment() : BaseFragment() {
     }
 
     private fun navigateToPerson(personTraktId: Int) {
-        val intent = Intent(context, PersonActivity::class.java)
-        intent.putExtra(PersonActivity.PERSON_ID_KEY, personTraktId)
-        startActivity(intent)
+        (activity as OnNavigateToEntity).navigateToPerson(
+            PersonDataModel(personTraktId, null, null)
+
+        )
     }
 
     override fun onDestroyView() {

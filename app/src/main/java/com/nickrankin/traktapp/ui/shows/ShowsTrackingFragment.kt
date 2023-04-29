@@ -17,6 +17,7 @@ import androidx.appcompat.widget.SearchView
 import androidx.core.content.ContextCompat
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.LoadState
 import androidx.recyclerview.widget.GridLayoutManager
@@ -31,6 +32,7 @@ import com.google.android.flexbox.JustifyContent
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.AdaptorActionControls
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
@@ -49,8 +51,6 @@ import com.nickrankin.traktapp.model.shows.ShowsTrackingViewModel
 import com.nickrankin.traktapp.services.helper.TrackedEpisodeAlarmScheduler
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.settings.SettingsFragment
-import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
-import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.uwetrottmann.trakt5.entities.SearchResult
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.*
@@ -250,7 +250,7 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
                 Snackbar.LENGTH_INDEFINITE
             ) {
                 requireActivity().supportFragmentManager.beginTransaction()
-                    .add(R.id.showsmainactivity_container, SettingsFragment())
+                    .add(R.id.splitviewactivity_first_container, SettingsFragment())
                     .commit()
             }.show()
         }
@@ -656,13 +656,11 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
 
 
     override fun navigateToShow(traktId: Int, tmdbId: Int?, title: String?) {
-        val intent = Intent(requireActivity(), ShowDetailsActivity::class.java)
-        intent.putExtra(ShowDetailsActivity.SHOW_DATA_KEY,
+        (activity as OnNavigateToEntity).navigateToShow(
             ShowDataModel(
                 traktId, tmdbId, title
             )
         )
-        startActivity(intent)
     }
 
     override fun navigateToEpisode(
@@ -672,18 +670,16 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
         episodeNumber: Int,
         title: String?
     ) {
-        val intent = Intent(requireActivity(), EpisodeDetailsActivity::class.java)
-
-        intent.putExtra(EpisodeDetailsActivity.EPISODE_DATA_KEY,
+        (activity as OnNavigateToEntity).navigateToEpisode(
             EpisodeDataModel(
                 showTraktId,
                 showTmdbId,
                 seasonNumber,
                 episodeNumber,
                 title
-            ))
+            )
+        )
 
-        startActivity(intent)
     }
 
     private fun getSnackbar(

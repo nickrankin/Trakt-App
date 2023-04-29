@@ -16,6 +16,7 @@ import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
 import com.nickrankin.traktapp.dao.stats.model.WatchedEpisodeStats
 import com.nickrankin.traktapp.dao.stats.model.WatchedMoviesStats
 import com.nickrankin.traktapp.databinding.ViewPosterItemBinding
+import com.nickrankin.traktapp.databinding.ViewUpcomingItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.ImageItemType
 import com.nickrankin.traktapp.helper.TmdbImageLoader
@@ -40,7 +41,7 @@ class LastWatchedHistoryAdapter<T: com.nickrankin.traktapp.dao.history.model.His
         viewType: Int
     ): LastWatchedHistoryAdapter<T>.WatchedHistoryVH {
         return WatchedHistoryVH(
-            ViewPosterItemBinding.inflate(
+            ViewUpcomingItemBinding.inflate(
                 LayoutInflater.from(
                     parent.context
                 ), parent, false
@@ -53,14 +54,16 @@ class LastWatchedHistoryAdapter<T: com.nickrankin.traktapp.dao.history.model.His
 
         holder.bindings.apply {
 
-            itemTimestamp.text = "Watched: " + currentItem.watched_date?.atZoneSameInstant(
+            upcomingitemviewAiring.text = "Watched: " + currentItem.watched_date?.atZoneSameInstant(
                 ZoneId.systemDefault())?.format(
                 DateTimeFormatter.ofPattern(AppConstants.DEFAULT_DATE_TIME_FORMAT))
 
-            itemTitle.text = currentItem.title
 
             when(currentItem) {
                 is MovieWatchedHistoryEntry -> {
+
+                    upcomingitemviewSeasonEpisodeTitle.text = currentItem.title
+
                     tmdbImageLoader.loadImages(
                         currentItem.trakt_id,
                         ImageItemType.MOVIE,
@@ -68,12 +71,16 @@ class LastWatchedHistoryAdapter<T: com.nickrankin.traktapp.dao.history.model.His
                         currentItem.title,
                         null,
                         true,
-                        itemPoster,
+                        upcomingitemviewPoster,
                         null,
                         false
                     )
                 }
                 is EpisodeWatchedHistoryEntry -> {
+                    upcomingitemviewShowTitle.text = currentItem.title
+
+                    upcomingitemviewSeasonEpisodeTitle.text = "S${currentItem.season}E${currentItem.episode}"
+
                     tmdbImageLoader.loadImages(
                         currentItem.trakt_id,
                         ImageItemType.SHOW,
@@ -81,7 +88,7 @@ class LastWatchedHistoryAdapter<T: com.nickrankin.traktapp.dao.history.model.His
                         currentItem.title,
                         null,
                         true,
-                        itemPoster,
+                        upcomingitemviewPoster,
                         null,
                         false
                     )
@@ -95,7 +102,7 @@ class LastWatchedHistoryAdapter<T: com.nickrankin.traktapp.dao.history.model.His
         }
     }
 
-    inner class WatchedHistoryVH(val bindings: ViewPosterItemBinding) :
+    inner class WatchedHistoryVH(val bindings: ViewUpcomingItemBinding) :
         BaseViewHolder(bindings.root)
 
     // Workaround to support variable height Cast Person elements in the horizontal RecyclerView.

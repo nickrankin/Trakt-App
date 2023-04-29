@@ -21,7 +21,16 @@ open class SearchViewModel @Inject constructor(open val traktApi: TraktApi) : Vi
         Pager(
             PagingConfig(15)
         ) {
-            SearchPagingSource(traktApi, query, type)
+            SearchPagingSource(traktApi, query, type, null)
+        }.flow
+            .cachedIn(viewModelScope)
+    }
+
+    fun doSearchWithGenre(query: String, type: Type?, genre: String) = run {
+        Pager(
+            PagingConfig(15)
+        ) {
+            SearchPagingSource(traktApi, query, type, genre)
         }.flow
             .cachedIn(viewModelScope)
     }

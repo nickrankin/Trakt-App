@@ -95,7 +95,7 @@ class ListEntryAdapter constructor(
                         currentItem.entryData.listed_at.format(
                             DateTimeFormatter.ofPattern(
                                 sharedPreferences.getString(
-                                    "date_format",
+                                    AppConstants.DATE_FORMAT,
                                     "dd/MM/yyyy"
                                 )
                             )
@@ -147,7 +147,7 @@ class ListEntryAdapter constructor(
                         currentItem.entryData.listed_at.format(
                             DateTimeFormatter.ofPattern(
                                 sharedPreferences.getString(
-                                    "date_format",
+                                    AppConstants.DATE_FORMAT,
                                     "dd/MM/yyyy"
                                 )
                             )
@@ -201,7 +201,7 @@ class ListEntryAdapter constructor(
                         currentItem.entryData.listed_at.format(
                             DateTimeFormatter.ofPattern(
                                 sharedPreferences.getString(
-                                    "date_format",
+                                    AppConstants.DATE_FORMAT,
                                     "dd/MM/yyyy"
                                 )
                             )
@@ -262,7 +262,7 @@ class ListEntryAdapter constructor(
                         currentItem.entryData.listed_at.format(
                             DateTimeFormatter.ofPattern(
                                 sharedPreferences.getString(
-                                    "date_format",
+                                    AppConstants.DATE_FORMAT,
                                     "dd/MM/yyyy"
                                 )
                             )

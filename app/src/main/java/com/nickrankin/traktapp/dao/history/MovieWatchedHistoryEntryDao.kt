@@ -13,7 +13,7 @@ interface MovieWatchedHistoryEntryDao {
     @Query("SELECT * FROM movie_history_entry WHERE trakt_id = :traktId")
     fun getWatchedHistoryForMovie(traktId: Int): Flow<List<MovieWatchedHistoryEntry>>
 
-    @Query("SELECT * FROM movie_history_entry ORDER BY watched_date DESC LIMIT 10")
+    @Query("SELECT * FROM movie_history_entry ORDER BY watched_date DESC LIMIT 3")
     fun getLatestWatchedHistoryForMovie(): Flow<List<MovieWatchedHistoryEntry>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

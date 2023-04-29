@@ -36,7 +36,7 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
-                <androidx.cardview.widget.CardView
+                <com.google.android.material.card.MaterialCardView
                     android:id="@+id/moviedetailsactivity_poster_cardview"
                     android:layout_width="98dp"
                     android:layout_height="150dp"
@@ -51,7 +51,7 @@
                         android:layout_height="match_parent"
                         android:scaleType="fitXY"
                         android:src="@drawable/ic_baseline_movie_filter_24" />
-                </androidx.cardview.widget.CardView>
+                </com.google.android.material.card.MaterialCardView>
 
 
 
@@ -100,7 +100,7 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/moviedetailsactivity_tagline" />
 
-                <androidx.cardview.widget.CardView
+                <com.google.android.material.card.MaterialCardView
                     android:id="@+id/moviedetailsactivity_action_buttons"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -109,9 +109,9 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/moviedetailsactivity_overview">
 
-                </androidx.cardview.widget.CardView>
+                </com.google.android.material.card.MaterialCardView>
 
-                <androidx.cardview.widget.CardView
+                <com.google.android.material.card.MaterialCardView
                     android:id="@+id/moviedetailsactivity_cast_crew"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -121,7 +121,7 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/moviedetailsactivity_action_buttons" />
 
-                <androidx.cardview.widget.CardView
+                <com.google.android.material.card.MaterialCardView
                     android:id="@+id/moviedetailsactivity_details"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -258,9 +258,9 @@
 
                         </com.google.android.material.chip.ChipGroup>
                     </LinearLayout>
-                </androidx.cardview.widget.CardView>
+                </com.google.android.material.card.MaterialCardView>
 
-                <androidx.cardview.widget.CardView
+                <com.google.android.material.card.MaterialCardView
                     android:id="@+id/moviedetailsactivity_watch"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -270,7 +270,7 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/moviedetailsactivity_details" />
 
-                <androidx.cardview.widget.CardView
+                <com.google.android.material.card.MaterialCardView
                     android:id="@+id/moviedetailsactivity_similar"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

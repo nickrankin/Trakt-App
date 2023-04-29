@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.nickrankin.traktapp.dao.calendars.ShowCalendarEntryDao
 import com.nickrankin.traktapp.dao.calendars.model.HiddenShowCalendarEntry
-import com.nickrankin.traktapp.dao.calendars.model.ShowCalendarEntry
+import com.nickrankin.traktapp.dao.calendars.model.ShowBaseCalendarEntry
 import com.nickrankin.traktapp.dao.history.EpisodeWatchedHistoryEntryDao
 import com.nickrankin.traktapp.dao.history.model.EpisodeWatchedHistoryEntry
 import com.nickrankin.traktapp.dao.refresh.LastRefreshedAt
@@ -17,7 +17,7 @@ import com.nickrankin.traktapp.dao.stats.*
 import com.nickrankin.traktapp.dao.stats.model.*
 
 @Database(
-    entities = [ShowCalendarEntry::class,
+    entities = [ShowBaseCalendarEntry::class,
         CollectedShow::class,
         CollectedEpisode::class,
         WatchedEpisode::class,
@@ -36,7 +36,9 @@ import com.nickrankin.traktapp.dao.stats.model.*
         RatingsEpisodesStats::class,
         HiddenShowCalendarEntry::class,
         LastRefreshedAt::class,
-        EpisodeWatchedHistoryEntry::class],
+        EpisodeWatchedHistoryEntry::class,
+               ShowsProgress::class,
+               SeasonProgress::class],
     version = 1,
     exportSchema = false
 )
@@ -66,6 +68,7 @@ abstract class ShowsDatabase : RoomDatabase() {
 
     abstract fun episodeWatchedHistoryEntryDao(): EpisodeWatchedHistoryEntryDao
 
+    abstract fun showSeasonProgressDao(): ShowSeasonProgressDao
 
 
     companion object {

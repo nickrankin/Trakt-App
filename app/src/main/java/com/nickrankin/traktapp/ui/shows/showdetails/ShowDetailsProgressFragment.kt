@@ -2,7 +2,6 @@ package com.nickrankin.traktapp.ui.shows.showdetails
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,6 +12,7 @@ import androidx.cardview.widget.CardView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.dao.stats.model.WatchedSeasonStats
 import com.nickrankin.traktapp.databinding.ShowDetailsProgressFragmentBinding
@@ -21,7 +21,7 @@ import com.nickrankin.traktapp.helper.calculateProgress
 import com.nickrankin.traktapp.model.datamodel.SeasonDataModel
 import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
 import com.nickrankin.traktapp.ui.IOnStatistcsRefreshListener
-import com.nickrankin.traktapp.ui.shows.SeasonEpisodesActivity
+import com.nickrankin.traktapp.ui.shows.SeasonEpisodesFragment
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
@@ -140,16 +140,15 @@ class ShowDetailsProgressFragment: Fragment(), IOnStatistcsRefreshListener {
         progressBar.progress = progressPercent
 
         progressView.setOnClickListener {
-            val seasonEpisodesIntent = Intent(activity, SeasonEpisodesActivity::class.java)
-            seasonEpisodesIntent.putExtra(SeasonEpisodesActivity.SEASON_DATA_KEY,
-            SeasonDataModel(
-                watchedSeasonStats.show_trakt_id,
-                null,
-                watchedSeasonStats.season,
-                ""
-            ))
 
-            startActivity(seasonEpisodesIntent)
+            (activity as OnNavigateToEntity).navigateToSeason(
+                SeasonDataModel(
+                    watchedSeasonStats.show_trakt_id,
+                    null,
+                    watchedSeasonStats.season,
+                    ""
+                )
+            )
 
         }
 

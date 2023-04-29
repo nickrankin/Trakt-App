@@ -1,10 +1,8 @@
 package com.nickrankin.traktapp.ui.person
 
 import android.content.Intent
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,13 +10,13 @@ import android.widget.ProgressBar
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexWrap
 import com.google.android.flexbox.FlexboxLayoutManager
 import com.google.android.material.chip.Chip
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.credits.CharacterPosterAdapter
 import com.nickrankin.traktapp.dao.credits.model.CreditPerson
@@ -30,12 +28,9 @@ import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.person.PersonOverviewViewModel
-import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
-import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.uwetrottmann.trakt5.enums.Type
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.flatMapLatest
 import javax.inject.Inject
 
 private const val LIMIT = 6
@@ -87,9 +82,13 @@ class PersonOverviewFragment : BaseFragment() {
 
         progressBar = bindings.personactivityProgressbar
 
-        bindings.personactivitySwipeLayout.setOnRefreshListener {
-            viewModel.onRefresh()
+        val personTraktId = arguments?.getInt(PERSON_ID_KEY)
+
+        if(personTraktId != null) {
+            viewModel.switchPerson(personTraktId)
         }
+
+        (activity as OnNavigateToEntity).enableOverviewLayout(true)
 
         initPersonMoviesAdapter()
         initPersonShowsAdapter()
@@ -110,9 +109,6 @@ class PersonOverviewFragment : BaseFragment() {
                         Log.d(TAG, "getPerson: Loading person")
                     }
                     is Resource.Success -> {
-                        if(bindings.personactivitySwipeLayout.isRefreshing) {
-                            bindings.personactivitySwipeLayout.isRefreshing = false
-                        }
                         progressBar.visibility = View.GONE
                         displayPersonData(personResource.data)
 
@@ -122,7 +118,7 @@ class PersonOverviewFragment : BaseFragment() {
 
                         (activity as IHandleError).showErrorSnackbarRetryButton(
                             personResource.error,
-                            bindings.personactivitySwipeLayout
+                            bindings.root
                         ) {
                             viewModel.onRefresh()
                         }
@@ -262,7 +258,7 @@ class PersonOverviewFragment : BaseFragment() {
 
                         (activity as IHandleError).showErrorSnackbarRetryButton(
                             creditsResource.error,
-                            bindings.personactivitySwipeLayout
+                            bindings.root
                         ) {
                             viewModel.onRefresh()
                         }
@@ -397,7 +393,7 @@ class PersonOverviewFragment : BaseFragment() {
             datesSb.append(
                 getFormattedDateTime(
                     person.birthday,
-                    sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)
+                    sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_FORMAT)
                         ?: "",
                     ""
                 )
@@ -408,7 +404,7 @@ class PersonOverviewFragment : BaseFragment() {
             datesSb.append(
                 " - " + getFormattedDateTime(
                     person.death,
-                    sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)
+                    sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_FORMAT)
                         ?: "",
                     ""
                 )
@@ -441,14 +437,11 @@ class PersonOverviewFragment : BaseFragment() {
     private fun initPersonMoviesAdapter() {
         personMoviesRecyclerView = bindings.personactivityMoviesRecyclerview
 
-        val lm = FlexboxLayoutManager(requireContext())
-        lm.flexDirection = FlexDirection.ROW
-        lm.flexWrap = FlexWrap.WRAP
+        val lm = getResponsiveGridLayoutManager(requireContext(), 3)
+
 
         _personMoviesAdapter = CharacterPosterAdapter(glide, tmdbImageLoader) { selectedCredit ->
-            val movieIntent = Intent(requireContext(), MovieDetailsActivity::class.java)
-            movieIntent.putExtra(
-                MovieDetailsActivity.MOVIE_DATA_KEY,
+            (activity as OnNavigateToEntity).navigateToMovie(
                 MovieDataModel(
                     selectedCredit.trakt_id,
                     selectedCredit.tmdb_id,
@@ -456,7 +449,6 @@ class PersonOverviewFragment : BaseFragment() {
                     selectedCredit.year
                 )
             )
-            startActivity(movieIntent)
         }
 
         personMoviesRecyclerView.layoutManager = lm
@@ -466,14 +458,10 @@ class PersonOverviewFragment : BaseFragment() {
     private fun initPersonShowsAdapter() {
         personShowsRecyclerView = bindings.personactivityShowsRecyclerview
 
-        val lm = FlexboxLayoutManager(requireContext())
-        lm.flexDirection = FlexDirection.ROW
-        lm.flexWrap = FlexWrap.WRAP
+        val lm =  getResponsiveGridLayoutManager(requireContext(), 3)
 
         _personShowsAdapter = CharacterPosterAdapter(glide, tmdbImageLoader) { selectedCredit ->
-            val showIntent = Intent(requireContext(), ShowDetailsActivity::class.java)
-            showIntent.putExtra(
-                ShowDetailsActivity.SHOW_DATA_KEY,
+            (activity as OnNavigateToEntity).navigateToShow(
                 ShowDataModel(
                     selectedCredit.trakt_id,
                     selectedCredit.tmdb_id,
@@ -481,7 +469,6 @@ class PersonOverviewFragment : BaseFragment() {
                 )
             )
 
-            startActivity(showIntent)
 
         }
 
@@ -522,16 +509,12 @@ class PersonOverviewFragment : BaseFragment() {
             )
         }
 
-        val lm = FlexboxLayoutManager(requireContext())
-        lm.flexDirection = FlexDirection.ROW
-        lm.flexWrap = FlexWrap.WRAP
+        val lm =  getResponsiveGridLayoutManager(requireContext(), 3)
 
         _personDirectedAdapter = CharacterPosterAdapter(glide, tmdbImageLoader) { selectedCredit ->
             when(selectedCredit.type) {
                 Type.MOVIE -> {
-                    val movieIntent = Intent(requireContext(), MovieDetailsActivity::class.java)
-                    movieIntent.putExtra(
-                        MovieDetailsActivity.MOVIE_DATA_KEY,
+                    (activity as OnNavigateToEntity).navigateToMovie(
                         MovieDataModel(
                             selectedCredit.trakt_id,
                             selectedCredit.tmdb_id,
@@ -539,12 +522,9 @@ class PersonOverviewFragment : BaseFragment() {
                             selectedCredit.year
                         )
                     )
-                    startActivity(movieIntent)
                 }
                 Type.SHOW -> {
-                    val showIntent = Intent(requireContext(), ShowDetailsActivity::class.java)
-                    showIntent.putExtra(
-                        ShowDetailsActivity.SHOW_DATA_KEY,
+                    (activity as OnNavigateToEntity).navigateToShow(
                         ShowDataModel(
                             selectedCredit.trakt_id,
                             selectedCredit.tmdb_id,
@@ -552,7 +532,6 @@ class PersonOverviewFragment : BaseFragment() {
                         )
                     )
 
-                    startActivity(showIntent)
                 }
                 else -> {
                     Log.e(TAG, "initPersonDirectedAdapter: Unsupported Type ${selectedCredit.type.name}")
@@ -575,7 +554,6 @@ class PersonOverviewFragment : BaseFragment() {
 
         fragTransaction
             ?.replace(this.id, peopleCreditsFragment)
-            ?.addToBackStack("pcf")
             ?.commit()
 
     }
@@ -597,6 +575,7 @@ class PersonOverviewFragment : BaseFragment() {
     }
 
     companion object {
+        const val PERSON_ID_KEY = "person_id"
         const val PERSON_NAME_KEY = "person_name_key"
         @JvmStatic
         fun newInstance() =

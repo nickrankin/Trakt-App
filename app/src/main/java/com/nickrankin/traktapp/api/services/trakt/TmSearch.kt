@@ -10,6 +10,19 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface TmSearch {
+    @GET("search/movie,show,")
+    suspend fun textQueryTags(
+        @Query("query") query: String?,
+        @Query("years") years: String?,
+        @Query("genres") genres: String?,
+        @Query("languages") languages: String?,
+        @Query("countries") countries: String?,
+        @Query("runtimes") runtimes: String?,
+        @Query("ratings") ratings: String?,
+        @Query("extended") extended: Extended?,
+        @Query("page") page: Int?,
+        @Query("limit") limit: Int?
+    ): List<SearchResult>
 
     /**
      * Search all text fields that a media object contains (i.e. title, overview, etc). Results are ordered by the most relevant score.

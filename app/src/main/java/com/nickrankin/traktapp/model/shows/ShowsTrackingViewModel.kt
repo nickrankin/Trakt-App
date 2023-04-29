@@ -68,7 +68,7 @@ class ShowsTrackingViewModel @Inject constructor(
                 val collectedShows = collectedShowsResource.data
 
                 val filteredShows: MutableList<CollectedShow> = mutableListOf()
-                Log.d(TAG, "Filtering for $filterText: ")
+                Log.d(TAG, "Filtering by $filterText: ")
 
                 // Filter the shows depending on applied filters
                 filteredShows.addAll(collectedShows?.filter { collectedShow ->

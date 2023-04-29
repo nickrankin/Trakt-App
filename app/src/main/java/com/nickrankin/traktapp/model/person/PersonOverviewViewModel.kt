@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nickrankin.traktapp.dao.credits.model.CrewType
 import com.nickrankin.traktapp.repo.person.PersonRepository
-import com.nickrankin.traktapp.ui.person.PersonActivity
+import com.nickrankin.traktapp.ui.person.PersonOverviewFragment
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
@@ -15,7 +15,11 @@ import javax.inject.Inject
 private const val TAG = "PersonViewModel"
 @HiltViewModel
 class PersonOverviewViewModel @Inject constructor(private val savedStateHandle: SavedStateHandle, private val repository: PersonRepository): ViewModel() {
-    private val personTraktId = savedStateHandle.get<Int>(PersonActivity.PERSON_ID_KEY)
+    private val personTraktId = savedStateHandle.get<Int>(PersonOverviewFragment.PERSON_ID_KEY)
+
+    private val personChangedChannel = Channel<Int>()
+    private val personChanged = personChangedChannel.receiveAsFlow()
+        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
     
     private val refreshEventChannel = Channel<Boolean>()
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
@@ -30,15 +34,28 @@ class PersonOverviewViewModel @Inject constructor(private val savedStateHandle: 
         .stateIn(viewModelScope, SharingStarted.Eagerly, CrewType.PRODUCING)
     
     val person = refreshEvent.flatMapLatest { shouldRefresh ->
-        repository.getPerson(personTraktId ?: 0, shouldRefresh)
+        personChanged.flatMapLatest { personTraktId ->
+            repository.getPerson(personTraktId, shouldRefresh)
+        }
     }
 
     val personCrew = refreshEvent.flatMapLatest { shouldRefresh ->
-        repository.getCrewPersonCredits(personTraktId ?: 0, shouldRefresh)
+        personChanged.flatMapLatest { personTraktId ->
+            repository.getCrewPersonCredits(personTraktId, shouldRefresh)
+        }
     }
 
     val personCast = refreshEvent.flatMapLatest { shouldRefresh ->
-        repository.getcastPersonCredits(personTraktId ?: 0, shouldRefresh)
+        personChanged.flatMapLatest { personTraktId ->
+
+            repository.getcastPersonCredits(personTraktId, shouldRefresh)
+        }
+    }
+
+    fun switchPerson(newPersonTraktId: Int) {
+        viewModelScope.launch {
+            personChangedChannel.send(newPersonTraktId)
+        }
     }
 
     fun changeCrewType(crewType: CrewType) {

@@ -1,7 +1,6 @@
 package com.nickrankin.traktapp.ui.shows
 
 import android.content.DialogInterface
-import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.*
@@ -14,19 +13,19 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.adapter.shows.RecommendedShowsAdapter
-import com.nickrankin.traktapp.databinding.FragmentShowsRecommendedBinding
 import com.nickrankin.traktapp.model.shows.RecommendedShowsViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.AdaptorActionControls
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
+import com.nickrankin.traktapp.databinding.FragmentSplitviewLayoutBinding
 import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.ui.auth.AuthActivity
-import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.uwetrottmann.trakt5.entities.Show
 import com.uwetrottmann.trakt5.enums.Type
 
@@ -35,12 +34,11 @@ private const val TAG = "ShowsRecommendedFragmen"
 @AndroidEntryPoint
 class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, OnNavigateToShow {
 
-    private var _bindings: FragmentShowsRecommendedBinding? = null
+    private var _bindings: FragmentSplitviewLayoutBinding? = null
     private val bindings get() = _bindings!!
 
     private val viewModel: RecommendedShowsViewModel by activityViewModels()
 
-    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
     private lateinit var progressBar: ProgressBar
     private lateinit var adapter: RecommendedShowsAdapter
     private lateinit var recyclerView: RecyclerView
@@ -56,7 +54,7 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
         savedInstanceState: Bundle?
     ): View {
         // Inflate the layout for this fragment
-        _bindings = FragmentShowsRecommendedBinding.inflate(inflater)
+        _bindings = FragmentSplitviewLayoutBinding.inflate(inflater)
         return bindings.root
     }
 
@@ -65,10 +63,10 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
 
         setHasOptionsMenu(true)
 
-        swipeRefreshLayout = bindings.fragmentreccomendedshowsSwipeLayout
-        swipeRefreshLayout.setOnRefreshListener(this)
+        (activity as OnNavigateToEntity).enableOverviewLayout(false)
 
-        progressBar = bindings.fragmentreccomendedshowsProgressbar
+
+        progressBar = bindings.splitviewlayoutProgressbar
 
         val isLoggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
 
@@ -96,7 +94,7 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
     }
 
     private fun initRecycler() {
-        recyclerView = bindings.fragmentreccomendedshowsRecyclerview
+        recyclerView = bindings.splitviewlayoutRecyclerview
 
         switchRecyclerViewLayoutManager(requireContext(), recyclerView, MediaEntryBaseAdapter.VIEW_TYPE_POSTER)
 
@@ -147,9 +145,6 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
                         progressBar.visibility = View.VISIBLE
                     }
                     is Resource.Success -> {
-                        if(swipeRefreshLayout.isRefreshing) {
-                            swipeRefreshLayout.isRefreshing = false
-                        }
 
                         progressBar.visibility = View.GONE
 
@@ -159,16 +154,13 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
                         }
                     }
                     is Resource.Error -> {
-                        if(swipeRefreshLayout.isRefreshing) {
-                            swipeRefreshLayout.isRefreshing = false
-                        }
 
                         progressBar.visibility = View.GONE
 
                         handleError(data.error, "Error loading recommended shows from Trakt. ")
 
                         showErrorSnackbarRetryButton(
-                            data.error, bindings.fragmentreccomendedshowsSwipeLayout
+                            data.error, bindings.root
                         ) {
                             viewModel.onRefresh()
                         }
@@ -260,14 +252,11 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
 
     override fun navigateToShow(traktId: Int, tmdbId: Int?, title: String?) {
 
-        val intent = Intent(context, ShowDetailsActivity::class.java)
-        intent.putExtra(ShowDetailsActivity.SHOW_DATA_KEY,
+        (activity as OnNavigateToEntity).navigateToShow(
             ShowDataModel(
                 traktId, tmdbId, title
             )
         )
-
-        startActivity(intent)
     }
 
 

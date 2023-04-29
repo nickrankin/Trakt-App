@@ -461,7 +461,7 @@ interface TmUsers {
     suspend fun watchedShows(
         @Path("username") userSlug: UserSlug,
         @Query(value = "extended", encoded = true) extended: Extended?
-    ): List<BaseShow>
+    ): List<com.nickrankin.traktapp.api.services.trakt.model.BaseShow>
 
     /**
      * **OAuth Optional**

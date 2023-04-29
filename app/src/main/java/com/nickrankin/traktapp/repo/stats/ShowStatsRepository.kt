@@ -4,13 +4,13 @@ import android.content.SharedPreferences
 import android.util.Log
 import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TraktApi
+import com.nickrankin.traktapp.api.services.trakt.model.BaseShow
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.stats.model.ShowsCollectedStats
 import com.nickrankin.traktapp.dao.stats.model.RatingsShowsStats
 import com.nickrankin.traktapp.dao.stats.model.WatchedEpisodeStats
 import com.nickrankin.traktapp.dao.stats.model.WatchedShowsStats
 import com.nickrankin.traktapp.ui.auth.AuthActivity
-import com.uwetrottmann.trakt5.entities.BaseShow
 import com.uwetrottmann.trakt5.entities.RatedShow
 import com.uwetrottmann.trakt5.entities.UserSlug
 import com.uwetrottmann.trakt5.enums.RatingsFilter
@@ -85,7 +85,7 @@ class ShowStatsRepository @Inject constructor(private val traktApi: TraktApi, pr
             insertRatedShowsStats(showRatingsResponse)
     }
 
-    private suspend fun insertCollectedShowsStats(shows: List<BaseShow>) {
+    private suspend fun insertCollectedShowsStats(shows: List<com.uwetrottmann.trakt5.entities.BaseShow>) {
         val showsCollectedStatsList: MutableList<ShowsCollectedStats> = mutableListOf()
 
         shows.map { baseShow ->

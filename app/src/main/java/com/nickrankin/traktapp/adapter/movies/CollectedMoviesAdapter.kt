@@ -55,7 +55,7 @@ class CollectedMoviesAdapter(private val tmdbImageLoader: TmdbImageLoader,
                     itemTitle.text = "${currentItem.title} (${currentItem.release_date?.year ?: "unknown"})"
 
                     if(currentItem.collected_at != null) {
-                        itemWatchedDate.text = "Collected: ${getFormattedDateTime(currentItem.collected_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString("time_format",AppConstants.DEFAULT_TIME_FORMAT))}"
+                        itemWatchedDate.text = "Collected: ${getFormattedDateTime(currentItem.collected_at, sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString(AppConstants.TIME_FORMAT,AppConstants.DEFAULT_TIME_FORMAT))}"
                     }
 
                     itemOverview.text = currentItem.movie_overview

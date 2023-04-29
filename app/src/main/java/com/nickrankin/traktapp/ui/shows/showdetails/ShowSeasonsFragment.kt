@@ -3,7 +3,6 @@ package com.nickrankin.traktapp.ui.shows.showdetails
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,17 +13,16 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.BaseFragment
-import com.nickrankin.traktapp.R
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.adapter.shows.SeasonsAdapter
 import com.nickrankin.traktapp.dao.show.TmSeasonAndStats
 import com.nickrankin.traktapp.databinding.FragmentShowSeasonsBinding
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.datamodel.SeasonDataModel
 import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
-import com.nickrankin.traktapp.ui.shows.SeasonEpisodesActivity
+import com.nickrankin.traktapp.ui.shows.SeasonEpisodesFragment
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.flatMapLatest
 import javax.inject.Inject
 
 private const val TAG = "ShowSeasonsFragment"
@@ -136,12 +134,12 @@ class ShowSeasonsFragment : BaseFragment() {
     }
 
     private fun navigateToSeason(tmSeasonAndStats: TmSeasonAndStats) {
-        val intent = Intent(requireContext(), SeasonEpisodesActivity::class.java)
-        intent.putExtra(SeasonEpisodesActivity.SEASON_DATA_KEY, SeasonDataModel(
-            tmSeasonAndStats.season.show_trakt_id, tmSeasonAndStats.season.show_tmdb_id, tmSeasonAndStats.season.season_number, "Season ${tmSeasonAndStats.season.season_number}")
-        )
+        Log.e(TAG, "navigateToSeason:  here", )
 
-        startActivity(intent)
+        (activity as OnNavigateToEntity).navigateToSeason(
+            SeasonDataModel(
+                tmSeasonAndStats.season.show_trakt_id, tmSeasonAndStats.season.show_tmdb_id, tmSeasonAndStats.season.season_number, "Season ${tmSeasonAndStats.season.season_number}")
+        )
     }
 
     override fun onDestroyView() {

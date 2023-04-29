@@ -29,10 +29,10 @@ class WatchedHistoryEntryAdapter constructor(val sharedPreferences: SharedPrefer
 
         holder.bindings.apply {
             if(currentEntry is EpisodeWatchedHistoryEntry) {
-                itemplayDate.text = "Watched (S${currentEntry.season}E${currentEntry.episode}): ${getFormattedDateTime(currentEntry.watched_date, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))}"
+                itemplayDate.text = "Watched (S${currentEntry.season}E${currentEntry.episode}): ${getFormattedDateTime(currentEntry.watched_date, sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString(AppConstants.TIME_FORMAT, AppConstants.DEFAULT_TIME_FORMAT))}"
 
             } else {
-                itemplayDate.text = "Watched: ${getFormattedDateTime(currentEntry.watched_date, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))}"
+                itemplayDate.text = "Watched: ${getFormattedDateTime(currentEntry.watched_date, sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString(AppConstants.TIME_FORMAT, AppConstants.DEFAULT_TIME_FORMAT))}"
             }
 
             itemplayRemove.setOnClickListener {

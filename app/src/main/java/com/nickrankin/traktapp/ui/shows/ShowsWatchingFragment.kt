@@ -1,7 +1,6 @@
 package com.nickrankin.traktapp.ui.shows
 
 import android.content.DialogInterface
-import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.*
@@ -11,26 +10,22 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.LoadState
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.AdaptorActionControls
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.adapter.shows.WatchedEpisodesLoadStateAdapter
 import com.nickrankin.traktapp.adapter.shows.WatchedEpisodesPagingAdapter
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
-import com.nickrankin.traktapp.dao.show.model.WatchedEpisodeAndStats
-import com.nickrankin.traktapp.databinding.FragmentWatchingBinding
+import com.nickrankin.traktapp.databinding.FragmentSplitviewLayoutBinding
 import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.shows.WatchedEpisodesViewModel
-import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
-import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
-import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.uwetrottmann.trakt5.entities.SyncItems
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.*
@@ -39,15 +34,16 @@ import org.threeten.bp.format.DateTimeFormatter
 import javax.inject.Inject
 
 private const val TAG = "WatchingFragment"
-@AndroidEntryPoint
-class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, OnNavigateToShow {
-    
-    private val viewModel by activityViewModels<WatchedEpisodesViewModel>()
 
-    private var _bindings: FragmentWatchingBinding? = null
+@AndroidEntryPoint
+class WatchedEpisodesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener,
+    OnNavigateToShow {
+
+    private val viewModel: WatchedEpisodesViewModel by activityViewModels()
+
+    private var _bindings: FragmentSplitviewLayoutBinding? = null
     private val bindings get() = _bindings!!
 
-    private lateinit var swipeLayout: SwipeRefreshLayout
     private lateinit var progressBar: ProgressBar
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: WatchedEpisodesPagingAdapter
@@ -62,18 +58,17 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _bindings = FragmentWatchingBinding.inflate(inflater)
+        _bindings = FragmentSplitviewLayoutBinding.inflate(inflater)
 
         return bindings.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        swipeLayout = bindings.showwatchingfragmentSwipeRefreshLayout
-        swipeLayout.setOnRefreshListener(this)
-
         setHasOptionsMenu(true)
 
-        progressBar = bindings.showwatchingfragmentProgressbar
+        (activity as OnNavigateToEntity).enableOverviewLayout(false)
+
+        progressBar = bindings.splitviewlayoutProgressbar
 
         updateTitle("Watched Episodes")
 
@@ -82,7 +77,7 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
 
         getViewState()
 
-        if(!isLoggedIn) {
+        if (!isLoggedIn) {
             handleLoggedOutState(this.id)
         }
 
@@ -100,10 +95,6 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
             viewModel.watchedEpisodes.collectLatest { latestData ->
                 progressBar.visibility = View.GONE
 
-                if(swipeLayout.isRefreshing) {
-                    swipeLayout.isRefreshing = false
-                }
-
                 adapter.submitData(latestData)
 
             }
@@ -114,25 +105,33 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
         lifecycleScope.launchWhenStarted {
             viewModel.events.collectLatest { event ->
 
-                when(event) {
+                when (event) {
                     is WatchedEpisodesViewModel.Event.RemoveWatchedHistoryEvent -> {
                         val syncResponseResource = event.syncResponse
 
-                        when(syncResponseResource) {
+                        when (syncResponseResource) {
                             is Resource.Success -> {
-                                if(syncResponseResource.data?.deleted?.episodes ?: 0 > 0) {
-                                    displayMessageToast("Succesfully removed play!", Toast.LENGTH_LONG)
+                                if (syncResponseResource.data?.deleted?.episodes ?: 0 > 0) {
+                                    displayMessageToast(
+                                        "Succesfully removed play!",
+                                        Toast.LENGTH_LONG
+                                    )
                                 } else {
                                     displayMessageToast("Error removing play", Toast.LENGTH_LONG)
                                 }
                             }
 
                             is Resource.Error -> {
-                                handleError(syncResponseResource.error, "Error removing watched Episode. ") }
+                                handleError(
+                                    syncResponseResource.error,
+                                    "Error removing watched Episode. "
+                                )
+                            }
                             else -> {}
 
                         }
-                    } else -> {
+                    }
+                    else -> {
                         //
                     }
                 }
@@ -142,35 +141,45 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
     }
 
     private fun initRecycler() {
-        recyclerView = bindings.showwatchingfragmentRecyclerview
+        recyclerView = bindings.splitviewlayoutRecyclerview
 
-        switchRecyclerViewLayoutManager(requireContext(), recyclerView, MediaEntryBaseAdapter.VIEW_TYPE_POSTER)
+        switchRecyclerViewLayoutManager(
+            requireContext(),
+            recyclerView,
+            MediaEntryBaseAdapter.VIEW_TYPE_POSTER
+        )
 
-        adapter = WatchedEpisodesPagingAdapter(AdaptorActionControls(context?.getDrawable(R.drawable.ic_baseline_remove_red_eye_24),
-            "Remove This Play", true,
-            R.menu.watched_shows_popup_menu, entrySelectedCallback = { selectedEpisode ->
-                navigateToEpisode(selectedEpisode.watchedEpisode)
+        adapter =
+            WatchedEpisodesPagingAdapter(AdaptorActionControls(context?.getDrawable(R.drawable.ic_baseline_remove_red_eye_24),
+                "Remove This Play", true,
+                R.menu.watched_shows_popup_menu, entrySelectedCallback = { selectedEpisode ->
+                    navigateToEpisode(selectedEpisode.watchedEpisode)
 
-            }, buttonClickedCallback = {selectedEpisode ->
-                removeFromWatchedHistory(selectedEpisode.watchedEpisode)
-            }, menuItemSelectedCallback = {selectedEpisode, menuSelected ->
-                when(menuSelected) {
-                    R.id.watchedshowspopup_nav_show -> {
-                        navigateToShow(selectedEpisode.watchedEpisode.show_trakt_id ?: 0, selectedEpisode.watchedEpisode.show_tmdb_id, selectedEpisode.watchedEpisode.show_title)
+                }, buttonClickedCallback = { selectedEpisode ->
+                    removeFromWatchedHistory(selectedEpisode.watchedEpisode)
+                }, menuItemSelectedCallback = { selectedEpisode, menuSelected ->
+                    when (menuSelected) {
+                        R.id.watchedshowspopup_nav_show -> {
+                            navigateToShow(
+                                selectedEpisode.watchedEpisode.show_trakt_id ?: 0,
+                                selectedEpisode.watchedEpisode.show_tmdb_id,
+                                selectedEpisode.watchedEpisode.show_title
+                            )
 
+                        }
+                        R.id.watchedshowspopup_nav_episode -> {
+                            navigateToEpisode(selectedEpisode.watchedEpisode)
+
+                        }
+                        R.id.watchedshowspopup_remove_show -> {
+                            removeFromWatchedHistory(selectedEpisode.watchedEpisode)
+                        }
+                        else -> {
+                            Log.e(TAG, "initRecycler: Invalid menu id $menuSelected")
+                        }
                     }
-                    R.id.watchedshowspopup_nav_episode -> {
-                        navigateToEpisode(selectedEpisode.watchedEpisode)
-
-                    }
-                    R.id.watchedshowspopup_remove_show -> {
-                        removeFromWatchedHistory(selectedEpisode.watchedEpisode)
-                    }
-                    else -> {
-                        Log.e(TAG, "initRecycler: Invalid menu id $menuSelected", )
-                    }
-                }
-            }),sharedPreferences, tmdbImageLoader)
+                }), sharedPreferences, tmdbImageLoader
+            )
 
         recyclerView.adapter = adapter.withLoadStateHeaderAndFooter(
             header = WatchedEpisodesLoadStateAdapter(adapter),
@@ -179,7 +188,8 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
 
         lifecycleScope.launchWhenCreated {
             adapter.loadStateFlow.collectLatest { loadStates ->
-                bindings.showwatchingfragmentSwipeRefreshLayout.isRefreshing = loadStates.refresh is LoadState.Loading
+//                bindings.splitviewlayoutSwipeLayout.isRefreshing =
+//                    loadStates.refresh is LoadState.Loading
             }
         }
 
@@ -189,29 +199,26 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
                 .distinctUntilChangedBy { it.refresh }
                 // Only react to cases where Remote REFRESH completes i.e., NotLoading.
                 .filter { it.refresh is LoadState.NotLoading }
-                .collect { bindings.showwatchingfragmentRecyclerview.scrollToPosition(0) }
+                .collect { bindings.splitviewlayoutRecyclerview.scrollToPosition(0) }
         }
 
     }
 
     override fun navigateToShow(traktId: Int, tmdbId: Int?, title: String?) {
-        val intent = Intent(requireActivity(), ShowDetailsActivity::class.java)
-        intent.putExtra(ShowDetailsActivity.SHOW_DATA_KEY,
+        (activity as OnNavigateToEntity).navigateToShow(
             ShowDataModel(
                 traktId, tmdbId, title
             )
         )
-        startActivity(intent)
     }
 
     private fun navigateToEpisode(selectedEpisode: WatchedEpisode?) {
-        if(selectedEpisode == null) {
-            Log.e(TAG, "navigateToEpisode: Selected Episode cannot be null", )
+        if (selectedEpisode == null) {
+            Log.e(TAG, "navigateToEpisode: Selected Episode cannot be null")
             return
         }
-        val intent = Intent(context, EpisodeDetailsActivity::class.java)
 
-        intent.putExtra(EpisodeDetailsActivity.EPISODE_DATA_KEY,
+        (activity as OnNavigateToEntity).navigateToEpisode(
             EpisodeDataModel(
                 selectedEpisode.show_trakt_id ?: 0,
                 selectedEpisode.show_tmdb_id,
@@ -221,10 +228,6 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
             )
         )
 
-        // We cannot guarantee Watched Episode data is up to date at this point so force refresh (user could have watched more of this show in meantime)
-        intent.putExtra(EpisodeDetailsRepository.SHOULD_REFRESH_WATCHED_KEY, true)
-
-        startActivity(intent)
     }
 
     private fun removeFromWatchedHistory(watcedEpisode: WatchedEpisode?) {
@@ -233,9 +236,15 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
 
         AlertDialog.Builder(requireContext())
             .setTitle("Are you sure?")
-            .setMessage("Are you sure you want to remove ${watcedEpisode?.episode_title} (${watcedEpisode?.show_title}) play ${watcedEpisode?.watched_at?.atZoneSameInstant(
-                ZoneId.systemDefault())?.format(
-                DateTimeFormatter.ofPattern(AppConstants.DEFAULT_DATE_TIME_FORMAT))}?")
+            .setMessage(
+                "Are you sure you want to remove ${watcedEpisode?.episode_title} (${watcedEpisode?.show_title}) play ${
+                    watcedEpisode?.watched_at?.atZoneSameInstant(
+                        ZoneId.systemDefault()
+                    )?.format(
+                        DateTimeFormatter.ofPattern(AppConstants.DEFAULT_DATE_TIME_FORMAT)
+                    )
+                }?"
+            )
             .setPositiveButton("Ok", DialogInterface.OnClickListener { dialogInterface, i ->
                 viewModel.removeFromWatchedHistory(syncItems)
             })
@@ -247,7 +256,7 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
     override fun onResume() {
         super.onResume()
 
-        if(isLoggedIn) {
+        if (isLoggedIn) {
             viewModel.onStart()
         }
     }
@@ -255,9 +264,7 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
     override fun onRefresh() {
         super.onRefresh()
 
-        if(isLoggedIn) {
-            Log.e(TAG, "onRefresh: CALLED", )
-
+        if (isLoggedIn) {
             //https://developer.android.com/reference/kotlin/androidx/paging/PagingDataAdapter#refresh()
             viewModel.onRefresh()
             //adapter.refresh()
@@ -265,7 +272,7 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when(item.itemId) {
+        when (item.itemId) {
             R.id.menu_switch_layout -> {
                 lifecycleScope.launchWhenStarted {
                     viewModel.switchViewType()
@@ -302,6 +309,6 @@ class WatchingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener, O
 
         @JvmStatic
         fun newInstance() =
-            WatchingFragment()
+            WatchedEpisodesFragment()
     }
 }

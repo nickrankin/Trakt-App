@@ -96,6 +96,30 @@ class SeasonEpisodesRepository @Inject constructor(
         }
     )
 
+    fun getSeason(
+        showTraktId: Int,
+        showTmdbId: Int?,
+        seasonNumber: Int,
+        shouldRefresh: Boolean
+    ) = networkBoundResource(
+        query = {
+            seasonDao.getSeasonForShow(showTraktId, seasonNumber)
+        },
+        fetch = {
+            showDataHelper.getSeasons(showTraktId, showTmdbId, null)
+        },
+        shouldFetch = { season ->
+            season == null || shouldRefresh
+        },
+        saveFetchResult = { seasons ->
+            Log.d(TAG, "getSeasons: Refreshing Seasons")
+            showsDatabase.withTransaction {
+                seasonDao.deleteAllSeasonsForShow(showTraktId)
+                seasonDao.insertSeasons(seasons)
+            }
+        }
+    )
+
     suspend fun getSeasonEpisodes(
         showTraktId: Int,
         showTmdbId: Int?,

@@ -4,6 +4,7 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import androidx.activity.addCallback
 import androidx.fragment.app.Fragment
 import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.OnTitleChangeListener
@@ -22,9 +23,12 @@ abstract class BaseFragment: Fragment(), IHandleError {
     protected var isLoggedIn = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         isLoggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
     }
+
+
 
     open fun updateTitle(newTitle: String) {
         try {
@@ -66,11 +70,7 @@ abstract class BaseFragment: Fragment(), IHandleError {
     }
 
     open fun onRefresh() {
-        try {
-            (activity as BaseActivity).onRefresh()
-        } catch(e: Exception) {
-            e.printStackTrace()
-        }
+
     }
 
     protected fun handleLoggedOutState(currentFragmentId: Int) {

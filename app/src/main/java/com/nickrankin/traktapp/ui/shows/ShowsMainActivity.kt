@@ -1,216 +1,182 @@
 package com.nickrankin.traktapp.ui.shows
 
+import android.app.SearchManager
 import android.os.Bundle
-import android.os.PersistableBundle
 import android.util.Log
+import android.view.View
 import android.widget.LinearLayout
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.drawerlayout.widget.DrawerLayout
-import androidx.navigation.NavController
-import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.setupActionBarWithNavController
+import androidx.fragment.app.FragmentManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.tabs.TabLayout
 import com.nickrankin.traktapp.BaseActivity
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.R
-import com.nickrankin.traktapp.databinding.ActivityShowsMainBinding
+import com.nickrankin.traktapp.SplitViewActivity
+import com.nickrankin.traktapp.databinding.ActivitySplitviewBinding
 import com.nickrankin.traktapp.helper.OnTitleChangeListener
+import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
+import com.nickrankin.traktapp.model.datamodel.MovieDataModel
+import com.nickrankin.traktapp.model.datamodel.ShowDataModel
+import com.nickrankin.traktapp.ui.OnSearchByGenre
+import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsFragment
+import com.nickrankin.traktapp.ui.person.PersonOverviewFragment
 import com.nickrankin.traktapp.ui.search.SearchResultsActivity
+import com.nickrankin.traktapp.ui.search.SearchResultsFragment
+import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsFragment
+import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsFragment
 import dagger.hilt.android.AndroidEntryPoint
-import java.lang.ClassCastException
+import kotlin.ClassCastException
 
 
 private const val TAG = "ShowsMainActivity"
+
 @AndroidEntryPoint
-class ShowsMainActivity : BaseActivity(), OnTitleChangeListener, TabLayout.OnTabSelectedListener {
-    private lateinit var bindings: ActivityShowsMainBinding
-    private lateinit var fragmentContainer: LinearLayout
+class ShowsMainActivity : SplitViewActivity(),
+    OnTitleChangeListener {
 
-    private lateinit var navTabs: TabLayout
-
-    private lateinit var toolbar: Toolbar
-    private lateinit var drawerLayout: DrawerLayout
-    private lateinit var navView: NavigationView
-
-    private lateinit var currentFragmentTag: String
+    private lateinit var showTabsFragment: ShowTabsFragment
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        bindings = ActivityShowsMainBinding.inflate(layoutInflater)
-        setContentView(bindings.root)
+        if(intent.hasExtra(EpisodeDetailsFragment.EPISODE_DATA_KEY)) {
+            // User has click on a upcoming episode pending intent, bring him to the episode overview
+            val episodeDataModel = intent.getParcelableExtra<EpisodeDataModel>(EpisodeDetailsFragment.EPISODE_DATA_KEY)
 
-        fragmentContainer = bindings.showsmainactivityContainer
-
-        navTabs = bindings.showsmainactivityNavigationTabs
-
-        toolbar = bindings.showsmainactivityToolbar.toolbar
-
-        setSupportActionBar(toolbar)
+            if(episodeDataModel != null) {
+                navigateToEpisode(episodeDataModel)
+            }
+        }
 
         // Search defaults to shows
         setSearchType(SearchResultsActivity.TYPE_SHOW_KEY)
 
-        setupDrawerLayout()
-
-        navTabs.addOnTabSelectedListener(this)
+        initNavTabs()
 
         currentFragmentTag = savedInstanceState?.getString(SHOW_CURRENT_FRAGMENT_TAG) ?: ""
-
-        navigateToFragment()
 
     }
 
     override fun onResume() {
         super.onResume()
+
+        navigateToFragment()
     }
+
+    private fun initNavTabs() {
+        showTabsFragment = ShowTabsFragment.newInstance()
+
+        supportFragmentManager.beginTransaction()
+            .replace(bindings.splitviewactivityHeader.id, showTabsFragment)
+            .commit()
+    }
+
 
     private fun navigateToFragment() {
 
         // Navigation triggered to a particular fragment/tab
-        if(intent.hasExtra(SHOW_CURRENT_FRAGMENT_TAG)) {
+        if (intent.hasExtra(SHOW_CURRENT_FRAGMENT_TAG)) {
             currentFragmentTag = intent.getStringExtra(SHOW_CURRENT_FRAGMENT_TAG) ?: ""
         }
 
-        if(currentFragmentTag.isNotBlank()) {
-            navTabs.selectTab(navTabs.getTabAt(selectTabByTag(currentFragmentTag)))
+        if (currentFragmentTag.isNotBlank()) {
+            showTabsFragment.selectTab(selectTabByTag(currentFragmentTag))
         } else {
-            supportFragmentManager.beginTransaction()
-                .add(fragmentContainer.id, ShowsUpcomingFragment.newInstance(), UPCOMING_SHOWS_TAG)
-                .commit()
 
-            currentFragmentTag = UPCOMING_SHOWS_TAG
+            super.navigateToFragment(PROGRESS_SHOWS_TAG)
+            currentFragmentTag = PROGRESS_SHOWS_TAG
         }
 
     }
 
     private fun selectTabByTag(tag: String): Int {
         var tabPos = -1
-        when(tag) {
-            UPCOMING_SHOWS_TAG -> {
+        when (tag) {
+            PROGRESS_SHOWS_TAG -> {
                 tabPos = 0
+
+            }
+            UPCOMING_SHOWS_TAG -> {
+                tabPos = 1
+
             }
             WATCHED_SHOWS_TAG -> {
-                tabPos = 1
+                tabPos = 2
+
             }
             TRACKING_SHOWS_TAG -> {
-                tabPos = 2
+                tabPos = 3
+
             }
             COLLECTED_SHOWS_TAG -> {
-                tabPos = 3
+                tabPos = 4
+
             }
             SUGGESTED_SHOWS_TAG -> {
-                tabPos = 4
+                tabPos = 5
             }
             else -> {
                 tabPos = 0
             }
         }
 
-        return  tabPos
+        return tabPos
     }
 
     override fun onTitleChanged(newTitle: String) {
         supportActionBar?.title = newTitle
     }
 
-    private fun setupDrawerLayout() {
-        setSupportActionBar(toolbar)
 
-        navView = bindings.showsmainactivityNavView
-        drawerLayout = bindings.showsmainactivityDrawer
+    override fun navigateToFragment(fragmentTag: String) {
+        when (fragmentTag) {
+            PROGRESS_SHOWS_TAG -> {
+                Log.d(TAG, "onTabSelected: Progress")
+                super.navigateToFragment(PROGRESS_SHOWS_TAG)
 
-        toolbar.setNavigationIcon(R.drawable.ic_baseline_menu_24)
-
-        toolbar.setNavigationOnClickListener {
-            drawerLayout.open()
-        }
-
-        navView.setNavigationItemSelectedListener(this)
-    }
-
-    override fun onTabSelected(tab: TabLayout.Tab?) {
-        when (tab?.position) {
-            0 -> {
+                currentFragmentTag = PROGRESS_SHOWS_TAG
+            }
+            UPCOMING_SHOWS_TAG -> {
                 Log.d(TAG, "onTabSelected: Upcoming")
-                supportFragmentManager.beginTransaction()
-                    .replace(fragmentContainer.id, ShowsUpcomingFragment.newInstance(), UPCOMING_SHOWS_TAG)
-                    .commit()
+
+                super.navigateToFragment(UPCOMING_SHOWS_TAG)
 
                 currentFragmentTag = UPCOMING_SHOWS_TAG
             }
-            1 -> {
+            WATCHED_SHOWS_TAG -> {
                 Log.d(TAG, "onTabSelected: Watched")
-                supportFragmentManager.beginTransaction()
-                    .replace(fragmentContainer.id, WatchingFragment.newInstance(), WATCHED_SHOWS_TAG)
-                    .commit()
+
+                super.navigateToFragment(WATCHED_SHOWS_TAG)
 
                 currentFragmentTag = WATCHED_SHOWS_TAG
             }
-            2 -> {
+            TRACKING_SHOWS_TAG -> {
                 Log.d(TAG, "onTabSelected: Tracking")
-                supportFragmentManager.beginTransaction()
-                    .replace(fragmentContainer.id, ShowsTrackingFragment.newInstance(), TRACKING_SHOWS_TAG)
-                    .commit()
+
+                super.navigateToFragment(TRACKING_SHOWS_TAG)
 
                 currentFragmentTag = TRACKING_SHOWS_TAG
             }
-            3 -> {
+            COLLECTED_SHOWS_TAG -> {
                 Log.d(TAG, "onTabSelected: Collected")
-                supportFragmentManager.beginTransaction()
-                    .replace(fragmentContainer.id, CollectedShowsFragment.newInstance(), COLLECTED_SHOWS_TAG)
-                    .commit()
+
+                super.navigateToFragment(COLLECTED_SHOWS_TAG)
 
                 currentFragmentTag = COLLECTED_SHOWS_TAG
             }
-            4 -> {
+            SUGGESTED_SHOWS_TAG -> {
                 Log.d(TAG, "onTabSelected: Recommended")
-                supportFragmentManager.beginTransaction()
-                    .replace(fragmentContainer.id, ShowsRecommendedFragment.newInstance(), SUGGESTED_SHOWS_TAG)
-                    .commit()
+
+                super.navigateToFragment(SUGGESTED_SHOWS_TAG)
 
                 currentFragmentTag = SUGGESTED_SHOWS_TAG
             }
             else -> {
-                Log.e(TAG, "onTabSelected: ELSE")
+                Log.e(TAG, "onTabSelected: Fragment $fragmentTag not supported")
             }
-        }
-    }
-
-    override fun onTabUnselected(tab: TabLayout.Tab?) {
-        when (tab?.position) {
-            0 -> {
-            }
-            1 -> {
-            }
-            2 -> {
-            }
-            3 -> {
-            }
-            4 -> {
-            }
-            else -> {
-            }
-        }
-    }
-
-    override fun onTabReselected(tab: TabLayout.Tab?) {
-        try {
-            Log.d(TAG, "onTabReselected: Current Fragment Tag $currentFragmentTag")
-            (supportFragmentManager.findFragmentByTag(currentFragmentTag) as SwipeRefreshLayout.OnRefreshListener).let { refreshFragment ->
-                Log.d(TAG, "onTabReselected: Refreshing Fragment $currentFragmentTag")
-                refreshFragment.onRefresh()
-            }
-        } catch (e: ClassCastException) {
-            Log.e(
-                TAG,
-                "onTabReselected: Cannot Cast ${supportFragmentManager.findFragmentByTag(currentFragmentTag)?.javaClass?.name} as SwipeRefreshLayout.OnRefreshListener",
-            )
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 
@@ -222,10 +188,13 @@ class ShowsMainActivity : BaseActivity(), OnTitleChangeListener, TabLayout.OnTab
 
     companion object {
         const val SHOW_CURRENT_FRAGMENT_TAG = "current_fragment"
-        const val UPCOMING_SHOWS_TAG = "upcoming"
-        const val TRACKING_SHOWS_TAG = "tracking"
-        const val COLLECTED_SHOWS_TAG = "collected"
-        const val WATCHED_SHOWS_TAG = "watched"
-        const val SUGGESTED_SHOWS_TAG = "suggested"
+        const val PROGRESS_SHOWS_TAG = "progress_shows"
+        const val UPCOMING_SHOWS_TAG = "upcoming_shows"
+        const val TRACKING_SHOWS_TAG = "tracking_shows"
+        const val COLLECTED_SHOWS_TAG = "collected_shows"
+        const val WATCHED_SHOWS_TAG = "watched_shows"
+        const val SUGGESTED_SHOWS_TAG = "suggested_shows"
+        const val SEASON_EPISODES_TAG = "season_episodes_tag"
     }
 }
+

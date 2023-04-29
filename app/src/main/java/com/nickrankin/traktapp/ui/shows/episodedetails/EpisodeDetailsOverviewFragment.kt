@@ -15,12 +15,13 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.adapter.credits.ShowCastCreditsAdapter
 import com.nickrankin.traktapp.dao.show.model.TmEpisode
 import com.nickrankin.traktapp.databinding.FragmentEpisodeDetailsOverviewBinding
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.model.datamodel.PersonDataModel
 import com.nickrankin.traktapp.model.shows.EpisodeDetailsViewModel
-import com.nickrankin.traktapp.ui.person.PersonActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
@@ -120,13 +121,12 @@ class EpisodeDetailsOverviewFragment : BaseFragment() {
         layoutManager.orientation = LinearLayoutManager.HORIZONTAL
 
         castAdapter = ShowCastCreditsAdapter(glide) { selectedCastPerson ->
-            val castPersonIntent = Intent(requireContext(), PersonActivity::class.java)
-            castPersonIntent.putExtra(
-                PersonActivity.PERSON_ID_KEY,
-                selectedCastPerson.person_trakt_id
+
+            (activity as OnNavigateToEntity).navigateToPerson(
+                PersonDataModel(selectedCastPerson.person_trakt_id, null, null)
+
             )
 
-            startActivity(castPersonIntent)
         }
 
         castRecyclerView.layoutManager = layoutManager

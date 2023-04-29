@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.lists.ListEntryAdapter
 import com.nickrankin.traktapp.dao.lists.model.TraktList
@@ -34,15 +35,11 @@ import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.lists.ListEntryViewModel
 import com.nickrankin.traktapp.model.lists.TraktListsViewModel
-import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
-import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
-import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.uwetrottmann.trakt5.enums.SortBy
 import com.uwetrottmann.trakt5.enums.SortHow
 import com.uwetrottmann.trakt5.enums.Type
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -57,13 +54,9 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
     private val viewModel: TraktListsViewModel by activityViewModels()
 
     private lateinit var progressBar: ProgressBar
-    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var listEntryAdapter: ListEntryAdapter
-
-    private val _sortingLiveData = MutableLiveData<Pair<SortBy?, SortHow?>>()
-    private val sortingLiveData: LiveData<Pair<SortBy?, SortHow?>> = _sortingLiveData
 
     private lateinit var selectedList: TraktList
 
@@ -79,20 +72,14 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-
         _bindings = FragmentListItemsBinding.inflate(inflater)
 
         return bindings.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-
-        swipeRefreshLayout = bindings.traktlistsfragmentSwipeRefresh
-        swipeRefreshLayout.setOnRefreshListener(this)
         progressBar = bindings.traktlistsfragmentProgressbar
-
         listTraktId = arguments?.getInt(ListEntryViewModel.LIST_ID_KEY, 0) ?: 0
-//        listName = arguments?.getString(ListEntryViewModel.LIST_NAME_KEY, "Unknown List") ?: "Unknown List"
 
         if (!isLoggedIn) {
             handleLoggedOutState(this.id)
@@ -100,9 +87,6 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
         setHasOptionsMenu(true)
 
-//        updateTitle("$listName Entries")
-
-        getList()
         initRecycler()
         getListEntries()
         getEvents()
@@ -114,102 +98,97 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
         inflater.inflate(R.menu.list_items_menu, menu)
     }
 
-    private fun getList() {
-        lifecycleScope.launchWhenStarted {
-            viewModel.list.collectLatest { listResource ->
+    private fun getListEntries() {
+        val messageContainerTextView = bindings.traktlistsfragmentMessageContainer
+
+        lifecycleScope.launch {
+            viewModel.listItems.collectLatest { listAndListEntriesData ->
+
+                val listResource = listAndListEntriesData.first
+                val listEntryResource = listAndListEntriesData.second
+
                 when (listResource) {
                     is Resource.Loading -> {}
                     is Resource.Success -> {
                         if (listResource.data != null) {
                             selectedList = listResource.data!!
                             updateTitle(listResource.data?.name ?: "Unknown List")
+
+                            displayListEntries(listEntryResource)
+
                         }
 
-                        _sortingLiveData.value =
-                            Pair(listResource.data?.sortBy, listResource.data?.sortHow)
+
                     }
                     is Resource.Error -> {
                         handleError(listResource.error, null)
                     }
 
                 }
+
             }
         }
     }
 
-    private fun getListEntries() {
-        val messageContainerTextView = bindings.traktlistsfragmentMessageContainer
+    private fun displayListEntries(listEntriesResource: Resource<List<TraktListEntry>>) {
+//        val messageContainerTextView = bindings.traktlistsfragmentMessageContainer
 
-        lifecycleScope.launch {
-            viewModel.listItems.collectLatest { listEntriesData ->
+        when (listEntriesResource) {
+            is Resource.Loading -> {
+                progressBar.visibility = View.VISIBLE
+                Log.d(TAG, "getListEntries: Loading entires")
+            }
+            is Resource.Success -> {
+                progressBar.visibility = View.GONE
 
-                when (listEntriesData) {
-                    is Resource.Loading -> {
-                        progressBar.visibility = View.VISIBLE
-                        Log.d(TAG, "getListEntries: Loading entires")
-                    }
-                    is Resource.Success -> {
-                        progressBar.visibility = View.GONE
-                        if (swipeRefreshLayout.isRefreshing) {
-                            swipeRefreshLayout.isRefreshing = false
-                        }
+                val listItems = listEntriesResource.data ?: emptyList()
 
-                        val listItems = listEntriesData.data ?: emptyList()
+                if (listItems.isNotEmpty()) {
+//                    messageContainerTextView.visibility = View.GONE
+                    recyclerView.visibility = View.VISIBLE
 
-                        if (listItems.isNotEmpty()) {
-                            messageContainerTextView.visibility = View.GONE
-                            recyclerView.visibility = View.VISIBLE
+                    val sortedLists = sortAndDisplayListEntries(selectedList.sortBy!!, selectedList.sortHow!!, listEntriesResource.data ?: emptyList())
 
-                            sortAndDisplayListEntries(listEntriesData.data ?: emptyList())
+                    listEntryAdapter.submitList(sortedLists)
 
-                        } else {
-                            messageContainerTextView.visibility = View.VISIBLE
-                            recyclerView.visibility = View.GONE
+
+                } else {
+//                    messageContainerTextView.visibility = View.VISIBLE
+                    recyclerView.visibility = View.GONE
 
 //                            messageContainerTextView.text = "You do not have any entries in list $listName! Why not add some?"
-                        }
-                        Log.d(TAG, "getListEntries: Got ${listEntriesData.data?.size} entries")
-                    }
-                    is Resource.Error -> {
-                        progressBar.visibility = View.GONE
-                        if (swipeRefreshLayout.isRefreshing) {
-                            swipeRefreshLayout.isRefreshing = false
-                        }
+                }
+                Log.d(TAG, "getListEntries: Got ${listEntriesResource.data?.size} entries")
+            }
+            is Resource.Error -> {
+                progressBar.visibility = View.GONE
 
-                        val listItems = listEntriesData.data ?: emptyList()
+                val listItems = listEntriesResource.data ?: emptyList()
 
-                        if (listItems.isNotEmpty()) {
-                            messageContainerTextView.visibility = View.GONE
-                            recyclerView.visibility = View.VISIBLE
+                if (listItems.isNotEmpty()) {
+//                    messageContainerTextView.visibility = View.GONE
+                    recyclerView.visibility = View.VISIBLE
 
-                            listEntryAdapter.submitList(listEntriesData.data)
-                        } else {
-                            messageContainerTextView.visibility = View.VISIBLE
-                            recyclerView.visibility = View.GONE
+                    listEntryAdapter.submitList(listEntriesResource.data)
+                } else {
+//                    messageContainerTextView.visibility = View.VISIBLE
+                    recyclerView.visibility = View.GONE
 
 //                            messageContainerTextView.text = "You do not have any entries in list $listName! Why not add some?"
-                        }
-
-                        handleError(listEntriesData.error, null)
-                    }
                 }
 
+                handleError(listEntriesResource.error, null)
             }
         }
     }
 
-    private fun sortAndDisplayListEntries(listEntries: List<TraktListEntry>) {
-        // Only update adapter when we have sorting options from the TraktList itself. We retain sortorder of lists on Trakt.tv
-        sortingLiveData.observe(viewLifecycleOwner) { sortingPair ->
-            listEntryAdapter.submitList(
-                getSortedList(
+    private fun sortAndDisplayListEntries(sortBy: SortBy, sortHow: SortHow, listEntries: List<TraktListEntry>): List<TraktListEntry> {
+                return getSortedList(
                     listEntries,
-                    sortingPair.first,
-                    sortingPair.second
-                )
+                    sortBy,
+                    sortHow
             )
 
-        }
     }
 
     private fun getSortedList(
@@ -230,7 +209,7 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                     it.entryData.rank
                 }
 
-                if(sortHow == SortHow.DESC) {
+                if (sortHow == SortHow.DESC) {
                     sortedList = sortedList.reversed()
                 }
 
@@ -241,7 +220,7 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                     it.entryData.listed_at
                 }
 
-                if(sortHow == SortHow.DESC) {
+                if (sortHow == SortHow.DESC) {
                     sortedList = sortedList.reversed()
                 }
 
@@ -270,7 +249,7 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                     }
                 }
 
-                if(sortHow == SortHow.DESC) {
+                if (sortHow == SortHow.DESC) {
                     sortedList = sortedList.reversed()
                 }
 
@@ -299,7 +278,7 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                     }
                 }
 
-                if(sortHow == SortHow.DESC) {
+                if (sortHow == SortHow.DESC) {
                     sortedList = sortedList.reversed()
                 }
 
@@ -320,7 +299,9 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
             SortBy.MY_RATING -> {
                 listItems
             }
-            SortBy.RANDOM -> { listItems.shuffled() }
+            SortBy.RANDOM -> {
+                listItems.shuffled()
+            }
         }
     }
 
@@ -364,7 +345,7 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                     is TraktListsViewModel.Event.EditListEvent -> {}
                     is TraktListsViewModel.Event.ErrorEvent -> {
                         // Null means no error so list update successful, only show error on Throwable not being NULL
-                        if(event.error != null) {
+                        if (event.error != null) {
                             Toast.makeText(
                                 requireContext(),
                                 "Could not update the list ordering. ${event.error.localizedMessage}",
@@ -379,7 +360,7 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
     }
 
     private fun initRecycler() {
-        recyclerView = bindings!!.traktlistsfragmentRecyclerview
+        recyclerView = bindings.traktlistsfragmentRecyclerview
         val lm = getResponsiveGridLayoutManager(requireContext(), null)
 
         listEntryAdapter = ListEntryAdapter(
@@ -392,18 +373,14 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                     when (action) {
                         ListEntryAdapter.ACTION_VIEW -> {
                             if (traktId != null) {
-                                val movieIntent =
-                                    Intent(requireContext(), MovieDetailsActivity::class.java)
-                                movieIntent.putExtra(
-                                    MovieDetailsActivity.MOVIE_DATA_KEY, MovieDataModel(
+                                (activity as OnNavigateToEntity).navigateToMovie(
+                                    MovieDataModel(
                                         traktId,
                                         selectedItem.movie?.tmdb_id,
                                         selectedItem.movie?.title,
                                         selectedItem.movie?.first_aired?.year ?: 0
                                     )
                                 )
-
-                                startActivity(movieIntent)
                             }
 
 
@@ -422,18 +399,14 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                         ListEntryAdapter.ACTION_VIEW -> {
 
                             if (traktId != null) {
-                                val showIntent =
-                                    Intent(requireContext(), ShowDetailsActivity::class.java)
-                                showIntent.putExtra(
-                                    ShowDetailsActivity.SHOW_DATA_KEY,
+
+                                (activity as OnNavigateToEntity).navigateToShow(
                                     ShowDataModel(
                                         traktId,
                                         selectedItem.show?.tmdb_id,
                                         selectedItem.show?.title
                                     )
                                 )
-
-                                startActivity(showIntent)
                             }
 
 
@@ -452,10 +425,8 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                         ListEntryAdapter.ACTION_VIEW -> {
 
                             if (selectedItem.episodeShow?.trakt_id != null) {
-                                val episodeIntent =
-                                    Intent(requireContext(), EpisodeDetailsActivity::class.java)
-                                episodeIntent.putExtra(
-                                    EpisodeDetailsActivity.EPISODE_DATA_KEY,
+
+                                (activity as OnNavigateToEntity).navigateToEpisode(
                                     EpisodeDataModel(
                                         selectedItem.episodeShow.trakt_id,
                                         selectedItem.episode?.tmdb_id,
@@ -465,7 +436,6 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                                     )
                                 )
 
-                                startActivity(episodeIntent)
                             }
 
 
@@ -507,7 +477,7 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
 
-        when(item.itemId) {
+        when (item.itemId) {
             R.id.listitemsmenu_added -> {
                 viewModel.changeListOrdering(selectedList, SortBy.ADDED)
             }

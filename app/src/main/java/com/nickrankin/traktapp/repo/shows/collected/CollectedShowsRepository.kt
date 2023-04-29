@@ -5,7 +5,6 @@ import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
 import com.nickrankin.traktapp.dao.show.model.CollectedShow
-import com.nickrankin.traktapp.dao.show.model.ShowProgress
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.networkBoundResource
 import com.nickrankin.traktapp.helper.shouldRefreshContents

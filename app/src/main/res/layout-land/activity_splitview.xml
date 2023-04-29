@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/splitviewactivity_drawer"
+    tools:openDrawer="start"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.movies.MoviesMainActivity">
+
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/splitviewactivity_swiperefreshlayour"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    <RelativeLayout
+        android:id="@+id/splitviewactivity_contraint"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <include android:id="@+id/splitviewactivity_toolbar" layout="@layout/toolbar_layout" />
+        <LinearLayout
+            android:id="@+id/splitviewactivity_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="?attr/actionBarSize" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/splitviewactivity_header">
+
+            <LinearLayout
+                android:id="@+id/splitviewactivity_first_container"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_margin="8dp"
+                app:layout_constraintHorizontal_chainStyle="spread"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/splitviewactivity_second_container"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <LinearLayout
+                android:id="@+id/splitviewactivity_second_container"
+                android:tag="landscape_tag"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_margin="8dp"
+                android:saveEnabled="false"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toEndOf="@id/splitviewactivity_first_container"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+
+    </RelativeLayout>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/splitviewactivity_nav_view"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        app:menu="@menu/nav_drawer"
+        android:layout_gravity="start" />
+
+</androidx.drawerlayout.widget.DrawerLayout>

@@ -13,12 +13,13 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.adapter.credits.MovieCastCreditsAdapter
 import com.nickrankin.traktapp.dao.movies.model.TmMovie
 import com.nickrankin.traktapp.databinding.FragmentMovieCastcrewOverviewBinding
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.model.datamodel.PersonDataModel
 import com.nickrankin.traktapp.model.movies.MovieDetailsViewModel
-import com.nickrankin.traktapp.ui.person.PersonActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
@@ -91,10 +92,11 @@ class MovieDetailsCastCrewFragment : BaseFragment() {
         layoutManager.orientation = LinearLayoutManager.HORIZONTAL
 
         castAdapter = MovieCastCreditsAdapter(glide) { selectedCredit ->
-            val creditIntent = Intent(requireContext(), PersonActivity::class.java)
-            creditIntent.putExtra(PersonActivity.PERSON_ID_KEY, selectedCredit.person_trakt_id)
 
-            startActivity(creditIntent)
+            (activity as OnNavigateToEntity).navigateToPerson(
+                PersonDataModel(selectedCredit.person_trakt_id, null, null)
+            )
+
         }
 
         castRecyclerView.layoutManager = layoutManager

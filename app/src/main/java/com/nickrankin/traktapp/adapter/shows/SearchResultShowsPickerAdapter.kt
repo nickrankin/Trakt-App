@@ -24,7 +24,7 @@ class SearchResultShowsPickerAdapter(private val sharedPreferences: SharedPrefer
         holder.bindings.apply {
             collectedshowlayoutTitle.text = selectedShow?.show?.title
             collectedshowlayoutCollectedAy.text = "First Aired: " + selectedShow?.show?.first_aired?.format(
-                DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)))
+                DateTimeFormatter.ofPattern(sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_TIME_FORMAT)))
 
             root.setOnClickListener {
                callback(selectedShow)

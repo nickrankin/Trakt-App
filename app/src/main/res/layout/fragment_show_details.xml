@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/showdetailsactivity_swipe_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <ProgressBar
+                    android:id="@id/showdetailsactivity_progressbar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+
+                <ImageView
+                    android:id="@+id/showdetailsactivity_backdrop"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/ic_baseline_local_movies_24"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/showdetailsactivity_poster_cardview"
+                    android:layout_width="98dp"
+                    android:layout_height="150dp"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="110dp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="@id/showdetailsactivity_backdrop">
+
+                    <ImageView
+                        android:id="@+id/showdetailsactivity_poster"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="fitXY"
+                        android:src="@drawable/ic_baseline_movie_filter_24" />
+                </androidx.cardview.widget.CardView>
+
+                <TextView
+                    android:id="@+id/showdetailsactivity_title"
+                    style="@style/TextAppearance.MaterialComponents.Headline4"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginEnd="8dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_poster_cardview"
+                    tools:text="The Simpsons" />
+
+                <androidx.constraintlayout.widget.Barrier
+                    android:id="@+id/showdetailsactivity_top_barrier"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:barrierDirection="bottom"
+                    app:constraint_referenced_ids="showdetailsactivity_poster_cardview,showdetailsactivity_title,showdetailsactivity_backdrop" />
+
+                <TextView
+                    android:id="@+id/showdetailsactivity_overview"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginEnd="8dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_top_barrier" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/showdetailsactivity_action_buttons"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_overview">
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/showdetailsactivity_season"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:padding="4dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_action_buttons" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/showdetailsactivity_cast_crew"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:padding="4dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_season" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/showdetailsactivity_details"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:padding="4dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_cast_crew">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginEnd="8dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/showdetailsactivity_info_title"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:padding="4dp"
+                            android:text="Information"
+                            android:textAppearance="?attr/textAppearanceHeadline6" />
+
+                        <com.google.android.material.chip.ChipGroup
+                            android:id="@+id/showdetailsactivity_tags_chipgroup"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                        <TextView
+                            android:id="@+id/showdetailsactivity_number_episodes"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            tools:text="Number episodes: 18" />
+
+                        <TextView
+                            android:id="@+id/showdetailsactivity_runtime"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            tools:text="Runtime: 1Hr 30 Mins" />
+
+                        <TextView
+                            android:id="@+id/showdetailsactivity_status"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            tools:text="Status: Ended" />
+
+                        <TextView
+                            android:id="@+id/showdetailsactivity_release_date"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            tools:text="Released: 01/01/2000" />
+
+                        <TextView
+                            android:id="@+id/showdetailsactivity_language"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            tools:text="Language: English" />
+
+                        <TextView
+                            android:id="@+id/showdetailsactivity_country"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            tools:text="Country: Ireland" />
+
+                        <com.google.android.flexbox.FlexboxLayout
+                            android:id="@+id/showdetailsactivity_companies"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:orientation="horizontal"
+                            app:flexDirection="row"
+                            app:flexWrap="wrap" />
+
+                        <TextView
+                            android:id="@+id/showdetailsactivity_created_by_title"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Created By:"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <com.google.android.material.chip.ChipGroup
+                            android:id="@+id/showdetailsactivity_direct_by_chipgroup"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal" />
+
+                        <com.google.android.material.chip.ChipGroup
+                            android:id="@+id/showdetailsactivity_written_by_chipgroup"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal" />
+
+                        <TextView
+                            android:id="@+id/showdetailsactivity_external_links_title"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="External Links:"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <com.google.android.material.chip.ChipGroup
+                            android:id="@+id/showdetailsactivity_external_links_chip_group"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content">
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/showdetailsactivity_chip_official_website"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Offcial Website" />
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/showdetailsactivity_chip_imdb"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="IMDB"
+                                app:chipIcon="@drawable/ic_imdb_logo_2016" />
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/showdetailsactivity_chip_tmdb"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="TMDB" />
+
+                        </com.google.android.material.chip.ChipGroup>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/showdetailsactivity_watch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:padding="4dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_details" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/showdetailsactivity_similar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:padding="4dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/showdetailsactivity_watch" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

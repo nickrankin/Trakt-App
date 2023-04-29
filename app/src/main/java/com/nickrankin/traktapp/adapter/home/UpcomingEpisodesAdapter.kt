@@ -9,22 +9,19 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.flexbox.AlignItems
 import com.google.android.flexbox.FlexboxLayoutManager
-import com.nickrankin.traktapp.dao.calendars.model.ShowCalendarEntry
+import com.nickrankin.traktapp.dao.calendars.model.ShowBaseCalendarEntry
 import com.nickrankin.traktapp.databinding.ViewPosterItemBinding
-import com.nickrankin.traktapp.helper.AppConstants
+import com.nickrankin.traktapp.databinding.ViewUpcomingItemBinding
 import com.nickrankin.traktapp.helper.ImageItemType
 import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.helper.convertToHumanReadableTime
-import com.uwetrottmann.trakt5.entities.HistoryEntry
-import org.threeten.bp.ZoneId
-import org.threeten.bp.format.DateTimeFormatter
 
 private const val TAG = "CollectedShowsAdapter"
 class UpcomingEpisodesAdapter(
     private val sharedPreferences: SharedPreferences,
     private val tmdbImageLoader: TmdbImageLoader,
-    private val callback: (ShowCalendarEntry: ShowCalendarEntry, action: Int, position: Int) -> Unit
-) : ListAdapter<ShowCalendarEntry, UpcomingEpisodesAdapter.WatchedHistoryVH>(
+    private val callback: (ShowCalendarEntry: ShowBaseCalendarEntry, action: Int, position: Int) -> Unit
+) : ListAdapter<ShowBaseCalendarEntry, UpcomingEpisodesAdapter.WatchedHistoryVH>(
     COMPARATOR
 ) {
 
@@ -33,7 +30,7 @@ class UpcomingEpisodesAdapter(
         viewType: Int
     ): UpcomingEpisodesAdapter.WatchedHistoryVH {
         return WatchedHistoryVH(
-            ViewPosterItemBinding.inflate(
+            ViewUpcomingItemBinding.inflate(
                 LayoutInflater.from(
                     parent.context
                 ), parent, false
@@ -46,10 +43,11 @@ class UpcomingEpisodesAdapter(
 
         holder.bindings.apply {
 
-            itemTimestamp.visibility = View.VISIBLE
-            itemTimestamp.text = "Airing: ${convertToHumanReadableTime(currentItem.first_aired)}"
+            upcomingitemviewAiring.visibility = View.VISIBLE
+            upcomingitemviewAiring.text = "Airing: ${convertToHumanReadableTime(currentItem.first_aired)}"
 
-                    itemTitle.text = "${currentItem?.episode_title} (${currentItem.show_title})"
+                    upcomingitemviewSeasonEpisodeTitle.text = "${currentItem?.episode_title} (${currentItem.show_title})"
+            upcomingitemviewShowTitle.text = currentItem?.show_title
 
                     tmdbImageLoader.loadImages(
                         currentItem.show_trakt_id,
@@ -58,7 +56,7 @@ class UpcomingEpisodesAdapter(
                         currentItem?.show_title,
                         currentItem.language,
                         true,
-                        itemPoster,
+                        upcomingitemviewPoster,
                         null,
                         false
                     )
@@ -70,7 +68,7 @@ class UpcomingEpisodesAdapter(
         }
     }
 
-    inner class WatchedHistoryVH(val bindings: ViewPosterItemBinding) :
+    inner class WatchedHistoryVH(val bindings: ViewUpcomingItemBinding) :
         BaseViewHolder(bindings.root)
 
     // Workaround to support variable height Cast Person elements in the horizontal RecyclerView.
@@ -87,14 +85,14 @@ class UpcomingEpisodesAdapter(
     }
 
     companion object {
-        val COMPARATOR = object : DiffUtil.ItemCallback<ShowCalendarEntry>() {
-            override fun areItemsTheSame(oldItem: ShowCalendarEntry, newItem: ShowCalendarEntry): Boolean {
+        val COMPARATOR = object : DiffUtil.ItemCallback<ShowBaseCalendarEntry>() {
+            override fun areItemsTheSame(oldItem: ShowBaseCalendarEntry, newItem: ShowBaseCalendarEntry): Boolean {
                 return oldItem == newItem
             }
 
             override fun areContentsTheSame(
-                oldItem: ShowCalendarEntry,
-                newItem: ShowCalendarEntry
+                oldItem: ShowBaseCalendarEntry,
+                newItem: ShowBaseCalendarEntry
             ): Boolean {
                 return oldItem.episode_trakt_id == newItem.episode_trakt_id
             }

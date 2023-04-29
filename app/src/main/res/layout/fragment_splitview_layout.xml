@@ -1,17 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.swiperefreshlayout.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/collectedmoviesfragment_swipe_layout"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/splitviewlayout_main_container"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.movies.MoviesMainActivity">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
         <ProgressBar
-            android:id="@+id/collectedmoviesfragment_progressbar"
+            android:id="@+id/splitviewlayout_progressbar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toTopOf="parent"
@@ -20,7 +17,7 @@
             app:layout_constraintEnd_toEndOf="parent" />
 
         <TextView
-            android:id="@+id/collectedmoviesfragment_message_container"
+            android:id="@+id/splitviewlayout_message_container"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
@@ -35,16 +32,14 @@
             android:visibility="gone"/>
 
         <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/collectedmoviesfragment_recyclerview"
+            android:id="@+id/splitviewlayout_recyclerview"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_marginTop="12dp"/>
 
         <androidx.constraintlayout.widget.Group
-            android:id="@+id/collectedmoviesfragment_main_group"
+            android:id="@+id/splitviewlayout_main_group"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:constraint_referenced_ids="collectedmoviesfragment_recyclerview" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+            app:constraint_referenced_ids="splitviewlayout_recyclerview" />
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -4,4 +4,4 @@ import android.os.Parcelable
 import kotlinx.android.parcel.Parcelize
 
 @Parcelize
-data class SeasonDataModel(val traktId: Int, val tmdbId: Int?, val seasonNumber: Int, val showTitle: String?) : Parcelable
+data class SeasonDataModel(override val traktId: Int, override val tmdbId: Int?, val seasonNumber: Int, val showTitle: String?) : BaseDataModel, Parcelable

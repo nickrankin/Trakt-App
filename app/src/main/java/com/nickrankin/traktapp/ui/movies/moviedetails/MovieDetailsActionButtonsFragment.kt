@@ -46,13 +46,6 @@ class MovieDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
         return bindings.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        Log.e(TAG, "onViewCreated:setupListsDialog HERE")
-
-        super.onViewCreated(view, savedInstanceState)
-
-    }
-
     override fun setup(config: (bindings: LayoutActionButtonsBinding, traktId: Int, title: String, type: Type) -> Unit)   {
 
         lifecycleScope.launchWhenStarted {

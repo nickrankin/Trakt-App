@@ -7,19 +7,17 @@ import android.view.*
 import android.widget.*
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
-import com.google.android.flexbox.FlexDirection
-import com.google.android.flexbox.FlexboxLayoutManager
-import com.google.android.flexbox.JustifyContent
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.R
-import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.adapter.shows.ShowCalendarEntriesAdapter
-import com.nickrankin.traktapp.databinding.FragmentShowsOverviewBinding
+import com.nickrankin.traktapp.dao.calendars.model.BaseCalendarEntry
+import com.nickrankin.traktapp.dao.calendars.model.ShowBaseCalendarEntry
+import com.nickrankin.traktapp.databinding.FragmentSplitviewLayoutBinding
 import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.TmdbImageLoader
@@ -27,11 +25,9 @@ import com.nickrankin.traktapp.helper.switchRecyclerViewLayoutManager
 import com.nickrankin.traktapp.model.auth.shows.ShowsOverviewViewModel
 import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
-import com.nickrankin.traktapp.repo.shows.episodedetails.EpisodeDetailsRepository
-import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
-import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
+import org.threeten.bp.temporal.ChronoUnit
 import javax.inject.Inject
 
 private const val TAG = "OverviewFragment"
@@ -43,22 +39,20 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
 
     @Inject
     lateinit var tmdbImageLoader: TmdbImageLoader
-    
-    private var _bindings: FragmentShowsOverviewBinding? = null
+
+    private var _bindings: FragmentSplitviewLayoutBinding? = null
     private val bindings get() = _bindings!!
 
 
     private lateinit var progressBar: ProgressBar
-    private lateinit var refreshLayout: SwipeRefreshLayout
     private lateinit var recyclerView: RecyclerView
     private lateinit var messageContainer: TextView
 
     private lateinit var adapter: ShowCalendarEntriesAdapter
 
-    private val viewModel by activityViewModels<ShowsOverviewViewModel>()
-    
+    private val viewModel: ShowsOverviewViewModel by activityViewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        Log.e(TAG, "onCreate: $this", )
         super.onCreate(savedInstanceState)
 
         setHasOptionsMenu(true)
@@ -69,27 +63,27 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _bindings = FragmentShowsOverviewBinding.inflate(inflater)
+        _bindings = FragmentSplitviewLayoutBinding.inflate(inflater)
 
         return bindings.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        refreshLayout = bindings.showsoverviewfragmentSwipeRefreshLayout
-        messageContainer = bindings.showsoverviewfragmentMessageContainer
+        messageContainer = bindings.splitviewlayoutMessageContainer
 
-        refreshLayout.setOnRefreshListener(this)
 
         updateTitle("Upcoming Shows")
 
-        progressBar = bindings.showsoverviewfragmentProgressbar
+        progressBar = bindings.splitviewlayoutProgressbar
+
+        (activity as OnNavigateToEntity).enableOverviewLayout(false)
 
         if(!isLoggedIn) {
             handleLoggedOutState(this.id)
         }
 
         setupRecyclerView()
-        getViewType()
+//        getViewType()
         getMyShows()
 
     }
@@ -112,16 +106,7 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
                         progressBar.visibility = View.GONE
                         messageContainer.visibility = View.GONE
 
-                        if(refreshLayout.isRefreshing) {
-                            refreshLayout.isRefreshing = false
-                        }
                         val data = myShowsResource.data
-
-                        Log.d(TAG, "getMyShows: Got ${data?.size} SHOWS")
-
-//                    data?.map {
-//                        Log.d(TAG, "getMyShows: Got show ${it.show_title} airing episode ${it.episode_title} S${it.episode_season} // E${it.episode_number} on ${it.first_aired.toString()}")
-//                    }
 
                         if(data?.isEmpty() == true) {
                             messageContainer.visibility = View.VISIBLE
@@ -130,25 +115,22 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
                             messageContainer.visibility = View.GONE
                         }
 
-                        adapter.submitList(data?.sortedBy {
-                            it.first_aired
-                        })
+
+                        adapter.submitList(sortShows(data))
+
                     }
                     is Resource.Error -> {
                         messageContainer.visibility = View.GONE
                         progressBar.visibility = View.GONE
 
-                        if(refreshLayout.isRefreshing) {
-                            refreshLayout.isRefreshing = false
-                        }
 
-                        if(myShowsResource.data != null) {
-                            adapter.submitList(myShowsResource.data ?: emptyList())
-                        }
+//                        if(myShowsResource.data != null) {
+//                            adapter.submitList(myShowsResource.data ?: emptyList())
+//                        }
 
                         (activity as IHandleError).showErrorSnackbarRetryButton(
                             myShowsResource.error,
-                            bindings.showsoverviewfragmentSwipeRefreshLayout
+                            bindings.root
                         ) {
                             viewModel.onRefresh()
                         }
@@ -159,31 +141,63 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
 
     }
 
-    private fun setupRecyclerView() {
-        recyclerView = bindings.showsoverviewfragmentRecyclerview
+    private fun sortShows(showCalendarEntries: List<ShowBaseCalendarEntry>?): List<BaseCalendarEntry> {
 
-        switchRecyclerViewLayoutManager(requireContext(), recyclerView, MediaEntryBaseAdapter.VIEW_TYPE_POSTER)
+        // Group the shows by Date of their airing.
+        val showsGroupedByDate = showCalendarEntries?.groupBy {
+            it.first_aired?.truncatedTo(ChronoUnit.DAYS)
+        }
+
+        val sortedShows = showsGroupedByDate?.flatMap { value1 ->
+
+            val mutableList: MutableList<BaseCalendarEntry> = mutableListOf()
+
+            // We use the key of the sortedShows Map to provide heading inserts into the List. The ListAdapter will display first Heading (Date airing) followed by all Show elements upcoming on that date.
+            // We should only have one Heading for particular date based on groupBy value to be certain, ensure we only have one heading per date
+            if(mutableList.find { it.first_aired?.truncatedTo(ChronoUnit.DAYS) == value1.key?.truncatedTo(ChronoUnit.DAYS) } == null) {
+                Log.d(TAG, "getMyShows: Header set: - ${value1.key?.truncatedTo(ChronoUnit.DAYS)}", )
+
+                // Add the heading element
+                mutableList.add(BaseCalendarEntry(value1.hashCode(), value1.key))
+            }
+
+            // Add the upcoming shows, this time sorted by Date & Time
+            mutableList.addAll(value1.value.sortedBy { it.first_aired })
+
+            mutableList
+        }
+
+        return sortedShows ?: emptyList()
+    }
+
+    private fun setupRecyclerView() {
+        recyclerView = bindings.splitviewlayoutRecyclerview
+
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
         adapter = ShowCalendarEntriesAdapter(sharedPreferences, tmdbImageLoader, callback = { calendarEntry, action ->
-            when(action) {
-                ShowCalendarEntriesAdapter.ACTION_NAVIGATE_EPISODE -> {
-                    navigateToEpisode(calendarEntry.show_trakt_id, calendarEntry.show_tmdb_id, calendarEntry.episode_season, calendarEntry.episode_number, calendarEntry.language ?: "en")
-                }
-                ShowCalendarEntriesAdapter.ACTION_NAVIGATE_SHOW -> {
-                    navigateToShow(calendarEntry.show_trakt_id, calendarEntry.show_tmdb_id, calendarEntry.show_title)
-                }
-                ShowCalendarEntriesAdapter.ACTION_REMOVE_COLLECTION-> {
-                    viewModel.setShowHiddenState(calendarEntry.show_tmdb_id, !calendarEntry.hidden)
+            if(calendarEntry is ShowBaseCalendarEntry) {
+                when(action) {
+                    ShowCalendarEntriesAdapter.ACTION_NAVIGATE_EPISODE -> {
+                        navigateToEpisode(calendarEntry.show_trakt_id, calendarEntry.show_tmdb_id, calendarEntry.episode_season, calendarEntry.episode_number, calendarEntry.language ?: "en")
+                    }
+                    ShowCalendarEntriesAdapter.ACTION_NAVIGATE_SHOW -> {
+                        navigateToShow(calendarEntry.show_trakt_id, calendarEntry.show_tmdb_id, calendarEntry.show_title)
+                    }
+                    ShowCalendarEntriesAdapter.ACTION_REMOVE_COLLECTION-> {
+                        viewModel.setShowHiddenState(calendarEntry.show_tmdb_id, !calendarEntry.hidden)
 
-                    // Force refresh of list
-                    viewModel.onRefresh()
+                        // Force refresh of list
+                        viewModel.onRefresh()
 
-                }
+                    }
 
-                else -> {
-                    navigateToEpisode(calendarEntry.show_trakt_id, calendarEntry.show_tmdb_id, calendarEntry.episode_season, calendarEntry.episode_number, calendarEntry.language ?: "en")
+                    else -> {
+                        navigateToEpisode(calendarEntry.show_trakt_id, calendarEntry.show_tmdb_id, calendarEntry.episode_season, calendarEntry.episode_number, calendarEntry.language ?: "en")
+                    }
                 }
             }
+
         })
 
         recyclerView.adapter = adapter
@@ -191,32 +205,25 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
     }
 
     override fun navigateToShow(traktId: Int, tmdbId: Int?, title: String?) {
-        val intent = Intent(requireActivity(), ShowDetailsActivity::class.java)
-        intent.putExtra(ShowDetailsActivity.SHOW_DATA_KEY,
+        (activity as OnNavigateToEntity).navigateToShow(
             ShowDataModel(
                 traktId, tmdbId, title
             )
         )
-        startActivity(intent)
     }
     override fun navigateToEpisode(showTraktId: Int, showTmdbId: Int?, seasonNumber: Int, episodeNumber: Int, language: String?) {
-        val intent = Intent(context, EpisodeDetailsActivity::class.java)
 
-        intent.putExtra(EpisodeDetailsActivity.EPISODE_DATA_KEY,
-            EpisodeDataModel(
-                showTraktId,
-                showTmdbId,
-                seasonNumber,
-                episodeNumber,
-                language
-            )
-        )
+        (activity as OnNavigateToEntity).navigateToEpisode(EpisodeDataModel(
+            showTraktId,
+            showTmdbId,
+            seasonNumber,
+            episodeNumber,
+            language
+        ))
 
+//        // We cannot guarantee Watched Episode data is up to date at this point so force refresh (user could have watched more of this show in meantime)
+//        intent.putExtra(EpisodeDetailsRepository.SHOULD_REFRESH_WATCHED_KEY, true)
 
-        // We cannot guarantee Watched Episode data is up to date at this point so force refresh (user could have watched more of this show in meantime)
-        intent.putExtra(EpisodeDetailsRepository.SHOULD_REFRESH_WATCHED_KEY, true)
-
-        startActivity(intent)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -238,7 +245,7 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
     private fun  getViewType() {
         lifecycleScope.launchWhenStarted {
             viewModel.viewType.collectLatest { viewType ->
-                adapter.switchView(viewType)
+//                adapter.switchView(viewType)
 
                 switchRecyclerViewLayoutManager(requireContext(), recyclerView, viewType)
 
@@ -250,7 +257,6 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
 
 
     override fun onResume() {
-        Log.e(TAG, "onResume: $this", )
         super.onResume()
 
         if(isLoggedIn) {
@@ -273,7 +279,7 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
 
         _bindings = null
     }
-        
+
     companion object {
         @JvmStatic
         fun newInstance() =

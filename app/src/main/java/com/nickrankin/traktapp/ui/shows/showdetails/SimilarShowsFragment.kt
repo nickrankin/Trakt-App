@@ -15,6 +15,7 @@ import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexWrap
 import com.google.android.flexbox.FlexboxLayoutManager
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.similar.SimilarMoviesAdapter
 import com.nickrankin.traktapp.adapter.similar.SimilarShowsAdapter
@@ -103,10 +104,9 @@ class SimilarShowsFragment : BaseFragment() {
             val traktId = viewModel.getTraktIdFromTmdbId(tmdbId)
 
             if(traktId != null) {
-                val intent = Intent(context, ShowDetailsActivity::class.java)
-                intent.putExtra(ShowDetailsActivity.SHOW_DATA_KEY, ShowDataModel(traktId, tmdbId, title))
-
-                startActivity(intent)
+                (activity as OnNavigateToEntity).navigateToShow(
+                    ShowDataModel(traktId, tmdbId, title)
+                )
             } else {
                 Log.e(TAG, "navigateToMovie: Trakt ID is null for movie $title // TMDB ID: $tmdbId, Aborting..", )
             }

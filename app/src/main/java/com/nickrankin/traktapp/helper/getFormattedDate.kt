@@ -8,7 +8,12 @@ import org.threeten.bp.format.DateTimeFormatter
 import java.util.*
 
 fun getFormattedDateTime(date: OffsetDateTime, datePattern: String?, timePattern: String?): String {
-    return date.atZoneSameInstant(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern(datePattern + " " + timePattern))
+    return if(timePattern != null) {
+        date.atZoneSameInstant(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern(datePattern + " " + timePattern))
+    } else {
+        date.atZoneSameInstant(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern(datePattern))
+
+    }
 }
 
 fun getFormattedDateTime(date: Date, datePattern: String?, timePattern: String?): String {

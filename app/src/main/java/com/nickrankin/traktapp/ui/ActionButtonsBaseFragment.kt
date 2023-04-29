@@ -107,7 +107,7 @@ abstract class ActionButtonsBaseFragment: BaseFragment() {
         watchedHistoryAdapter = WatchedHistoryEntryAdapter(sharedPreferences) { watchedHistoryEntry ->
             AlertDialog.Builder(requireContext())
                 .setTitle("Confirm Removal")
-                .setMessage("Are you sure you want to remove play ${getFormattedDateTime(watchedHistoryEntry.watched_date, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))} ")
+                .setMessage("Are you sure you want to remove play ${getFormattedDateTime(watchedHistoryEntry.watched_date, sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString(AppConstants.TIME_FORMAT, AppConstants.DEFAULT_TIME_FORMAT))} ")
                 .setPositiveButton("Yes") { dialog, _ ->
                     removeHistoryEntry(watchedHistoryEntry)
                     dialog.dismiss()
@@ -128,7 +128,7 @@ abstract class ActionButtonsBaseFragment: BaseFragment() {
         updatePlayCount { historyEntries ->
             if(historyEntries.isNotEmpty()) {
                 bindings.apply {
-                    actionbuttonsLastWatched.text = "Last watched: ${getFormattedDateTime(historyEntries.first().watched_date, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))}"
+                    actionbuttonsLastWatched.text = "Last watched: ${getFormattedDateTime(historyEntries.first().watched_date, sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString(AppConstants.TIME_FORMAT, AppConstants.DEFAULT_TIME_FORMAT))}"
 
                     actionbuttonsAllPlays.visibility = View.VISIBLE
                     actionbuttonsAllPlays.text = "Plays (${historyEntries.size})"

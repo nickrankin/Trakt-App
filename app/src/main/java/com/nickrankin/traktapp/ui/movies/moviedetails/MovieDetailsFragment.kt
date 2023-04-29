@@ -7,25 +7,35 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
+import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.chip.Chip
 import com.nickrankin.traktapp.BaseActivity
+import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.dao.credits.model.TmCrewPerson
 import com.nickrankin.traktapp.dao.movies.model.TmMovie
 import com.nickrankin.traktapp.databinding.ActivityMovieDetailsLayoutBinding
+import com.nickrankin.traktapp.databinding.FragmentMovieDetailsLayoutBinding
 import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
+import com.nickrankin.traktapp.model.datamodel.PersonDataModel
 import com.nickrankin.traktapp.model.movies.MovieDetailsViewModel
 import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
-import com.nickrankin.traktapp.ui.person.PersonActivity
+import com.nickrankin.traktapp.ui.OnSearchByGenre
+import com.nickrankin.traktapp.ui.movies.MoviesMainActivity
+import com.nickrankin.traktapp.ui.movies.collected.CollectedMoviesFragment
+import com.nickrankin.traktapp.ui.search.SearchResultsActivity
 import com.uwetrottmann.tmdb2.entities.BaseCompany
 import com.uwetrottmann.tmdb2.entities.Country
 import com.uwetrottmann.trakt5.entities.CrewMember
@@ -43,29 +53,38 @@ private const val TRAKT_WRITING_KEY = "Writer"
 private const val TAG = "MovieDetailsActivity"
 
 @AndroidEntryPoint
-class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListener {
+class MovieDetailsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
-    private val viewModel: MovieDetailsViewModel by viewModels()
-    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+    private val viewModel: MovieDetailsViewModel by activityViewModels()
+//    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
-    private lateinit var bindings: ActivityMovieDetailsLayoutBinding
+    private var _bindings: FragmentMovieDetailsLayoutBinding? = null
+    private val bindings get() = _bindings!!
 
     @Inject
     lateinit var glide: RequestManager
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _bindings = FragmentMovieDetailsLayoutBinding.inflate(layoutInflater)
 
-        bindings = ActivityMovieDetailsLayoutBinding.inflate(layoutInflater)
-        setContentView(bindings.root)
+        return bindings.root
+    }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        swipeRefreshLayout = bindings.moviedetailsactivitySwipeLayout
-        swipeRefreshLayout.setOnRefreshListener(this)
+        if(arguments?.containsKey(MOVIE_DATA_KEY) == false || arguments?.getParcelable<MovieDataModel>(
+                MOVIE_DATA_KEY) == null) {
+            throw RuntimeException("MovieDataModel must be passed to this Activity.")
+        }
 
-        setSupportActionBar(bindings.moviedetailsactivityToolbar.toolbar)
+        viewModel.switchMovie(arguments!!.getParcelable<MovieDataModel>(MOVIE_DATA_KEY)!!)
 
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        (activity as OnNavigateToEntity).enableOverviewLayout(true)
 
         getMovie()
 
@@ -74,10 +93,6 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
         setupCastCrewFragment()
         setupActionButtonFragment()
 
-        if(intent.extras?.containsKey(MOVIE_DATA_KEY) == false || intent.extras?.getParcelable<MovieDataModel>(
-                MOVIE_DATA_KEY) == null) {
-            throw RuntimeException("MovieDataModel must be passed to this Activity.")
-        }
     }
 
     override fun onResume() {
@@ -97,25 +112,15 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
                     }
                     is Resource.Success -> {
                         val movie = movieResource.data
-
-                        if (swipeRefreshLayout.isRefreshing) {
-                            swipeRefreshLayout.isRefreshing = false
-                        }
-
                         if (movie != null) {
                             displayMovie(movie)
                         }
                     }
 
                     is Resource.Error -> {
-                        if (swipeRefreshLayout.isRefreshing) {
-                            swipeRefreshLayout.isRefreshing = false
-                        }
-
                         if (movieResource.data != null) {
                             val movie = movieResource.data
                             displayMovie(movie)
-
                         }
 
                         showErrorSnackbarRetryButton(movieResource.error, bindings.root) {
@@ -129,7 +134,7 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
     }
 
     private fun setupCastCrewFragment() {
-        val fragmentTransaction = supportFragmentManager.beginTransaction()
+        val fragmentTransaction = childFragmentManager.beginTransaction()
         val castCrewFragment = MovieDetailsCastCrewFragment.newInstance()
 
         fragmentTransaction.replace(bindings.moviedetailsactivityCastCrew.id, castCrewFragment)
@@ -137,7 +142,7 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
     }
 
     private fun setupActionButtonFragment() {
-        val fragmentTransaction = supportFragmentManager.beginTransaction()
+        val fragmentTransaction = childFragmentManager.beginTransaction()
         val abFragment = MovieDetailsActionButtonsFragment.newInstance()
 
         fragmentTransaction.replace(bindings.moviedetailsactivityActionButtons.id, abFragment)
@@ -150,6 +155,7 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
             return
         }
 
+
         displayExternalLinks(tmMovie)
 
         val title = tmMovie.title
@@ -160,7 +166,7 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
         val posterPath = tmMovie.poster_path
         val backdropPath = tmMovie.backdrop_path
 
-        supportActionBar?.title = title
+        updateTitle(title)
 
         bindings.apply {
             if (backdropPath != null && backdropPath.isNotBlank()) {
@@ -197,7 +203,7 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
         }
 
         if(tmMovie.release_date != null) {
-            bindings.moviedetailsactivityReleaseDate.text = "Released: ${ getFormattedDate(tmMovie.release_date, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)) }"
+            bindings.moviedetailsactivityReleaseDate.text = "Released: ${ getFormattedDate(tmMovie.release_date, sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_FORMAT)) }"
         }
 
         displayGenres(tmMovie.genres)
@@ -212,7 +218,7 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
     private fun displayExternalLinks(movie: TmMovie) {
         if(movie.imdb_id != null) {
             bindings.moviedetailsactivityChipImdb.setOnClickListener {
-                ImdbNavigationHelper.navigateToImdb(this, movie.imdb_id)
+                ImdbNavigationHelper.navigateToImdb(requireContext(), movie.imdb_id)
             }
         } else {
             bindings.moviedetailsactivityChipImdb.visibility = View.GONE
@@ -225,7 +231,7 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
                     val i = Intent(Intent.ACTION_VIEW, Uri.parse(movie.homepage))
                     startActivity(i)
                 } catch(e: Exception) {
-                    Toast.makeText(this, "Error loading the Movie homepage. ", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Error loading the Movie homepage. ", Toast.LENGTH_SHORT).show()
                     Log.e(TAG, "displayExternalLinks: Couldn't load homepage, ${e.message}", )
                 }
             }
@@ -240,7 +246,7 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
                     startActivity(i)
                 } catch(e: Exception) {
                     Log.e(TAG, "displayExternalLinks: Error loading TMDB URL: ${e.message}", )
-                    Toast.makeText(this, "Error loading TMDB URL.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Error loading TMDB URL.", Toast.LENGTH_SHORT).show()
                 }
 
             }
@@ -253,7 +259,7 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
     private fun displayStreamingService() {
         val movieVideoServicesFragment = MovieVideoServicesFragment()
 
-        supportFragmentManager.beginTransaction()
+        childFragmentManager.beginTransaction()
             .replace(bindings.moviedetailsactivityWatch.id, movieVideoServicesFragment)
             .commit()
     }
@@ -323,10 +329,11 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
             return
         }
 
-        val intent = Intent(this, PersonActivity::class.java)
-        intent.putExtra(PersonActivity.PERSON_ID_KEY, traktId)
+        (activity as OnNavigateToEntity).navigateToPerson(
+            PersonDataModel(traktId, null, null)
 
-        startActivity(intent)
+        )
+
     }
 
     private fun displayCompanies(
@@ -378,12 +385,14 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
         genresGroup.removeAllViews()
 
         genres.forEach { genre ->
-            val tag = Chip(this)
+            val tag = Chip(requireContext())
             tag.text = StringUtils.capitalize(genre)
 
-            tag.setOnClickListener {
-//                navigateToTag(genre)
+            tag.setOnClickListener { tag ->
+                childFragmentManager.popBackStack()
+                val chip = tag as Chip
 
+                (activity as OnSearchByGenre).doSearchWithGenre("", chip.text.toString())
             }
 
             genresGroup.addView(tag)
@@ -495,14 +504,13 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
             return
         }
 
-        val fm = supportFragmentManager
+        val fm = childFragmentManager
         val similarMoviesCardView = bindings.moviedetailsactivitySimilar
 
         fm.beginTransaction()
             .replace(similarMoviesCardView.id, SimilarMoviesFragment.newInstance(tmMovie.tmdb_id ?: 0, tmMovie.original_language))
             .commit()
     }
-
 
     override fun onStart() {
         super.onStart()
@@ -515,12 +523,12 @@ class MovieDetailsActivity : BaseActivity(), SwipeRefreshLayout.OnRefreshListene
         viewModel.onRefresh()
     }
 
-    override fun onSupportNavigateUp(): Boolean {
-        onBackPressed()
-        return super.onSupportNavigateUp()
-    }
-
     companion object {
+
+        @JvmStatic
+        fun newInstance() =
+            MovieDetailsFragment()
+
         const val MOVIE_DATA_KEY = "movie_data_key"
     }
 }

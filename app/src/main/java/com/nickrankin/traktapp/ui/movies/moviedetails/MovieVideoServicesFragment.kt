@@ -9,6 +9,7 @@ import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.movies.MovieDetailsViewModel
 import com.nickrankin.traktapp.ui.videoservices.VideoServicesFragment
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.flatMapLatest
 
 private const val TAG = "MovieVideoServicesFragm"
 class MovieVideoServicesFragment: VideoServicesFragment() {
@@ -43,7 +44,10 @@ class MovieVideoServicesFragment: VideoServicesFragment() {
     
     private fun getStreamingServices() {
         lifecycleScope.launchWhenStarted {
-            setVideoServices(viewModel.getVideoStreamingServices())
+            viewModel.videoStreamingServices.collectLatest { videoStreamingServices ->
+                setVideoServices(videoStreamingServices)
+
+            }
         }
     }
 }

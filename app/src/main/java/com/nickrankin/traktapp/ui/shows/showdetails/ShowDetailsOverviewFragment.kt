@@ -18,13 +18,14 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.work.WorkInfo
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.adapter.credits.ShowCastCreditsAdapter
 import com.nickrankin.traktapp.dao.credits.ShowCastPerson
 import com.nickrankin.traktapp.databinding.ShowDetailsOverviewFragmentBinding
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.model.datamodel.PersonDataModel
 import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
 import com.nickrankin.traktapp.ui.IOnStatistcsRefreshListener
-import com.nickrankin.traktapp.ui.person.PersonActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
@@ -154,10 +155,11 @@ class ShowDetailsOverviewFragment : BaseFragment() {
         layoutManager.orientation = LinearLayoutManager.HORIZONTAL
 
         showCastCreditsAdapter = ShowCastCreditsAdapter(glide) { selectedCastPerson ->
-            val castPersonIntent = Intent(requireContext(), PersonActivity::class.java)
-            castPersonIntent.putExtra(PersonActivity.PERSON_ID_KEY, selectedCastPerson.person_trakt_id)
 
-            startActivity(castPersonIntent)
+            (activity as OnNavigateToEntity).navigateToPerson(
+                PersonDataModel(selectedCastPerson.person_trakt_id, null, null)
+
+            )
         }
 
         castRecyclerView.layoutManager = layoutManager

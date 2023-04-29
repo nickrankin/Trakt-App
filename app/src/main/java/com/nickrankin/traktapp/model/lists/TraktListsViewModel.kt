@@ -21,7 +21,7 @@ import javax.inject.Inject
 private const val TAG = "TraktListsViewModel"
 @HiltViewModel
 class TraktListsViewModel @Inject constructor(private val repository: ListsRepository): ViewModel() {
-    
+
     private val eventChannel = Channel<Event>()
     val events = eventChannel.receiveAsFlow()
         .shareIn(viewModelScope, SharingStarted.Lazily, 1)
@@ -32,7 +32,7 @@ class TraktListsViewModel @Inject constructor(private val repository: ListsRepos
 
     private val activeListChannel = Channel<Int?>()
     val activeList = activeListChannel.receiveAsFlow()
-        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+        .shareIn(viewModelScope, SharingStarted.Eagerly, 1)
 
     private val menuSortingChannel = Channel<String>()
     private val menuSorting = menuSortingChannel.receiveAsFlow()
@@ -57,7 +57,9 @@ class TraktListsViewModel @Inject constructor(private val repository: ListsRepos
 
     val listItems = refreshEvent.flatMapLatest { shouldRefresh ->
         activeList.flatMapLatest { listId ->
-            repository.getListEntries(listId, shouldRefresh)
+            combine(repository.getListById(listId, shouldRefresh), repository.getListEntries(listId, shouldRefresh)) { list, entries ->
+                Pair(list, entries)
+            }
         }
     }
 

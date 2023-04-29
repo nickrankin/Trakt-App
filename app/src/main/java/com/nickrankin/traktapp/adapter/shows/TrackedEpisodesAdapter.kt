@@ -24,7 +24,7 @@ class TrackedEpisodesAdapter(private val sharedPreferences: SharedPreferences, p
 
             holder.bindings.apply {
                 collectedshowlayoutTitle.text = currentEpisode.title + " (S${currentEpisode.season}E${currentEpisode.episode})"
-                collectedshowlayoutCollectedAy.text = "Airs: ${currentEpisode.airs_date?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)))} on ${ currentEpisode?.network ?: "Unknown" }"
+                collectedshowlayoutCollectedAy.text = "Airs: ${currentEpisode.airs_date?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_TIME_FORMAT)))} on ${ currentEpisode?.network ?: "Unknown" }"
 
                 root.setOnClickListener {
                     callback(currentEpisode)

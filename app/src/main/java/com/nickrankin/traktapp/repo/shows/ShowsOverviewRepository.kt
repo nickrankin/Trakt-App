@@ -7,8 +7,7 @@ import com.nickrankin.traktapp.api.TmdbApi
 import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.calendars.model.HiddenShowCalendarEntry
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
-import com.nickrankin.traktapp.dao.calendars.model.ShowCalendarEntry
-import com.nickrankin.traktapp.helper.AppConstants
+import com.nickrankin.traktapp.dao.calendars.model.ShowBaseCalendarEntry
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.networkBoundResource
 import com.nickrankin.traktapp.helper.shouldRefreshContents
@@ -48,6 +47,27 @@ class ShowsOverviewRepository @Inject constructor(private val traktApi: TraktApi
         }
     )
 
+    suspend fun getLatestShows(shouldRefresh: Boolean) = networkBoundResource(
+        query = { showCalendarEntryDao.getLatestShowCalendarEntries() },
+        fetch = {
+            traktApi.tmCalendars().myShows(OffsetDateTime.now().format(DateTimeFormatter.ofPattern(
+                DEFAULT_TRAKT_DATE_FORMAT)), NUM_DAYS)
+        },
+        shouldFetch = { calendarShowEntries ->
+            shouldRefreshContents(sharedPreferences.getString(SHOWS_OVERVIEW_LAST_REFRESHED_KEY, "") ?: "", REFRESH_INTERVAL) || calendarShowEntries.isEmpty() || shouldRefresh
+        },
+        saveFetchResult = { calendarShowEntries ->
+
+            sharedPreferences.edit()
+                .putString(SHOWS_OVERVIEW_LAST_REFRESHED_KEY, OffsetDateTime.now().toString())
+                .apply()
+
+            showsDatabase.withTransaction {
+                showCalendarEntryDao.insert(convertEntries(calendarShowEntries))
+            }
+        }
+    )
+
     suspend fun setShowHiddenState(showTmdbId: Int, isHidden: Boolean) {
         showsDatabase.withTransaction {
             showCalendarEntryDao.updateHiddenState(
@@ -56,7 +76,7 @@ class ShowsOverviewRepository @Inject constructor(private val traktApi: TraktApi
         }
     }
 
-    suspend fun removeAlreadyAiredEpisodes(shows: List<ShowCalendarEntry>) {
+    suspend fun removeAlreadyAiredEpisodes(shows: List<ShowBaseCalendarEntry>) {
         Log.e(TAG, "removeAlreadyAiredEpisodes: ${shows.size}", )
         val dateNow = OffsetDateTime.now()
         shows.map { calendarEntry ->
@@ -69,12 +89,12 @@ class ShowsOverviewRepository @Inject constructor(private val traktApi: TraktApi
         }
     }
 
-    private fun convertEntries(entries: List<CalendarShowEntry>): List<ShowCalendarEntry> {
-        val showCalendarEntries: MutableList<ShowCalendarEntry> = mutableListOf()
+    private fun convertEntries(entries: List<CalendarShowEntry>): List<ShowBaseCalendarEntry> {
+        val showCalendarEntries: MutableList<ShowBaseCalendarEntry> = mutableListOf()
 
         entries.map { entry ->
             showCalendarEntries.add(
-                ShowCalendarEntry(
+                ShowBaseCalendarEntry(
                     entry.episode?.ids?.trakt ?: 0,
                     entry.episode?.ids?.tmdb ?: 0,
                     entry.show?.language ?: "en",
@@ -98,7 +118,7 @@ class ShowsOverviewRepository @Inject constructor(private val traktApi: TraktApi
         return showCalendarEntries
     }
 
-    suspend fun getHiddenStatus(showHidden: Boolean, showEntries: List<ShowCalendarEntry>): Resource<List<ShowCalendarEntry>> {
+    suspend fun getHiddenStatus(showHidden: Boolean, showEntries: List<ShowBaseCalendarEntry>): Resource<List<ShowBaseCalendarEntry>> {
         val hiddenShows = showCalendarEntryDao.getShowHiddenStatus().first()
 
         showEntries.map { showCalendarEntry ->

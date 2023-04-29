@@ -1,5 +1,6 @@
 package com.nickrankin.traktapp.model.shows
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -7,13 +8,13 @@ import androidx.lifecycle.viewModelScope
 import com.nickrankin.traktapp.dao.history.model.HistoryEntry
 import com.nickrankin.traktapp.helper.TmdbToTraktIdHelper
 import com.nickrankin.traktapp.model.ActionButtonEvent
+import com.nickrankin.traktapp.model.BaseViewModel
 import com.nickrankin.traktapp.model.ICreditsPersons
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.repo.shows.SeasonEpisodesRepository
 import com.nickrankin.traktapp.repo.shows.showdetails.*
 import com.nickrankin.traktapp.repo.stats.SeasonStatsRepository
 import com.nickrankin.traktapp.services.helper.StatsWorkRefreshHelper
-import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
@@ -34,7 +35,7 @@ class ShowDetailsViewModel @Inject constructor(
     private val seasonStatsRepository: SeasonStatsRepository,
     private val showDetailsProgressRepository: ShowDetailsProgressRepository,
     private val tmdbToTraktIdHelper: TmdbToTraktIdHelper
-) : ViewModel(), ICreditsPersons {
+) : BaseViewModel(), ICreditsPersons {
 
     private val eventsChannel = Channel<ActionButtonEvent>()
     val events = eventsChannel.receiveAsFlow()
@@ -44,31 +45,39 @@ class ShowDetailsViewModel @Inject constructor(
     private val castToggle = castToggleChannel.receiveAsFlow()
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    private val refreshEventChannel = Channel<Boolean>()
-    private val refreshEvent = refreshEventChannel.receiveAsFlow()
+
+    private val showDataModelChangedChannel = Channel<ShowDataModel>()
+    private val showDataModelChanded = showDataModelChangedChannel.receiveAsFlow()
         .shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
-    val showDataModel: ShowDataModel? = savedStateHandle.get(ShowDetailsActivity.SHOW_DATA_KEY)
-
     val show = refreshEvent.flatMapLatest { shouldRefresh ->
-        repository.getShowSummary(showDataModel?.traktId ?: 0, shouldRefresh)
+        showDataModelChanded.flatMapLatest { showDataModel ->
+            repository.getShowSummary(showDataModel.traktId, shouldRefresh)
+        }
     }
 
     // Seasons & progress
     val seasons = refreshEvent.flatMapLatest { shouldRefresh ->
-            seasonEpisodesRepository.getSeasons(showDataModel?.traktId ?: 0, showDataModel?.tmdbId ?: 0, shouldRefresh)
+        showDataModelChanded.flatMapLatest { showDataModel ->
+            seasonEpisodesRepository.getSeasons(showDataModel.traktId, showDataModel.tmdbId ?: 0, shouldRefresh)
+        }
     }
 
     val seasonWatchedStats = refreshEvent.flatMapLatest { shouldRefresh ->
-        showDetailsProgressRepository.getSeasonStats(showDataModel?.traktId ?: 0, showDataModel?.tmdbId, shouldRefresh)
+        showDataModelChanded.flatMapLatest { showDataModel ->
+            showDetailsProgressRepository.getSeasonStats(showDataModel.traktId, showDataModel.tmdbId, shouldRefresh)
+        }
     }
 
 
     // Overview
     override val cast = refreshEvent.flatMapLatest { shouldRefresh ->
-        castToggle.flatMapLatest { showGuestStars ->
-            showDetailsOverviewRepository.getCast(showDataModel?.traktId ?: 0, showDataModel?.tmdbId ?: 0, showGuestStars, shouldRefresh)
+        showDataModelChanded.flatMapLatest { showDataModel ->
+            castToggle.flatMapLatest { showGuestStars ->
+                showDetailsOverviewRepository.getCast(showDataModel.traktId, showDataModel.tmdbId ?: 0, showGuestStars, shouldRefresh)
+            }
         }
+
     }
 
     override fun filterCast(showGuestStars: Boolean) {
@@ -81,22 +90,28 @@ class ShowDetailsViewModel @Inject constructor(
 
     // Action buttons
     val playCount = refreshEvent.flatMapLatest { shouldRefresh ->
-        showActionButtonsRepository.getPlaybackHistory(showDataModel?.traktId ?: 0, shouldRefresh)
+        showDataModelChanded.flatMapLatest { showDataModel ->
+            showActionButtonsRepository.getPlaybackHistory(showDataModel.traktId, shouldRefresh)
+        }
     }
 
     val ratings = refreshEvent.flatMapLatest { shouldRefresh ->
-        showActionButtonsRepository.getRatings(showDataModel?.traktId ?: 0, shouldRefresh)
+        showDataModelChanded.flatMapLatest { showDataModel ->
+            showActionButtonsRepository.getRatings(showDataModel.traktId, shouldRefresh)
+        }
     }
 
     val collectionStatus = refreshEvent.flatMapLatest { shouldRefresh ->
-        showActionButtonsRepository.getCollectedStats(showDataModel?.traktId ?: 0, shouldRefresh)
+        showDataModelChanded.flatMapLatest { showDataModel ->
+            showActionButtonsRepository.getCollectedStats(showDataModel.traktId ?: 0, shouldRefresh)
+        }
     }
 
     val lists = refreshEvent.flatMapLatest { shouldRefresh ->
         showActionButtonsRepository.getTraktListsAndItems(shouldRefresh)
     }
 
-    suspend fun showStreamingServices() = repository.getShowStreamingServices(showDataModel?.tmdbId, showDataModel?.showTitle)
+//    suspend fun showStreamingServices() = repository.getShowStreamingServices(showDataModel?.tmdbId, showDataModel?.showTitle)
 
     fun addToCollection(traktId: Int) = viewModelScope.launch {
         eventsChannel.send(
@@ -175,25 +190,25 @@ class ShowDetailsViewModel @Inject constructor(
         )
     }
 
-    fun onStart() {
+    fun switchShowDataModel(showDataModel: ShowDataModel) {
         viewModelScope.launch {
-            refreshEventChannel.send(false)
-            seasonStatsRepository.getWatchedSeasonStatsPerShow(showDataModel?.traktId ?: 0, false)
+            showDataModelChangedChannel.send(showDataModel)
         }
     }
+    
+//
+//    override fun onStart() {
+//        viewModelScope.launch {
+////            seasonStatsRepository.getWatchedSeasonStatsPerShow(showDataModel?.traktId ?: 0, false)
+//        }
+//    }
+//
+//    override fun onRefresh() {
+//        viewModelScope.launch {
+//
+//            statsWorkRefreshHelper.refreshShowStats()
+//        }
+//
+//    }
 
-    fun onRefresh() {
-        viewModelScope.launch {
-            refreshEventChannel.send(true)
-
-            statsWorkRefreshHelper.refreshShowStats()
-        }
-
-    }
-
-    fun resetRefreshState() {
-        viewModelScope.launch {
-            refreshEventChannel.send(false)
-        }
-    }
 }

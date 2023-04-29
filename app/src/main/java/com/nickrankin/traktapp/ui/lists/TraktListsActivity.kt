@@ -1,5 +1,6 @@
 package com.nickrankin.traktapp.ui.lists
 
+import android.app.SearchManager
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.res.Configuration
@@ -26,14 +27,27 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.tabs.TabLayout
 import com.nickrankin.traktapp.BaseActivity
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.R
+import com.nickrankin.traktapp.SplitViewActivity
 import com.nickrankin.traktapp.adapter.lists.TraktListsAdapter
+import com.nickrankin.traktapp.databinding.ActivitySplitviewBinding
 import com.nickrankin.traktapp.databinding.ActivityTraktListsBinding
 import com.nickrankin.traktapp.databinding.AddListLayoutBinding
 import com.nickrankin.traktapp.helper.OnTitleChangeListener
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
+import com.nickrankin.traktapp.model.datamodel.MovieDataModel
+import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.lists.ListEntryViewModel
 import com.nickrankin.traktapp.model.lists.TraktListsViewModel
+import com.nickrankin.traktapp.ui.OnSearchByGenre
+import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsFragment
+import com.nickrankin.traktapp.ui.person.PersonOverviewFragment
+import com.nickrankin.traktapp.ui.search.SearchResultsActivity
+import com.nickrankin.traktapp.ui.search.SearchResultsFragment
+import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsFragment
+import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsFragment
 import com.uwetrottmann.trakt5.entities.TraktList
 import com.uwetrottmann.trakt5.enums.ListPrivacy
 import com.uwetrottmann.trakt5.enums.SortBy
@@ -44,28 +58,14 @@ import kotlinx.coroutines.flow.collectLatest
 private const val TAG = "TraktListsActivity"
 
 @AndroidEntryPoint
-class TraktListsActivity : BaseActivity(), OnTitleChangeListener {
+class TraktListsActivity : SplitViewActivity(), SwipeRefreshLayout.OnRefreshListener {
 
-
-    private lateinit var bindings: ActivityTraktListsBinding
     private val viewModel: TraktListsViewModel by viewModels()
-    private var listsFragment: ListsFragment? = null
-
-    private lateinit var toolbar: Toolbar
-    private lateinit var drawerLayout: DrawerLayout
-    private lateinit var navView: NavigationView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        bindings = ActivityTraktListsBinding.inflate(layoutInflater)
-        setContentView(bindings.root)
-
-        toolbar = bindings.toolbarLayout.toolbar
-        setSupportActionBar(bindings.toolbarLayout.toolbar)
-
         supportActionBar?.title = "My Lists"
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         displayAllLists()
         setupDrawerLayout()
@@ -77,14 +77,11 @@ class TraktListsActivity : BaseActivity(), OnTitleChangeListener {
 
         lifecycleScope.launchWhenStarted {
             viewModel.activeList.collectLatest { activeListId ->
+
+                Log.e(TAG, "getActiveList: Active list is $activeListId", )
+
                 if(activeListId != null) {
                     navigateList(activeListId)
-                    showDrawerIcon(false)
-                } else {
-                    supportFragmentManager.popBackStack()
-                    displayAllLists()
-                    showDrawerIcon(true)
-
                 }
             }
         }
@@ -93,29 +90,12 @@ class TraktListsActivity : BaseActivity(), OnTitleChangeListener {
     private fun setupDrawerLayout() {
         setSupportActionBar(toolbar)
 
-        navView = bindings.traktlistsactivityNavView
-        drawerLayout = bindings.traktlistsactivityDrawerlayout
-
-        showDrawerIcon(true)
+        navView = bindings.splitviewactivityNavView
+        drawerLayout = bindings.splitviewactivityDrawer
 
         navView.setNavigationItemSelectedListener(this)
     }
 
-    private fun showDrawerIcon(isEnabled: Boolean) {
-        if(isEnabled) {
-            toolbar.setNavigationIcon(R.drawable.ic_baseline_menu_24)
-
-            toolbar.setNavigationOnClickListener {
-                drawerLayout.open()
-            }
-        } else {
-            toolbar.setNavigationIcon(androidx.appcompat.R.drawable.abc_ic_ab_back_material)
-
-            toolbar.setNavigationOnClickListener {
-                onSupportNavigateUp()
-            }
-        }
-    }
 
 
     private fun navigateList(traktListId: Int) {
@@ -127,50 +107,35 @@ class TraktListsActivity : BaseActivity(), OnTitleChangeListener {
         bundle.putInt(TraktListsViewModel.LIST_ID_KEY, traktListId)
 
         supportFragmentManager.beginTransaction()
-            .replace(bindings.traktlistsactivityFragmentContainer.id, listItemsFragment)
-            .addToBackStack("list_items")
+            .replace(bindings.splitviewactivityFirstContainer.id, listItemsFragment)
             .commit()
     }
 
     private fun displayAllLists() {
         supportFragmentManager.beginTransaction()
-            .replace(bindings.traktlistsactivityFragmentContainer.id, getListsFragment())
+            .replace(bindings.splitviewactivityFirstContainer.id, ListsFragment.newInstance())
             .commit()
     }
 
-    override fun onTitleChanged(newTitle: String) {
-        supportActionBar?.title = newTitle
-    }
-
     override fun onSupportNavigateUp(): Boolean {
-        viewModel.switchList(null)
-        onBackPressed()
+        onBackPressedDispatcher.onBackPressed()
         return true
     }
 
-    private fun getListsFragment(): ListsFragment {
-        if(listsFragment == null) {
-            listsFragment = ListsFragment.newInstance()
-        }
 
-        return listsFragment!!
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        
-        listsFragment = null
+    override fun onRefresh() {
+        super.onRefresh()
     }
 
     override fun onBackPressed() {
-        // Need to use getId on fragment to solve configuration change bug in popBackStack method
-        // https://stackoverflow.com/questions/40834313/supportfragmentmanager-popbackstack-screen-rotation
-        if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
-            getSupportFragmentManager().popBackStack(getSupportFragmentManager()
-                .getBackStackEntryAt(0).getId(),
-                FragmentManager.POP_BACK_STACK_INCLUSIVE)
-        } else {
-            super.onBackPressed();
-        }
+//        // Need to use getId on fragment to solve configuration change bug in popBackStack method
+//        // https://stackoverflow.com/questions/40834313/supportfragmentmanager-popbackstack-screen-rotation
+//        if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
+//            getSupportFragmentManager().popBackStack(getSupportFragmentManager()
+//                .getBackStackEntryAt(0).getId(),
+//                FragmentManager.POP_BACK_STACK_INCLUSIVE)
+//        } else {
+//            super.onBackPressed();
+//        }
     }
 }

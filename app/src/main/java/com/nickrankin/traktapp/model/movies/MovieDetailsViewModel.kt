@@ -1,5 +1,6 @@
 package com.nickrankin.traktapp.model.movies
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,7 +12,6 @@ import com.nickrankin.traktapp.repo.movies.MovieActionButtonsRepository
 import com.nickrankin.traktapp.repo.movies.MovieDetailsOverviewRepository
 import com.nickrankin.traktapp.repo.movies.MovieDetailsRepository
 import com.nickrankin.traktapp.services.helper.StatsWorkRefreshHelper
-import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
@@ -22,7 +22,7 @@ import javax.inject.Inject
 private const val TAG = "MovieDetailsViewModel"
 
 @HiltViewModel
-class MovieDetailsViewModel @Inject constructor(
+open class MovieDetailsViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val repository: MovieDetailsRepository,
     private val movieActionButtonsRepository: MovieActionButtonsRepository,
@@ -30,9 +30,6 @@ class MovieDetailsViewModel @Inject constructor(
     private val tmdbToTraktIdHelper: TmdbToTraktIdHelper
 
 ) : ViewModel() {
-    private val movieDataModel: MovieDataModel? =
-        savedStateHandle.get(MovieDetailsActivity.MOVIE_DATA_KEY)
-
     private val eventsChannel = Channel<ActionButtonEvent>()
     val events = eventsChannel.receiveAsFlow()
 
@@ -40,13 +37,21 @@ class MovieDetailsViewModel @Inject constructor(
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
         .shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
+    private val movieDataModelChangedChannel = Channel<MovieDataModel>()
+    private val movieDataModelChanged = movieDataModelChangedChannel.receiveAsFlow()
+        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
     val movie = refreshEvent.flatMapLatest { shouldRefresh ->
-        repository.getMovieSummary(movieDataModel?.traktId ?: 0, shouldRefresh)
+        movieDataModelChanged.flatMapLatest { movieDataModel ->
+            repository.getMovieSummary(movieDataModel?.traktId ?: 0, shouldRefresh)
+        }
     }
 
+
     val watchedMovieHistoryEntries = refreshEvent.flatMapLatest { shouldRefresh ->
-        movieActionButtonsRepository.getPlaybackHistory(movieDataModel?.traktId ?: 0, shouldRefresh)
+        movieDataModelChanged.flatMapLatest { movieDataModel ->
+            movieActionButtonsRepository.getPlaybackHistory(movieDataModel.traktId, shouldRefresh)
+        }
     }
 
     val listsAndEntries = refreshEvent.flatMapLatest { shouldRefresh ->
@@ -55,11 +60,14 @@ class MovieDetailsViewModel @Inject constructor(
 
     // Overview Fragment
     val credits = refreshEvent.flatMapLatest { shouldRefresh ->
-        movieDetailsOverviewRepository.getCast(
-            movieDataModel?.traktId ?: 0,
-            movieDataModel?.tmdbId ?: 0,
-            shouldRefresh
-        )
+        movieDataModelChanged.flatMapLatest { movieDataModel ->
+            movieDetailsOverviewRepository.getCast(
+                movieDataModel?.traktId ?: 0,
+                movieDataModel?.tmdbId ?: 0,
+                shouldRefresh
+            )
+        }
+
     }
 
     suspend fun personTmdbIdToTrakt(tmdbId: Int) =
@@ -67,12 +75,18 @@ class MovieDetailsViewModel @Inject constructor(
 
 
     val collectedMovieStats = refreshEvent.flatMapLatest { shouldRefresh ->
-        movieActionButtonsRepository.getCollectedStats(movieDataModel?.traktId ?: 0, shouldRefresh)
+        movieDataModelChanged.flatMapLatest { movieDataModel ->
+            movieActionButtonsRepository.getCollectedStats(movieDataModel?.traktId ?: 0, shouldRefresh)
+        }
     }
 
     fun addToCollection(traktId: Int) = viewModelScope.launch {
         eventsChannel.send(
-            ActionButtonEvent.AddToCollectionEvent(movieActionButtonsRepository.addToCollection(traktId ?: 0))
+            ActionButtonEvent.AddToCollectionEvent(
+                movieActionButtonsRepository.addToCollection(
+                    traktId ?: 0
+                )
+            )
         )
     }
 
@@ -87,23 +101,25 @@ class MovieDetailsViewModel @Inject constructor(
     }
 
     fun addListEntry(itemTraktId: Int, listTraktId: Int) = viewModelScope.launch {
-                movieActionButtonsRepository.addToList(
-                    itemTraktId,
-                    listTraktId
-                )
+        movieActionButtonsRepository.addToList(
+            itemTraktId,
+            listTraktId
+        )
     }
 
     fun removeListEntry(itemTraktId: Int, listTraktId: Int) =
         viewModelScope.launch {
 
-                    movieActionButtonsRepository.removeFromList(
-                        itemTraktId,
-                        listTraktId
-                    )
+            movieActionButtonsRepository.removeFromList(
+                itemTraktId,
+                listTraktId
+            )
         }
 
     val movieRatings = refreshEvent.flatMapLatest { shouldRefresh ->
-        movieActionButtonsRepository.getRatings(movieDataModel?.traktId ?: 0, shouldRefresh)
+        movieDataModelChanged.flatMapLatest { movieDataModel ->
+            movieActionButtonsRepository.getRatings(movieDataModel?.traktId ?: 0, shouldRefresh)
+        }
     }
 
     fun addRating(newRating: Int, traktId: Int) = viewModelScope.launch {
@@ -117,7 +133,11 @@ class MovieDetailsViewModel @Inject constructor(
 
     fun deleteRating(traktId: Int) = viewModelScope.launch {
         eventsChannel.send(
-            ActionButtonEvent.RemoveRatingEvent(movieActionButtonsRepository.deleteRating(traktId ?: -1))
+            ActionButtonEvent.RemoveRatingEvent(
+                movieActionButtonsRepository.deleteRating(
+                    traktId ?: -1
+                )
+            )
         )
     }
 
@@ -150,8 +170,16 @@ class MovieDetailsViewModel @Inject constructor(
             )
         )
     }
-    suspend fun getVideoStreamingServices() =
+
+    val videoStreamingServices = movieDataModelChanged.mapLatest { movieDataModel ->
         repository.getVideoStreamingServices(movieDataModel?.tmdbId, movieDataModel?.movieTitle)
+    }
+
+    fun switchMovie(movieDataModel: MovieDataModel) {
+        viewModelScope.launch {
+            movieDataModelChangedChannel.send(movieDataModel)
+        }
+    }
 
     fun onStart() {
         viewModelScope.launch {
@@ -162,7 +190,7 @@ class MovieDetailsViewModel @Inject constructor(
     fun onRefresh() {
         viewModelScope.launch {
             refreshEventChannel.send(true)
-           // statsWorkRefreshHelper.refreshMovieStats()
+            // statsWorkRefreshHelper.refreshMovieStats()
 
         }
     }

@@ -38,7 +38,7 @@ class CollectedShowsAdapter(controls: AdaptorActionControls<CollectedShow>,
 
                     if(currentItem.collected_at != null) {
                         itemTimestamp.visibility = View.VISIBLE
-                        itemTimestamp.text = "Last collected: ${getFormattedDateTime(currentItem.collected_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))}"
+                        itemTimestamp.text = "Last collected: ${getFormattedDateTime(currentItem.collected_at, sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString(AppConstants.TIME_FORMAT, AppConstants.DEFAULT_TIME_FORMAT))}"
                     }
 
 
@@ -70,7 +70,7 @@ class CollectedShowsAdapter(controls: AdaptorActionControls<CollectedShow>,
                         ZoneId.systemDefault())?.format(
                         DateTimeFormatter.ofPattern(
                             sharedPreferences.getString(
-                                "date_format",
+                                AppConstants.DATE_FORMAT,
                                 AppConstants.DEFAULT_DATE_TIME_FORMAT
                             )
                         )

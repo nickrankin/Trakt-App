@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.lists.TraktListsAdapter
 import com.nickrankin.traktapp.databinding.AddListLayoutBinding
@@ -57,9 +58,6 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 
-        val swipeLayout = bindings.traktlistsfragmentSwipeLayout
-        swipeLayout.setOnRefreshListener(this)
-
         initRecycler()
 
         addListFab = bindings.traktlistsfragmentAddList
@@ -70,6 +68,8 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
         updateTitle("My Lists")
 
         setHasOptionsMenu(true)
+
+        (activity as OnNavigateToEntity).enableOverviewLayout(false)
 
         if(!isLoggedIn) {
             handleLoggedOutState(this.id)
@@ -89,7 +89,6 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
     private fun getLists() {
         val progressBar = bindings.traktlistsfragmentProgressbar
         val messageContainerTextView = bindings.traktlistsfragmentMessageContainer
-        val swipeLayout = bindings.traktlistsfragmentSwipeLayout
 
         lifecycleScope.launchWhenStarted {
             viewModel.lists.collectLatest { listsResource ->
@@ -102,9 +101,6 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                     is Resource.Success -> {
                         progressBar.visibility = View.GONE
                         recyclerView.visibility = View.VISIBLE
-                        if (swipeLayout.isRefreshing) {
-                            swipeLayout.isRefreshing = false
-                        }
 
                         val lists = listsResource.data ?: emptyList()
 
@@ -126,9 +122,6 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                     }
                     is Resource.Error -> {
                         progressBar.visibility = View.GONE
-                        if (swipeLayout.isRefreshing) {
-                            swipeLayout.isRefreshing = false
-                        }
 
                         val lists = listsResource.data ?: emptyList()
 
@@ -144,7 +137,7 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                             messageContainerTextView.text = "You have no lists yet. Why not make one?"
                         }
 
-                        (activity as IHandleError).showErrorSnackbarRetryButton(listsResource.error, bindings!!.traktlistsfragmentSwipeLayout) {
+                        (activity as IHandleError).showErrorSnackbarRetryButton(listsResource.error, bindings.root) {
                             viewModel.onRefresh()
                         }
                     }
@@ -211,7 +204,7 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
     }
 
     private fun initRecycler() {
-        recyclerView = bindings!!.traktlistsfragmentRecyclerview
+        recyclerView = bindings.traktlistsfragmentRecyclerview
 
         val lm = LinearLayoutManager(requireContext())
 

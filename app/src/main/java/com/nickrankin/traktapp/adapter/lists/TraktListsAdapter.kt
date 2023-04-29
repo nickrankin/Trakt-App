@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.dao.lists.model.TraktList
 import com.nickrankin.traktapp.databinding.TraktListItemBinding
+import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.repo.lists.ListsRepository
 import com.uwetrottmann.trakt5.enums.ListPrivacy
 import org.threeten.bp.format.DateTimeFormatter
@@ -64,7 +65,7 @@ class TraktListsAdapter(private val sharedPreferences: SharedPreferences, privat
             }
 
             if(currentItem.created_at != null) {
-                listitemCreated.text = "Created: " + currentItem.created_at.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", "dd/MM/yyyy")))
+                listitemCreated.text = "Created: " + currentItem.created_at.format(DateTimeFormatter.ofPattern(sharedPreferences.getString(AppConstants.DATE_FORMAT, "dd/MM/yyyy")))
             }
 
             if((currentItem.item_count ?: 0) > 999) {

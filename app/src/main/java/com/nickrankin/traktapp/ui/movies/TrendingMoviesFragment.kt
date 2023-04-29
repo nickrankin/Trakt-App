@@ -10,14 +10,16 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.adapter.movies.TrendingMoviesAdaptor
+import com.nickrankin.traktapp.databinding.FragmentSplitviewLayoutBinding
 import com.nickrankin.traktapp.databinding.FragmentTrendingMoviesBinding
 import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.movies.TrendingMoviesViewModel
-import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
+import com.uwetrottmann.trakt5.entities.TrendingMovie
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
@@ -26,10 +28,9 @@ private const val TAG = "TrendingMoviesFragment"
 @AndroidEntryPoint
 class TrendingMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
-    private lateinit var bindings: FragmentTrendingMoviesBinding
+    private lateinit var bindings: FragmentSplitviewLayoutBinding
     private val viewModel: TrendingMoviesViewModel by activityViewModels()
 
-    private lateinit var swipeLayout: SwipeRefreshLayout
     private lateinit var progressBar: ProgressBar
 
     private lateinit var recyclerView: RecyclerView
@@ -42,7 +43,7 @@ class TrendingMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        bindings = FragmentTrendingMoviesBinding.inflate(layoutInflater)
+        bindings = FragmentSplitviewLayoutBinding.inflate(layoutInflater)
 
         return bindings.root
     }
@@ -51,15 +52,14 @@ class TrendingMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
         super.onViewCreated(view, savedInstanceState)
         setHasOptionsMenu(true)
 
-        swipeLayout = bindings.trendingmoviesfragmentSwipeLayout
-        swipeLayout.setOnRefreshListener(this)
-
-        progressBar = bindings.trendingmoviesfragmentProgressbar
+        progressBar = bindings.splitviewlayoutProgressbar
 
         updateTitle("Trending Movies")
 
         initRecycler()
         getViewType()
+
+        (activity as OnNavigateToEntity).enableOverviewLayout(false)
 
         getTrendingMovies()
     }
@@ -87,28 +87,21 @@ class TrendingMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
 
                         progressBar.visibility = View.GONE
 
-                        if(swipeLayout.isRefreshing) {
-                            swipeLayout.isRefreshing = false
-                        }
-
                         adapter.submitList(trendingMoviesResource.data) {
                             recyclerView.scrollToPosition(0)
                         }
+
                     }
 
                     is Resource.Error -> {
 
                         progressBar.visibility = View.GONE
 
-                        if(swipeLayout.isRefreshing) {
-                            swipeLayout.isRefreshing = false
-                        }
-
                         recyclerView.visibility = View.GONE
 
                         (activity as IHandleError).showErrorSnackbarRetryButton(
                             trendingMoviesResource.error,
-                            bindings.trendingmoviesfragmentSwipeLayout
+                            bindings.root
                         ) {
                             viewModel.onRefresh()
                         }
@@ -120,25 +113,32 @@ class TrendingMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
     }
 
     private fun initRecycler() {
-        recyclerView = bindings.trendingmoviesfragmentRecyclerview
+        recyclerView = bindings.splitviewlayoutRecyclerview
 
         switchRecyclerViewLayoutManager(requireContext(), recyclerView, MediaEntryBaseAdapter.VIEW_TYPE_POSTER)
 
         adapter = TrendingMoviesAdaptor(tmdbPosterImageLoader, callback = { trendingMovie ->
-            val intent = Intent(requireContext(), MovieDetailsActivity::class.java)
-            intent.putExtra(MovieDetailsActivity.MOVIE_DATA_KEY,
-                MovieDataModel(
-                    trendingMovie?.movie?.ids?.trakt ?: 0,
-                    trendingMovie?.movie?.ids?.tmdb,
-                    trendingMovie?.movie?.title,
-                    trendingMovie?.movie?.year
-                )
-            )
-            startActivity(intent)
-
+            navigateToMovie(trendingMovie)
         })
 
         recyclerView.adapter = adapter
+    }
+
+    private fun navigateToMovie(trendingMovie: TrendingMovie?) {
+        if(trendingMovie == null) {
+            Log.e(TAG, "navigateToMovie: Trending movies object cannot be null", )
+
+            return
+        }
+
+        (activity as MoviesMainActivity).navigateToMovie(
+            MovieDataModel(
+                trendingMovie.movie?.ids?.trakt ?: 0,
+                trendingMovie.movie?.ids?.tmdb,
+                trendingMovie.movie?.title,
+                trendingMovie.movie?.year
+            )
+        )
     }
 
     private fun getViewType() {

@@ -8,20 +8,33 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.LinearLayout
 import android.widget.SearchView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
+import androidx.drawerlayout.widget.DrawerLayout
+import androidx.fragment.app.FragmentManager
 import androidx.preference.PreferenceManager
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
+import com.nickrankin.traktapp.databinding.ActivitySplitviewBinding
 import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.Resource
+import com.nickrankin.traktapp.model.datamodel.*
+import com.nickrankin.traktapp.ui.OnSearchByGenre
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.lists.TraktListsActivity
 import com.nickrankin.traktapp.ui.movies.MoviesMainActivity
+import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsFragment
+import com.nickrankin.traktapp.ui.person.PersonOverviewFragment
 import com.nickrankin.traktapp.ui.search.SearchResultsActivity
+import com.nickrankin.traktapp.ui.search.SearchResultsFragment
 import com.nickrankin.traktapp.ui.settings.SettingsActivity
 import com.nickrankin.traktapp.ui.shows.ShowsMainActivity
+import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsFragment
+import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsFragment
 import dagger.hilt.android.AndroidEntryPoint
 import retrofit2.HttpException
 import java.io.IOException
@@ -56,6 +69,7 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
         PreferenceManager.setDefaultValues(this, R.xml.root_preferences, false)
 
         isLoggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
+
 
 
 
@@ -180,6 +194,7 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
             .show()
     }
 
+
     open fun onRefresh() {
         errorHandled = false
     }
@@ -215,5 +230,14 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
         throwable?.printStackTrace()
 
     }
+}
 
+interface OnNavigateToEntity {
+    fun enableOverviewLayout(isEnabled: Boolean)
+    fun navigateToFragment(fragmentTag: String)
+    fun navigateToMovie(movieDataModel: MovieDataModel)
+    fun navigateToShow(showDataModel: ShowDataModel)
+    fun navigateToSeason(seasonDataModel: SeasonDataModel)
+    fun navigateToEpisode(episodeDataModel: EpisodeDataModel)
+    fun navigateToPerson(personDataModel: PersonDataModel)
 }

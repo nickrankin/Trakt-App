@@ -11,10 +11,12 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.LoadState
+import androidx.paging.map
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.AdaptorActionControls
 import com.nickrankin.traktapp.adapter.MediaEntryBasePagingAdapter
@@ -23,11 +25,12 @@ import com.nickrankin.traktapp.adapter.movies.WatchedMoviesPagingAdapter
 //import com.nickrankin.traktapp.adapter.movies.WatchedMoviesPagingAdapter
 import com.nickrankin.traktapp.dao.movies.model.WatchedMovie
 import com.nickrankin.traktapp.dao.movies.model.WatchedMovieAndStats
+import com.nickrankin.traktapp.databinding.FragmentSplitviewLayoutBinding
 import com.nickrankin.traktapp.databinding.FragmentWatchedMoviesBinding
 import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.movies.WatchedMoviesViewModel
-import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
+import com.nickrankin.traktapp.ui.movies.MoviesMainActivity
 import com.uwetrottmann.trakt5.entities.SyncItems
 import com.uwetrottmann.trakt5.enums.Type
 import dagger.hilt.android.AndroidEntryPoint
@@ -39,10 +42,9 @@ private const val TAG = "WatchedMoviesFragment"
 @AndroidEntryPoint
 class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
-    private lateinit var bindings: FragmentWatchedMoviesBinding
+    private lateinit var bindings: FragmentSplitviewLayoutBinding
     private val viewModel: WatchedMoviesViewModel by activityViewModels()
 
-    private lateinit var swipeLayout: SwipeRefreshLayout
     private lateinit var progressBar: ProgressBar
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: MediaEntryBasePagingAdapter<WatchedMovieAndStats>
@@ -57,7 +59,7 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        bindings = FragmentWatchedMoviesBinding.inflate(inflater)
+        bindings = FragmentSplitviewLayoutBinding.inflate(inflater)
 
         return bindings.root
     }
@@ -67,15 +69,14 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
 
         setHasOptionsMenu(true)
 
-        swipeLayout = bindings.moviewatchingfragmentSwipeRefreshLayout
-        progressBar = bindings.moviewatchingfragmentProgressbar
-
-        swipeLayout.setOnRefreshListener(this)
+        progressBar = bindings.splitviewlayoutProgressbar
 
 
         updateTitle("Watched Movies")
 
         initRecycler()
+
+        (activity as OnNavigateToEntity).enableOverviewLayout(false)
 
 
         if(!isLoggedIn) {
@@ -100,10 +101,6 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
                 Log.e(TAG, "getWatchedMovies: Triggered ${System.currentTimeMillis()}", )
                 
                 progressBar.visibility = View.GONE
-
-                if(swipeLayout.isRefreshing) {
-                    swipeLayout.isRefreshing = false
-                }
 
                 adapter.submitData(latestData)
 
@@ -155,7 +152,7 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
     }
 
     private fun initRecycler() {
-        recyclerView = bindings.moviewatchingfragmentRecyclerview
+        recyclerView = bindings.splitviewlayoutRecyclerview
 
         switchRecyclerViewLayoutManager(requireContext(), recyclerView, MediaEntryBasePagingAdapter.VIEW_TYPE_POSTER)
 
@@ -184,7 +181,7 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
 
         lifecycleScope.launchWhenCreated {
             adapter.loadStateFlow.collectLatest { loadStates ->
-                bindings.moviewatchingfragmentSwipeRefreshLayout.isRefreshing = loadStates.refresh is LoadState.Loading
+//                bindings.splitviewlayoutProgressbar.isRefreshing = loadStates.refresh is LoadState.Loading
             }
         }
 
@@ -194,7 +191,7 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
                 .distinctUntilChangedBy { it.refresh }
                 // Only react to cases where Remote REFRESH completes i.e., NotLoading.
                 .filter { it.refresh is LoadState.NotLoading }
-                .collect { bindings.moviewatchingfragmentRecyclerview.scrollToPosition(0) }
+                .collect { bindings.splitviewlayoutRecyclerview.scrollToPosition(0) }
         }
     }
 
@@ -202,8 +199,8 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
         if(watchedMovie == null) {
             return
         }
-        val intent = Intent(requireContext(), MovieDetailsActivity::class.java)
-        intent.putExtra(MovieDetailsActivity.MOVIE_DATA_KEY,
+
+        (activity as OnNavigateToEntity).navigateToMovie(
             MovieDataModel(
                 watchedMovie.trakt_id,
                 watchedMovie.tmdb_id,
@@ -211,7 +208,6 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
                 0
             )
         )
-        startActivity(intent)
     }
 
     private fun handleWatchedHistoryDeletion(watchedMovie: WatchedMovie?) {
@@ -226,7 +222,7 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
             .setTitle("Remove play for ${watchedMovie.title}")
             .setMessage("Do you want to remove play for ${watchedMovie.title} at ${watchedMovie.watched_at?.atZoneSameInstant(
                 org.threeten.bp.ZoneId.systemDefault())?.format(
-                DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)))}?")
+                DateTimeFormatter.ofPattern(sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_FORMAT)))}?")
             .setPositiveButton("Remove", DialogInterface.OnClickListener { dialogInterface, i ->
                 viewModel.removeFromWatchedHistory(syncItems)
                 dialogInterface.dismiss()

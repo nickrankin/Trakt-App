@@ -57,7 +57,7 @@ class TmdbImageLoader @Inject constructor(
                 //Log.d(TAG, "loadImages: Loading images from cache for $traktId // $title")
                 loadImagesOnMainThread(cachedPosters, imageItemType, posterImageView, backdropImageView)
             } else {
-                Log.d(TAG, "loadImages: Refreshing images for $traktId // $title")
+//                Log.d(TAG, "loadImages: Refreshing images for $traktId // $title")
 
                 if (imageItemType == ImageItemType.EPISODE) {
                     throw RuntimeException("For episodes, use loadEpisodeImages() method")
@@ -66,7 +66,7 @@ class TmdbImageLoader @Inject constructor(
                     val images = getTmdbImages(traktId, imageItemType, tmbId, null, null, originalLanguage)
 
                     if (shouldCache && !images.poster_path.isNullOrBlank()) {
-                        Log.d(TAG, "loadImages: Caching images for TraktId $traktId // $title")
+//                        Log.d(TAG, "loadImages: Caching images for TraktId $traktId // $title")
                         imagesDao.insert(images)
                     }
 
@@ -102,7 +102,7 @@ class TmdbImageLoader @Inject constructor(
                 loadImagesOnMainThread(cachedEpisodeImages, ImageItemType.EPISODE, posterImageView, backdropImageView)
 
             } else {
-                Log.d(TAG, "loadEpisodeImages: Loading image from cache $traktId - $showTitle")
+//                Log.d(TAG, "loadEpisodeImages: Loading image from cache $traktId - $showTitle")
 
                 // Check if the Show images are already cached:
                 val cachedShowImages = imagesDao.getImage(PREFIX_SHOW+showTraktId)
@@ -124,7 +124,7 @@ class TmdbImageLoader @Inject constructor(
                     loadImagesOnMainThread(episodeImages, ImageItemType.EPISODE, posterImageView, backdropImageView)
 
                 } else {
-                    Log.d(TAG, "loadEpisodeImages: Getting show images for TMDBID $tmbId")
+//                    Log.d(TAG, "loadEpisodeImages: Getting show images for TMDBID $tmbId")
                     val showImages = getTmdbImages(showTraktId, ImageItemType.SHOW, tmbId, showTitle, null, originalLanguage)
 
                     // Insert the Show images to cache

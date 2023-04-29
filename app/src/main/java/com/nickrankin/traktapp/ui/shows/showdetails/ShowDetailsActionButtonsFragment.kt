@@ -199,7 +199,7 @@ class ShowDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
          viewModel.lists.collectLatest { listsResource ->
              when(listsResource) {
                  is Resource.Loading -> {
-                     Log.e(TAG, "getLists: Loading lists ...", )
+                     Log.d(TAG, "getLists: Loading lists ...", )
                  }
                  is Resource.Success -> {
                      onListsChanged(listsResource.data ?: emptyList())

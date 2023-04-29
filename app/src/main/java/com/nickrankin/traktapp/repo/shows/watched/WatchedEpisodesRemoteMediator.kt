@@ -8,13 +8,10 @@ import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
 import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TraktApi
-import com.nickrankin.traktapp.dao.calendars.model.ShowCalendarEntry
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
-import com.nickrankin.traktapp.dao.show.WatchedShowsMediatorDatabase
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisode
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisodeAndStats
 import com.nickrankin.traktapp.dao.show.model.WatchedEpisodePageKey
-import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.shouldRefreshContents
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.uwetrottmann.trakt5.entities.HistoryEntry
@@ -23,7 +20,6 @@ import com.uwetrottmann.trakt5.enums.Extended
 import com.uwetrottmann.trakt5.enums.HistoryType
 import com.uwetrottmann.trakt5.enums.Status
 import org.threeten.bp.OffsetDateTime
-import org.threeten.bp.format.DateTimeFormatter
 import retrofit2.HttpException
 import java.io.IOException
 

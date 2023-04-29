@@ -1,32 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-
-    <androidx.coordinatorlayout.widget.CoordinatorLayout
-        android:id="@+id/coordinator_layout"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fitsSystemWindows="true">
-
-        <include
-            android:id="@+id/toolbar_layout"
-            layout="@layout/toolbar_layout" />
-
-        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-            android:id="@+id/home_swipe_layout"
+        <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginTop="?attr/actionBarSize">
-
-        <ScrollView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            >
+            android:layout_height="wrap_content">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -38,6 +19,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="8dp">
+
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:id="@+id/home_stats_layout"
                         android:layout_width="match_parent"
@@ -60,9 +42,9 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_margin="10dp"
-                            app:layout_constraintTop_toBottomOf="@id/home_stats_title"
+                            app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintEnd_toEndOf="parent" />
+                            app:layout_constraintTop_toBottomOf="@id/home_stats_title" />
 
                         <TextView
                             android:id="@+id/home_stats_movies"
@@ -132,11 +114,10 @@
                             android:layout_marginStart="8dp"
                             android:layout_marginBottom="8dp"
                             android:text="Duration: 5 days, 16 hours, 5 minutes"
-                            app:layout_constraintStart_toEndOf="@id/home_stats_movies_duration_icon"
-                            app:layout_constraintEnd_toEndOf="@id/home_stats_guideline"
-                            app:layout_constraintTop_toTopOf="@id/home_stats_movies_duration_icon"
                             app:layout_constraintBottom_toBottomOf="parent"
-                            />
+                            app:layout_constraintEnd_toEndOf="@id/home_stats_guideline"
+                            app:layout_constraintStart_toEndOf="@id/home_stats_movies_duration_icon"
+                            app:layout_constraintTop_toTopOf="@id/home_stats_movies_duration_icon" />
 
 
                         <androidx.constraintlayout.widget.Guideline
@@ -144,8 +125,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:orientation="vertical"
-                            app:layout_constraintGuide_percent="0.5"
-                            />
+                            app:layout_constraintGuide_percent="0.5" />
 
                         <TextView
                             android:id="@+id/home_stats_shows"
@@ -154,8 +134,8 @@
                             android:layout_marginTop="8dp"
                             android:text="Shows"
                             android:textAppearance="?attr/textAppearanceHeadline6"
-                            app:layout_constraintStart_toStartOf="@id/home_stats_guideline"
                             app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="@id/home_stats_guideline"
                             app:layout_constraintTop_toBottomOf="@id/home_stats_divider" />
 
                         <ImageView
@@ -165,8 +145,8 @@
                             android:layout_marginTop="8dp"
                             android:layout_marginEnd="8dp"
                             android:src="@drawable/ic_baseline_collections_bookmark_24"
-                            app:layout_constraintStart_toStartOf="@id/home_stats_guideline"
                             app:layout_constraintEnd_toStartOf="@id/home_stats_shows_collected"
+                            app:layout_constraintStart_toStartOf="@id/home_stats_guideline"
                             app:layout_constraintTop_toBottomOf="@id/home_stats_shows" />
 
                         <TextView
@@ -175,8 +155,8 @@
                             android:layout_height="wrap_content"
                             android:layout_marginEnd="8dp"
                             android:text="Collected: 567"
-                            app:layout_constraintStart_toEndOf="@id/home_stats_shows_collected_icon"
                             app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toEndOf="@id/home_stats_shows_collected_icon"
 
                             app:layout_constraintTop_toTopOf="@id/home_stats_shows_collected_icon" />
 
@@ -187,8 +167,8 @@
                             android:layout_marginTop="8dp"
                             android:layout_marginEnd="8dp"
                             android:src="@drawable/ic_baseline_play_circle_24"
-                            app:layout_constraintStart_toStartOf="@+id/home_stats_guideline"
                             app:layout_constraintEnd_toStartOf="@id/home_stats_shows_plays"
+                            app:layout_constraintStart_toStartOf="@+id/home_stats_guideline"
                             app:layout_constraintTop_toBottomOf="@id/home_stats_shows_collected_icon" />
 
                         <TextView
@@ -197,8 +177,8 @@
                             android:layout_height="wrap_content"
 
                             android:text="Plays: 237"
-                            app:layout_constraintStart_toEndOf="@id/home_stats_shows_plays_icon"
                             app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toEndOf="@id/home_stats_shows_plays_icon"
                             app:layout_constraintTop_toTopOf="@id/home_stats_shows_plays_icon" />
 
                         <ImageView
@@ -218,10 +198,10 @@
                             android:layout_marginEnd="8dp"
                             android:layout_marginBottom="8dp"
                             android:text="Duration: 5 days, 16 hours, 5 minutes"
-                            app:layout_constraintStart_toEndOf="@id/home_stats_shows_duration_icon"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintTop_toTopOf="@id/home_stats_shows_duration_icon"
                             app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toEndOf="@id/home_stats_shows_duration_icon"
+                            app:layout_constraintTop_toTopOf="@id/home_stats_shows_duration_icon"
 
                             />
 
@@ -233,9 +213,11 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="8dp">
+
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content">
+
                         <TextView
                             android:id="@+id/home_next_airing_title"
                             android:layout_width="wrap_content"
@@ -243,8 +225,8 @@
                             android:layout_margin="8dp"
                             android:text="Airing soon..."
                             android:textAppearance="?attr/textAppearanceHeadline5"
-                            app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="parent" />
 
                         <com.google.android.material.divider.MaterialDivider
@@ -252,9 +234,9 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_margin="10dp"
-                            app:layout_constraintTop_toBottomOf="@id/home_next_airing_title"
+                            app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintEnd_toEndOf="parent" />
+                            app:layout_constraintTop_toBottomOf="@id/home_next_airing_title" />
 
                         <ProgressBar
                             android:id="@+id/home_next_airing_progressbar"
@@ -294,9 +276,11 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="8dp">
+
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content">
+
                         <TextView
                             android:id="@+id/home_watched_movies_title"
                             android:layout_width="wrap_content"
@@ -304,8 +288,8 @@
                             android:layout_margin="8dp"
                             android:text="Last Watched Movies ..."
                             android:textAppearance="?attr/textAppearanceHeadline5"
-                            app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="parent" />
 
                         <com.google.android.material.divider.MaterialDivider
@@ -313,9 +297,9 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_margin="10dp"
-                            app:layout_constraintTop_toBottomOf="@id/home_watched_movies_title"
+                            app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintEnd_toEndOf="parent" />
+                            app:layout_constraintTop_toBottomOf="@id/home_watched_movies_title" />
 
 
                         <androidx.recyclerview.widget.RecyclerView
@@ -355,9 +339,11 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="8dp">
+
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content">
+
                         <TextView
                             android:id="@+id/home_watched_Shows_title"
                             android:layout_width="wrap_content"
@@ -365,8 +351,8 @@
                             android:layout_margin="8dp"
                             android:text="Last Watched Episodes ..."
                             android:textAppearance="?attr/textAppearanceHeadline5"
-                            app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="parent" />
 
                         <com.google.android.material.divider.MaterialDivider
@@ -374,9 +360,9 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_margin="10dp"
-                            app:layout_constraintTop_toBottomOf="@id/home_watched_Shows_title"
+                            app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintEnd_toEndOf="parent" />
+                            app:layout_constraintTop_toBottomOf="@id/home_watched_Shows_title" />
 
                         <ProgressBar
                             android:id="@+id/home_watched_shows_progressbar"
@@ -412,20 +398,9 @@
                 </com.google.android.material.card.MaterialCardView>
 
 
-
             </LinearLayout>
 
-    </ScrollView>
-        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+        </androidx.core.widget.NestedScrollView>
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-    <com.google.android.material.navigation.NavigationView
-        android:id="@+id/main_drawer"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_gravity="start"
-        app:menu="@menu/nav_drawer" />
-
-
-</androidx.drawerlayout.widget.DrawerLayout>

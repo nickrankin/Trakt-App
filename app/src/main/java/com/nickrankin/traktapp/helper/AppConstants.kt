@@ -4,8 +4,11 @@ import org.threeten.bp.OffsetDateTime
 
 class AppConstants {
     companion object {
+        const val APP_TITLE = "Trakt Manager"
         const val APP_VERSION = "0.1"
         const val APP_DATE = "17/11/2021"
+        const val DATE_FORMAT = "date_format"
+        const val TIME_FORMAT = "time_format"
         const val DEFAULT_DATE_FORMAT = "dd/MM/yyyy"
         const val DEFAULT_TIME_FORMAT = "HH:mm"
 

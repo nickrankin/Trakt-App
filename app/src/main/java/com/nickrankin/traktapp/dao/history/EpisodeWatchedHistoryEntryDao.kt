@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface EpisodeWatchedHistoryEntryDao {
 
-    @Query("SELECT * FROM episode_watched_history ORDER BY watched_date DESC LIMIT 10")
+    @Query("SELECT * FROM episode_watched_history ORDER BY watched_date DESC LIMIT 3")
     fun getLatestWatchedEpisodes(): Flow<List<EpisodeWatchedHistoryEntry>>
 
     @Query("SELECT * FROM episode_watched_history WHERE show_trakt_id = :showTraktId AND season = :season AND episode = :episode ORDER BY watched_date DESC")

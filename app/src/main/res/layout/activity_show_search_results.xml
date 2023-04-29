@@ -6,12 +6,10 @@
     android:layout_height="match_parent"
     tools:context=".ui.search.SearchResultsActivity"
     android:orientation="vertical">
-    <include android:id="@+id/toolbar_layout" layout="@layout/toolbar_layout" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="?attr/actionBarSize">
+        android:layout_height="match_parent">
         <com.google.android.material.chip.ChipGroup
             android:id="@+id/searchresultsactivity_chip_group"
             android:layout_width="match_parent"

@@ -17,12 +17,13 @@ import javax.inject.Inject
 private const val TAG = "ShowSearchPagingSource"
 private const val START_PAGE_INDEX = 1
 private const val PAGE_LIMIT = 15
-class SearchPagingSource constructor(val traktApi: TraktApi, var query: String, var type: Type): PagingSource<Int, SearchResult>() {
+class SearchPagingSource constructor(val traktApi: TraktApi, var query: String, var type: Type?, var genre: String?): PagingSource<Int, SearchResult>() {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, SearchResult> {
         val page = params.key ?: START_PAGE_INDEX
 
         return try {
+
             val response = when(type) {
                 Type.MOVIE -> {
                     traktApi.tmSearch().textQueryMovie(query, null, null, null, null, null, null, null, Extended.FULL, page,
@@ -33,7 +34,8 @@ class SearchPagingSource constructor(val traktApi: TraktApi, var query: String, 
                         PAGE_LIMIT)
                 }
                 else -> {
-                    traktApi.tmSearch().textQueryMovie(query, null, null, null, null, null, null, null, Extended.FULL, page,
+                    // When we specify Type as null, we also consider genres (if user clicks on a tag within details vie)
+                    traktApi.tmSearch().textQueryTags(query, null, genre?.lowercase(), null, null, null, null, Extended.FULL, page,
                         PAGE_LIMIT)
                 }
             }

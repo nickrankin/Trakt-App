@@ -44,6 +44,7 @@ class ShowDetailsRepository @Inject constructor(
             shouldRefresh || tmShow == null
         },
         saveFetchResult = { traktShow ->
+            Log.d(TAG, "getShowSummary: Refreshing Show Details")
             showsDatabase.withTransaction {
                 if(traktShow != null) {
                     tmShowDao.insertShow(traktShow)

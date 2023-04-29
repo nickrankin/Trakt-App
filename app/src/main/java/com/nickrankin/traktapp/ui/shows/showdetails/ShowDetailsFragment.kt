@@ -7,35 +7,35 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
+import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.chip.Chip
 import com.google.gson.Gson
-import com.nickrankin.traktapp.BaseActivity
+import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.R
-import com.nickrankin.traktapp.dao.movies.model.TmMovie
-import com.nickrankin.traktapp.dao.show.TmSeasonAndStats
 import com.nickrankin.traktapp.dao.show.model.TmShow
-import com.nickrankin.traktapp.databinding.ActivityShowDetailsBinding
+import com.nickrankin.traktapp.databinding.FragmentShowDetailsBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.ImdbNavigationHelper
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
+import com.nickrankin.traktapp.model.datamodel.PersonDataModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
-import com.nickrankin.traktapp.repo.shows.showdetails.ShowDetailsRepository
-import com.nickrankin.traktapp.ui.movies.moviedetails.SimilarMoviesFragment
-import com.nickrankin.traktapp.ui.person.PersonActivity
+import com.nickrankin.traktapp.ui.OnSearchByGenre
+import com.nickrankin.traktapp.ui.movies.MoviesMainActivity
 import com.nickrankin.traktapp.ui.shows.OnNavigateToEpisode
-import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsActivity
+import com.nickrankin.traktapp.ui.shows.ShowsMainActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import org.apache.commons.lang3.StringUtils
@@ -59,17 +59,16 @@ private const val SHOW_STREAMING_SERVICES = true
 private const val SELECT_TAB_POS = "selected_tab_pos"
 
 @AndroidEntryPoint
-class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
+class ShowDetailsFragment : BaseFragment(), OnNavigateToEpisode,
     SwipeRefreshLayout.OnRefreshListener {
-    private lateinit var bindings: ActivityShowDetailsBinding
-
-    private lateinit var swipeRefeshLayout: SwipeRefreshLayout
+    private var _bindings: FragmentShowDetailsBinding? = null
+    private val bindings get() = _bindings!!
 
     private var showTraktId = 0
     private var showTmdbId: Int? = null
     private var showTitle: String? = ""
 
-    private val viewModel: ShowDetailsViewModel by viewModels()
+    private val viewModel: ShowDetailsViewModel by activityViewModels()
 
     @Inject
     lateinit var glide: RequestManager
@@ -77,43 +76,34 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
     @Inject
     lateinit var gson: Gson
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _bindings = FragmentShowDetailsBinding.inflate(layoutInflater)
 
-        bindings = ActivityShowDetailsBinding.inflate(layoutInflater)
+        return bindings.root
+    }
 
-        setContentView(bindings.root)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        // Init SwipeRefreshLayout
-        swipeRefeshLayout = bindings.showdetailsactivitySwipeLayout
-        swipeRefeshLayout.setOnRefreshListener(this)
-
-
-        // Action bar setup
-        setSupportActionBar(bindings.showdetailsactivityToolbar.toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-
-        // Init variable
-        showTraktId = intent.getIntExtra(ShowDetailsRepository.SHOW_TRAKT_ID_KEY, 0)
-
-        Log.d(TAG, "onCreate: Got show $showTitle with TraktId $showTraktId TmdbId $showTmdbId")
-
-        // We need to check if the parent activity has sent ShowDataModel
-        if(intent.extras?.containsKey(SHOW_DATA_KEY) == false || intent!!.extras?.getParcelable<ShowDataModel>(
-                SHOW_DATA_KEY) == null) {
-            throw RuntimeException("Must pass ShowDataModel to ${this.javaClass.name}.")
+        if(arguments?.containsKey(SHOW_DATA_KEY) == false || arguments?.getParcelable<ShowDataModel>(
+                SHOW_DATA_KEY
+            ) == null) {
+            throw RuntimeException("SHOW_DATA_KEY must be passed to this Activity.")
         }
+
+        viewModel.switchShowDataModel(arguments!!.getParcelable<ShowDataModel>(SHOW_DATA_KEY)!!)
+
+        (activity as OnNavigateToEntity).enableOverviewLayout(true)
 
         initFragments()
 
         // Get data
         getShow()
-    }
 
-    override fun onResume() {
-        super.onResume()
-
-        viewModel.resetRefreshState()
     }
 
     private fun getShow() {
@@ -125,9 +115,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
                 when (showResource) {
                     is Resource.Loading -> {
                         // No need for 2 progressbars if swiperefresh invoked
-                        if(!swipeRefeshLayout.isRefreshing) {
-                            showLoadingProgressBar.visibility = View.VISIBLE
-                        }
+
                     }
                     is Resource.Success -> {
 
@@ -136,9 +124,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
                             displayShowInformation(show)
                             displayExternalLinks(show)
                         }
-                        if(swipeRefeshLayout.isRefreshing) {
-                            swipeRefeshLayout.isRefreshing = false
-                        }
+
 
                         showLoadingProgressBar.visibility = View.GONE
                     }
@@ -148,9 +134,6 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
                             displayShowInformation(show)
                         }
 
-                        if(swipeRefeshLayout.isRefreshing) {
-                            swipeRefeshLayout.isRefreshing = false
-                        }
                         showLoadingProgressBar.visibility = View.GONE
 
                         showErrorSnackbarRetryButton(showResource.error, bindings.root) {
@@ -165,7 +148,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
     private fun initFragments() {
         val showActionButtonsFragment = ShowDetailsActionButtonsFragment.newInstance()
 
-        supportFragmentManager.beginTransaction()
+        childFragmentManager.beginTransaction()
             .replace(
                 bindings.showdetailsactivityActionButtons.id,
                 showActionButtonsFragment,
@@ -187,7 +170,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
 
         showSimilarShows(tmShow)
 
-        supportActionBar?.title = tmShow.name
+        updateTitle(tmShow.name)
 
 
         if (tmShow.backdrop_path?.isNotEmpty() == true) {
@@ -237,7 +220,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
                 showdetailsactivityReleaseDate.visibility = View.VISIBLE
 
                 showdetailsactivityReleaseDate.text = "Premiered: ${tmShow.first_aired.format(
-                    DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT))
+                    DateTimeFormatter.ofPattern(sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_TIME_FORMAT))
                 ) }"
             } else {
                 showdetailsactivityReleaseDate.visibility = View.GONE
@@ -278,7 +261,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
     private fun displayExternalLinks(show: TmShow) {
         if(show.imdb_id != null) {
             bindings.showdetailsactivityChipImdb.setOnClickListener {
-                ImdbNavigationHelper.navigateToImdb(this, show.imdb_id)
+                ImdbNavigationHelper.navigateToImdb(requireContext(), show.imdb_id)
             }
         } else {
             bindings.showdetailsactivityChipImdb.visibility = View.GONE
@@ -291,7 +274,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
                     val i = Intent(Intent.ACTION_VIEW, Uri.parse(show.homepage))
                     startActivity(i)
                 } catch(e: Exception) {
-                    Toast.makeText(this, "Error loading the Movie homepage. ", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Error loading the Movie homepage. ", Toast.LENGTH_SHORT).show()
                     Log.e(TAG, "displayExternalLinks: Couldn't load homepage, ${e.message}", )
                 }
             }
@@ -306,7 +289,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
                     startActivity(i)
                 } catch(e: Exception) {
                     Log.e(TAG, "displayExternalLinks: Error loading TMDB URL: ${e.message}", )
-                    Toast.makeText(this, "Error loading TMDB URL.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Error loading TMDB URL.", Toast.LENGTH_SHORT).show()
                 }
 
             }
@@ -317,7 +300,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
 
     private fun displayStreamingServices(show: TmShow) {
         lifecycleScope.launchWhenStarted {
-            supportFragmentManager.beginTransaction()
+            childFragmentManager.beginTransaction()
                 .replace(bindings.showdetailsactivityWatch.id, ShowVideServicesFragment())
                 .commit()
         }
@@ -331,22 +314,16 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
         episodeNumber: Int,
         language: String?
     ) {
-        val intent = Intent(this, EpisodeDetailsActivity::class.java)
-        intent.putExtra(EpisodeDetailsActivity.EPISODE_DATA_KEY,
-        EpisodeDataModel(
-            showTraktId,
-            showTmdbId,
-            seasonNumber,
-            episodeNumber,
-            ""
-        ))
 
-        startActivity(intent)
-    }
-
-    override fun onSupportNavigateUp(): Boolean {
-        onBackPressed()
-        return true
+        (activity as OnNavigateToEntity).navigateToEpisode(
+            EpisodeDataModel(
+                showTraktId,
+                showTmdbId,
+                seasonNumber,
+                episodeNumber,
+                ""
+            )
+        )
     }
 
     override fun onStart() {
@@ -454,11 +431,15 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
         genresGroup.removeAllViews()
 
         genres.forEach { genre ->
-            val tag = Chip(this)
+            val tag = Chip(requireContext())
             tag.text = StringUtils.capitalize(genre)
 
-            tag.setOnClickListener {
-//                navigateToTag(genre)
+            tag.setOnClickListener { chip ->
+
+                val genreChip = chip as Chip
+
+                (activity as OnSearchByGenre).doSearchWithGenre("", genreChip.text.toString())
+
 
             }
 
@@ -541,10 +522,11 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
             return
         }
 
-        val intent = Intent(this, PersonActivity::class.java)
-        intent.putExtra(PersonActivity.PERSON_ID_KEY, traktId)
+        (activity as OnNavigateToEntity).navigateToPerson(
+            PersonDataModel(traktId, null, null)
 
-        startActivity(intent)
+        )
+
     }
 
     private fun showSimilarShows(show: TmShow?) {
@@ -552,7 +534,7 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
             return
         }
 
-        val fm = supportFragmentManager
+        val fm = childFragmentManager
         val similarShowsCardView = bindings.showdetailsactivitySimilar
 
         fm.beginTransaction()
@@ -561,10 +543,14 @@ class ShowDetailsActivity : BaseActivity(), OnNavigateToEpisode,
     }
 
     private fun displayToastMessage(message: String, length: Int) {
-        Toast.makeText(this, message, length).show()
+        Toast.makeText(requireContext(), message, length).show()
     }
 
     companion object {
+
+        @JvmStatic
+        fun newInstance() = ShowDetailsFragment()
+
         const val SHOW_DATA_KEY = "show_data_key"
 
     }

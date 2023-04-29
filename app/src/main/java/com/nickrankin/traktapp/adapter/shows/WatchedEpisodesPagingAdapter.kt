@@ -29,7 +29,7 @@ class WatchedEpisodesPagingAdapter(controls: AdaptorActionControls<WatchedEpisod
 
                     if(currentItem?.watchedEpisode?.watched_at != null) {
                         itemTimestamp.visibility = View.VISIBLE
-                        itemTimestamp.text = "Watched: ${getFormattedDateTime(currentItem.watchedEpisode.watched_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))}"
+                        itemTimestamp.text = "Watched: ${getFormattedDateTime(currentItem.watchedEpisode.watched_at, sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString(AppConstants.TIME_FORMAT, AppConstants.DEFAULT_TIME_FORMAT))}"
                     }
                 }
             }
@@ -45,7 +45,7 @@ class WatchedEpisodesPagingAdapter(controls: AdaptorActionControls<WatchedEpisod
 
                     if(currentItem?.watchedEpisode?.watched_at != null) {
                         itemWatchedDate.visibility = View.VISIBLE
-                        itemWatchedDate.text = "Watched: ${getFormattedDateTime(currentItem.watchedEpisode.watched_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))}"
+                        itemWatchedDate.text = "Watched: ${getFormattedDateTime(currentItem.watchedEpisode.watched_at, sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString(AppConstants.TIME_FORMAT, AppConstants.DEFAULT_TIME_FORMAT))}"
                     }
 
 

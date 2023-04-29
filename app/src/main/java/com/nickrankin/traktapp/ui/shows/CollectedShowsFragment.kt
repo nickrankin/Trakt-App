@@ -1,7 +1,6 @@
 package com.nickrankin.traktapp.ui.shows
 
 import android.content.DialogInterface
-import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.*
@@ -9,27 +8,20 @@ import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
-import com.google.android.flexbox.FlexDirection
-import com.google.android.flexbox.FlexWrap
-import com.google.android.flexbox.FlexboxLayoutManager
-import com.google.android.flexbox.JustifyContent
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.AdaptorActionControls
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.adapter.shows.CollectedShowsAdapter
 import com.nickrankin.traktapp.dao.show.model.CollectedShow
-import com.nickrankin.traktapp.databinding.FragmentCollectedShowsBinding
+import com.nickrankin.traktapp.databinding.FragmentSplitviewLayoutBinding
 import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.auth.shows.CollectedShowsViewModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
-import com.nickrankin.traktapp.ui.auth.AuthActivity
-import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -40,10 +32,9 @@ private const val TAG = "CollectedShowsFragment"
 @AndroidEntryPoint
 class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
-    private var _bindings: FragmentCollectedShowsBinding? = null
+    private var _bindings: FragmentSplitviewLayoutBinding? = null
     private  val bindings get() = _bindings!!
 
-    private lateinit var swipeLayout: SwipeRefreshLayout
     private lateinit var progressBar: ProgressBar
     private lateinit var messageContainer: TextView
 
@@ -56,17 +47,15 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
     @Inject
     lateinit var glide: RequestManager
 
-    private val viewModel by activityViewModels<CollectedShowsViewModel>()
+    private val viewModel: CollectedShowsViewModel by activityViewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _bindings = FragmentCollectedShowsBinding.inflate(inflater)
-        swipeLayout = bindings.collectedshowsfragmentSwipeLayout
-        messageContainer = bindings.collectedshowsfragmentMessageContainer
+        _bindings = FragmentSplitviewLayoutBinding.inflate(inflater)
+        messageContainer = bindings.splitviewlayoutMessageContainer
 
-        swipeLayout.setOnRefreshListener(this)
         setHasOptionsMenu(true)
 
         return bindings.root
@@ -74,7 +63,9 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 
-        progressBar = bindings.collectedshowsfragmentProgressbar
+        progressBar = bindings.splitviewlayoutProgressbar
+
+        (activity as OnNavigateToEntity).enableOverviewLayout(false)
 
         updateTitle("Collected Shows")
 
@@ -101,16 +92,15 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
     private fun handleLoggedOutState() {
         progressBar.visibility = View.GONE
         messageContainer.visibility = View.VISIBLE
-        swipeLayout.isEnabled = false
 
-        val connectButton = bindings.collectedshowsfragmentTraktConnectButton
-        connectButton.visibility = View.VISIBLE
+//        val connectButton = bindings.collectedshowsfragmentTraktConnectButton
+//        connectButton.visibility = View.VISIBLE
 
         messageContainer.text = "You are not logged in. Please login to see your  Collected shows."
 
-        connectButton.setOnClickListener {
-            startActivity(Intent(activity, AuthActivity::class.java))
-        }
+//        connectButton.setOnClickListener {
+//            startActivity(Intent(activity, AuthActivity::class.java))
+//        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -129,9 +119,7 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
                 }
                 is Resource.Success -> {
                     messageContainer.visibility = View.GONE
-                    if (swipeLayout.isRefreshing) {
-                        swipeLayout.isRefreshing = false
-                    }
+
                     progressBar.visibility = View.GONE
                     Log.d(TAG, "collectCollectedShows: Got Collected Shows success")
 
@@ -151,9 +139,7 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
                 }
                 is Resource.Error -> {
                     messageContainer.visibility = View.GONE
-                    if (swipeLayout.isRefreshing) {
-                        swipeLayout.isRefreshing = false
-                    }
+
                     progressBar.visibility = View.GONE
 
                     if (collectedShowsResource.data != null) {
@@ -162,7 +148,7 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
 
                     (activity as IHandleError).showErrorSnackbarRetryButton(
                         collectedShowsResource.error,
-                        bindings.collectedshowsfragmentSwipeLayout
+                        bindings.root
                     ) {
                         viewModel.onRefresh()
                     }
@@ -197,7 +183,7 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
     }
 
     private fun initRecycler() {
-        recyclerView = bindings.collectedshowsfragmentRecyclerview
+        recyclerView = bindings.splitviewlayoutRecyclerview
 
         switchRecyclerViewLayoutManager(requireContext(), recyclerView, MediaEntryBaseAdapter.VIEW_TYPE_POSTER)
 
@@ -230,13 +216,13 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
     }
 
     private fun navigateToShow(collectedShow: CollectedShow) {
-        val intent = Intent(requireActivity(), ShowDetailsActivity::class.java)
-        intent.putExtra(ShowDetailsActivity.SHOW_DATA_KEY,
+
+        (activity as OnNavigateToEntity).navigateToShow(
             ShowDataModel(
                 collectedShow.show_trakt_id, collectedShow.show_tmdb_id, collectedShow.show_title
             )
         )
-        startActivity(intent)
+
     }
 
     private fun removeFromCollection(collectedShow: CollectedShow) {

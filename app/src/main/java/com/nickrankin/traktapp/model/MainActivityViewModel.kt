@@ -45,20 +45,7 @@ class MainActivityViewModel @Inject constructor(
     }
 
     val upcomingShows = refreshEvent.flatMapLatest { shouldRefresh ->
-        showsOverviewRepository.getMyShows(shouldRefresh)
-    }.map { calendarEntriesResource ->
-        if (calendarEntriesResource is Resource.Success) {
-
-            var data = calendarEntriesResource.data
-
-            showsOverviewRepository.removeAlreadyAiredEpisodes(data ?: emptyList())
-
-            if ((data?.size ?: 0) >= 4) {
-                data = data?.subList(0, 4)
-            }
-            calendarEntriesResource.data = data
-        }
-        calendarEntriesResource
+        showsOverviewRepository.getLatestShows(shouldRefresh)
     }
 
     val userStats = refreshEvent.flatMapLatest { shouldRefresh ->

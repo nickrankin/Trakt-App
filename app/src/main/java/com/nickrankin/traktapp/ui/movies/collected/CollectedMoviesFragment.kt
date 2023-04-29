@@ -1,8 +1,6 @@
 package com.nickrankin.traktapp.ui.movies.collected
 
 import android.content.DialogInterface
-import android.content.Intent
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.*
@@ -10,23 +8,22 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
-import com.google.android.flexbox.FlexDirection
-import com.google.android.flexbox.FlexboxLayoutManager
-import com.google.android.flexbox.JustifyContent
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.AdaptorActionControls
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.adapter.movies.CollectedMoviesAdapter
-import com.nickrankin.traktapp.databinding.FragmentCollectedMoviesBinding
+import com.nickrankin.traktapp.dao.movies.model.CollectedMovie
+import com.nickrankin.traktapp.databinding.FragmentSplitviewLayoutBinding
 import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.movies.CollectedMoviesViewModel
-import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
+import com.nickrankin.traktapp.ui.movies.MoviesMainActivity
+import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsFragment
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
@@ -36,9 +33,8 @@ private const val TAG = "CollectedMoviesFragment"
 @AndroidEntryPoint
 class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
-    private lateinit var bindings: FragmentCollectedMoviesBinding
+    private lateinit var bindings: FragmentSplitviewLayoutBinding
 
-    private lateinit var swipeLayout: SwipeRefreshLayout
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: CollectedMoviesAdapter
@@ -57,16 +53,13 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        bindings = FragmentCollectedMoviesBinding.inflate(inflater)
+        bindings = FragmentSplitviewLayoutBinding.inflate(inflater)
         // Inflate the layout for this fragment
         return bindings.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        swipeLayout = bindings.collectedmoviesfragmentSwipeLayout
-        swipeLayout.setOnRefreshListener(this)
 
         setHasOptionsMenu(true)
 
@@ -76,11 +69,15 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
             handleLoggedOutState(this.id)
         }
 
+        // Enable the Drawer Layout and Navigation Tabs
+        (activity as OnNavigateToEntity).enableOverviewLayout(false)
+
         initRecycler()
 
         getCollectedMovies()
         getViewTypeState()
     }
+
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
@@ -95,41 +92,35 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
             viewModel.collectedMovies.collectLatest { collectedMoviesResource ->
                 when (collectedMoviesResource) {
                     is Resource.Loading -> {
-                        bindings.collectedmoviesfragmentProgressbar.visibility = View.VISIBLE
+                        bindings.splitviewlayoutProgressbar.visibility = View.VISIBLE
                         Log.d(TAG, "getCollectedMovies: Loading collected")
                     }
                     is Resource.Success -> {
-                        bindings.collectedmoviesfragmentProgressbar.visibility = View.GONE
-
-                        if (swipeLayout.isRefreshing) {
-                            swipeLayout.isRefreshing = false
-                        }
+                        bindings.splitviewlayoutProgressbar.visibility = View.GONE
 
                         val collectedMovies = collectedMoviesResource.data
 
                         if(collectedMovies != null && collectedMovies.isNotEmpty()) {
-                            bindings.collectedmoviesfragmentMainGroup.visibility = View.VISIBLE
-                            bindings.collectedmoviesfragmentMessageContainer.visibility = View.GONE
+                            bindings.splitviewlayoutMainGroup.visibility = View.VISIBLE
+                            bindings.splitviewlayoutMessageContainer.visibility = View.GONE
 
                             adapter.submitList(collectedMoviesResource.data) {
                                 recyclerView.scrollToPosition(0)
                             }
+
                         } else {
                             handleNoResults()
                             adapter.submitList(collectedMoviesResource.data)
                         }
                     }
                     is Resource.Error -> {
-                        bindings.collectedmoviesfragmentProgressbar.visibility = View.GONE
-                        if (swipeLayout.isRefreshing) {
-                            swipeLayout.isRefreshing = false
-                        }
+                        bindings.splitviewlayoutProgressbar.visibility = View.GONE
 
                         val collectedMovies = collectedMoviesResource.data
 
                         if(collectedMovies != null && collectedMovies.isNotEmpty()) {
-                            bindings.collectedmoviesfragmentMainGroup.visibility = View.VISIBLE
-                            bindings.collectedmoviesfragmentMessageContainer.visibility = View.GONE
+                            bindings.splitviewlayoutMainGroup.visibility = View.VISIBLE
+                            bindings.splitviewlayoutMessageContainer.visibility = View.GONE
 
                             adapter.submitList(collectedMoviesResource.data)
                         } else {
@@ -139,7 +130,7 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
 
                         (activity as IHandleError).showErrorSnackbarRetryButton(
                             collectedMoviesResource.error,
-                            bindings.collectedmoviesfragmentSwipeLayout
+                            bindings.root
                         ) {
                             viewModel.onRefresh()
                         }
@@ -150,31 +141,20 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
     }
 
     private fun handleNoResults() {
-        bindings.collectedmoviesfragmentMainGroup.visibility = View.GONE
-        bindings.collectedmoviesfragmentMessageContainer.visibility = View.VISIBLE
-        bindings.collectedmoviesfragmentMessageContainer.text = "You have nothing in your Trakt Collection :( "
+        bindings.splitviewlayoutMainGroup.visibility = View.GONE
+        bindings.splitviewlayoutMessageContainer.visibility = View.VISIBLE
+        bindings.splitviewlayoutMessageContainer.text = "You have nothing in your Trakt Collection :( "
     }
 
     private fun initRecycler() {
-        recyclerView = bindings.collectedmoviesfragmentRecyclerview
+        recyclerView = bindings.splitviewlayoutRecyclerview
 
         switchRecyclerViewLayoutManager(requireContext(), recyclerView, MediaEntryBaseAdapter.VIEW_TYPE_POSTER)
 
         adapter = CollectedMoviesAdapter(tmdbImageLoader, sharedPreferences,
         AdaptorActionControls(context?.getDrawable(R.drawable.ic_baseline_delete_forever_24), "REmove from Collection", false, R.menu.collected_popup_menu,
             entrySelectedCallback = {selectedItem ->
-                val intent = Intent(requireContext(), MovieDetailsActivity::class.java)
-                intent.putExtra(
-                    MovieDetailsActivity.MOVIE_DATA_KEY,
-                    MovieDataModel(
-                        selectedItem.trakt_id,
-                        selectedItem.tmdb_id,
-                        selectedItem.title,
-                        selectedItem.release_date?.year
-                    )
-                )
-
-                startActivity(intent)
+                navigateToMovie(selectedItem)
             },
             buttonClickedCallback = { selectedMovie -> Toast.makeText(requireContext(), "Deleted ${selectedMovie.title}", Toast.LENGTH_SHORT).show() },
             menuItemSelectedCallback = { selectedMovie, menuItem ->
@@ -192,8 +172,6 @@ AlertDialog.Builder(requireContext())
                             .setNegativeButton("No", DialogInterface.OnClickListener { dialogInterface, i -> dialogInterface.dismiss() })
                             .create()
                             .show()
-
-                        Log.e(TAG, "initRecycler: Deleted ${selectedMovie.title} ok!!111", )
                     }
                     else -> {
                         Log.e(TAG, "initRecycler: Invalid menu $menuItem", )
@@ -203,6 +181,19 @@ AlertDialog.Builder(requireContext())
         )
 
         recyclerView.adapter = adapter
+    }
+
+    private fun navigateToMovie(collectedMovie: CollectedMovie) {
+        (activity as OnNavigateToEntity).navigateToMovie(
+            MovieDataModel(
+                collectedMovie.trakt_id,
+                collectedMovie.tmdb_id,
+                collectedMovie.title,
+                collectedMovie.release_date?.year
+            )
+        )
+
+
     }
 
     override fun onStart() {
@@ -238,7 +229,6 @@ AlertDialog.Builder(requireContext())
 
         return false
     }
-
 
     private fun getViewTypeState() {
         lifecycleScope.launchWhenStarted {

@@ -47,8 +47,8 @@ class EpisodesAdapter(
             if (episode.air_date != null) {
                 episodeitemAirDate.text = "First aired: " + getFormattedDateTime(
                     episode.air_date,
-                    sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)!!,
-                    sharedPreferences.getString("timeFormat", AppConstants.DEFAULT_TIME_FORMAT)!!
+                    sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_FORMAT)!!,
+                    sharedPreferences.getString(AppConstants.TIME_FORMAT, AppConstants.DEFAULT_TIME_FORMAT)!!
                 )
             }
 
@@ -75,11 +75,11 @@ class EpisodesAdapter(
                         getFormattedDateTime(
                             currentWatchedEpisode.watched_date,
                             sharedPreferences.getString(
-                                "date_format",
+                                AppConstants.DATE_FORMAT,
                                 AppConstants.DEFAULT_DATE_FORMAT
                             )!!,
                             sharedPreferences.getString(
-                                "time_format",
+                                AppConstants.TIME_FORMAT,
                                 AppConstants.DEFAULT_TIME_FORMAT
                             )!!
                         )

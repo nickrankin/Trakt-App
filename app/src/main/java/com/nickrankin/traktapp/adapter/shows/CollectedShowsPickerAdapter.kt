@@ -23,7 +23,7 @@ class CollectedShowsPickerAdapter(private val sharedPreferences: SharedPreferenc
         holder.bindings.apply {
             collectedshowlayoutTitle.text = selectedShow.show_title
             collectedshowlayoutCollectedAy.text = "Collected At: " + selectedShow.collected_at?.atZoneSameInstant(
-                ZoneId.systemDefault())?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_TIME_FORMAT)))
+                ZoneId.systemDefault())?.format(DateTimeFormatter.ofPattern(sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_TIME_FORMAT)))
 
             root.setOnClickListener {
                callback(selectedShow)

@@ -1,19 +1,56 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Theme.TraktApp" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <!-- Primary brand color. -->
-        <item name="colorPrimary">#d9210c</item>
-        <item name="colorPrimaryVariant">#9f0000</item>
-        <item name="colorPrimaryDark">#9f0000</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <!-- Secondary brand color. -->
-        <item name="colorSecondary">#ff5d3a</item>
-        <item name="colorSecondaryVariant">#ff5d3a</item>
-        <item name="colorOnSecondary">@color/black</item>
-        <!-- Status bar color. -->
-        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
+    <style name="Theme.TraktApp" parent="Theme.MaterialComponents.NoActionBar">
+        <!-- Indigo 50 -->
+        <!--        &lt;!&ndash; Primary brand color. &ndash;&gt;-->
+        <!--        <item name="colorPrimary">#283593</item>-->
+        <!--        <item name="colorPrimaryVariant">#1A237E</item>-->
+        <!--        <item name="colorPrimaryDark">#1A237E</item>-->
 
-        <!-- Customize your theme here. -->
+        <!--&lt;!&ndash;        <item name="android:background">#303F9F</item>&ndash;&gt;-->
+        <!--        <item name="android:windowBackground">#3F51B5</item>-->
+        <!--&lt;!&ndash;        <item name="android:colorBackground">#303F9F</item>&ndash;&gt;-->
+
+        <!--        <item name="colorOnPrimary">@color/black</item>-->
+        <!--        &lt;!&ndash; Secondary brand color. &ndash;&gt;-->
+        <!--        <item name="colorSecondary">#ff5d3a</item>-->
+        <!--        <item name="colorSecondaryVariant">#ff5d3a</item>-->
+        <!--        <item name="colorOnSecondary">@color/black</item>-->
+        <!--        &lt;!&ndash; Status bar color. &ndash;&gt;-->
+        <!--        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>-->
+        <!--        &lt;!&ndash; Customize your theme here. &ndash;&gt;-->
+        <!--        <item name="toolbarStyle">@style/Custom.ActionBar</item>-->
+        <item name="android:statusBarColor" >@color/md_theme_dark_onPrimary</item>
+        <item name="android:actionBarStyle">@style/Custom.ActionBar</item>
+
+        <item name="android:action" >@color/md_theme_dark_onPrimary</item>
+
+        <item name="colorPrimary">@color/md_theme_dark_primary</item>
+        <item name="colorOnPrimary">@color/md_theme_dark_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/md_theme_dark_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/md_theme_dark_onPrimaryContainer</item>
+        <item name="colorSecondary">@color/md_theme_dark_secondary</item>
+        <item name="colorOnSecondary">@color/md_theme_dark_onSecondary</item>
+        <item name="colorSecondaryContainer">@color/md_theme_dark_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/md_theme_dark_onSecondaryContainer</item>
+        <item name="colorTertiary">@color/md_theme_dark_tertiary</item>
+        <item name="colorOnTertiary">@color/md_theme_dark_onTertiary</item>
+        <item name="colorTertiaryContainer">@color/md_theme_dark_tertiaryContainer</item>
+        <item name="colorOnTertiaryContainer">@color/md_theme_dark_onTertiaryContainer</item>
+        <item name="colorError">@color/md_theme_dark_error</item>
+        <item name="colorErrorContainer">@color/md_theme_dark_errorContainer</item>
+        <item name="colorOnError">@color/md_theme_dark_onError</item>
+        <item name="colorOnErrorContainer">@color/md_theme_dark_onErrorContainer</item>
+        <item name="android:colorBackground">@color/md_theme_dark_background</item>
+        <item name="colorOnBackground">@color/md_theme_dark_onBackground</item>
+        <item name="colorSurface">@color/md_theme_dark_surface</item>
+        <item name="colorOnSurface">@color/md_theme_dark_onSurface</item>
+        <item name="colorSurfaceVariant">@color/md_theme_dark_surfaceVariant</item>
+        <item name="colorOnSurfaceVariant">@color/md_theme_dark_onSurfaceVariant</item>
+        <item name="colorOutline">@color/md_theme_dark_outline</item>
+        <item name="colorOnSurfaceInverse">@color/md_theme_dark_inverseOnSurface</item>
+        <item name="colorSurfaceInverse">@color/md_theme_dark_inverseSurface</item>
+        <item name="colorPrimaryInverse">@color/md_theme_dark_inversePrimary</item>
     </style>
 
     <style name="Divider">
@@ -22,13 +59,10 @@
         <item name="android:background">?android:attr/listDivider</item>
     </style>
 
-    <style name="Theme.TraktApp.NoActionBar">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
+
+    <style name="Custom.ActionBar" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <item name="background">@color/md_theme_dark_onPrimary</item>
     </style>
 
-    <style name="Theme.TraktApp.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
-
-    <style name="Theme.TraktApp.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
 </resources>

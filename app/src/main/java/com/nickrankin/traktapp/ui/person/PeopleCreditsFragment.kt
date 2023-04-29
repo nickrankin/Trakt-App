@@ -9,12 +9,14 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexWrap
 import com.google.android.flexbox.FlexboxLayoutManager
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.adapter.credits.CharacterPosterAdapter
 import com.nickrankin.traktapp.dao.credits.model.CreditPerson
 import com.nickrankin.traktapp.databinding.FragmentPeopleCreditsBinding
@@ -26,8 +28,6 @@ import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.person.PeopleCreditsViewModel
 import com.nickrankin.traktapp.model.person.PersonOverviewViewModel
-import com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsActivity
-import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsActivity
 import com.uwetrottmann.trakt5.enums.Type
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -185,16 +185,13 @@ class PeopleCreditsFragment : BaseFragment() {
     private fun initRecycler() {
         creditsRecyclerView = bindings.personactivityCreditsRecyclerview
 
-        val lm = FlexboxLayoutManager(requireContext())
-        lm.flexDirection = FlexDirection.ROW
-        lm.flexWrap = FlexWrap.WRAP
+        val lm = GridLayoutManager(requireContext(), 2)
 
         adapter = CharacterPosterAdapter(glide, tmdbImageLoader) { selectedCredit ->
             when (selectedCredit.type) {
                 Type.MOVIE -> {
-                    val movieIntent = Intent(requireContext(), MovieDetailsActivity::class.java)
-                    movieIntent.putExtra(
-                        MovieDetailsActivity.MOVIE_DATA_KEY,
+
+                    (activity as OnNavigateToEntity).navigateToMovie(
                         MovieDataModel(
                             selectedCredit.trakt_id,
                             selectedCredit.tmdb_id,
@@ -202,21 +199,16 @@ class PeopleCreditsFragment : BaseFragment() {
                             selectedCredit.year
                         )
                     )
-
-                    startActivity(movieIntent)
                 }
                 Type.SHOW -> {
-                    val showIntent = Intent(requireContext(), ShowDetailsActivity::class.java)
-                    showIntent.putExtra(
-                        ShowDetailsActivity.SHOW_DATA_KEY,
+
+                    (activity as OnNavigateToEntity).navigateToShow(
                         ShowDataModel(
                             selectedCredit.trakt_id,
                             selectedCredit.tmdb_id,
                             selectedCredit.title
                         )
                     )
-
-                    startActivity(showIntent)
                 }
                 else -> {
                     Log.e(TAG, "initRecycler: Incompatible type ${selectedCredit.type.name}")

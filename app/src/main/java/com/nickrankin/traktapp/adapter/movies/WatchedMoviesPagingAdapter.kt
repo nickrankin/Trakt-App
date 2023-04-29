@@ -32,7 +32,7 @@ class WatchedMoviesPagingAdapter(controls: AdaptorActionControls<WatchedMovieAnd
                     itemTitle.text = currentItem?.watchedMovie?.title
                     itemOverview.text = currentItem?.watchedMovie?.overview
                     if(currentItem?.watchedMovie?.watched_at != null) {
-                        itemWatchedDate.text = "Watched: " + getFormattedDateTime(currentItem.watchedMovie.watched_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)+ " ", sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))
+                        itemWatchedDate.text = "Watched: " + getFormattedDateTime(currentItem.watchedMovie.watched_at, sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_FORMAT)+ " ", sharedPreferences.getString(AppConstants.TIME_FORMAT, AppConstants.DEFAULT_TIME_FORMAT))
                     }
                     tmdbImageLoader.loadImages(currentItem?.watchedMovie?.trakt_id ?: 0, ImageItemType.MOVIE,currentItem?.watchedMovie?.tmdb_id ?: 0,  currentItem?.watchedMovie?.title, currentItem?.watchedMovie?.language,true, itemPoster, itemBackdropImageview, false)
 
@@ -59,7 +59,7 @@ class WatchedMoviesPagingAdapter(controls: AdaptorActionControls<WatchedMovieAnd
 
                     if(currentItem?.watchedMovie?.watched_at != null) {
                         itemTimestamp.visibility = View.VISIBLE
-                        itemTimestamp.text = getFormattedDateTime(currentItem.watchedMovie.watched_at, sharedPreferences.getString("date_format", AppConstants.DEFAULT_DATE_FORMAT)+ " ", sharedPreferences.getString("time_format", AppConstants.DEFAULT_TIME_FORMAT))
+                        itemTimestamp.text = getFormattedDateTime(currentItem.watchedMovie.watched_at, sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_FORMAT)+ " ", sharedPreferences.getString(AppConstants.TIME_FORMAT, AppConstants.DEFAULT_TIME_FORMAT))
                     }
 
                     tmdbImageLoader.loadImages(currentItem?.watchedMovie?.trakt_id ?: 0, ImageItemType.MOVIE,currentItem?.watchedMovie?.tmdb_id ?: 0,  currentItem?.watchedMovie?.title, currentItem?.watchedMovie?.language,true, itemPoster, null, false)
@@ -71,24 +71,6 @@ class WatchedMoviesPagingAdapter(controls: AdaptorActionControls<WatchedMovieAnd
             }
         }
     }
-//
-//    override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
-////        super.onViewRecycled(holder)
-//        Log.e(TAG, "onViewRecycled: Recyclered $holder", )
-//    }
-//
-//
-//
-//    override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
-//        super.onViewDetachedFromWindow(holder)
-//
-//        glide.clear(holder.itemView.findViewById<ImageView>(R.id.item_poster))
-//
-//        //(holder as MediaEntryBasePagingAdapter<*>.CardViewHolder).bindings = null
-//
-//
-//       // Log.e(TAG, "onViewDetachedFromWindow: Detached ${(holder as MediaEntryBasePagingAdapter<*>.PosterViewHolder).bindings.itemTitle.text} at pos ${holder.absoluteAdapterPosition}", )
-//    }
 
     override fun reloadImages(
         selectedItem: WatchedMovieAndStats,

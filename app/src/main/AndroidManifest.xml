@@ -29,8 +29,7 @@
         <activity
             android:name=".ui.movies.moviedetails.MovieDetailsActivity"
             android:exported="false"
-            android:label="@string/title_activity_movie_details"
-            android:theme="@style/Theme.TraktApp.NoActionBar" />
+            android:label="@string/title_activity_movie_details" />
         <activity
             android:name=".ui.movies.MoviesMainActivity"
             android:exported="false" />
@@ -63,7 +62,7 @@
             android:name=".ui.shows.showdetails.ShowDetailsActivity"
             android:exported="true" />
         <activity
-            android:name=".ui.shows.SeasonEpisodesActivity"
+            android:name=".ui.shows.SeasonEpisodesFragment"
             android:exported="true" />
         <activity
             android:name=".ui.shows.episodedetails.EpisodeDetailsActivity"
