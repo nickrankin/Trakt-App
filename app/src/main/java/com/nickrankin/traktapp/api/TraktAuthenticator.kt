@@ -29,7 +29,7 @@ class TraktAuthenticator(private val context: Context, private val trakt: TraktV
 
     @Throws(IOException::class)
     override fun authenticate(route: Route?, response: Response): Request? {
-        Log.e(TAG, "authenticate: Authenticating!=", )
+        Log.e(TAG, "authenticate: Authenticating!=")
         return handleAuthenticate(response, trakt)
     }
 
@@ -72,7 +72,7 @@ class TraktAuthenticator(private val context: Context, private val trakt: TraktV
         sharedPreferences.edit()
             .putString(AuthActivity.ACCESS_TOKEN_KEY, accessToken)
             .putString(AuthActivity.REFRESH_TOKEN_KEY, body.refresh_token)
-            .putInt(AuthActivity.REFRESH_TOKEN_AT_KEY, body.expires_in)
+            .putInt(AuthActivity.REFRESH_TOKEN_AT_KEY, body.expires_in ?: -1)
             .apply()
 
         Log.d(TAG, "handleAuthenticate: New AccessToken $accessToken")

@@ -60,7 +60,7 @@ class MainActivityRepository @Inject constructor(private val traktApi: TraktApi,
                 }
             }
 
-            Log.e(TAG, "getLatestMovies: Broken with ${historyEntries.size} ", )
+            Log.e(TAG, "getLatestMovies: Broken with ${historyEntries.size} ")
 
             historyEntries
         },
@@ -68,7 +68,7 @@ class MainActivityRepository @Inject constructor(private val traktApi: TraktApi,
             shouldRefresh(lastRefreshedMoviesDao.getLastRefreshed(RefreshType.PLAYBACK_HISORY_MOVIES).first(), null) || shouldRefresh
         },
         saveFetchResult = { historyEntries ->
-            Log.e(TAG, "getLatestMovies: Entries ${historyEntries.size}", )
+            Log.e(TAG, "getLatestMovies: Entries ${historyEntries.size}")
             moviesDatabase.withTransaction {
                 watchedMoviesStatsDao.deleteAllMovieWatchedEntries()
                 watchedMoviesStatsDao.insert(convertMovieHistoryEntries(historyEntries))
@@ -114,7 +114,7 @@ class MainActivityRepository @Inject constructor(private val traktApi: TraktApi,
                 }
             }
 
-            Log.e(TAG, "getLatestEpisodes: Broken with ${historyEntries.size} ", )
+            Log.e(TAG, "getLatestEpisodes: Broken with ${historyEntries.size} ")
 
             historyEntries
         },
@@ -122,7 +122,7 @@ class MainActivityRepository @Inject constructor(private val traktApi: TraktApi,
             shouldRefresh(lastRefreshedepisodeStatsDao.getLastRefreshed(RefreshType.PLAYBACK_HISTORY_EPISODES).first(), null) || shouldRefresh
         },
         saveFetchResult = { historyEntries ->
-            Log.e(TAG, "getLatestEpisodes: Entries ${historyEntries.size}", )
+            Log.e(TAG, "getLatestEpisodes: Entries ${historyEntries.size}")
             moviesDatabase.withTransaction {
                 watchedEpisodesStatsDao.deleteAllWatchedHistory()
                 watchedEpisodesStatsDao.insert(convertEpisodeHistoryEntries(historyEntries))

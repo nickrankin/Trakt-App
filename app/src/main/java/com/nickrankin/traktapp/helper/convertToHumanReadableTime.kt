@@ -27,8 +27,8 @@ fun convertToHumanReadableTime(dateTime: OffsetDateTime?): String {
     val calendarToday = Calendar.getInstance(Locale.getDefault())
 
     Log.d(
-        TAG, "convertToHumanReadableTime: $zonedDateTime  // ${DateUtils.getRelativeTimeSpanString(calendar.timeInMillis, calendarToday.timeInMillis, DateUtils.DAY_IN_MILLIS, DateUtils.FORMAT_SHOW_WEEKDAY).toString()} " +
-            "${zonedDateTime.format(DateTimeFormatter.ofPattern(TIME_FORMAT))} ", )
+        TAG, "convertToHumanReadableTime: $zonedDateTime  // ${DateUtils.getRelativeTimeSpanString(calendar.timeInMillis, calendarToday.timeInMillis, DateUtils.DAY_IN_MILLIS, DateUtils.FORMAT_SHOW_WEEKDAY)} " +
+            "${zonedDateTime.format(DateTimeFormatter.ofPattern(TIME_FORMAT))} ")
 
     return "${DateUtils.getRelativeTimeSpanString(calendar.timeInMillis, calendarToday.timeInMillis, DateUtils.DAY_IN_MILLIS, DateUtils.FORMAT_SHOW_WEEKDAY)} at ${zonedDateTime.format(
         DateTimeFormatter.ofPattern(TIME_FORMAT))}"

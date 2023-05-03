@@ -335,7 +335,7 @@ class PersonOverviewFragment : BaseFragment() {
                 }
             }
             else -> {
-                Log.e(TAG, "displayCredits:  Invalid type $type", )
+                Log.e(TAG, "displayCredits:  Invalid type $type")
             }
         }
     }

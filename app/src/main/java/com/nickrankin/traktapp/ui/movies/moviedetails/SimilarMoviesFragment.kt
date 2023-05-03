@@ -91,7 +91,7 @@ class SimilarMoviesFragment : BaseFragment() {
 
     private fun navigateToMovie(tmdbId: Int?, movieTitle: String?, movieYear: Int?) {
         if(tmdbId == null) {
-            Log.e(TAG, "navigateToMovie: Cannot navigate with null TmdbId", )
+            Log.e(TAG, "navigateToMovie: Cannot navigate with null TmdbId")
             return
         }
 
@@ -103,7 +103,7 @@ class SimilarMoviesFragment : BaseFragment() {
                     MovieDataModel(traktId, tmdbId, movieTitle, movieYear)
                 )
             } else {
-                Log.e(TAG, "navigateToMovie: Trakt ID is null for movie $movieTitle // TMDB ID: $tmdbId, Aborting..", )
+                Log.e(TAG, "navigateToMovie: Trakt ID is null for movie $movieTitle // TMDB ID: $tmdbId, Aborting..")
             }
 
 

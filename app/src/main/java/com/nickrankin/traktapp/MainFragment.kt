@@ -4,9 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.*
-import androidx.activity.viewModels
-import androidx.appcompat.widget.Toolbar
-import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
@@ -15,7 +12,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.work.WorkInfo
-import com.google.android.material.navigation.NavigationView
 import com.nickrankin.traktapp.adapter.home.LastWatchedHistoryAdapter
 import com.nickrankin.traktapp.adapter.home.UpcomingEpisodesAdapter
 import com.nickrankin.traktapp.dao.auth.model.Stats
@@ -33,7 +29,6 @@ import com.nickrankin.traktapp.repo.movies.watched.WatchedMoviesRemoteMediator
 import com.nickrankin.traktapp.repo.shows.watched.WatchedEpisodesRemoteMediator
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.movies.MoviesMainActivity
-import com.nickrankin.traktapp.ui.settings.SettingsActivity
 import com.nickrankin.traktapp.ui.shows.ShowsMainActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -69,7 +64,7 @@ class MainFragment: BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
 
 
 
@@ -179,12 +174,12 @@ class MainFragment: BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
             viewModel.watchedMovies.collectLatest { latestMoviesResource ->
                 when(latestMoviesResource) {
                     is Resource.Loading -> {
-                        Log.e(TAG, "getLastWatchedMovies: loading", )
+                        Log.e(TAG, "getLastWatchedMovies: loading")
                         bindings.homeWatchedMoviesProgressbar.visibility = View.VISIBLE
 
                     }
                     is Resource.Success -> {
-                        Log.e(TAG, "getLastWatchedMovies: get ${latestMoviesResource.data?.size}", )
+                        Log.e(TAG, "getLastWatchedMovies: get ${latestMoviesResource.data?.size}")
                         bindings.homeWatchedMoviesProgressbar.visibility = View.GONE
 
                         lastWatchedMoviesAdapter.submitList(latestMoviesResource.data)
@@ -293,7 +288,7 @@ class MainFragment: BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                 oldItem: MovieWatchedHistoryEntry,
                 newItem: MovieWatchedHistoryEntry
             ): Boolean {
-                return oldItem == oldItem
+                return oldItem == newItem
             }
 
             override fun areContentsTheSame(
@@ -335,7 +330,7 @@ class MainFragment: BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                 oldItem: EpisodeWatchedHistoryEntry,
                 newItem: EpisodeWatchedHistoryEntry
             ): Boolean {
-                return oldItem == oldItem
+                return oldItem == newItem
             }
 
             override fun areContentsTheSame(
@@ -404,7 +399,6 @@ class MainFragment: BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
     }
 
     override fun onRefresh() {
-        super.onRefresh()
 
         isRefreshingMovies = true
         isRefreshingShows = true
@@ -448,13 +442,13 @@ class MainFragment: BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                 showRefreshStateLiveData.observe(this) { workInfo ->
                     when (workInfo.state) {
                         WorkInfo.State.ENQUEUED -> {
-                            Log.e(TAG, "onRefresh: enqueued",)
+                            Log.e(TAG, "onRefresh: enqueued")
                             bindings.homeWatchedShowsProgressbar.visibility = View.VISIBLE
                             bindings.homeWatchedShowsProgressbar.bringToFront()
 
                         }
                         WorkInfo.State.RUNNING -> {
-                            Log.e(TAG, "onRefresh: running",)
+                            Log.e(TAG, "onRefresh: running")
                             bindings.homeWatchedShowsProgressbar.visibility = View.VISIBLE
                             bindings.homeWatchedShowsProgressbar.bringToFront()
                         }

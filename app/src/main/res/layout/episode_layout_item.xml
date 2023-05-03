@@ -103,7 +103,7 @@
             android:textColor="@color/red"
             android:textSize="13sp"
             android:textStyle="bold"
-            android:text="Unwatched"
+            android:text="@string/unwatched"
             android:layout_marginTop="8dp"
 
             android:layout_marginStart="4dp"

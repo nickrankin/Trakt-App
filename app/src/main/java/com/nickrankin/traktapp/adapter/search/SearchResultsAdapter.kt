@@ -79,7 +79,7 @@ class SearchResultsAdapter(
 
             tmdbImageLoader.loadImages(
                 traktId,
-                imageItemType!!,
+                imageItemType,
                 tmdbId,
                 title,
                 language,

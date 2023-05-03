@@ -23,8 +23,6 @@ class WatchedMoviesPagingAdapter(controls: AdaptorActionControls<WatchedMovieAnd
 
         val currentItem = getItem(holder.absoluteAdapterPosition)
 
-        val traktId = currentItem?.watchedMovie?.trakt_id ?: 0
-
         when(holder) {
             is CardViewHolder -> {
                 holder.bindings.apply {
@@ -35,15 +33,6 @@ class WatchedMoviesPagingAdapter(controls: AdaptorActionControls<WatchedMovieAnd
                         itemWatchedDate.text = "Watched: " + getFormattedDateTime(currentItem.watchedMovie.watched_at, sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_FORMAT)+ " ", sharedPreferences.getString(AppConstants.TIME_FORMAT, AppConstants.DEFAULT_TIME_FORMAT))
                     }
                     tmdbImageLoader.loadImages(currentItem?.watchedMovie?.trakt_id ?: 0, ImageItemType.MOVIE,currentItem?.watchedMovie?.tmdb_id ?: 0,  currentItem?.watchedMovie?.title, currentItem?.watchedMovie?.language,true, itemPoster, itemBackdropImageview, false)
-
-                    val ratingStat = currentItem?.ratedMovieStats
-
-//                    if(ratingStat != null) {
-//                        watchedentryitemRating.visibility = View.VISIBLE
-//                        watchedentryitemRating.text = "You rated: ${ratingStat.rating}"
-//                    } else {
-//                        watchedentryitemRating.visibility = View.GONE
-//                    }
                 }
 
             }
@@ -67,7 +56,7 @@ class WatchedMoviesPagingAdapter(controls: AdaptorActionControls<WatchedMovieAnd
                 }
             }
             else -> {
-                Log.e(TAG, "onBindViewHolder: Invalid ViewHolder ${holder.javaClass.name}", )
+                Log.e(TAG, "onBindViewHolder: Invalid ViewHolder ${holder.javaClass.name}")
             }
         }
     }
@@ -77,7 +66,7 @@ class WatchedMoviesPagingAdapter(controls: AdaptorActionControls<WatchedMovieAnd
         posterImageView: ImageView,
         backdropImageView: ImageView?
     ) {
-        tmdbImageLoader.loadImages(selectedItem?.watchedMovie?.trakt_id ?: 0, ImageItemType.MOVIE,selectedItem?.watchedMovie?.tmdb_id ?: 0,  selectedItem?.watchedMovie?.title, selectedItem?.watchedMovie?.language,true, posterImageView, backdropImageView, true)
+        tmdbImageLoader.loadImages(selectedItem.watchedMovie.trakt_id, ImageItemType.MOVIE,selectedItem.watchedMovie.tmdb_id,  selectedItem.watchedMovie.title, selectedItem.watchedMovie.language,true, posterImageView, backdropImageView, true)
     }
 
     companion object {

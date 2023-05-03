@@ -304,7 +304,7 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
 //                            deleteRecommendation(selectedShow)
                         }
                         else -> {
-                            Log.e(TAG, "initRecycler: Invalid menu item $menuItem", )
+                            Log.e(TAG, "initRecycler: Invalid menu item $menuItem")
                         }
                     }
                 }
@@ -603,7 +603,7 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
 
                             trackedShowsAdapter.submitList(updatedList)
 
-                            val timer = getTimer() {
+                            val timer = getTimer {
                                 Log.e(
                                     TAG,
                                     "onFinish: Timer ended for remove tracked show ${show.trackedShow.title}!"
@@ -730,8 +730,6 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
     }
 
     override fun onRefresh() {
-        super.onRefresh()
-
         viewModel.onRefresh()
 
         //generateTestNotifications()

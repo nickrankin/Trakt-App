@@ -14,22 +14,17 @@
     <application xmlns:tools="http://schemas.android.com/tools"
         android:name=".TmApplication"
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/trakt_manager_icon"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@mipmap/trakt_manager_icon_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.TraktApp">
-        <activity
-            android:name=".ui.person.PersonActivity"
-            android:exported="false" />
+
 
         <activity
             android:name=".ui.lists.TraktListsActivity"
             android:exported="false" />
-        <activity
-            android:name=".ui.movies.moviedetails.MovieDetailsActivity"
-            android:exported="false"
-            android:label="@string/title_activity_movie_details" />
+
         <activity
             android:name=".ui.movies.MoviesMainActivity"
             android:exported="false" />
@@ -59,15 +54,9 @@
             android:exported="true" />
 
         <activity
-            android:name=".ui.shows.showdetails.ShowDetailsActivity"
-            android:exported="true" />
-        <activity
             android:name=".ui.shows.SeasonEpisodesFragment"
             android:exported="true" />
-        <activity
-            android:name=".ui.shows.episodedetails.EpisodeDetailsActivity"
-            android:exported="true"
-            android:parentActivityName=".BaseActivity" />
+
         <activity
             android:name=".ui.auth.AuthActivity"
             android:exported="true"
@@ -86,11 +75,9 @@
             android:exported="true" />
         <activity
             android:name=".MainActivity"
-            android:exported="true"
-            android:label="@string/app_name">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

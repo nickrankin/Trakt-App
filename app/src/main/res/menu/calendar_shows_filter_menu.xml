@@ -4,10 +4,10 @@
     <item
         android:id="@+id/calendarshowsmenu_switch_layout"
         android:icon="@drawable/ic_baseline_remove_red_eye_24"
-        android:title="Switch layout"
+        android:title="@string/switch_layout"
         app:showAsAction="ifRoom"/>
     <item
         android:id="@+id/calendarshowsmenu_show_hidden"
         android:icon="@drawable/ic_baseline_visibility_off_24"
-        android:title="Show hidden shows" />
+        android:title="@string/show_hidden_shows" />
 </menu>

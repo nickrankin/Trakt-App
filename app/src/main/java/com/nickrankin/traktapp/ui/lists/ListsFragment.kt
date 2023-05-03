@@ -403,7 +403,7 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
             }
             else -> {
-                Log.e(TAG, "onOptionsItemSelected: Invalid menu item ${item.itemId}", )
+                Log.e(TAG, "onOptionsItemSelected: Invalid menu item ${item.itemId}")
             }
         }
 
@@ -416,8 +416,6 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
     }
 
     override fun onRefresh() {
-        super.onRefresh()
-
         viewModel.onRefresh()
     }
 

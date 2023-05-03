@@ -43,7 +43,7 @@ open class MovieDetailsViewModel @Inject constructor(
 
     val movie = refreshEvent.flatMapLatest { shouldRefresh ->
         movieDataModelChanged.flatMapLatest { movieDataModel ->
-            repository.getMovieSummary(movieDataModel?.traktId ?: 0, shouldRefresh)
+            repository.getMovieSummary(movieDataModel.traktId, shouldRefresh)
         }
     }
 
@@ -62,8 +62,8 @@ open class MovieDetailsViewModel @Inject constructor(
     val credits = refreshEvent.flatMapLatest { shouldRefresh ->
         movieDataModelChanged.flatMapLatest { movieDataModel ->
             movieDetailsOverviewRepository.getCast(
-                movieDataModel?.traktId ?: 0,
-                movieDataModel?.tmdbId ?: 0,
+                movieDataModel.traktId,
+                movieDataModel.tmdbId ?: 0,
                 shouldRefresh
             )
         }
@@ -76,7 +76,7 @@ open class MovieDetailsViewModel @Inject constructor(
 
     val collectedMovieStats = refreshEvent.flatMapLatest { shouldRefresh ->
         movieDataModelChanged.flatMapLatest { movieDataModel ->
-            movieActionButtonsRepository.getCollectedStats(movieDataModel?.traktId ?: 0, shouldRefresh)
+            movieActionButtonsRepository.getCollectedStats(movieDataModel.traktId, shouldRefresh)
         }
     }
 
@@ -84,7 +84,7 @@ open class MovieDetailsViewModel @Inject constructor(
         eventsChannel.send(
             ActionButtonEvent.AddToCollectionEvent(
                 movieActionButtonsRepository.addToCollection(
-                    traktId ?: 0
+                    traktId
                 )
             )
         )
@@ -94,7 +94,7 @@ open class MovieDetailsViewModel @Inject constructor(
         eventsChannel.send(
             ActionButtonEvent.RemoveFromCollectionEvent(
                 movieActionButtonsRepository.removeFromCollection(
-                    traktId ?: -1
+                    traktId
                 )
             )
         )
@@ -118,7 +118,7 @@ open class MovieDetailsViewModel @Inject constructor(
 
     val movieRatings = refreshEvent.flatMapLatest { shouldRefresh ->
         movieDataModelChanged.flatMapLatest { movieDataModel ->
-            movieActionButtonsRepository.getRatings(movieDataModel?.traktId ?: 0, shouldRefresh)
+            movieActionButtonsRepository.getRatings(movieDataModel.traktId, shouldRefresh)
         }
     }
 
@@ -135,7 +135,7 @@ open class MovieDetailsViewModel @Inject constructor(
         eventsChannel.send(
             ActionButtonEvent.RemoveRatingEvent(
                 movieActionButtonsRepository.deleteRating(
-                    traktId ?: -1
+                    traktId
                 )
             )
         )
@@ -172,7 +172,7 @@ open class MovieDetailsViewModel @Inject constructor(
     }
 
     val videoStreamingServices = movieDataModelChanged.mapLatest { movieDataModel ->
-        repository.getVideoStreamingServices(movieDataModel?.tmdbId, movieDataModel?.movieTitle)
+        repository.getVideoStreamingServices(movieDataModel.tmdbId, movieDataModel.movieTitle)
     }
 
     fun switchMovie(movieDataModel: MovieDataModel) {

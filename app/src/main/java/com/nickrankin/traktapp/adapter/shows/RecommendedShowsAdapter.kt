@@ -48,7 +48,7 @@ class RecommendedShowsAdapter(private val tmdbImageLoader: TmdbImageLoader, cont
                 }
             }
             else -> {
-                Log.e(TAG, "onBindViewHolder: Error invalid ViewHolder ${holder.javaClass.name}", )
+                Log.e(TAG, "onBindViewHolder: Error invalid ViewHolder ${holder.javaClass.name}")
             }
         }
     }
@@ -58,7 +58,7 @@ class RecommendedShowsAdapter(private val tmdbImageLoader: TmdbImageLoader, cont
         posterImageView: ImageView,
         backdropImageView: ImageView?
     ) {
-        tmdbImageLoader.loadImages(selectedItem?.ids?.trakt ?: 0, ImageItemType.SHOW,selectedItem?.ids?.tmdb ?: 0,selectedItem?.title ?: "", selectedItem.language, true, posterImageView, backdropImageView, true)
+        tmdbImageLoader.loadImages(selectedItem.ids?.trakt ?: 0, ImageItemType.SHOW,selectedItem.ids?.tmdb ?: 0,selectedItem.title ?: "", selectedItem.language, true, posterImageView, backdropImageView, true)
 
     }
 
@@ -78,7 +78,7 @@ class RecommendedShowsAdapter(private val tmdbImageLoader: TmdbImageLoader, cont
             }
 
             override fun getChangePayload(oldItem: Show, newItem: Show): Any? {
-                Log.e(TAG, "getChangePayload: Change detected ${oldItem.title} // ${newItem.title}", )
+                Log.e(TAG, "getChangePayload: Change detected ${oldItem.title} // ${newItem.title}")
                 return super.getChangePayload(oldItem, newItem)
             }
         }

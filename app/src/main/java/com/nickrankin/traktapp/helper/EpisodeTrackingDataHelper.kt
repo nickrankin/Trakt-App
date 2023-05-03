@@ -56,10 +56,6 @@ class EpisodeTrackingDataHelper @Inject constructor(
                         }
                     }
 
-            Log.d(
-                TAG,
-                "storeUpcomingEpisodes: Got ${upcomingEpisodesResponse.size} Upcoming Episodes for ${show?.name}"
-            )
             val trackedEpisodes = buildTrackedEpisodes(show, upcomingEpisodesResponse)
 
             // Schedule alarms for these episodes
@@ -127,7 +123,7 @@ class EpisodeTrackingDataHelper @Inject constructor(
 
     suspend fun removeExpiredTrackedEpisodesPerShow(showTraktId: Int) {
         val trackedEpisodes = trackedEpisodeDao.getAllEpisodesForShow(showTraktId).first()
-        val expiredTrackedEpisodes = trackedEpisodes.filter { it?.airs_date?.isBefore(OffsetDateTime.now()) ?: false}
+        val expiredTrackedEpisodes = trackedEpisodes.filter { it.airs_date?.isBefore(OffsetDateTime.now()) ?: false}
 
         // Cancel any remaining alarms
         expiredTrackedEpisodes.map { trackedEpisode ->

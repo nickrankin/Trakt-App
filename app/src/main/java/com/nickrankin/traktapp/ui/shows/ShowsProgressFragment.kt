@@ -104,7 +104,6 @@ class ShowsProgressFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
     }
 
     override fun onRefresh() {
-        super.onRefresh()
         viewModel.onRefresh()
     }
 

@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.flexbox.AlignItems
 import com.google.android.flexbox.FlexboxLayoutManager
+import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.dao.history.model.EpisodeWatchedHistoryEntry
 import com.nickrankin.traktapp.dao.history.model.MovieWatchedHistoryEntry
 import com.nickrankin.traktapp.dao.movies.model.WatchedMovie
@@ -54,9 +55,9 @@ class LastWatchedHistoryAdapter<T: com.nickrankin.traktapp.dao.history.model.His
 
         holder.bindings.apply {
 
-            upcomingitemviewAiring.text = "Watched: " + currentItem.watched_date?.atZoneSameInstant(
+            upcomingitemviewAiring.text = holder.itemView.context.getString(R.string.watched, currentItem.watched_date.atZoneSameInstant(
                 ZoneId.systemDefault())?.format(
-                DateTimeFormatter.ofPattern(AppConstants.DEFAULT_DATE_TIME_FORMAT))
+                DateTimeFormatter.ofPattern(AppConstants.DEFAULT_DATE_TIME_FORMAT)))
 
 
             when(currentItem) {

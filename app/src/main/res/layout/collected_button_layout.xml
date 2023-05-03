@@ -26,7 +26,7 @@
             android:id="@+id/collectedbutton_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Collected"
+            android:text="@string/collected"
             android:textSize="12sp"
             android:textStyle="bold"
             android:layout_marginStart="8dp"

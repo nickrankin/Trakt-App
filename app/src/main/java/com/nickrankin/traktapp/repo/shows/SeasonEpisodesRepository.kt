@@ -209,7 +209,7 @@ class SeasonEpisodesRepository @Inject constructor(
 
     suspend fun refreshShowStats(traktShowId: Int?) {
         if(traktShowId == null) {
-            Log.e(TAG, "refreshShowStats: Trakt Show ID must not be null", )
+            Log.e(TAG, "refreshShowStats: Trakt Show ID must not be null")
             return
         }
         Log.d(TAG, "refreshEpisodeStats: Refreshing Watched and Rating Stats")

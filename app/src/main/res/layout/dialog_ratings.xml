@@ -15,7 +15,7 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="24dp"
         android:layout_marginRight="24dp"
-        android:text="Choose a rating"
+        android:text="@string/choose_a_rating"
         android:textAlignment="center"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -36,7 +36,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
         android:layout_marginLeft="24dp"
-        android:text="Rate!"
+        android:text="@string/rate"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/dialog_ratings_numbpicker" />
 
@@ -46,7 +46,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
         android:layout_marginRight="24dp"
-        android:text="Reset Rating"
+        android:text="@string/reset_rating"
         app:layout_constraintBaseline_toBaselineOf="@id/dialog_ratings_ratebtn"
         app:layout_constraintEnd_toEndOf="parent"
 
@@ -68,7 +68,8 @@
         android:id="@+id/dialog_ratings_closebtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Close"
+
+        android:text="@string/close"
         android:layout_marginTop="2dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

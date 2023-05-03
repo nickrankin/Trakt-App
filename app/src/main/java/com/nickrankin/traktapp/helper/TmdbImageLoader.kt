@@ -261,7 +261,7 @@ class TmdbImageLoader @Inject constructor(
 
             }
         } catch(e: Exception) {
-            Log.e(TAG, "getEpisodeStillImages: Error getting episode images ${e.message}", )
+            Log.e(TAG, "getEpisodeStillImages: Error getting episode images ${e.message}")
             e.printStackTrace()
         }
 

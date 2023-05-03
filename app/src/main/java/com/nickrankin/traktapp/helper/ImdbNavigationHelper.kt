@@ -24,7 +24,7 @@ object ImdbNavigationHelper {
             navigateToUri(context, IMDB_URL_PATH + imdbId)
 
         } catch(e: Exception) {
-            Log.e(TAG, "navigateToImdb: An error occurred ${e.message}. Fallback to using browser default https:// protocol handler", )
+            Log.e(TAG, "navigateToImdb: An error occurred ${e.message}. Fallback to using browser default https:// protocol handler")
             navigateToUri(context, IMDB_URL_PATH + imdbId)
         }
 
@@ -38,7 +38,7 @@ object ImdbNavigationHelper {
             context.startActivity(imdbIntent)
 
         } catch (e: Exception) {
-            Log.e(TAG, "navigateToUrl: Error navigating to IMDB. URL Given $uri", )
+            Log.e(TAG, "navigateToUrl: Error navigating to IMDB. URL Given $uri")
             e.printStackTrace()
         }
     }

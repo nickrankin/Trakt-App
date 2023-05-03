@@ -67,7 +67,7 @@ class MovieActionButtonsRepository @Inject constructor(
             traktApi.tmUsers().ratingsMovies(userSlug, RatingsFilter.ALL, null)
         },
         shouldFetch = { rating ->
-            shouldFetch || shouldRefresh(lastRefreshedAtDao.getLastRefreshed(RefreshType.RATED_MOVIES).first(), null) ?: true
+            shouldFetch || shouldRefresh(lastRefreshedAtDao.getLastRefreshed(RefreshType.RATED_MOVIES).first(), null)
         },
         saveFetchResult = { ratedMovies ->
             moviesDatabase.withTransaction {

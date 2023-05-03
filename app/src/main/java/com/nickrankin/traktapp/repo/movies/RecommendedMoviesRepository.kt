@@ -36,7 +36,7 @@ class RecommendedMoviesRepository @Inject constructor(private val traktApi: Trak
                 _recommendedMoviesStateFlow.update { Resource.Success(recommendedMovies) }
 
             } catch(t: Throwable) {
-                Log.e(TAG, "getRecommendedMovies: Error ${t.message}", )
+                Log.e(TAG, "getRecommendedMovies: Error ${t.message}")
                 _recommendedMoviesStateFlow.update { Resource.Error(t, null) }
             }
         }

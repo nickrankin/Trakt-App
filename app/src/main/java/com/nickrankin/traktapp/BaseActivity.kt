@@ -85,7 +85,7 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
         try {
             application = getApplication() as TmApplication
         } catch(e: Throwable) {
-            Log.e(TAG, "getTmApplication: Error getting application", )
+            Log.e(TAG, "getTmApplication: Error getting application")
             e.printStackTrace()
         }
     }
@@ -94,7 +94,6 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
         menuInflater.inflate(R.menu.main_menu, menu)
 
         // Get the SearchView and set the searchable configuration
-        val searchManager = getSystemService(SEARCH_SERVICE) as SearchManager
         searchMenuItem = menu.findItem(R.id.mainmenu_search)!!
 
         ((searchMenuItem).actionView as SearchView).apply {
@@ -169,7 +168,7 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
     }
 
     override fun showErrorSnackbarRetryButton(throwable: Throwable?, view: View, retryCallback: () -> Unit) {
-        Log.e(TAG, "handleError: Error occurred ", )
+        Log.e(TAG, "handleError: Error occurred ")
         throwable?.printStackTrace()
 
         var errorMessage = StringBuilder()
@@ -207,11 +206,15 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
                     errorMessage.append(customMessage)
                     errorMessage.append(": ")
                 }
+                
+                if(throwable is kotlinx.coroutines.CancellationException) {
+                    Log.d(TAG, "handleError: UndispatchedCoroutine was cancelled (${throwable.message})")
+                    return
+                }
 
                 if(throwable is HttpException) {
                     if(throwable.code() == 401) {
-                        // Try refreshing access token...
-                        Log.e(TAG, "handleError: 401 HTTP Code, access token refresh needed", )
+                        Log.e(TAG, "handleError: 401 HTTP Code, access token refresh needed. Would be handled in TraktAuthenticator class")
                     } else {
                         errorMessage.append("HTTP Response code ${throwable.code()}")
                     }

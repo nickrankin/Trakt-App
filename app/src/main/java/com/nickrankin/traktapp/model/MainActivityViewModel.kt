@@ -28,9 +28,7 @@ private const val TAG = "MainActivityViewModel"
 class MainActivityViewModel @Inject constructor(
     private val showsOverviewRepository: ShowsOverviewRepository,
     private val authRepository: AuthRepository,
-    private val mainActivityRepository: MainActivityRepository,
-    private val episodesStatsRepository: EpisodesStatsRepository,
-    private val statsWorkRefreshHelper: StatsWorkRefreshHelper
+    private val mainActivityRepository: MainActivityRepository
 ) : ViewModel() {
     private val refreshEventChannel = Channel<Boolean>()
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
@@ -62,9 +60,6 @@ class MainActivityViewModel @Inject constructor(
     fun onRefresh(movieRefreshState: (state: LiveData<WorkInfo>) -> Unit, showRefreshState: (state: LiveData<WorkInfo>) -> Unit) {
         viewModelScope.launch {
             refreshEventChannel.send(true)
-//
-//            movieRefreshState(statsWorkRefreshHelper.refreshMovieStats())
-//            showRefreshState(statsWorkRefreshHelper.refreshShowStats())
         }
     }
 }

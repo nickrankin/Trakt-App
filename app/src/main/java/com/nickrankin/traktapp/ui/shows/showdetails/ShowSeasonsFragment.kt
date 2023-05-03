@@ -134,7 +134,7 @@ class ShowSeasonsFragment : BaseFragment() {
     }
 
     private fun navigateToSeason(tmSeasonAndStats: TmSeasonAndStats) {
-        Log.e(TAG, "navigateToSeason:  here", )
+        Log.e(TAG, "navigateToSeason:  here")
 
         (activity as OnNavigateToEntity).navigateToSeason(
             SeasonDataModel(

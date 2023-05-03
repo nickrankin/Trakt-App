@@ -48,7 +48,7 @@ class CancelShowTrackingNotificationReceiver: BroadcastReceiver() {
                 }
 
             } else {
-                Log.e(TAG, "onReceive: Incorrect Episode Traky ID value received (-1)", )
+                Log.e(TAG, "onReceive: Incorrect Episode Traky ID value received (-1)")
             }
         }
     }

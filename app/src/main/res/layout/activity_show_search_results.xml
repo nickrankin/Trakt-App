@@ -24,7 +24,7 @@
                 android:layout_height="wrap_content"
                 android:textSize="19sp"
             style="@style/Widget.MaterialComponents.Chip.Choice"
-            android:text="Movies"/>
+            android:text="@string/movies"/>
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/searchresultsactivity_chip_shows"
@@ -32,7 +32,7 @@
                 android:layout_height="wrap_content"
                 android:textSize="19sp"
                 style="@style/Widget.MaterialComponents.Chip.Choice"
-            android:text="Shows"/>
+            android:text="@string/shows"/>
         </com.google.android.material.chip.ChipGroup>
 
         <ProgressBar
@@ -54,7 +54,7 @@
             android:layout_gravity="center"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:text="No results for query!"
+            android:text="@string/no_results"
             android:visibility="gone"
             tools:visibility="visible"
             app:layout_constraintTop_toTopOf="parent"

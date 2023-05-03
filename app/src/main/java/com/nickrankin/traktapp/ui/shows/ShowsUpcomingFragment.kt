@@ -155,7 +155,7 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
             // We use the key of the sortedShows Map to provide heading inserts into the List. The ListAdapter will display first Heading (Date airing) followed by all Show elements upcoming on that date.
             // We should only have one Heading for particular date based on groupBy value to be certain, ensure we only have one heading per date
             if(mutableList.find { it.first_aired?.truncatedTo(ChronoUnit.DAYS) == value1.key?.truncatedTo(ChronoUnit.DAYS) } == null) {
-                Log.d(TAG, "getMyShows: Header set: - ${value1.key?.truncatedTo(ChronoUnit.DAYS)}", )
+                Log.d(TAG, "getMyShows: Header set: - ${value1.key?.truncatedTo(ChronoUnit.DAYS)}")
 
                 // Add the heading element
                 mutableList.add(BaseCalendarEntry(value1.hashCode(), value1.key))
@@ -266,8 +266,6 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
     }
 
     override fun onRefresh() {
-        super.onRefresh()
-
         if(isLoggedIn) {
             viewModel.showHiddenEntries(false)
             viewModel.onRefresh()

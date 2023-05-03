@@ -53,7 +53,7 @@ class MovieDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
 
                     when (movieResource) {
                         is Resource.Loading -> {
-                            Log.e(TAG, "setup: Loading movie...", )
+                            Log.e(TAG, "setup: Loading movie...")
                         }
                         is Resource.Success -> {
                             val movie = movieResource.data
@@ -191,13 +191,13 @@ class MovieDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
     override fun getLists(onListsChanged: (listEntries: List<Pair<TraktList, List<TraktListEntry>>>) -> Unit) {
         lifecycleScope.launchWhenStarted {
             viewModel.listsAndEntries.collectLatest { listsAndEntriesResource ->
-                Log.e(TAG, "getLists: $listsAndEntriesResource", )
+                Log.e(TAG, "getLists: $listsAndEntriesResource")
                 when(listsAndEntriesResource) {
                     is Resource.Loading -> {
-                        Log.e(TAG, "getLists: Loading ...", )
+                        Log.e(TAG, "getLists: Loading ...")
                     }
                     is Resource.Success -> {
-                        Log.e(TAG, "getLists: Got lists ${listsAndEntriesResource.data?.size}", )
+                        Log.e(TAG, "getLists: Got lists ${listsAndEntriesResource.data?.size}")
 
                         onListsChanged(listsAndEntriesResource.data ?: emptyList())
 

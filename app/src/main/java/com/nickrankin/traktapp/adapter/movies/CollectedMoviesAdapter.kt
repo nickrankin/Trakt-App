@@ -74,7 +74,7 @@ class CollectedMoviesAdapter(private val tmdbImageLoader: TmdbImageLoader,
                 }
             }
             else -> {
-                Log.e(TAG, "onBindViewHolder: Invalid ViewHolder ${holder.javaClass.name}", )
+                Log.e(TAG, "onBindViewHolder: Invalid ViewHolder ${holder.javaClass.name}")
             }
         }
     }
@@ -112,7 +112,7 @@ class CollectedMoviesAdapter(private val tmdbImageLoader: TmdbImageLoader,
             }
 
             override fun getChangePayload(oldItem: CollectedMovie, newItem: CollectedMovie): Any? {
-                Log.e(TAG, "getChangePayload: Change detected ${oldItem.title} // ${newItem.title}", )
+                Log.e(TAG, "getChangePayload: Change detected ${oldItem.title} // ${newItem.title}")
                 return super.getChangePayload(oldItem, newItem)
             }
         }

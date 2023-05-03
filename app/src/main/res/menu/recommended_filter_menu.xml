@@ -4,18 +4,18 @@
     <item
         android:id="@+id/collectedfiltermenu"
         android:icon="@drawable/ic_baseline_filter_list_24"
-        android:title="Sort"
+        android:title="@string/sort"
         app:showAsAction="always">
         <menu>
             <item
                 android:id="@+id/reccomendedfiltermenu_recommended_at"
-                android:title="Last Recommended" />
+                android:title="@string/last_recommended" />
             <item
                 android:id="@+id/reccomendedfiltermenu_title"
-                android:title="Title" />
+                android:title="@string/title" />
 
             <item android:id="@+id/reccomendedfiltermenu_year"
-                android:title="Year" />
+                android:title="@string/year" />
         </menu>
     </item>
 </menu>

@@ -3,8 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".ui.person.PersonActivity">
+    android:layout_height="match_parent">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -147,7 +146,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_margin="8dp"
-                            android:text="Show All" />
+                            android:text="@string/show_all" />
                     </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
@@ -180,7 +179,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_margin="8dp"
-                            android:text="Movies"
+                            android:text="@string/movies"
                             android:textAppearance="?attr/textAppearanceHeadline5" />
 
                         <androidx.recyclerview.widget.RecyclerView
@@ -195,7 +194,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_margin="8dp"
-                            android:text="Show All" />
+                            android:text="@string/show_all" />
                     </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
@@ -230,7 +229,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_margin="8dp"
-                            android:text="Shows"
+                            android:text="@string/shows"
                             android:textAppearance="?attr/textAppearanceHeadline5" />
 
                         <androidx.recyclerview.widget.RecyclerView
@@ -246,7 +245,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_margin="8dp"
-                            android:text="Show All" />
+                            android:text="@string/show_all" />
                     </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>

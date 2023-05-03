@@ -103,7 +103,7 @@ class ShowDetailsViewModel @Inject constructor(
 
     val collectionStatus = refreshEvent.flatMapLatest { shouldRefresh ->
         showDataModelChanded.flatMapLatest { showDataModel ->
-            showActionButtonsRepository.getCollectedStats(showDataModel.traktId ?: 0, shouldRefresh)
+            showActionButtonsRepository.getCollectedStats(showDataModel.traktId, shouldRefresh)
         }
     }
 
@@ -115,7 +115,9 @@ class ShowDetailsViewModel @Inject constructor(
 
     fun addToCollection(traktId: Int) = viewModelScope.launch {
         eventsChannel.send(
-            ActionButtonEvent.AddToCollectionEvent(showActionButtonsRepository.addToCollection(traktId ?: 0))
+            ActionButtonEvent.AddToCollectionEvent(showActionButtonsRepository.addToCollection(
+                traktId
+            ))
         )
     }
 
@@ -123,7 +125,7 @@ class ShowDetailsViewModel @Inject constructor(
         eventsChannel.send(
             ActionButtonEvent.RemoveFromCollectionEvent(
                 showActionButtonsRepository.removeFromCollection(
-                    traktId ?: -1
+                    traktId
                 )
             )
         )
@@ -156,7 +158,7 @@ class ShowDetailsViewModel @Inject constructor(
 
     fun deleteRating(traktId: Int) = viewModelScope.launch {
         eventsChannel.send(
-            ActionButtonEvent.RemoveRatingEvent(showActionButtonsRepository.deleteRating(traktId ?: -1))
+            ActionButtonEvent.RemoveRatingEvent(showActionButtonsRepository.deleteRating(traktId))
         )
     }
 

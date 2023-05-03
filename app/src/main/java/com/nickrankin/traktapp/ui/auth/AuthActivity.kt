@@ -87,11 +87,11 @@ class AuthActivity : BaseActivity(), TitleHelper {
                     }
                     is Resource.Success -> {
                         val accessToken = tokenResource.data
-                        Log.d(TAG, "processAccessToken: Got ${tokenResource.data?.access_token}", )
+                        Log.d(TAG, "processAccessToken: Got ${tokenResource.data?.access_token}")
 
                         // Authorize user to the Trakt API
                         traktApi.accessToken(accessToken!!.access_token)
-                        Log.e(TAG, "processAccessToken: Access Token is ${traktApi.accessToken()} ", )
+                        Log.e(TAG, "processAccessToken: Access Token is ${traktApi.accessToken()} ")
 
                         // Need the Slug to get User data from certain Trakt endpoints
                         getUserSlug(accessToken)
@@ -179,7 +179,7 @@ class AuthActivity : BaseActivity(), TitleHelper {
             if(url.contains("?")) {
                 // Fix faulty URI Trakt returns
                 val fixedUrl = TraktApi.CALLBACK_URL + url.substring(url.indexOf("?"))
-                Log.d(TAG, "shouldOverrideUrlLoading: Stripped Url $fixedUrl", )
+                Log.d(TAG, "shouldOverrideUrlLoading: Stripped Url $fixedUrl")
 
                 val uri = Uri.parse(fixedUrl)
                 val code = uri.getQueryParameter("code") ?: ""

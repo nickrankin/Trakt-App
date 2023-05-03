@@ -62,8 +62,8 @@ class WatchedEpisodesPagingAdapter(controls: AdaptorActionControls<WatchedEpisod
         posterImageView: ImageView,
         backdropImageView: ImageView?
     ) {
-        tmdbImageLoader.loadEpisodeImages(selectedItem?.watchedEpisode?.episode_trakt_id ?: 0, selectedItem?.watchedEpisode?.show_tmdb_id ?: 0, selectedItem?.watchedEpisode?.show_trakt_id ?: 0,
-            selectedItem?.watchedEpisode?.episode_season, selectedItem?.watchedEpisode?.episode_number, selectedItem?.watchedEpisode?.show_title ?: "", selectedItem?.watchedEpisode?.language, true, posterImageView, backdropImageView, true)
+        tmdbImageLoader.loadEpisodeImages(selectedItem.watchedEpisode.episode_trakt_id, selectedItem.watchedEpisode.show_tmdb_id ?: 0, selectedItem.watchedEpisode.show_trakt_id ?: 0,
+            selectedItem.watchedEpisode.episode_season, selectedItem.watchedEpisode.episode_number, selectedItem.watchedEpisode.show_title ?: "", selectedItem.watchedEpisode.language, true, posterImageView, backdropImageView, true)
     }
 
     companion object {

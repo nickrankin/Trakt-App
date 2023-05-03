@@ -11,6 +11,4 @@ data class MoviesCollectedStats(
     override val collected_at: OffsetDateTime?,
     override val title: String,
     override val listedAt: OffsetDateTime?
-    ): CollectedStats {
-
-}
+    ): CollectedStats

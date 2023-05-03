@@ -98,7 +98,7 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
         lifecycleScope.launchWhenStarted {
 
             viewModel.watchedMovies.collectLatest { latestData ->
-                Log.e(TAG, "getWatchedMovies: Triggered ${System.currentTimeMillis()}", )
+                Log.e(TAG, "getWatchedMovies: Triggered ${System.currentTimeMillis()}")
                 
                 progressBar.visibility = View.GONE
 
@@ -169,7 +169,7 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
                         handleWatchedHistoryDeletion(selectedMovie.watchedMovie)
                     } 
                     else -> {
-                        Log.e(TAG, "initRecycler: Invalid menu id $menuSelected", )
+                        Log.e(TAG, "initRecycler: Invalid menu id $menuSelected")
                     }
                 }
             }), sharedPreferences, glide, tmdbPosterImageLoader)
@@ -244,8 +244,6 @@ class WatchedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
     }
 
     override fun onRefresh() {
-        super.onRefresh()
-
         viewModel.onRefresh()
     }
 

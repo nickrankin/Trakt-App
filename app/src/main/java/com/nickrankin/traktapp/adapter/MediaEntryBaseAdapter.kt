@@ -113,7 +113,7 @@ abstract class MediaEntryBaseAdapter<T> constructor(private val controls: Adapto
                 }
             }
             else -> {
-                Log.e(TAG, "onBindViewHolder: Invalid ViewHolder ${holder.javaClass.name}", )
+                Log.e(TAG, "onBindViewHolder: Invalid ViewHolder ${holder.javaClass.name}")
             }
         }
     }

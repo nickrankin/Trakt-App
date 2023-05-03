@@ -111,7 +111,7 @@ class ListsRepository @Inject constructor(
         query = {
             val query =
                 SimpleSQLiteQuery("SELECT * FROM lists ORDER BY $sortBy COLLATE NOCASE $sortHow")
-            Log.d(TAG, "getLists: Sorting ${query.sql}",)
+            Log.d(TAG, "getLists: Sorting ${query.sql}")
             traktLIstsDao.getSortedTraktLists(query)
         },
         fetch = {
@@ -559,7 +559,7 @@ class ListsRepository @Inject constructor(
             }
             Type.PERSON -> {
                 if (listTraktId == WATCHLIST_ID) {
-                    Log.e(TAG, "insertListItem:  Person should not be in watch list",)
+                    Log.e(TAG, "insertListItem:  Person should not be in watch list")
                 }
                 traktApi.tmUsers().listItems(userSlug, listTraktId.toString(), Extended.FULL)
                     .find { (it.person?.ids?.trakt ?: 0) == itemTraktId }
@@ -571,7 +571,7 @@ class ListsRepository @Inject constructor(
 
 
         if (listEntry == null) {
-            Log.e(TAG, "insertListItem: Listentry should not be null",)
+            Log.e(TAG, "insertListItem: Listentry should not be null")
             return
         }
 
@@ -581,7 +581,7 @@ class ListsRepository @Inject constructor(
                     listEntry.id,
                     listTraktId,
                     itemTraktId,
-                    listEntry?.show?.ids?.trakt ?: 0,
+                    listEntry.show?.ids?.trakt ?: 0,
                     listEntry.listed_at,
                     listEntry.rank,
                     type

@@ -60,7 +60,7 @@ class ListsCheckboxAdapter(private val currentItemTraktId: Int, private val type
                         currentListEntry.second.find { (it.person?.trakt_id ?: -1) == currentItemTraktId } != null
                     }
                     else -> {
-                        Log.e(TAG, "onBindViewHolder: Invalid type in this content: Type: $type", )
+                        Log.e(TAG, "onBindViewHolder: Invalid type in this content: Type: $type")
                         false
                     }
                 }

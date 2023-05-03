@@ -28,7 +28,7 @@ class EpisodeNotificationReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         // This method is called when the BroadcastReceiver is receiving an Intent broadcast.
-        Log.e(TAG, "onReceive: Receive episode ${intent.getIntExtra(TRAKT_ID_KEY, -1)}", )
+        Log.e(TAG, "onReceive: Receive episode ${intent.getIntExtra(TRAKT_ID_KEY, -1)}")
 
         showNotification(intent.getIntExtra(TRAKT_ID_KEY, -1))
 
@@ -36,7 +36,7 @@ class EpisodeNotificationReceiver : BroadcastReceiver() {
 
     private fun showNotification(episodeTraktId: Int) {
         if(episodeTraktId == -1) {
-            Log.e(TAG, "showNotification: Valid episode ID not supplied ($episodeTraktId)", )
+            Log.e(TAG, "showNotification: Valid episode ID not supplied ($episodeTraktId)")
             return
         }
 
@@ -55,7 +55,7 @@ class EpisodeNotificationReceiver : BroadcastReceiver() {
                         Log.d(TAG, "showNotification: Episode $episodeTraktId dismissed 3 times, won't send again")
                     }
                 } else {
-                    Log.e(TAG, "showNotification: Episode $episodeTraktId not found in DB", )
+                    Log.e(TAG, "showNotification: Episode $episodeTraktId not found in DB")
                 }
 
             pendingResult.finish()

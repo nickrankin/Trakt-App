@@ -131,7 +131,7 @@ class SearchResultsFragment : BaseFragment() {
 
 
 
-            Log.d(TAG, "onCreate: Got Search Query $query", )
+            Log.d(TAG, "onCreate: Got Search Query $query")
 
             updateTitle("Search results: $query")
 
@@ -219,7 +219,7 @@ class SearchResultsFragment : BaseFragment() {
                         )
                     }
                     "else" -> {
-                        Log.e(TAG, "initRecycler: Unknown result type ${resultClicked.type}", )
+                        Log.e(TAG, "initRecycler: Unknown result type ${resultClicked.type}")
                     }
                 }
 

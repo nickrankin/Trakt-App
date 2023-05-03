@@ -3,15 +3,15 @@
     <item
         android:id="@+id/showstrackingpopup_go_to_show"
         android:icon="@drawable/ic_baseline_live_tv_24"
-        android:title="Go to show" />
+        android:title="@string/go_to_show" />
     <item
         android:id="@+id/showstrackingpopup_cancel"
         android:icon="@drawable/ic_baseline_do_disturb_24"
-        android:title="Stop Tracking" />
+        android:title="@string/stop_tracking" />
     <group>
         <item
             android:id="@+id/showstrackingpopup_list"
             android:icon="@drawable/ic_baseline_live_tv_24"
-            android:title="Upcoming Episodes" />
+            android:title="@string/upcoming_episodes" />
     </group>
 </menu>

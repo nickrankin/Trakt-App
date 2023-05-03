@@ -35,7 +35,7 @@
             app:layout_constraintBottom_toTopOf="@id/movieentry_poster_cardview"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:text="MOVIE" />
+            android:text="@string/movie" />
 
 
         <com.google.android.material.card.MaterialCardView

@@ -53,7 +53,7 @@ class ShowDetailsOverviewRepository @Inject constructor(
             showCastPeopleDao.getShowCast(episodeDataModel?.traktId ?: 0, showGuestStars)
         },
         fetch = {
-            Log.e(TAG, "getEpisodeCast: edm $episodeDataModel", )
+            Log.e(TAG, "getEpisodeCast: edm $episodeDataModel")
             creditsHelper.getShowCredits(episodeDataModel?.traktId ?: 0 , episodeDataModel?.tmdbId)
         },
         shouldFetch = { castPersons ->

@@ -2,14 +2,14 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/watchedshowspopup_nav_episode"
         android:icon="@drawable/ic_baseline_live_tv_24"
-        android:title="Go to Episode" />
+        android:title="@string/go_to_episode" />
     <item
         android:id="@+id/watchedshowspopup_nav_show"
         android:icon="@drawable/ic_baseline_live_tv_24"
-        android:title="Go to Show" />
+        android:title="@string/go_to_show" />
     <item
         android:id="@+id/watchedshowspopup_remove_show"
         android:icon="@drawable/ic_baseline_delete_forever_24"
-        android:title="Remove this Play"/>
+        android:title="@string/remove_this_play"/>
 
 </menu>

@@ -9,30 +9,30 @@
     <com.google.android.material.tabs.TabItem
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Progress" />
+        android:text="@string/progress" />
 
     <com.google.android.material.tabs.TabItem
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Upcoming" />
+        android:text="@string/upcoming" />
 
     <com.google.android.material.tabs.TabItem
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Watched" />
+        android:text="@string/watched" />
 
     <com.google.android.material.tabs.TabItem
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="TRACK" />
+        android:text="@string/track" />
 
     <com.google.android.material.tabs.TabItem
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Collection" />
+        android:text="@string/collection" />
 
     <com.google.android.material.tabs.TabItem
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Suggested" />
+        android:text="@string/suggested" />
 </com.google.android.material.tabs.TabLayout>

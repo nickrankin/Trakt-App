@@ -74,7 +74,7 @@ class MovieDetailsCastCrewFragment : BaseFragment() {
                         val credits = creditsResource.data
 
                         if(credits != null && credits.isNotEmpty()) {
-                            castAdapter.submitList(credits?.sortedBy { it.ordering })
+                            castAdapter.submitList(credits.sortedBy { it.ordering })
                         }
 
 

@@ -39,7 +39,7 @@ class ShowDataHelper @Inject constructor(
     suspend fun getShow(
         traktId: Int
     ): TmShow? {
-        var tmShow: TmShow? = null
+        var tmShow: TmShow?
 
         val traktShowResponse = traktApi.tmShows().summary(traktId.toString(), Extended.FULL)
         val traktCreditsResponse = traktApi.tmShows().people(traktId.toString(), null)
@@ -61,12 +61,12 @@ class ShowDataHelper @Inject constructor(
                 )
                 return convertTmdbShow(traktShowResponse, traktCreditsResponse, response, traktRatings.rating ?: 0.0)
             } catch(e: HttpException) {
-                Log.e(TAG, "getShow: HttpException occurred. Code: ${e.code()}. ${e.message()}", )
+                Log.e(TAG, "getShow: HttpException occurred. Code: ${e.code()}. ${e.message()}")
                 return convertTraktShow(traktShowResponse, traktCreditsResponse,traktRatings.rating ?: 0.0)
 
             }catch(e: Exception) {
                 e.printStackTrace()
-                Log.e(TAG, "getShow: Error getting TMDB Data", )
+                Log.e(TAG, "getShow: Error getting TMDB Data")
                 return convertTraktShow(traktShowResponse, traktCreditsResponse,traktRatings.rating ?: 0.0)
             }
 
@@ -210,7 +210,7 @@ class ShowDataHelper @Inject constructor(
                                 tvSeason?.images,
                                 tvSeason?.videos,
                                 traktSeason.first_aired,
-                                traktSeason.episode_count,
+                                traktSeason.episode_count ?: -1,
                                 traktSeason.number ?: 0,
                                 tvSeason?.poster_path,
                                 TmSeason.SOURCE_TMDB
@@ -219,12 +219,12 @@ class ShowDataHelper @Inject constructor(
                     }
                 }
             } catch(e: HttpException) {
-                Log.e(TAG, "getSeasons: Error getting Season Data from TMDB. Code ${e.code()}. ${e.message()}", )
+                Log.e(TAG, "getSeasons: Error getting Season Data from TMDB. Code ${e.code()}. ${e.message()}")
                 e.printStackTrace()
 
                 tmSeasons.addAll(traktSeasonSource(showTmdbId, showTraktId, language, traktSeasons))
             } catch(e: Exception) {
-                Log.e(TAG, "getSeasons: Error getting Tmdb Data.", )
+                Log.e(TAG, "getSeasons: Error getting Tmdb Data.")
                 e.printStackTrace()
                 tmSeasons.addAll(traktSeasonSource(showTmdbId, showTraktId, language, traktSeasons))
             }
@@ -241,12 +241,6 @@ class ShowDataHelper @Inject constructor(
     private fun traktSeasonSource(showTmdbId: Int?, showTraktId: Int, language: String?, traktSeasons: List<Season>): List<TmSeason> {
         val tmSeasons: MutableList<TmSeason> = mutableListOf()
         traktSeasons.map { tvSeason ->
-
-            var airedDate: Date? = null
-
-            if(tvSeason.first_aired != null) {
-                airedDate = DateTimeUtils.toDate(tvSeason.first_aired?.toInstant())
-            }
 
             tmSeasons.add(
                 TmSeason(
@@ -332,7 +326,7 @@ class ShowDataHelper @Inject constructor(
                     )
                 }
             } catch(e: HttpException) {
-                Log.e(TAG, "getSeasonEpisodesData: HttpException Error getting episode data from Tmdb. Code: ${e.code()}. ${e.message()}", )
+                Log.e(TAG, "getSeasonEpisodesData: HttpException Error getting episode data from Tmdb. Code: ${e.code()}. ${e.message()}")
                 e.printStackTrace()
                 episodes.addAll(traktEpisodeSource(showTmdbId, showTraktId, language, traktSeasonEpisodes))
             }catch (e: Exception) {
@@ -380,7 +374,7 @@ class ShowDataHelper @Inject constructor(
         language: String?,
         traktSeasonEpisodes: List<Episode>
     ): List<TmEpisode> {
-        Log.d(TAG, "traktEpisodeSource: Getting Trakt Episode Data", )
+        Log.d(TAG, "traktEpisodeSource: Getting Trakt Episode Data")
         var episodes: MutableList<TmEpisode> = mutableListOf()
 
         traktSeasonEpisodes.map { traktEpisode ->

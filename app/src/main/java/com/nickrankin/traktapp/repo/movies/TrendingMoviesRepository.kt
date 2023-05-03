@@ -32,7 +32,7 @@ class TrendingMoviesRepository @Inject constructor(private val traktApi: TraktAp
 
                 _trendingMoviesStateFlow.update { Resource.Success(trendingMovies) }
             } catch(t: Throwable) {
-                Log.e(TAG, "getTrendingMovies: Error ${t.message}", )
+                Log.e(TAG, "getTrendingMovies: Error ${t.message}")
                 _trendingMoviesStateFlow.update { Resource.Error(t, null) }
             }
         }

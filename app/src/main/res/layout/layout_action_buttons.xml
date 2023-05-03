@@ -9,7 +9,7 @@
         android:id="@+id/actionbuttons_account_actions"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="My Trakt"
+        android:text="@string/my_trakt"
         android:layout_marginStart="8dp"
         android:layout_marginTop="4dp"
         android:padding="4dp"
@@ -30,7 +30,7 @@
         android:textStyle="bold"
         android:textAllCaps="true"
         android:textSize="12sp"
-        android:text=" - "
+        android:text="@string/dash"
         tools:text="10"
         android:layout_marginTop="16dp"
         android:layout_marginStart="8dp"
@@ -41,7 +41,7 @@
         android:id="@+id/actionbuttons_rating_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Your Rating"
+        android:text="@string/your_rating"
         android:textAllCaps="true"
         android:textStyle="bold"
         android:layout_marginStart="8dp"
@@ -55,7 +55,7 @@
         android:id="@+id/actionbuttons_trakt_rating"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Trakt Rating: Unrated"
+        android:text="@string/trakt_rating_empty"
         android:textSize="14sp"
         android:textStyle="bold"
         android:layout_marginTop="8dp"
@@ -80,7 +80,7 @@
         android:layout_marginTop="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
-        android:text="Last watched: Unwatched"
+        android:text="@string/last_watched_unwatched"
         android:textSize="14sp"
         android:textStyle="bold"
         app:layout_constraintTop_toBottomOf="@id/actionbuttons_trakt_rating"
@@ -93,7 +93,7 @@
         android:layout_height="wrap_content"
         tools:visibility="visible"
         android:visibility="gone"
-        android:text="Plays (2)"
+        android:text="@string/plays_0"
         app:layout_constraintTop_toBottomOf="@id/actionbuttons_last_watched"
         app:layout_constraintStart_toStartOf="@id/actionbuttons_last_watched" />
 
@@ -129,7 +129,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:chipIcon="@drawable/ic_baseline_check_24"
-                android:text="Checkin"
+                android:text="@string/checkin"
                 />
 
             <com.google.android.material.chip.Chip
@@ -137,7 +137,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:chipIcon="@drawable/ic_baseline_collections_bookmark_24"
-                android:text="Add to Collection"
+                android:text="@string/add_to_collection"
                 />
 
             <com.google.android.material.chip.Chip
@@ -145,7 +145,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:chipIcon="@drawable/ic_baseline_calendar_month_24"
-                android:text="Add to Watch History"
+                android:text="@string/add_to_watch_history"
                 app:layout_constraintTop_toBottomOf="@id/actionbuttons_collection"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent" />
@@ -155,7 +155,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:chipIcon="@drawable/ic_baseline_list_24"
-                android:text="Lists"
+                android:text="@string/LISTS"
                 app:layout_constraintTop_toBottomOf="@id/actionbuttons_history"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"

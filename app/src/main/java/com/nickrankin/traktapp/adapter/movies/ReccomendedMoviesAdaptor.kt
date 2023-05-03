@@ -18,7 +18,7 @@ import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.uwetrottmann.trakt5.entities.Movie
 
 private const val TAG = "ReccomendedMoviesAdapto"
-class ReccomendedMoviesAdaptor(private val tmdbImageLoader: TmdbImageLoader, adapterControls: AdaptorActionControls<Movie>,): MediaEntryBaseAdapter<Movie>(
+class ReccomendedMoviesAdaptor(private val tmdbImageLoader: TmdbImageLoader, adapterControls: AdaptorActionControls<Movie>): MediaEntryBaseAdapter<Movie>(
     adapterControls, COMPARATOR) {
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
@@ -46,7 +46,7 @@ class ReccomendedMoviesAdaptor(private val tmdbImageLoader: TmdbImageLoader, ada
                 }
             }
             else -> {
-                Log.e(TAG, "onBindViewHolder: Invalid ViewHolder ${holder.javaClass.name}", )
+                Log.e(TAG, "onBindViewHolder: Invalid ViewHolder ${holder.javaClass.name}")
             }
         }
 
@@ -57,7 +57,7 @@ class ReccomendedMoviesAdaptor(private val tmdbImageLoader: TmdbImageLoader, ada
         posterImageView: ImageView,
         backdropImageView: ImageView?
     ) {
-        tmdbImageLoader.loadImages(selectedItem?.ids?.trakt ?: 0, ImageItemType.MOVIE,selectedItem?.ids?.tmdb ?: 0,  selectedItem.title, selectedItem.language, true, posterImageView, backdropImageView, true)
+        tmdbImageLoader.loadImages(selectedItem.ids?.trakt ?: 0, ImageItemType.MOVIE,selectedItem.ids?.tmdb ?: 0,  selectedItem.title, selectedItem.language, true, posterImageView, backdropImageView, true)
 
     }
 

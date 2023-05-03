@@ -493,7 +493,7 @@ class EpisodeActionButtonsRepository @Inject constructor(
                 )
             }
         } else {
-            Log.e(TAG, "insertCollectedEpisode: Error finding episode $traktId on Trakt!",)
+            Log.e(TAG, "insertCollectedEpisode: Error finding episode $traktId on Trakt!")
         }
     }
 

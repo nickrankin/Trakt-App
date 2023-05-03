@@ -262,8 +262,6 @@ class WatchedEpisodesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
     }
 
     override fun onRefresh() {
-        super.onRefresh()
-
         if (isLoggedIn) {
             //https://developer.android.com/reference/kotlin/androidx/paging/PagingDataAdapter#refresh()
             viewModel.onRefresh()

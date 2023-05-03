@@ -58,7 +58,7 @@ class SimilarShowsFragment : BaseFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        bindings.moviedetailsactivitySimilarTitle.text="Similar Shows"
+        bindings.moviedetailsactivitySimilarTitle.text = getString(R.string.similar_shows)
 
         initAdapter()
         
@@ -96,7 +96,7 @@ class SimilarShowsFragment : BaseFragment() {
 
     private fun navigateToShow(tmdbId: Int?, title: String?) {
         if(tmdbId == null) {
-            Log.e(TAG, "navigateToMovie: Cannot navigate with null TmdbId", )
+            Log.e(TAG, "navigateToMovie: Cannot navigate with null TmdbId")
             return
         }
 
@@ -108,7 +108,7 @@ class SimilarShowsFragment : BaseFragment() {
                     ShowDataModel(traktId, tmdbId, title)
                 )
             } else {
-                Log.e(TAG, "navigateToMovie: Trakt ID is null for movie $title // TMDB ID: $tmdbId, Aborting..", )
+                Log.e(TAG, "navigateToMovie: Trakt ID is null for movie $title // TMDB ID: $tmdbId, Aborting..")
             }
         }
     }

@@ -3,6 +3,6 @@
     <item
         android:id="@+id/suggestedpopupmenu_dismiss_suggestion"
         android:icon="@drawable/ic_baseline_do_disturb_24"
-        android:title="Not Interested" />
+        android:title="@string/not_interested" />
 
 </menu>

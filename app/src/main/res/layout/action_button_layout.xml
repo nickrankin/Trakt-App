@@ -30,7 +30,7 @@
                 android:textStyle="bold"
                 android:textAllCaps="true"
                 android:textSize="10sp"
-                android:text="Checkin" />
+                android:text="@string/CHECKIN" />
 
     </LinearLayout>
 
@@ -59,7 +59,7 @@
             android:textStyle="bold"
             android:textAllCaps="true"
             android:textSize="10sp"
-            android:text="Add to Watch History" />
+            android:text="@string/ADD_HISTORY" />
 
     </LinearLayout>
 
@@ -102,7 +102,7 @@
                 android:textAllCaps="true"
                 android:textSize="10sp"
 
-                android:text="Rate" />
+                android:text="@string/RATE" />
 
     </LinearLayout>
 

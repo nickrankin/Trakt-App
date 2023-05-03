@@ -97,14 +97,14 @@ class ShowCalendarEntriesAdapter @Inject constructor(private val sharedPreferenc
                                 upcomingitemviewAiring.text = "Airing: ${getFormattedDateTime(currentItem.first_aired!!, sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString(AppConstants.TIME_FORMAT, AppConstants.DEFAULT_TIME_FORMAT))}"
                             }
 
-                            tmdbImageLoader.loadEpisodeImages(currentItem.episode_trakt_id, currentItem.show_tmdb_id, currentItem.show_trakt_id, currentItem.episode_season,currentItem.episode_number, currentItem?.show_title ?: "",currentItem.language,true, upcomingitemviewPoster, null, false)
+                            tmdbImageLoader.loadEpisodeImages(currentItem.episode_trakt_id, currentItem.show_tmdb_id, currentItem.show_trakt_id, currentItem.episode_season,currentItem.episode_number, currentItem.show_title, currentItem.language,true, upcomingitemviewPoster, null, false)
 
                             root.setOnClickListener { callback(currentItem, ACTION_NAVIGATE_EPISODE) }
                         }
                     }
 
                     else -> {
-                        Log.e(TAG, "onBindViewHolder: Invalid type", )
+                        Log.e(TAG, "onBindViewHolder: Invalid type")
                     }
                 }
             }
@@ -129,7 +129,7 @@ class ShowCalendarEntriesAdapter @Inject constructor(private val sharedPreferenc
                     }
 
                     else -> {
-                        Log.e(TAG, "onBindViewHolder: Invalid type", )
+                        Log.e(TAG, "onBindViewHolder: Invalid type")
                     }
                 }
             }

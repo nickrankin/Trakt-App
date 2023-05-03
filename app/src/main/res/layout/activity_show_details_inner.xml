@@ -206,7 +206,7 @@
                 android:layout_height="wrap_content"
                 android:drawableLeft="@drawable/ic_baseline_live_tv_24"
                 android:layout_marginTop="8dp"
-                android:text="Trailer"
+                android:text="@string/trailer"
                 android:visibility="gone"
                 tools:visibility="visible"
                 />
@@ -218,7 +218,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:drawableLeft="@drawable/ic_imdb_logo_2016"
-                android:text="IMDB"
+                android:text="@string/imdb"
                 android:visibility="gone"
                 tools:visibility="visible" />
 
@@ -274,17 +274,17 @@
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Overview" />
+                android:text="@string/overview" />
 
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Seasons" />
+                android:text="@string/seasons" />
 
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Progress" />
+                android:text="@string/progress" />
         </com.google.android.material.tabs.TabLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

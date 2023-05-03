@@ -132,11 +132,11 @@ class WatchedEpisodesRemoteMediator(
 
             return MediatorResult.Success(endOfPaginationReached = endOfPaginationReached)
         } catch (e: IOException) {
-            Log.e(TAG, "load: IO Exception ${e.message}", )
+            Log.e(TAG, "load: IO Exception ${e.message}")
             e.printStackTrace()
             return MediatorResult.Error(e)
         } catch (e: HttpException) {
-            Log.e(TAG, "load: HTTPException (code ${e.code()}). ${e.message()}", )
+            Log.e(TAG, "load: HTTPException (code ${e.code()}). ${e.message()}")
             e.printStackTrace()
             return MediatorResult.Error(e)
         }
@@ -171,7 +171,7 @@ class WatchedEpisodesRemoteMediator(
     private suspend fun getRemoteKeyForLastItem(state: PagingState<Int, WatchedEpisodeAndStats>): WatchedEpisodePageKey? {
         // Get the last page that was retrieved, that contained items.
         // From that last page, get the last item
-        return state.pages.lastOrNull() { it.data.isNotEmpty() }?.data?.lastOrNull()
+        return state.pages.lastOrNull { it.data.isNotEmpty() }?.data?.lastOrNull()
             ?.let { episode ->
                 // Get the remote keys of the last item retrieved
                 remoteKeyDao.remoteKeyByPage(episode.watchedEpisode.episode_trakt_id)

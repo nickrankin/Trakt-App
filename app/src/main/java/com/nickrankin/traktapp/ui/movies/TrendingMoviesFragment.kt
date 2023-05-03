@@ -126,7 +126,7 @@ class TrendingMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
 
     private fun navigateToMovie(trendingMovie: TrendingMovie?) {
         if(trendingMovie == null) {
-            Log.e(TAG, "navigateToMovie: Trending movies object cannot be null", )
+            Log.e(TAG, "navigateToMovie: Trending movies object cannot be null")
 
             return
         }
@@ -172,7 +172,7 @@ class TrendingMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
                 viewModel.applySorting(TrendingMoviesViewModel.TOTAL_WATCHING_SORT_BY)
             }
             else -> {
-                Log.e(TAG, "onOptionsItemSelected: Invalid menu item ${item.itemId}", )
+                Log.e(TAG, "onOptionsItemSelected: Invalid menu item ${item.itemId}")
             }
         }
 
@@ -186,7 +186,6 @@ class TrendingMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
     }
 
     override fun onRefresh() {
-        super.onRefresh()
         viewModel.onRefresh()
     }
 

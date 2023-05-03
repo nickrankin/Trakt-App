@@ -175,7 +175,7 @@ class PeopleCreditsFragment : BaseFragment() {
                 }
             }
             else -> {
-                Log.e(TAG, "getCredits: Unknown Credits type: $type", )
+                Log.e(TAG, "getCredits: Unknown Credits type: $type")
             }
         }
 

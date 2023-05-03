@@ -62,7 +62,7 @@ class SearchResultsActivity : SplitViewActivity() {
             throw RuntimeException("A search Query and Type must be provided!")
         }
 
-        Log.d(TAG, "onCreate: Got Search Query $query",)
+        Log.d(TAG, "onCreate: Got Search Query $query")
 
         supportActionBar?.title = "Search results: $query"
 

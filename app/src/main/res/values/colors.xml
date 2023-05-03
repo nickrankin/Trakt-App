@@ -74,5 +74,6 @@
     <color name="md_theme_dark_outlineVariant">#44464F</color>
     <color name="md_theme_dark_scrim">#000000</color>
     <color name="CustomColor1">#5AF1AA</color>
+    <color name="TraktRed">#ed1c24</color>
 
 </resources>

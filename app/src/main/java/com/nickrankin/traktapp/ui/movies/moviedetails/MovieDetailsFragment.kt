@@ -232,7 +232,7 @@ class MovieDetailsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListene
                     startActivity(i)
                 } catch(e: Exception) {
                     Toast.makeText(requireContext(), "Error loading the Movie homepage. ", Toast.LENGTH_SHORT).show()
-                    Log.e(TAG, "displayExternalLinks: Couldn't load homepage, ${e.message}", )
+                    Log.e(TAG, "displayExternalLinks: Couldn't load homepage, ${e.message}")
                 }
             }
         } else {
@@ -245,7 +245,7 @@ class MovieDetailsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListene
                     val i = Intent(Intent.ACTION_VIEW, Uri.parse(AppConstants.TMDB_MOVIE_URL + movie.tmdb_id))
                     startActivity(i)
                 } catch(e: Exception) {
-                    Log.e(TAG, "displayExternalLinks: Error loading TMDB URL: ${e.message}", )
+                    Log.e(TAG, "displayExternalLinks: Error loading TMDB URL: ${e.message}")
                     Toast.makeText(requireContext(), "Error loading TMDB URL.", Toast.LENGTH_SHORT).show()
                 }
 
@@ -518,8 +518,6 @@ class MovieDetailsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListene
     }
 
     override fun onRefresh() {
-        super.onRefresh()
-
         viewModel.onRefresh()
     }
 

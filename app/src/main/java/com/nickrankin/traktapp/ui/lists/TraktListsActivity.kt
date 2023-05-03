@@ -78,7 +78,7 @@ class TraktListsActivity : SplitViewActivity(), SwipeRefreshLayout.OnRefreshList
         lifecycleScope.launchWhenStarted {
             viewModel.activeList.collectLatest { activeListId ->
 
-                Log.e(TAG, "getActiveList: Active list is $activeListId", )
+                Log.e(TAG, "getActiveList: Active list is $activeListId")
 
                 if(activeListId != null) {
                     navigateList(activeListId)

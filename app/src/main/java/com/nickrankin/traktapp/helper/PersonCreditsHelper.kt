@@ -30,7 +30,7 @@ class PersonCreditsHelper @Inject constructor(
 
         var profileImage: String? = ""
         if (traktApiResponse.ids?.tmdb != null) {
-            val tmdbPersonData = getPersonTmdbData(traktApiResponse.ids.tmdb)
+            val tmdbPersonData = getPersonTmdbData(traktApiResponse.ids.tmdb ?: -1)
 
             profileImage = tmdbPersonData?.profile_path
         }
@@ -177,7 +177,7 @@ class PersonCreditsHelper @Inject constructor(
                     index,
                     crewMember.person?.name,
                     Type.MOVIE,
-                    crewMember.job,
+                    crewMember.job ?: "",
                     crewType
                 )
             }
@@ -192,7 +192,7 @@ class PersonCreditsHelper @Inject constructor(
                     index,
                     crewMember.person?.name,
                     Type.SHOW,
-                    crewMember.job,
+                    crewMember.job ?: "",
                     crewType
                 )
             }
@@ -276,8 +276,6 @@ class PersonCreditsHelper @Inject constructor(
             traktResponse.cast?.mapIndexed { index, castPerson ->
 
                 val person = castPerson.person
-                val movie = castPerson.movie
-
 
                 val traktPersonId = castPerson.person?.ids?.trakt
                 val tmdbPersonId = castPerson.person?.ids?.tmdb
@@ -422,7 +420,7 @@ class PersonCreditsHelper @Inject constructor(
             return showCreditsList
 
         } catch(e: Exception) {
-            Log.e(TAG, "getEpisodeGuestCredits: Error ${e.message}", )
+            Log.e(TAG, "getEpisodeGuestCredits: Error ${e.message}")
             e.printStackTrace()
         }
         return emptyList()
@@ -439,7 +437,7 @@ class PersonCreditsHelper @Inject constructor(
 
     private suspend fun getTmdbCrewPersonProfilePath(tmdbResponse: Credits?, personTmdbId: Int?): String? {
         if(personTmdbId == null) {
-            Log.e(TAG, "getTmdbPerson: Cuodn't get Tmdb Person", )
+            Log.e(TAG, "getTmdbPerson: Cuodn't get Tmdb Person")
             return null
         }
 
@@ -457,7 +455,7 @@ class PersonCreditsHelper @Inject constructor(
 
     private suspend fun getTmdbCastPersonProfilePath(tmdbResponse: Credits?, personTmdbId: Int?): String? {
         if(personTmdbId == null) {
-            Log.e(TAG, "getTmdbPerson: Cuodn't get Tmdb Person", )
+            Log.e(TAG, "getTmdbPerson: Cuodn't get Tmdb Person")
             return null
         }
 
@@ -486,7 +484,7 @@ class PersonCreditsHelper @Inject constructor(
         try {
             return tmdbApi.tmPersonService().summary(tmdbId, getTmdbLanguage(null))
         } catch(e: Exception) {
-            Log.e(TAG, "getTmdbPerson: Error getting person ${e.message}", )
+            Log.e(TAG, "getTmdbPerson: Error getting person ${e.message}")
 
             e.printStackTrace()
         }

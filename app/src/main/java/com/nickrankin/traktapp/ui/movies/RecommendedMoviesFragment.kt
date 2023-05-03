@@ -245,7 +245,7 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
                 }
             }
             else -> {
-                Log.e(TAG, "onOptionsItemSelected: Invalid menu item ${item.itemId}", )
+                Log.e(TAG, "onOptionsItemSelected: Invalid menu item ${item.itemId}")
             }
         }
         return false
@@ -293,8 +293,6 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
     }
 
     override fun onRefresh() {
-        super.onRefresh()
-
         viewModel.onRefresh()
     }
 

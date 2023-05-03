@@ -312,11 +312,11 @@ class EpisodeDetailsFragment : BaseFragment(), OnNavigateToShow,
             episodedetailsactivityShowTitle.text = show.name
 
             episodedetailsactivityShowTitle.setOnClickListener {
-                navigateToShow(show.trakt_id ?: 0, show.tmdb_id, show.name)
+                navigateToShow(show.trakt_id, show.tmdb_id, show.name)
             }
 
             episodedetailsactivityPosterCardview.setOnClickListener {
-                navigateToShow(show.trakt_id ?: 0, show.tmdb_id, show.name)
+                navigateToShow(show.trakt_id, show.tmdb_id, show.name)
             }
         }
     }
@@ -397,8 +397,6 @@ class EpisodeDetailsFragment : BaseFragment(), OnNavigateToShow,
     }
 
     override fun onRefresh() {
-        super.onRefresh()
-
         viewModel.onRefresh()
     }
 

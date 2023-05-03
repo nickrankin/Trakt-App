@@ -35,7 +35,7 @@
             android:textSize="20sp"
             android:textAllCaps="true"
             android:textStyle="bold"
-            android:text="Episode" />
+            android:text="@string/episode" />
 
 
         <com.google.android.material.card.MaterialCardView

@@ -130,7 +130,7 @@ Fusce laoreet ut quam nec sodales. Donec in vulputate neque, id commodo sem. Mau
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
                 app:icon="@drawable/ic_baseline_tv_24"
-                android:text="Show"
+                android:text="@string/show"
                 style="?attr/borderlessButtonStyle"
                 />
             <com.google.android.material.button.MaterialButton
@@ -140,7 +140,7 @@ Fusce laoreet ut quam nec sodales. Donec in vulputate neque, id commodo sem. Mau
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
                 app:icon="@drawable/ic_baseline_live_tv_24"
-                android:text="Episode"
+                android:text="@string/episode"
                 style="?attr/borderlessButtonStyle"
                 />
             <com.google.android.material.button.MaterialButton
@@ -149,7 +149,7 @@ Fusce laoreet ut quam nec sodales. Donec in vulputate neque, id commodo sem. Mau
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
                 app:icon="@drawable/ic_baseline_remove_red_eye_24"
-                android:text="Hide Show"
+                android:text="@string/hide_show"
                 style="?attr/borderlessButtonStyle"
                 />
         </LinearLayout>

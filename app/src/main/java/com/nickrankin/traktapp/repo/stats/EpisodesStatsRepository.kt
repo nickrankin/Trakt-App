@@ -52,7 +52,7 @@ class EpisodesStatsRepository @Inject constructor(private val traktApi: TraktApi
 
                 if(result.isEmpty()) {
                     Log.d(TAG, "refreshEpisodeRatings: Finished")
-                    break;
+                    break
                 }
             }
     }

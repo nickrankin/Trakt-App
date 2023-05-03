@@ -15,14 +15,14 @@ private const val TAG = "EpisodeTrackingRefreshW"
 @HiltWorker
 class EpisodeTrackingRefreshWorker @AssistedInject constructor(@Assisted val context: Context, @Assisted params: WorkerParameters, val episodeTrackingDataHelper: EpisodeTrackingDataHelper): CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
-        Log.d(TAG, "doWork: Refreshing Tracked Episodes now. Date ${OffsetDateTime.now().toString()}")
+        Log.d(TAG, "doWork: Refreshing Tracked Episodes now. Date ${OffsetDateTime.now()}")
         return try {
             // Refreshes all Episodes and schedule their alarms
             episodeTrackingDataHelper.refreshUpComingEpisodesForAllShows()
 
             Result.success()
         } catch(e: Exception) {
-            Log.e(TAG, "doWork: Error refreshing Tracked Episodes. ${e.localizedMessage}", )
+            Log.e(TAG, "doWork: Error refreshing Tracked Episodes. ${e.localizedMessage}")
             e.printStackTrace()
 
             Result.retry()

@@ -15,6 +15,4 @@ open class CreditsRepository @Inject constructor(
     private val creditsHelper: PersonCreditsHelper,
     private val showsDatabase: ShowsDatabase,
     private val creditsDatabase: CreditsDatabase
-) {
-
-}
+)

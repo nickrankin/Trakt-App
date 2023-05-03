@@ -42,7 +42,7 @@ class TrackedEpisodeAlarmScheduler(private val context: Context, private val ala
         val notificationDateTime = trackedEpisode.airs_date?.minusHours(NOTIFICATION_HOURS_BEFORE)
 
         if(notificationDateTime == null) {
-            Log.e(TAG, "scheduleTrackedEpisodeAlarm: notification date and time must not be null", )
+            Log.e(TAG, "scheduleTrackedEpisodeAlarm: notification date and time must not be null")
             return
         }
 

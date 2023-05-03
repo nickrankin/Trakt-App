@@ -275,7 +275,7 @@ class ShowDetailsFragment : BaseFragment(), OnNavigateToEpisode,
                     startActivity(i)
                 } catch(e: Exception) {
                     Toast.makeText(requireContext(), "Error loading the Movie homepage. ", Toast.LENGTH_SHORT).show()
-                    Log.e(TAG, "displayExternalLinks: Couldn't load homepage, ${e.message}", )
+                    Log.e(TAG, "displayExternalLinks: Couldn't load homepage, ${e.message}")
                 }
             }
         } else {
@@ -288,7 +288,7 @@ class ShowDetailsFragment : BaseFragment(), OnNavigateToEpisode,
                     val i = Intent(Intent.ACTION_VIEW, Uri.parse(AppConstants.TMDB_SHOW_URL + show.tmdb_id))
                     startActivity(i)
                 } catch(e: Exception) {
-                    Log.e(TAG, "displayExternalLinks: Error loading TMDB URL: ${e.message}", )
+                    Log.e(TAG, "displayExternalLinks: Error loading TMDB URL: ${e.message}")
                     Toast.makeText(requireContext(), "Error loading TMDB URL.", Toast.LENGTH_SHORT).show()
                 }
 
@@ -332,16 +332,10 @@ class ShowDetailsFragment : BaseFragment(), OnNavigateToEpisode,
     }
 
     override fun onRefresh() {
-        super.onRefresh()
-
         viewModel.onRefresh()
 
     }
 
-
-    override fun onDestroy() {
-        super.onDestroy()
-    }
 
     private fun displayDirectors(people: List<com.uwetrottmann.trakt5.entities.CrewMember?>) {
 

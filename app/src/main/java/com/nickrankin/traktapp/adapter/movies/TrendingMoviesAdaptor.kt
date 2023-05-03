@@ -62,7 +62,7 @@ class TrendingMoviesAdaptor(private val tmdbImageLoader: TmdbImageLoader, privat
         posterImageView: ImageView,
         backdropImageView: ImageView?
     ) {
-        tmdbImageLoader.loadImages(selectedItem.movie?.ids?.trakt ?: 0, ImageItemType.MOVIE, selectedItem.movie?.ids?.tmdb ?: 0,  selectedItem.movie?.title, selectedItem?.movie?.language, true, posterImageView, backdropImageView, true)
+        tmdbImageLoader.loadImages(selectedItem.movie?.ids?.trakt ?: 0, ImageItemType.MOVIE, selectedItem.movie?.ids?.tmdb ?: 0,  selectedItem.movie?.title, selectedItem.movie?.language, true, posterImageView, backdropImageView, true)
     }
 
     companion object {

@@ -3,5 +3,5 @@
     <item
         android:id="@+id/watchedpopupmenu_remove"
         android:icon="@drawable/ic_baseline_delete_forever_24"
-        android:title="Remove this Play"/>
+        android:title="@string/remove_this_play"/>
 </menu>

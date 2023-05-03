@@ -174,7 +174,7 @@ AlertDialog.Builder(requireContext())
                             .show()
                     }
                     else -> {
-                        Log.e(TAG, "initRecycler: Invalid menu $menuItem", )
+                        Log.e(TAG, "initRecycler: Invalid menu $menuItem")
                     }
                 }
             })
@@ -202,8 +202,6 @@ AlertDialog.Builder(requireContext())
     }
 
     override fun onRefresh() {
-        super.onRefresh()
-
         viewModel.onRefresh()
     }
 

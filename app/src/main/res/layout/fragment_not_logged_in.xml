@@ -17,14 +17,14 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@id/notloggedin_connect_button"
-        android:text="You are not logged in to Trakt! Please connect your Trakt account to access this feature!"
+        android:text="@string/you_are_not_logged_in_to_trakt"
         />
     <Button
         android:id="@+id/notloggedin_connect_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
-        android:text="Connect to Trakt"
+        android:text="@string/connect_to_trakt"
         app:layout_constraintTop_toBottomOf="@id/notloggedin_text"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

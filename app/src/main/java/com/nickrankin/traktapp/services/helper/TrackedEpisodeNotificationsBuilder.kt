@@ -62,7 +62,9 @@ class TrackedEpisodeNotificationsBuilder(private val context: Context) {
             .setContentIntent(getPendingIntent(trackedEpisode))
             .setDeleteIntent(getCancelPendingIntent(trackedEpisode))
             .setStyle(NotificationCompat.BigTextStyle()
-                .bigText("Airing ${trackedEpisode.show_title} - ${trackedEpisode.title} - ${convertToHumanReadableTime(trackedEpisode.airs_date!!)}"))
+                .bigText("Airing ${trackedEpisode.show_title} - ${trackedEpisode.title} - ${convertToHumanReadableTime(
+                    trackedEpisode.airs_date
+                )}"))
             .setGroup(GROUP_KEY)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)

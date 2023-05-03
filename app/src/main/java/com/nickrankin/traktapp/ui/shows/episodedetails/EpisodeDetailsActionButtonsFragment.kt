@@ -42,7 +42,7 @@ import javax.inject.Inject
 private const val TAG = "EpisodeDetailsActionBut"
 
 @AndroidEntryPoint
-class EpisodeDetailsActionButtonsFragment() : ActionButtonsBaseFragment() {
+class EpisodeDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
 
     private val viewModel: EpisodeDetailsViewModel by activityViewModels()
 
@@ -58,10 +58,6 @@ class EpisodeDetailsActionButtonsFragment() : ActionButtonsBaseFragment() {
         _bindings = LayoutActionButtonsBinding.inflate(layoutInflater)
 
         return bindings.root
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
     }
 
     override fun setup(config: (bindings: LayoutActionButtonsBinding, traktId: Int, title: String, type: Type) -> Unit) {
@@ -122,7 +118,7 @@ class EpisodeDetailsActionButtonsFragment() : ActionButtonsBaseFragment() {
 
                     }
                     is Resource.Success -> {
-                        Log.e(TAG, "updatePlayCount: ${watchedEpisodesResource.data}", )
+                        Log.e(TAG, "updatePlayCount: ${watchedEpisodesResource.data}")
                         onPlayCountUpdated(watchedEpisodesResource.data!!)
                     }
                     is Resource.Error -> {

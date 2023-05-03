@@ -109,7 +109,7 @@ Fusce laoreet ut quam nec sodales. Donec in vulputate neque, id commodo sem. Mau
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
                 app:icon="@drawable/ic_baseline_delete_forever_24"
-                android:text="Remove from Collection"
+                android:text="@string/remove_from_collection"
                 style="?attr/borderlessButtonStyle"
                 />
         </LinearLayout>

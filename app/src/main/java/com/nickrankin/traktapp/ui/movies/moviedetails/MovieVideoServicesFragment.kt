@@ -34,7 +34,7 @@ class MovieVideoServicesFragment: VideoServicesFragment() {
                         setTrailer(movieResource.data?.trailer)
                     }
                     is Resource.Error -> {
-                        Log.e(TAG, "getMovie: Error ${movieResource.error}", )
+                        Log.e(TAG, "getMovie: Error ${movieResource.error}")
                     }
                 }
 

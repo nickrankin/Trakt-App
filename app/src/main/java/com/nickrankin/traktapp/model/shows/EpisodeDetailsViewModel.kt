@@ -65,14 +65,16 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
     @ExperimentalCoroutinesApi
     val show = refreshEvent.flatMapLatest { shouldRefresh ->
         episodeDataModelChanged.flatMapLatest { episodeDataModel ->
-            showDetailsRepository.getShowSummary(episodeDataModel.traktId ?: 0, shouldRefresh)
+            showDetailsRepository.getShowSummary(episodeDataModel.traktId, shouldRefresh)
         }
 
     }
 
     val episode = refreshEvent.flatMapLatest { shouldRefresh ->
         episodeDataModelChanged.flatMapLatest { episodeDataModel ->
-            repository.getEpisodes(episodeDataModel.traktId ?: 0, episodeDataModel.tmdbId, episodeDataModel.seasonNumber ?: -1, episodeDataModel.episodeNumber, shouldRefresh).map {
+            repository.getEpisodes(
+                episodeDataModel.traktId, episodeDataModel.tmdbId,
+                episodeDataModel.seasonNumber, episodeDataModel.episodeNumber, shouldRefresh).map {
                 if(it is Resource.Success) {
                     viewModelScope.launch {
                         episodeIdChannel.send(it.data?.episode_trakt_id ?: 0)
@@ -85,7 +87,7 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
 
     val seasonEpisodes = refreshEvent.flatMapLatest { shouldRefresh ->
         episodeDataModelChanged.flatMapLatest { episodeDataModel ->
-            seasonEpisodesRepository.getSeasonEpisodes(episodeDataModel.traktId ?: 0, episodeDataModel.tmdbId, episodeDataModel.seasonNumber, shouldRefresh).mapLatest {
+            seasonEpisodesRepository.getSeasonEpisodes(episodeDataModel.traktId, episodeDataModel.tmdbId, episodeDataModel.seasonNumber, shouldRefresh).mapLatest {
                 Pair(episodeDataModel.episodeNumber, it)
 
             }
@@ -190,7 +192,7 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
 
 //    fun switchEpisode(episodeNumber: Int?) {
 //        if(episodeNumber == null) {
-//            Log.e(TAG, "switchEpisode: Episode number cannot be null. ", )
+//            Log.e(TAG, "switchEpisode: Episode number cannot be null. ")
 //            return
 //        }
 //        viewModelScope.launch {
@@ -201,7 +203,7 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
 
     fun switchEpisodeDataModel(episodeDataModel: EpisodeDataModel?) {
         if(episodeDataModel == null) {
-            Log.e(TAG, "switchEpisodeDataModel: EpisodeData<odel canot be null", )
+            Log.e(TAG, "switchEpisodeDataModel: EpisodeData<odel canot be null")
             return
         }
         viewModelScope.launch {

@@ -204,7 +204,7 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
                         removeFromCollection(selectedShow)
                     }
                     else -> {
-                        Log.e(TAG, "initRecycler: Invalid menu item $menuItem", )
+                        Log.e(TAG, "initRecycler: Invalid menu item $menuItem")
                     }
                 }
             }),
@@ -295,8 +295,6 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
     }
 
     override fun onRefresh() {
-        super.onRefresh()
-
         if (isLoggedIn) {
             viewModel.onRefresh()
         }

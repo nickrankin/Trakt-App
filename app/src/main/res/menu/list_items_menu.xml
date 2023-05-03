@@ -3,27 +3,27 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/listitemsmenu_sort"
-        android:title="Sorting"
+        android:title="@string/sorting"
         android:icon="@drawable/ic_baseline_filter_list_24"
         app:showAsAction="always">
         <menu>
             <item
                 android:id="@+id/listitemsmenu_added"
-                android:title="Added" />
+                android:title="@string/added" />
 
             <item
                 android:id="@+id/listitemsmenu_rank"
-                android:title="Rank" />
+                android:title="@string/rank" />
 
             <item
                 android:id="@+id/listitemsmenu_title"
-                android:title="Title" />
+                android:title="@string/title" />
             <item
                 android:id="@+id/listitemsmenu_released"
-                android:title="Released" />
+                android:title="@string/released" />
             <item
                 android:id="@+id/listitemsmenu_random"
-                android:title="Random" />
+                android:title="@string/random" />
         </menu>
     </item>
 </menu>

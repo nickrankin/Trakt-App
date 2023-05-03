@@ -69,10 +69,6 @@ abstract class BaseFragment: Fragment(), IHandleError {
         }
     }
 
-    open fun onRefresh() {
-
-    }
-
     protected fun handleLoggedOutState(currentFragmentId: Int) {
         val fm = activity?.supportFragmentManager!!
         fm.beginTransaction()

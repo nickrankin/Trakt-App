@@ -208,7 +208,7 @@
                 android:layout_height="wrap_content"
                 android:drawableLeft="@drawable/ic_baseline_live_tv_24"
                 android:layout_marginTop="8dp"
-                android:text="Trailer"
+                android:text="@string/trailer"
                 android:visibility="gone"
                 tools:visibility="visible"
  />
@@ -219,8 +219,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:drawableLeft="@drawable/ic_imdb_logo_2016"
-                android:text="IMDB"
+                android:drawableStart="@drawable/ic_imdb_logo_2016"
+                android:text="@string/imdb"
                 android:visibility="gone"
                 tools:visibility="visible" />
 
@@ -272,7 +272,7 @@
         android:id="@+id/moviedetailsactivity_fragment_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:name="com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsOverviewFragment"
+        android:name="com.nickrankin.traktapp.ui.movies.moviedetails.MovieDetailsFragment"
         android:layout_margin="8dp"/>
 
 </LinearLayout>

@@ -23,7 +23,7 @@ private const val GOOGLE_URL = "https://www.google.com"
 private const val NETFLIX_URL = "https://www.netflix.com"
 private const val YOUTUBE_URL = "https://www.youtube.com"
 private const val TAG = "VideoServicesFragment"
-abstract class VideoServicesFragment() : Fragment(), OnSetVideoServiceCallback {
+abstract class VideoServicesFragment : Fragment(), OnSetVideoServiceCallback {
 
     private var _bindings: LayoutWatchVideoServicesBinding? = null
     private val bindings get() = _bindings!!

@@ -69,13 +69,13 @@ class TrackedShowsAdapter(val controls: AdaptorActionControls<TrackedShowWithEpi
                 }
             }
             else -> {
-                Log.e(TAG, "onBindViewHolder: Invalid ViewHolder ${holder.javaClass.name}", )
+                Log.e(TAG, "onBindViewHolder: Invalid ViewHolder ${holder.javaClass.name}")
             }
         }
     }
 
     private fun updateUpcomingUpisodesCount(trackedShowWithEpisodes: TrackedShowWithEpisodes, upcomingEpisodesButton: MaterialButton) {
-        Log.d(TAG, "updateUpcomingUpisodesCount: Show ${trackedShowWithEpisodes.trackedShow.title} has ${trackedShowWithEpisodes.episodes?.size} upcoming episodes")
+        Log.d(TAG, "updateUpcomingUpisodesCount: Show ${trackedShowWithEpisodes.trackedShow.title} has ${trackedShowWithEpisodes.episodes.size} upcoming episodes")
         val totalUpcoming = trackedShowWithEpisodes.episodes.size
 
         if(totalUpcoming > 0) {

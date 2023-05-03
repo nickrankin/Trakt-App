@@ -29,7 +29,7 @@ import javax.inject.Inject
 
 private const val TAG = "EpisodeCreditsFragment"
 @AndroidEntryPoint
-class EpisodeCreditsFragment() : BaseFragment() {
+class EpisodeCreditsFragment : BaseFragment() {
 
     private var _bindings: FragmentShowCreditsBinding? = null
     private val bindings get() = _bindings!!
@@ -64,7 +64,7 @@ class EpisodeCreditsFragment() : BaseFragment() {
             viewModel.cast.collectLatest { castResource ->
                 when(castResource) {
                     is Resource.Loading -> {
-                        Log.e(TAG, "getCredits: here", )
+                        Log.e(TAG, "getCredits: here")
                         progressBar.visibility = View.VISIBLE
                     }
                     is Resource.Success -> {
@@ -148,7 +148,6 @@ class EpisodeCreditsFragment() : BaseFragment() {
 
         _bindings = null
     }
-
 
     companion object {
         @JvmStatic

@@ -24,7 +24,7 @@
         android:layout_marginStart="6dp"
         android:textAppearance="?attr/textAppearanceHeadline6"
         android:textStyle="bold"
-        android:text="Cast" />
+        android:text="@string/cast" />
 
 
     <androidx.recyclerview.widget.RecyclerView

@@ -117,7 +117,7 @@ abstract class MediaEntryBasePagingAdapter<T: Any> constructor(protected val con
                     }
                 }
                 else -> {
-                    Log.e(TAG, "onBindViewHolder: Invalid ViewHolder ${holder.javaClass.name}",)
+                    Log.e(TAG, "onBindViewHolder: Invalid ViewHolder ${holder.javaClass.name}")
                 }
             }
         }

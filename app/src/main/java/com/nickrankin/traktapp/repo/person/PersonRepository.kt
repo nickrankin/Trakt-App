@@ -32,7 +32,7 @@ class PersonRepository @Inject constructor(private val personCreditsHelper: Pers
                     )
                 }
             } else {
-                Log.e(TAG, "getPerson: Person with Trakt ID $personTraktId not existing", )
+                Log.e(TAG, "getPerson: Person with Trakt ID $personTraktId not existing")
             }
 
         }

@@ -143,7 +143,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:padding="4dp"
-                            android:text="Information"
+                            android:text="@string/information"
                             android:textAppearance="?attr/textAppearanceHeadline6" />
 
                         <com.google.android.material.chip.ChipGroup
@@ -219,7 +219,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="Created By:"
+                            android:text="@string/created_by"
                             android:textSize="14sp"
                             android:textStyle="bold" />
 
@@ -239,7 +239,7 @@
                             android:id="@+id/showdetailsactivity_external_links_title"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="External Links:"
+                            android:text="@string/external_links"
                             android:textSize="14sp"
                             android:textStyle="bold" />
 
@@ -252,20 +252,20 @@
                                 android:id="@+id/showdetailsactivity_chip_official_website"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Offcial Website" />
+                                android:text="@string/offcial_website" />
 
                             <com.google.android.material.chip.Chip
                                 android:id="@+id/showdetailsactivity_chip_imdb"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="IMDB"
+                                android:text="@string/imdb"
                                 app:chipIcon="@drawable/ic_imdb_logo_2016" />
 
                             <com.google.android.material.chip.Chip
                                 android:id="@+id/showdetailsactivity_chip_tmdb"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="TMDB" />
+                                android:text="@string/tmdb" />
 
                         </com.google.android.material.chip.ChipGroup>
                     </LinearLayout>

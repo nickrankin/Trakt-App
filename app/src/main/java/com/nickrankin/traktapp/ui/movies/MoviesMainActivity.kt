@@ -193,7 +193,7 @@ class MoviesMainActivity : SplitViewActivity(), OnTitleChangeListener, OnNavigat
                 currentFragmentTag = TAG_TRENDING_MOVIES
             }
             else -> {
-                Log.e(TAG, "navigateToFragment: Invalid tag $fragmentTag", )
+                Log.e(TAG, "navigateToFragment: Invalid tag $fragmentTag")
             }
         }
     }

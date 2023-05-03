@@ -98,7 +98,7 @@ Fusce laoreet ut quam nec sodales. Donec in vulputate neque, id commodo sem. Mau
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp"
-                    android:text="Not Interested"
+                    android:text="@string/not_interested"
                     app:icon="@drawable/ic_baseline_do_disturb_24"
                     style="?attr/borderlessButtonStyle"
                     />

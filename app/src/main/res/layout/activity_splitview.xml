@@ -6,8 +6,7 @@
     android:id="@+id/splitviewactivity_drawer"
     tools:openDrawer="start"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".ui.movies.moviedetails.MovieDetailsActivity">
+    android:layout_height="match_parent">
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/splitviewactivity_swiperefreshlayour"

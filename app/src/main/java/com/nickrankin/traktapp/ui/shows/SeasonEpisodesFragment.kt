@@ -258,16 +258,16 @@ class SeasonEpisodesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
 
         seasonSpinner.adapter = seasonArrayAdapter
 
-        val currentSeasonDataModel = arguments?.getParcelable<SeasonDataModel>(SEASON_DATA_KEY)
+        lifecycleScope.launchWhenStarted {
+            viewModel.seasonSwitched.collectLatest { seasonNumber ->
+                    Log.d(
+                        TAG,
+                        "setupSeasonSwitcher: Current Season number is ${seasonNumber}. All seasons array $seasonsList"
+                    )
+                    if (seasonsList.contains(seasonNumber)) {
+                        seasonSpinner.setSelection(seasonsList.indexOf(seasonNumber))
+                    }
 
-        // If CurrentSeasonDataModel object is passed, assume the value for seasonNumber should be used, otherwise first season in ArrayList will be shown
-        if (currentSeasonDataModel != null) {
-            Log.d(
-                TAG,
-                "setupSeasonSwitcher: Current Season number is ${currentSeasonDataModel.seasonNumber}. All seasons array $seasonsList"
-            )
-            if (seasonsList.contains(currentSeasonDataModel.seasonNumber)) {
-                seasonSpinner.setSelection(seasonsList.indexOf(currentSeasonDataModel.seasonNumber))
             }
 
         }
@@ -337,10 +337,9 @@ class SeasonEpisodesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
     }
 
     override fun onRefresh() {
-        super.onRefresh()
-
         viewModel.onRefresh()
     }
+    
 
     companion object {
 

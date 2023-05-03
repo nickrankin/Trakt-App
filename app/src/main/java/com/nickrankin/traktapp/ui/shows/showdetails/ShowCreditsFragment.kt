@@ -23,7 +23,7 @@ import javax.inject.Inject
 
 private const val TAG = "ShowCreditsFragment"
 @AndroidEntryPoint
-class ShowCreditsFragment() : BaseFragment() {
+class ShowCreditsFragment : BaseFragment() {
 
     private var _bindings: FragmentShowCreditsBinding? = null
     private val bindings get() = _bindings!!
@@ -145,7 +145,6 @@ class ShowCreditsFragment() : BaseFragment() {
 
         _bindings = null
     }
-
 
     companion object {
         @JvmStatic

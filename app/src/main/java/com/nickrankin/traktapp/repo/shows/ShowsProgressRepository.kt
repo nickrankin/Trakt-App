@@ -93,7 +93,7 @@ class ShowsProgressRepository @Inject constructor(
         seasons.map { baseSeason ->
             seasonProgressList.add(
                 SeasonProgress(
-                    (showTraktId + baseSeason.number) ?: 0,
+                    (showTraktId + baseSeason.number),
                     showTraktId,
                     baseSeason.number ?: 0,
                     baseSeason.episodes?.size ?: 0

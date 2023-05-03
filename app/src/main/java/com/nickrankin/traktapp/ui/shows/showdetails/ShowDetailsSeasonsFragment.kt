@@ -28,7 +28,7 @@ import javax.inject.Inject
 private const val TAG = "ShowDetailsSeasonsFragm"
 
 @AndroidEntryPoint
-class ShowDetailsSeasonsFragment() : BaseFragment() {
+class ShowDetailsSeasonsFragment : BaseFragment() {
     private val viewModel: ShowDetailsViewModel by activityViewModels()
 
     private var _bindings: ShowDetailsSeasonsFragmentBinding? = null

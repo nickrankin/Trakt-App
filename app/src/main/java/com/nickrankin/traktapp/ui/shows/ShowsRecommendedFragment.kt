@@ -74,7 +74,7 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
 
         if(!isLoggedIn) {
             // TODO display relevant message to UI
-            Log.e(TAG, "onViewCreated: Need login for this action", )
+            Log.e(TAG, "onViewCreated: Need login for this action")
             return
         }
 
@@ -116,7 +116,7 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
                         deleteRecommendation(selectedShow)
                     }
                     else -> {
-                        Log.e(TAG, "initRecycler: Invalid menu item $menuItem", )
+                        Log.e(TAG, "initRecycler: Invalid menu item $menuItem")
                     }
                 }
             }
@@ -245,8 +245,6 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
     }
 
     override fun onRefresh() {
-        super.onRefresh()
-
         viewModel.onRefresh()
     }
 
@@ -281,7 +279,7 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
                 }
             }
             else -> {
-                Log.e(TAG, "onOptionsItemSelected: Invalid menu option ${item.itemId}", )
+                Log.e(TAG, "onOptionsItemSelected: Invalid menu option ${item.itemId}")
             }
         }
         return false

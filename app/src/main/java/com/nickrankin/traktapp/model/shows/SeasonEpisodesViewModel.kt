@@ -27,14 +27,14 @@ class SeasonEpisodesViewModel @Inject constructor(
 
     private val refreshEventChannel = Channel<Boolean>()
     private val refreshEvent = refreshEventChannel.receiveAsFlow()
-        .shareIn(viewModelScope, replay = 1, started = SharingStarted.WhileSubscribed())
+        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
     private val seasonDataModel: SeasonDataModel =
         savedStateHandle.get<SeasonDataModel>(SeasonEpisodesFragment.SEASON_DATA_KEY)!!
 
     private val seasonSwitchedChannel = Channel<Int>()
-    private val seasonSwitched = seasonSwitchedChannel.receiveAsFlow()
-        .shareIn(viewModelScope, SharingStarted.Lazily, 1)
+    val seasonSwitched = seasonSwitchedChannel.receiveAsFlow()
+        .stateIn(viewModelScope, SharingStarted.Lazily, savedStateHandle.get<SeasonDataModel>(SeasonEpisodesFragment.SEASON_DATA_KEY)?.seasonNumber ?: 0)
 
     val show = refreshEvent.flatMapLatest { shouldRefresh ->
         repository.getShow(seasonDataModel.traktId, seasonDataModel.tmdbId, shouldRefresh)
@@ -44,15 +44,13 @@ class SeasonEpisodesViewModel @Inject constructor(
         repository.getSeasons(seasonDataModel.traktId, seasonDataModel.tmdbId, shouldRefresh)
     }
 
-    val currentSeason = refreshEvent.flatMapLatest { shouldRefresh ->
-        seasonSwitched.flatMapLatest { seasonNumber ->
+    val currentSeason = seasonSwitched.flatMapLatest { seasonNumber ->
             repository.getSeason(
                 seasonDataModel.traktId,
                 seasonDataModel.tmdbId,
                 seasonNumber,
-                shouldRefresh
+                false
             )
-        }
     }
 
     fun switchSeason(SeasonNumber: Int) {
@@ -63,10 +61,10 @@ class SeasonEpisodesViewModel @Inject constructor(
     }
 
     @ExperimentalCoroutinesApi
-    val episodes = refreshEvent.flatMapLatest { shouldRefresh ->
-        seasonSwitched.flatMapLatest { seasonNumber ->
+    val episodes = seasonSwitched.flatMapLatest { seasonNumber ->
+        refreshEvent.flatMapLatest { shouldRefresh ->
             repository.getSeasonEpisodes(
-                seasonDataModel.traktId ?: 0,
+                seasonDataModel.traktId,
                 seasonDataModel.tmdbId,
                 seasonNumber,
                 shouldRefresh
@@ -82,6 +80,7 @@ class SeasonEpisodesViewModel @Inject constructor(
 
     fun onRefresh() {
         viewModelScope.launch {
+            Log.e(TAG, "onRefresh: HERE", )
             refreshEventChannel.send(true)
 //            repository.refreshShowStats(seasonDataModel?.traktId)
         }

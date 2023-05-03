@@ -33,7 +33,8 @@ import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsOverviewFra
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsFragment
 
 private const val TAG = "SplitViewActivity"
-open class SplitViewActivity: BaseActivity(), OnNavigateToEntity,
+
+open class SplitViewActivity : BaseActivity(), OnNavigateToEntity,
     OnSearchByGenre, SwipeRefreshLayout.OnRefreshListener {
     protected lateinit var bindings: ActivitySplitviewBinding
 
@@ -69,18 +70,18 @@ open class SplitViewActivity: BaseActivity(), OnNavigateToEntity,
         setSupportActionBar(toolbar)
         setupDrawerLayout()
 
-        Log.e(TAG, "onCreate: backstack is ${supportFragmentManager.backStackEntryCount}", )
+        Log.e(TAG, "onCreate: backstack is ${supportFragmentManager.backStackEntryCount}")
 
 
         supportFragmentManager.fragments.map {
-            Log.d(TAG, "onCreate: Fragment in backstack is ${it.javaClass.name} // ${it.tag}", )
+            Log.d(TAG, "onCreate: Fragment in backstack is ${it.javaClass.name} // ${it.tag}")
 
         }
 
         supportFragmentManager.addOnBackStackChangedListener {
             Log.d(TAG, "onCreate: -------------------------START-----------------------")
             supportFragmentManager.fragments.forEach {
-                Log.d(TAG, "onCreate: Current Fragment backstack: ${it.javaClass.name}", )
+                Log.d(TAG, "onCreate: Current Fragment backstack: ${it.javaClass.name}")
             }
             Log.d(TAG, "onCreate: -------------------------ENDS-----------------------\n")
         }
@@ -132,7 +133,7 @@ open class SplitViewActivity: BaseActivity(), OnNavigateToEntity,
     private fun handlePrimaryFragmentSwitch() {
         viewModel.currentPrimaryFragment.observe(this) { fragmentTag ->
 
-            val fragment: Fragment? = when(fragmentTag) {
+            val fragment: Fragment? = when (fragmentTag) {
                 MainActivity.MAIN_ACTIVITY_TAG -> {
                     MainFragment.newInstance()
                 }
@@ -168,14 +169,18 @@ open class SplitViewActivity: BaseActivity(), OnNavigateToEntity,
                 }
 
                 else -> {
-                    Log.e(TAG, "handlePrimaryFragmentSwitch: Tag $fragmentTag not recognised!", )
+                    Log.e(TAG, "handlePrimaryFragmentSwitch: Tag $fragmentTag not recognised!")
                     null
                 }
             }
 
-            if(fragment != null) {
+            if (fragment != null) {
                 supportFragmentManager.beginTransaction()
-                    .replace(bindings.splitviewactivityFirstContainer.id, fragment, PRIMARY_FRAGMENT_TAG)
+                    .replace(
+                        bindings.splitviewactivityFirstContainer.id,
+                        fragment,
+                        PRIMARY_FRAGMENT_TAG
+                    )
                     .setReorderingAllowed(true)
 //                    .setPrimaryNavigationFragment(fragment)
                     .commit()
@@ -186,13 +191,13 @@ open class SplitViewActivity: BaseActivity(), OnNavigateToEntity,
 
     private fun handleSecondaryFragmentSwitch() {
         viewModel.currentSecondaryFragment.observe(this) { baseDataModel ->
-            when(baseDataModel) {
+            when (baseDataModel) {
                 is MovieDataModel -> {
                     val currentTag = "movie"
 
                     val fragment = MovieDetailsFragment.newInstance()
                     val bundle = Bundle()
-                    bundle.putParcelable(MovieDetailsFragment.MOVIE_DATA_KEY, baseDataModel )
+                    bundle.putParcelable(MovieDetailsFragment.MOVIE_DATA_KEY, baseDataModel)
                     fragment.arguments = bundle
 
                     performFragmentNav(fragment, currentTag)
@@ -203,7 +208,7 @@ open class SplitViewActivity: BaseActivity(), OnNavigateToEntity,
 
                     val fragment = ShowDetailsFragment.newInstance()
                     val bundle = Bundle()
-                    bundle.putParcelable(ShowDetailsFragment.SHOW_DATA_KEY, baseDataModel )
+                    bundle.putParcelable(ShowDetailsFragment.SHOW_DATA_KEY, baseDataModel)
                     fragment.arguments = bundle
 
                     performFragmentNav(fragment, currentTag)
@@ -213,7 +218,7 @@ open class SplitViewActivity: BaseActivity(), OnNavigateToEntity,
 
                     val fragment = SeasonEpisodesFragment.newInstance()
                     val bundle = Bundle()
-                    bundle.putParcelable(SeasonEpisodesFragment.SEASON_DATA_KEY, baseDataModel )
+                    bundle.putParcelable(SeasonEpisodesFragment.SEASON_DATA_KEY, baseDataModel)
                     fragment.arguments = bundle
 
                     performFragmentNav(fragment, currentTag)
@@ -223,7 +228,7 @@ open class SplitViewActivity: BaseActivity(), OnNavigateToEntity,
 
                     val fragment = EpisodeDetailsFragment.newInstance()
                     val bundle = Bundle()
-                    bundle.putParcelable(EpisodeDetailsFragment.EPISODE_DATA_KEY, baseDataModel )
+                    bundle.putParcelable(EpisodeDetailsFragment.EPISODE_DATA_KEY, baseDataModel)
                     fragment.arguments = bundle
 
                     performFragmentNav(fragment, currentTag)
@@ -244,7 +249,7 @@ open class SplitViewActivity: BaseActivity(), OnNavigateToEntity,
     }
 
     private fun performFragmentNav(fragment: Fragment?, tag: String) {
-        if(fragment != null) {
+        if (fragment != null) {
             if (isLandscape) {
                 supportFragmentManager.beginTransaction()
                     .replace(bindings.splitviewactivitySecondContainer.id, fragment, tag)
@@ -304,36 +309,57 @@ open class SplitViewActivity: BaseActivity(), OnNavigateToEntity,
     }
 
     override fun onRefresh() {
-        super.onRefresh()
+        val primaryFragment = supportFragmentManager.findFragmentById(bindings.splitviewactivityFirstContainer.id)
+        val secondaryFragment = supportFragmentManager.findFragmentById(bindings.splitviewactivitySecondContainer.id)
 
-        try {
-            val primaryFragment = supportFragmentManager.findFragmentByTag(PRIMARY_FRAGMENT_TAG)
-
-            if(primaryFragment != null) {
+        if(primaryFragment != null) {
+            try {
                 (primaryFragment as SwipeRefreshLayout.OnRefreshListener).onRefresh()
+                Log.d(TAG, "onRefresh: Refresh called for ${primaryFragment.javaClass.name}")
 
+            } catch (cce: ClassCastException) {
+                Log.e(
+                    TAG,
+                    "onRefresh: Cannot cast ${primaryFragment.javaClass.name} to SwipeRefreshLayout.OnRefreshListener "
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-
-
-        } catch(cce: ClassCastException) {
-            Log.e(TAG, "onRefresh: Cannot cast primary fragment primary fragment to SwipeRefreshLayout.OnRefreshListener ", )
-        } catch(e: Exception) {
-            e.printStackTrace()
+        } else {
+            Log.d(TAG, "onRefresh: Primary Fragment is null, skipping refresh")
         }
 
-        try {
-            val secondaryFragment = supportFragmentManager.findFragmentByTag(SECONDARY_FRAGMENT_TAG)
-
-            if(secondaryFragment != null) {
+        if(secondaryFragment != null) {
+            try {
                 (secondaryFragment as SwipeRefreshLayout.OnRefreshListener).onRefresh()
+                Log.d(TAG, "onRefresh: Refresh called for ${secondaryFragment.javaClass.name}")
+
+            } catch (cce: ClassCastException) {
+                Log.e(
+                    TAG,
+                    "onRefresh: Cannot cast ${secondaryFragment.javaClass.name} to SwipeRefreshLayout.OnRefreshListener "
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-
-
-        } catch(cce: ClassCastException) {
-            Log.e(TAG, "onRefresh: Cannot cast secondary fragment primary fragment to SwipeRefreshLayout.OnRefreshListener ", )
-        } catch(e: Exception) {
-            e.printStackTrace()
+        } else {
+            Log.d(TAG, "onRefresh: Secondary fragment is null, skipping refresh")
         }
+
+
+//        try {
+//            val secondaryFragment = supportFragmentManager.findFragmentByTag(SECONDARY_FRAGMENT_TAG)
+//
+//            if(secondaryFragment != null) {
+//                (secondaryFragment as SwipeRefreshLayout.OnRefreshListener).onRefresh()
+//            }
+//
+//
+//        } catch(cce: ClassCastException) {
+//            Log.e(TAG, "onRefresh: Cannot cast secondary fragment primary fragment to SwipeRefreshLayout.OnRefreshListener ")
+//        } catch(e: Exception) {
+//            e.printStackTrace()
+//        }
 
         swipeRefreshLayout.isRefreshing = false
 
