@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.R
@@ -44,7 +45,11 @@ private const val TAG = "EpisodeDetailsActionBut"
 @AndroidEntryPoint
 class EpisodeDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
 
-    private val viewModel: EpisodeDetailsViewModel by activityViewModels()
+    private val viewModel: EpisodeDetailsViewModel by viewModels(
+        ownerProducer = {
+            requireParentFragment()
+        }
+    )
 
     private var _bindings: LayoutActionButtonsBinding? = null
     private val bindings get() = _bindings!!
@@ -118,7 +123,6 @@ class EpisodeDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
 
                     }
                     is Resource.Success -> {
-                        Log.e(TAG, "updatePlayCount: ${watchedEpisodesResource.data}")
                         onPlayCountUpdated(watchedEpisodesResource.data!!)
                     }
                     is Resource.Error -> {
@@ -184,7 +188,8 @@ class EpisodeDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
 
             viewModel.collectionStatus.collectLatest { collectedEpisodesStatsResource ->
                 when (collectedEpisodesStatsResource) {
-                    is Resource.Loading -> {}
+                    is Resource.Loading -> {
+                    }
                     is Resource.Success -> {
                         oncollectedStateChanged(collectedEpisodesStatsResource.data)
                     }

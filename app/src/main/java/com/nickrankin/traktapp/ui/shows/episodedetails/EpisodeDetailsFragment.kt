@@ -5,7 +5,8 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -15,7 +16,7 @@ import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.adapter.history.EpisodeWatchedHistoryItemAdapter
 import com.nickrankin.traktapp.dao.show.model.TmEpisode
 import com.nickrankin.traktapp.dao.show.model.TmShow
-import com.nickrankin.traktapp.databinding.ActivityEpisodeDetailsBinding
+import com.nickrankin.traktapp.databinding.FragmentEpisodeDetailsBinding
 import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.EpisodeDataModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
@@ -29,23 +30,23 @@ import kotlinx.coroutines.flow.collectLatest
 import org.threeten.bp.format.DateTimeFormatter
 import javax.inject.Inject
 
-private const val TAG = "EpisodeDetailsActivity"
+private const val TAG = "EpisodeDetailsFragment"
 
 private const val FRAGMENT_ACTION_BUTTONS = "action_buttons_fragment"
 
 @AndroidEntryPoint
-class EpisodeDetailsFragment : BaseFragment(), OnNavigateToShow,
+class EpisodeDetailsFragment() : BaseFragment(), OnNavigateToShow,
     SwipeRefreshLayout.OnRefreshListener {
 
-    private var _bindings: ActivityEpisodeDetailsBinding? = null
+    private var _bindings: FragmentEpisodeDetailsBinding? = null
     private val bindings get() = _bindings!!
 
-    private val viewModel: EpisodeDetailsViewModel by activityViewModels()
-
-    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+    private val viewModel: EpisodeDetailsViewModel by viewModels()
 
     private lateinit var watchedEpisodesRecyclerView: RecyclerView
     private lateinit var watchedEpisodesAdapter: EpisodeWatchedHistoryItemAdapter
+
+    private var episodeTitle = ""
 
     private var episodeDataModel: EpisodeDataModel? = null
 
@@ -60,16 +61,13 @@ class EpisodeDetailsFragment : BaseFragment(), OnNavigateToShow,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _bindings = ActivityEpisodeDetailsBinding.inflate(inflater)
+        _bindings = FragmentEpisodeDetailsBinding.inflate(inflater)
 
         return bindings.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        swipeRefreshLayout = bindings.episodedetailsactivitySwipeLayout
-        swipeRefreshLayout.setOnRefreshListener(this)
 
 
         if (arguments?.containsKey(EPISODE_DATA_KEY) == false || arguments?.getParcelable<EpisodeDataModel>(
@@ -89,9 +87,15 @@ class EpisodeDetailsFragment : BaseFragment(), OnNavigateToShow,
 
         getShow()
         getEpisode()
+    }
 
+    override fun onResume() {
+        super.onResume()
 
-        getSeasonEpisodes()
+        if(episodeTitle.isNotBlank()) {
+            // In situation fragment got cached, make sure the title is changed when switched
+            updateTitle(episodeTitle)
+        }
     }
 
     private fun dismissEipsodeNotifications() {
@@ -107,9 +111,8 @@ class EpisodeDetailsFragment : BaseFragment(), OnNavigateToShow,
     }
 
     private fun initFragments() {
-
         if (isLoggedIn) {
-            parentFragmentManager.beginTransaction()
+            childFragmentManager.beginTransaction()
                 .replace(
                     bindings.episodedetailsactivityActionButtons.id,
                     EpisodeDetailsActionButtonsFragment.newInstance(),
@@ -149,7 +152,7 @@ class EpisodeDetailsFragment : BaseFragment(), OnNavigateToShow,
 
                         showErrorSnackbarRetryButton(
                             showResource.error,
-                            bindings.episodedetailsactivitySwipeLayout
+                            bindings.root
                         ) {
                             viewModel.onRefresh()
                         }
@@ -165,31 +168,22 @@ class EpisodeDetailsFragment : BaseFragment(), OnNavigateToShow,
             viewModel.episode.collectLatest { episodeResource ->
 
                 val episode = episodeResource.data
-
                 when (episodeResource) {
                     is Resource.Loading -> {
                         progressBar.visibility = View.VISIBLE
-                        if (!swipeRefreshLayout.isRefreshing) {
-                            progressBar.visibility = View.VISIBLE
-                        }
                     }
                     is Resource.Success -> {
                         progressBar.visibility = View.GONE
 
-                        if (swipeRefreshLayout.isRefreshing) {
-                            swipeRefreshLayout.isRefreshing = false
-                        }
+                        episodeTitle = episode?.name ?: "Unknown"
 
-                        updateTitle(episode?.name ?: "Unknown")
+                        updateTitle(episodeTitle)
 
                         displayEpisode(episode)
                     }
                     is Resource.Error -> {
                         progressBar.visibility = View.GONE
 
-                        if (swipeRefreshLayout.isRefreshing) {
-                            swipeRefreshLayout.isRefreshing = false
-                        }
                         // Try to display cached episode if available
                         if (episodeResource.data != null) {
                             displayEpisode(episode)
@@ -197,7 +191,7 @@ class EpisodeDetailsFragment : BaseFragment(), OnNavigateToShow,
 
                         showErrorSnackbarRetryButton(
                             episodeResource.error,
-                            bindings.episodedetailsactivitySwipeLayout
+                            bindings.root
                         ) {
                             viewModel.onRefresh()
                         }
@@ -208,80 +202,7 @@ class EpisodeDetailsFragment : BaseFragment(), OnNavigateToShow,
         }
     }
 
-    private fun getSeasonEpisodes() {
-        val nextEpisodeButton = bindings.episodedetailsactivityNextEpisode
-        val prevEpisodeButton = bindings.episodedetailsactivityPreviousEpisode
 
-
-
-        lifecycleScope.launchWhenStarted {
-            viewModel.seasonEpisodes.collectLatest { episodeNumberAndseasonEpisodesResource ->
-                val currentEpisodeNumber = episodeNumberAndseasonEpisodesResource.first
-                val seasonEpisodesResource = episodeNumberAndseasonEpisodesResource.second
-                Log.d(TAG, "getSeasonEpisodes: currentEpisodeNumber $currentEpisodeNumber")
-
-                if (currentEpisodeNumber == -1) {
-                    Log.e(TAG, "getSeasonEpisodes: Current episode is not correct")
-
-                    prevEpisodeButton.visibility = View.GONE
-                    nextEpisodeButton.visibility = View.GONE
-                }
-
-                when (seasonEpisodesResource) {
-                    is Resource.Loading -> {
-                        prevEpisodeButton.visibility = View.GONE
-                        nextEpisodeButton.visibility = View.GONE
-                    }
-                    is Resource.Success -> {
-                        val seasonEpisodeData = seasonEpisodesResource.data
-                        if (currentEpisodeNumber > 1) {
-                            prevEpisodeButton.visibility = View.VISIBLE
-
-                            val previousEpisode =
-                                seasonEpisodeData?.find { it.episode.episode_number == currentEpisodeNumber - 1 }
-                            prevEpisodeButton.text =
-                                "Episode ${previousEpisode?.episode?.episode_number?.toString()}"
-
-                            prevEpisodeButton.setOnClickListener {
-                                viewModel.switchEpisodeDataModel(
-                                    getEpisodeDataModelByNumber(
-                                        previousEpisode?.episode?.episode_number
-                                    )
-                                )
-                            }
-                        } else {
-                            prevEpisodeButton.visibility = View.GONE
-                        }
-
-                        // We have more Episodes after this Episode
-                        if (currentEpisodeNumber < (seasonEpisodeData?.size ?: 0)) {
-                            nextEpisodeButton.visibility = View.VISIBLE
-
-                            val nextEpisode =
-                                seasonEpisodeData?.find { it.episode.episode_number == currentEpisodeNumber + 1 }
-
-                            nextEpisodeButton.text =
-                                "Episode ${nextEpisode?.episode?.episode_number}"
-
-                            nextEpisodeButton.setOnClickListener {
-                                viewModel.switchEpisodeDataModel(
-                                    getEpisodeDataModelByNumber(
-                                        nextEpisode?.episode?.episode_number
-                                    )
-                                )
-                            }
-                        } else {
-                            nextEpisodeButton.visibility = View.GONE
-                        }
-                    }
-                    is Resource.Error -> {
-                        handleError(seasonEpisodesResource.error, null)
-                    }
-
-                }
-            }
-        }
-    }
 
     private fun getWatchedEpisodes(show: TmShow?) {
         if (show == null) {
@@ -363,32 +284,12 @@ class EpisodeDetailsFragment : BaseFragment(), OnNavigateToShow,
 
     override fun navigateToShow(traktId: Int, tmdbId: Int?, title: String?) {
 
-
         (activity as OnNavigateToEntity).navigateToShow(
             ShowDataModel(
                 traktId, tmdbId, title
             )
         )
 
-    }
-
-    private fun getEpisodeDataModelByNumber(newEpisodeNumber: Int?): EpisodeDataModel? {
-        if (episodeDataModel == null) {
-            Log.e(TAG, "getEpisodeDataModelByNumber: Episode Data model cannot be null")
-            return null
-        }
-
-        if (newEpisodeNumber == null) {
-            Log.e(TAG, "getEpisodeDataModelByNumber: Episode number cannot be null")
-            return null
-        }
-        return EpisodeDataModel(
-            episodeDataModel!!.traktId,
-            episodeDataModel!!.tmdbId,
-            episodeDataModel!!.seasonNumber,
-            newEpisodeNumber,
-            episodeDataModel!!.showTitle
-        )
     }
 
     override fun onStart() {
@@ -399,6 +300,7 @@ class EpisodeDetailsFragment : BaseFragment(), OnNavigateToShow,
     override fun onRefresh() {
         viewModel.onRefresh()
     }
+
 
     companion object {
         @JvmStatic

@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -37,7 +38,11 @@ class EpisodeCreditsFragment : BaseFragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: ShowCastCreditsAdapter
 
-    private val viewModel: EpisodeDetailsViewModel by activityViewModels()
+    private val viewModel: EpisodeDetailsViewModel by viewModels(
+        ownerProducer = {
+            requireParentFragment()
+        }
+    )
 
     @Inject
     lateinit var glide: RequestManager
@@ -64,7 +69,6 @@ class EpisodeCreditsFragment : BaseFragment() {
             viewModel.cast.collectLatest { castResource ->
                 when(castResource) {
                     is Resource.Loading -> {
-                        Log.e(TAG, "getCredits: here")
                         progressBar.visibility = View.VISIBLE
                     }
                     is Resource.Success -> {

@@ -30,6 +30,7 @@ import com.nickrankin.traktapp.ui.search.SearchResultsFragment
 import com.nickrankin.traktapp.ui.shows.*
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsFragment
 import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodeDetailsOverviewFragment
+import com.nickrankin.traktapp.ui.shows.episodedetails.EpisodePagerFragment
 import com.nickrankin.traktapp.ui.shows.showdetails.ShowDetailsFragment
 
 private const val TAG = "SplitViewActivity"
@@ -226,7 +227,7 @@ open class SplitViewActivity : BaseActivity(), OnNavigateToEntity,
                 is EpisodeDataModel -> {
                     val currentTag = "episode"
 
-                    val fragment = EpisodeDetailsFragment.newInstance()
+                    val fragment = EpisodePagerFragment.newInstance()
                     val bundle = Bundle()
                     bundle.putParcelable(EpisodeDetailsFragment.EPISODE_DATA_KEY, baseDataModel)
                     fragment.arguments = bundle

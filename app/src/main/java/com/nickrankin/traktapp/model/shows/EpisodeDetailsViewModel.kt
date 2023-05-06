@@ -34,8 +34,6 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
                                                   private val episodesStatsRepository: EpisodesStatsRepository,
                                                   private val showDetailsOverviewRepository: ShowDetailsOverviewRepository): ViewModel(), ICreditsPersons {
 
-//    val episodeDataModel = savedStateHandle.get<EpisodeDataModel>(EpisodeDetailsActivity.EPISODE_DATA_KEY)
-
     private val eventChannel = Channel<ActionButtonEvent>()
     val events = eventChannel.receiveAsFlow()
         .shareIn(viewModelScope, SharingStarted.Lazily)
@@ -55,11 +53,6 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
     private val episodeDataModelChangedChannel = Channel<EpisodeDataModel>()
     private val episodeDataModelChanged = episodeDataModelChangedChannel.receiveAsFlow()
         .shareIn(viewModelScope, SharingStarted.Lazily, 1)
-
-//    private val episodeNumberChannel = Channel<Int>()
-//    private val episodeNumber = episodeNumberChannel.receiveAsFlow()
-//        .stateIn(viewModelScope, SharingStarted.Eagerly, episodeDataModel?.episodeNumber ?: 0)
-
 
 
     @ExperimentalCoroutinesApi
@@ -83,16 +76,17 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
                 it
             }
         }
-    }
+    }.shareIn(viewModelScope, SharingStarted.Lazily, 1)
 
-    val seasonEpisodes = refreshEvent.flatMapLatest { shouldRefresh ->
-        episodeDataModelChanged.flatMapLatest { episodeDataModel ->
-            seasonEpisodesRepository.getSeasonEpisodes(episodeDataModel.traktId, episodeDataModel.tmdbId, episodeDataModel.seasonNumber, shouldRefresh).mapLatest {
-                Pair(episodeDataModel.episodeNumber, it)
 
-            }
-        }
-    }
+//    val seasonEpisodes = refreshEvent.flatMapLatest { shouldRefresh ->
+//        episodeDataModelChanged.flatMapLatest { episodeDataModel ->
+//            seasonEpisodesRepository.getSeasonEpisodes(episodeDataModel.traktId, episodeDataModel.tmdbId, episodeDataModel.seasonNumber, shouldRefresh).mapLatest {
+//                Pair(episodeDataModel.episodeNumber, it)
+//
+//            }
+//        }
+//    }
 
     val watchedEpisodes = episodeId.flatMapLatest { traktId ->
         refreshEvent.flatMapLatest { shouldRefresh ->
@@ -203,7 +197,7 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
 
     fun switchEpisodeDataModel(episodeDataModel: EpisodeDataModel?) {
         if(episodeDataModel == null) {
-            Log.e(TAG, "switchEpisodeDataModel: EpisodeData<odel canot be null")
+            Log.e(TAG, "switchEpisodeDataModel: EpisodeDataModel cannot be null")
             return
         }
         viewModelScope.launch {
@@ -212,14 +206,12 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
     }
 
    fun onStart() {
-        Log.d(TAG, "onStart: Called callStart")
         viewModelScope.launch {
             refreshEventChannel.send(false)
         }
     }
 
     fun onRefresh() {
-        Log.d(TAG, "onRefresh: Called callStart")
         viewModelScope.launch {
             refreshEventChannel.send(true)
 

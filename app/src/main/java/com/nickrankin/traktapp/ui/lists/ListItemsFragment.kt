@@ -429,7 +429,7 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                                 (activity as OnNavigateToEntity).navigateToEpisode(
                                     EpisodeDataModel(
                                         selectedItem.episodeShow.trakt_id,
-                                        selectedItem.episode?.tmdb_id,
+                                        selectedItem.episodeShow.tmdb_id,
                                         selectedItem.episode?.season_number ?: 0,
                                         selectedItem.episode?.episode_number ?: 0,
                                         selectedItem.episodeShow.title
