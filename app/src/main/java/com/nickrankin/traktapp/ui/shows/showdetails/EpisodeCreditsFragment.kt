@@ -83,14 +83,13 @@ class EpisodeCreditsFragment : BaseFragment() {
                             bindings.showcreditsfragmentNoCast.visibility = View.GONE
                             adapter.submitList(castList)
                         }
-
                         progressBar.visibility = View.GONE
                     }
                     is Resource.Error -> {
                         val castList = castResource.data
 
                         if(castList.isNullOrEmpty()) {
-                           // bindings.showcreditsfragmentNoCast.visibility = View.VISIBLE
+                            bindings.showcreditsfragmentNoCast.visibility = View.VISIBLE
                             adapter.submitList(emptyList())
                         } else {
                             bindings.showcreditsfragmentNoCast.visibility = View.GONE
@@ -98,7 +97,7 @@ class EpisodeCreditsFragment : BaseFragment() {
                         }
                         progressBar.visibility = View.GONE
 
-                        handleError(castResource.error, null)
+                        handleError(castResource.error, getString(R.string.credits_loading_error))
                     }
                 }
             }

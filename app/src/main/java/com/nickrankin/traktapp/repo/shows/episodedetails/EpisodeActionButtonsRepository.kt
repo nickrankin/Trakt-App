@@ -40,7 +40,8 @@ class EpisodeActionButtonsRepository @Inject constructor(
     private val traktApi: TraktApi,
     private val sharedPreferences: SharedPreferences,
     private val listsRepository: ListsRepository,
-    private val showsDatabase: ShowsDatabase) : IActionButtons<EpisodeWatchedHistoryEntry> {
+    private val showsDatabase: ShowsDatabase
+) : IActionButtons<EpisodeWatchedHistoryEntry> {
     private val userSlug = UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "NULL"))
 
     private val ratedEpisodesStatsDao = showsDatabase.ratedEpisodesStatsDao()
@@ -68,8 +69,8 @@ class EpisodeActionButtonsRepository @Inject constructor(
             },
             shouldFetch = { rating ->
                 shouldFetch || shouldRefresh(
-                    lastRefreshedDao.getLastRefreshed(RefreshType.RATED_EPISODES).first()
-                , null)
+                    lastRefreshedDao.getLastRefreshed(RefreshType.RATED_EPISODES).first(), null
+                )
             },
             saveFetchResult = { ratedEpisodes ->
                 showsDatabase.withTransaction {
@@ -105,23 +106,28 @@ class EpisodeActionButtonsRepository @Inject constructor(
             }
         )
 
-    override suspend fun getCollectedStats(
-        traktId: Int,
+    suspend fun getCollectedStats(
+        showTraktId: Int,
+        seasonNumber: Int,
+        episodeNumber: Int,
         shouldFetch: Boolean
     ): Flow<Resource<CollectedStats?>> = networkBoundResource(
         query = {
-            episodeCollectedStats.getCollectedStatsByEpisodeId(traktId)
+            episodeCollectedStats.getCollectedStatsByEpisodeNumber(showTraktId, seasonNumber, episodeNumber)
         },
         fetch = {
             traktApi.tmUsers().collectionShows(userSlug, null)
         },
         shouldFetch = { collectionStats ->
             shouldFetch || shouldRefresh(
-                lastRefreshedDao.getLastRefreshed(RefreshType.COLLECTED_EPISODE_STATS).first()
-            , null)
+                lastRefreshedDao.getLastRefreshed(RefreshType.COLLECTED_EPISODE_STATS).first(), null
+            )
         },
         saveFetchResult = { baseShows ->
-            insertEpisodeStats(traktId, baseShows)
+            showsDatabase.withTransaction {
+                collectedEpisodesStatsDao.deleteEpisodeStats()
+            }
+            insertEpisodeStats(baseShows)
 
             showsDatabase.withTransaction {
                 lastRefreshedDao.insertLastRefreshStats(
@@ -134,27 +140,31 @@ class EpisodeActionButtonsRepository @Inject constructor(
         }
     )
 
-    private suspend fun insertEpisodeStats(episodeTraktId: Int, baseShows: List<BaseShow>) {
+    private suspend fun insertEpisodeStats(baseShows: List<BaseShow>) {
+        val episodesStatsList: MutableList<EpisodesCollectedStats> = mutableListOf()
+
         baseShows.map { show ->
             show.seasons?.map { season ->
                 season.episodes?.map { episode ->
-                    showsDatabase.withTransaction {
-                        episodeCollectedStats.insert(
-                            EpisodesCollectedStats(
-                                episodeTraktId,
-                                episodeTraktId,
-                                null,
-                                episode.collected_at,
-                                "",
-                                null,
-                                show.show?.ids?.trakt ?: 0,
-                                season.number ?: -1,
-                                episode.number ?: -1
-                            )
+                    episodesStatsList.add(
+                        EpisodesCollectedStats(
+                            0,
+                            show.show?.ids?.trakt ?: 0,
+                            null,
+                            episode.collected_at,
+                            "",
+                            null,
+                            season.number ?: -1,
+                            episode.number ?: -1
                         )
-                    }
+                    )
+
                 }
             }
+        }
+
+        showsDatabase.withTransaction {
+            episodeCollectedStats.insert(episodesStatsList)
         }
     }
 
@@ -182,8 +192,8 @@ class EpisodeActionButtonsRepository @Inject constructor(
                 LastRefreshedAt(
                     RefreshType.PLAYBACK_HISTORY_EPISODES,
                     OffsetDateTime.now()
-                )
-            , null)
+                ), null
+            )
         },
         saveFetchResult = { historyEntries ->
             showsDatabase.withTransaction {
@@ -470,6 +480,7 @@ class EpisodeActionButtonsRepository @Inject constructor(
                 collectedEpisodesDao.insert(
                     CollectedEpisode(
                         result.episode.ids?.trakt ?: 0,
+                        result.show.ids?.trakt ?: 0,
                         result.episode.season,
                         result.episode.number,
                         result.show.title,
@@ -480,13 +491,12 @@ class EpisodeActionButtonsRepository @Inject constructor(
 
                 collectedEpisodesStatsDao.insert(
                     EpisodesCollectedStats(
-                        result.episode.ids?.trakt ?: 0,
-                        result.episode.ids?.trakt ?: 0,
+                        0,
+                        result.show.ids?.trakt ?: 0,
                         result.episode.ids?.tmdb ?: 0,
                         OffsetDateTime.now(),
                         result.show.title,
                         OffsetDateTime.now(),
-                        result.show.ids?.trakt ?: 0,
                         result.episode.season,
                         result.episode.number
                     )
@@ -497,12 +507,12 @@ class EpisodeActionButtonsRepository @Inject constructor(
         }
     }
 
-    override suspend fun removeFromCollection(traktId: Int): Resource<SyncResponse> {
+    suspend fun removeFromCollection(episodeTraktId: Int, showTraktId: Int, seasonNumber: Int, episodeNumber: Int): Resource<SyncResponse> {
         return try {
             val removeFromCollectionResponse =
-                traktApi.tmSync().deleteItemsFromCollection(getSyncItems(traktId))
+                traktApi.tmSync().deleteItemsFromCollection(getSyncItems(episodeTraktId))
 
-            deleteCollectedShow(traktId, removeFromCollectionResponse)
+            deleteCollectedEpisode(showTraktId, seasonNumber, episodeNumber, removeFromCollectionResponse)
 
             Resource.Success(removeFromCollectionResponse)
         } catch (t: Throwable) {
@@ -510,14 +520,17 @@ class EpisodeActionButtonsRepository @Inject constructor(
         }
     }
 
-    private suspend fun deleteCollectedShow(traktId: Int, syncResponse: SyncResponse) {
+    private suspend fun deleteCollectedEpisode(showTraktId: Int, seasonNumber: Int, episodeNumber: Int, syncResponse: SyncResponse) {
         if ((syncResponse.deleted?.episodes ?: 0) <= 0) {
-            Log.e(TAG, "deleteCollectedMovie: Error, sync returned 0, returning")
+            Log.e(TAG, "deleteCollectedEpisode: Error, sync returned 0, returning")
             return
         }
+
+        Log.d(TAG, "deleteCollectedEpisode: Deleting show episode: Show ID ${showTraktId} S${seasonNumber}E${episodeNumber}")
+
         showsDatabase.withTransaction {
-            collectedEpisodesDao.deleteCollectedEpisodeById(traktId)
-            collectedEpisodesStatsDao.deleteEpisodeStatsByEpisodeId(traktId)
+            collectedEpisodesDao.deleteCollectedEpisodeById(showTraktId, seasonNumber, episodeNumber)
+            collectedEpisodesStatsDao.deleteEpisodeStatsByEpisode(showTraktId, seasonNumber, episodeNumber)
         }
     }
 

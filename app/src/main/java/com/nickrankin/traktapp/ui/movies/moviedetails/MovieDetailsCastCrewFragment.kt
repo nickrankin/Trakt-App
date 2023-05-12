@@ -66,17 +66,18 @@ class MovieDetailsCastCrewFragment : BaseFragment() {
 
                         val credits = creditsResource.data
 
-                        castAdapter.submitList(credits?.sortedBy { it.ordering })
+                        if(!credits.isNullOrEmpty()) {
+                            castAdapter.submitList(credits.sortedBy { it.ordering })
+                        }
                     }
                     is Resource.Error -> {
                         handleError(creditsResource.error, null)
 
                         val credits = creditsResource.data
 
-                        if(credits != null && credits.isNotEmpty()) {
+                        if(!credits.isNullOrEmpty()) {
                             castAdapter.submitList(credits.sortedBy { it.ordering })
                         }
-
 
                     }
 

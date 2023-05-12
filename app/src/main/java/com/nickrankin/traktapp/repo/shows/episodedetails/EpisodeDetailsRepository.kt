@@ -28,8 +28,8 @@ class EpisodeDetailsRepository @Inject constructor(
     private val showsDatabase: ShowsDatabase): CreditsRepository(creditsHelper, showsDatabase, creditsDatabase) {
 
     private val episodesDao = showsDatabase.TmEpisodesDao()
-    private val collectedEpisodesStatsDao = showsDatabase.collectedEpisodesStatsDao()
-    private val showsDbWatchedHistoryShowsDao = showsDatabase.watchedEpisodesDao()
+//    private val collectedEpisodesStatsDao = showsDatabase.collectedEpisodesStatsDao()
+//    private val showsDbWatchedHistoryShowsDao = showsDatabase.watchedEpisodesDao()
 
     suspend fun getEpisode(showTraktId: Int, seasonNumber: Int, episodeNumber: Int): TmEpisode? {
         return episodesDao.getEpisode(showTraktId, seasonNumber, episodeNumber).first()
@@ -60,70 +60,69 @@ class EpisodeDetailsRepository @Inject constructor(
         }
     )
 
-    fun getEpisodeCollectionStatus(showTraktId: Int, season: Int, episode: Int, shouldRefresh: Boolean) = networkBoundResource(
-        query = {
-                collectedEpisodesStatsDao.getCollectedStatsByEpisode(showTraktId, season, episode)
-        },
-        fetch = {
-                traktApi.tmUsers().collectionShows(UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "NULL")), null)
-        },
-        shouldFetch = { collectedStats ->
-            collectedStats.isEmpty() || shouldRefresh
-        },
-        saveFetchResult = { collectedShows ->
-            showsDatabase.withTransaction {
-                collectedEpisodesStatsDao.insert(getCollectedStats(collectedShows))
-            }
-        }
-    )
-
-    private fun getCollectedStats(baseShow: List<BaseShow>): List<EpisodesCollectedStats> {
-        val collectedEpisodes: MutableList<EpisodesCollectedStats> = mutableListOf()
-
-        baseShow.map { show ->
-            show.seasons?.map { season ->
-                season.episodes?.map { episode ->
-                    collectedEpisodes.add(
-                        EpisodesCollectedStats(
-                            0,
-                            0,
-                            0,
-                            episode.collected_at,
-                            "",
-                            null,
-                            show.show.ids.trakt,
-                            season.number,
-                            episode.number
-                        )
-                    )
-                }
-            }
-        }
-
-        return collectedEpisodes
-    }
-
-    suspend fun removeWatchedEpisode(syncItems: SyncItems): Resource<SyncResponse> {
-        return try {
-            val response = traktApi.tmSync().deleteItemsFromWatchedHistory(syncItems)
-
-            val historyId = syncItems.ids?.first() ?: 0L
-
-            /// Clean up the databases
-            showsDatabase.withTransaction {
-                showsDbWatchedHistoryShowsDao.deleteWatchedEpisodeById(historyId)
-            }
-
-            // Ensure Watched History pager gets refreshed on next call if we remove a play
-            sharedPreferences.edit()
-                .putBoolean(WatchedEpisodesRemoteMediator.WATCHED_EPISODES_FORCE_REFRESH_KEY, true)
-                .apply()
-
-            Resource.Success(response)
-        } catch (e: Throwable) {
-            Resource.Error(e, null)
-        }
-    }
+//    fun getEpisodeCollectionStatus(showTraktId: Int, season: Int, episode: Int, shouldRefresh: Boolean) = networkBoundResource(
+//        query = {
+//                collectedEpisodesStatsDao.getCollectedStatsByEpisode(showTraktId, season, episode)
+//        },
+//        fetch = {
+//                traktApi.tmUsers().collectionShows(UserSlug(sharedPreferences.getString(AuthActivity.USER_SLUG_KEY, "NULL")), null)
+//        },
+//        shouldFetch = { collectedStats ->
+//            collectedStats.isEmpty() || shouldRefresh
+//        },
+//        saveFetchResult = { collectedShows ->
+//            showsDatabase.withTransaction {
+//                collectedEpisodesStatsDao.insert(getCollectedStats(collectedShows))
+//            }
+//        }
+//    )
+//
+//    private fun getCollectedStats(baseShow: List<BaseShow>): List<EpisodesCollectedStats> {
+//        val collectedEpisodes: MutableList<EpisodesCollectedStats> = mutableListOf()
+//
+//        baseShow.map { show ->
+//            show.seasons?.map { season ->
+//                season.episodes?.map { episode ->
+//                    collectedEpisodes.add(
+//                        EpisodesCollectedStats(
+//                            0,
+//                            show.show.ids.trakt,
+//                            0,
+//                            episode.collected_at,
+//                            "",
+//                            null,
+//                            season.number,
+//                            episode.number
+//                        )
+//                    )
+//                }
+//            }
+//        }
+//
+//        return collectedEpisodes
+//    }
+//
+//    suspend fun removeWatchedEpisode(syncItems: SyncItems): Resource<SyncResponse> {
+//        return try {
+//            val response = traktApi.tmSync().deleteItemsFromWatchedHistory(syncItems)
+//
+//            val historyId = syncItems.ids?.first() ?: 0L
+//
+//            /// Clean up the databases
+//            showsDatabase.withTransaction {
+//                showsDbWatchedHistoryShowsDao.deleteWatchedEpisodeById(historyId)
+//            }
+//
+//            // Ensure Watched History pager gets refreshed on next call if we remove a play
+//            sharedPreferences.edit()
+//                .putBoolean(WatchedEpisodesRemoteMediator.WATCHED_EPISODES_FORCE_REFRESH_KEY, true)
+//                .apply()
+//
+//            Resource.Success(response)
+//        } catch (e: Throwable) {
+//            Resource.Error(e, null)
+//        }
+//    }
 
     companion object {
         const val SHOULD_REFRESH_WATCHED_KEY = "should_refresh_watched"

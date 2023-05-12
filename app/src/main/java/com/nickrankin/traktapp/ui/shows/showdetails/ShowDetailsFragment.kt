@@ -33,9 +33,7 @@ import com.nickrankin.traktapp.model.datamodel.PersonDataModel
 import com.nickrankin.traktapp.model.datamodel.ShowDataModel
 import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
 import com.nickrankin.traktapp.ui.OnSearchByGenre
-import com.nickrankin.traktapp.ui.movies.MoviesMainActivity
 import com.nickrankin.traktapp.ui.shows.OnNavigateToEpisode
-import com.nickrankin.traktapp.ui.shows.ShowsMainActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import org.apache.commons.lang3.StringUtils
@@ -107,26 +105,22 @@ class ShowDetailsFragment : BaseFragment(), OnNavigateToEpisode,
     }
 
     private fun getShow() {
-        val showLoadingProgressBar = bindings.showdetailsactivityProgressbar
 
         lifecycleScope.launchWhenStarted {
             viewModel.show.collectLatest { showResource ->
                 val show = showResource.data
                 when (showResource) {
                     is Resource.Loading -> {
-                        // No need for 2 progressbars if swiperefresh invoked
+                        bindings.showdetailsactivityProgressbar.visibility = View.VISIBLE
 
                     }
                     is Resource.Success -> {
-
 
                         if(show != null) {
                             displayShowInformation(show)
                             displayExternalLinks(show)
                         }
-
-
-                        showLoadingProgressBar.visibility = View.GONE
+                        bindings.showdetailsactivityProgressbar.visibility = View.GONE
                     }
                     is Resource.Error -> {
                         // If show in cache, display it cache
@@ -134,7 +128,7 @@ class ShowDetailsFragment : BaseFragment(), OnNavigateToEpisode,
                             displayShowInformation(show)
                         }
 
-                        showLoadingProgressBar.visibility = View.GONE
+                        bindings.showdetailsactivityProgressbar.visibility = View.GONE
 
                         showErrorSnackbarRetryButton(showResource.error, bindings.root) {
                             onRefresh()
@@ -301,7 +295,7 @@ class ShowDetailsFragment : BaseFragment(), OnNavigateToEpisode,
     private fun displayStreamingServices(show: TmShow) {
         lifecycleScope.launchWhenStarted {
             childFragmentManager.beginTransaction()
-                .replace(bindings.showdetailsactivityWatch.id, ShowVideServicesFragment())
+                .replace(bindings.showdetailsactivityWatch.id, ShowVide0ServicesFragment())
                 .commit()
         }
 

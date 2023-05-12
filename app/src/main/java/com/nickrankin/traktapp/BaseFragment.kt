@@ -4,8 +4,8 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import androidx.activity.addCallback
 import androidx.fragment.app.Fragment
+import com.nickrankin.traktapp.databinding.FragmentSplitviewLayoutBinding
 import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.OnTitleChangeListener
 import com.nickrankin.traktapp.ui.auth.AuthActivity
@@ -76,5 +76,16 @@ abstract class BaseFragment: Fragment(), IHandleError {
             .commit()
 
         fm.popBackStack()
+    }
+
+    protected fun toggleMessageBanner(bindings: FragmentSplitviewLayoutBinding, message: String?, isEnabled: Boolean) {
+        if(isEnabled) {
+            bindings.splitviewlayoutMessageContainer.visibility = View.VISIBLE
+            bindings.splitviewlayoutRecyclerview.visibility = View.GONE
+            bindings.splitviewlayoutMessageContainer.text = message
+        } else {
+            bindings.splitviewlayoutMessageContainer.visibility = View.GONE
+            bindings.splitviewlayoutRecyclerview.visibility = View.VISIBLE
+        }
     }
 }

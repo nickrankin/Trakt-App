@@ -66,12 +66,13 @@ class SimilarShowsFragment : BaseFragment() {
     }
     
     private fun getRecommendations() {
-        lifecycleScope.launchWhenStarted { 
+        lifecycleScope.launchWhenStarted {
             val resource = viewModel.getSimilarShows(tmdbId, language)
             
             if(resource is Resource.Success) {
                 adapter.submitList(resource.data?.results)
             } else {
+                adapter.submitList(resource.data?.results)
                 handleError(resource.error, null)
             }
         }

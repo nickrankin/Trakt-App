@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.OnNavigateToEntity
+import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.credits.ShowCastCreditsAdapter
 import com.nickrankin.traktapp.databinding.FragmentShowCreditsBinding
 import com.nickrankin.traktapp.helper.Resource
@@ -49,7 +50,6 @@ class ShowCreditsFragment : BaseFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         initRecycler()
-        //setupCastSwitcher()
         getCredits()
     }
 
@@ -89,7 +89,7 @@ class ShowCreditsFragment : BaseFragment() {
 
                         progressBar.visibility = View.GONE
 
-                        handleError(castResource.error, null)
+                        handleError(castResource.error, getString(R.string.credits_loading_error))
                     }
                 }
             }

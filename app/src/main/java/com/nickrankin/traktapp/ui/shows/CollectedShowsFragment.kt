@@ -115,42 +115,40 @@ class CollectedShowsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
             when (collectedShowsResource) {
                 is Resource.Loading -> {
                     progressBar.visibility = View.VISIBLE
-                    Log.d(TAG, "collectCollectedShows: Loading collected shows ...")
+                    toggleMessageBanner(bindings, null, false)
                 }
                 is Resource.Success -> {
-                    messageContainer.visibility = View.GONE
-
                     progressBar.visibility = View.GONE
-                    Log.d(TAG, "collectCollectedShows: Got Collected Shows success")
 
                     val data = collectedShowsResource.data
 
                     if (data?.isNotEmpty() == true) {
-
+                        toggleMessageBanner(bindings, null, false)
                         adapter.submitList(data) {
                             recyclerView.scrollToPosition(0)
                         }
-
                     } else {
-                        messageContainer.visibility = View.VISIBLE
-                        messageContainer.text = "You have nothing in your collection :-("
+                        toggleMessageBanner(bindings, getString(R.string.collection_shows_empty), true)
                     }
-
                 }
                 is Resource.Error -> {
-                    messageContainer.visibility = View.GONE
-
                     progressBar.visibility = View.GONE
 
-                    if (collectedShowsResource.data != null) {
-                        adapter.submitList(collectedShowsResource.data ?: emptyList())
-                    }
+                    val data = collectedShowsResource.data
 
+                    if (data?.isNotEmpty() == true) {
+                        toggleMessageBanner(bindings, null, false)
+                        adapter.submitList(data) {
+                            recyclerView.scrollToPosition(0)
+                        }
+                    } else {
+                        toggleMessageBanner(bindings, getString(R.string.collection_shows_empty), true)
+                    }
                     (activity as IHandleError).showErrorSnackbarRetryButton(
                         collectedShowsResource.error,
                         bindings.root
                     ) {
-                        viewModel.onRefresh()
+                        onRefresh()
                     }
                 }
             }

@@ -1,44 +1,27 @@
 package com.nickrankin.traktapp.ui.shows.episodedetails
 
-import android.content.DialogInterface
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
-import androidx.appcompat.app.AlertDialog
-import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
-import com.nickrankin.traktapp.BaseFragment
-import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.dao.history.model.HistoryEntry
-import com.nickrankin.traktapp.dao.lists.model.ListEntry
 import com.nickrankin.traktapp.dao.lists.model.TraktList
 import com.nickrankin.traktapp.dao.lists.model.TraktListEntry
-import com.nickrankin.traktapp.dao.show.model.TmEpisode
 import com.nickrankin.traktapp.dao.stats.model.CollectedStats
 import com.nickrankin.traktapp.dao.stats.model.RatingStats
-import com.nickrankin.traktapp.databinding.ActionButtonsFragmentBinding
 import com.nickrankin.traktapp.databinding.LayoutActionButtonsBinding
-import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.helper.Response
-import com.nickrankin.traktapp.helper.getSyncResponse
 import com.nickrankin.traktapp.model.ActionButtonEvent
 import com.nickrankin.traktapp.model.shows.EpisodeDetailsViewModel
 import com.nickrankin.traktapp.ui.ActionButtonsBaseFragment
-import com.nickrankin.traktapp.ui.dialog.RatingPickerFragment
-import com.nickrankin.traktmanager.ui.dialoguifragments.WatchedDatePickerFragment
-import com.uwetrottmann.trakt5.enums.Rating
 import com.uwetrottmann.trakt5.enums.Type
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import org.threeten.bp.OffsetDateTime
-import retrofit2.HttpException
-import javax.inject.Inject
 
 private const val TAG = "EpisodeDetailsActionBut"
 
@@ -65,12 +48,12 @@ class EpisodeDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
         return bindings.root
     }
 
-    override fun setup(config: (bindings: LayoutActionButtonsBinding, traktId: Int, title: String, type: Type) -> Unit) {
+    override fun setup(config: (bindings: LayoutActionButtonsBinding, traktId: Int, title: String, type: Type, enableCheckinButton: Boolean, enableHistoryButton: Boolean) -> Unit) {
         lifecycleScope.launchWhenStarted {
             viewModel.episode.collectLatest { episodeResource ->
                 when (episodeResource) {
                     is Resource.Loading -> {
-                        Log.d(TAG, "getEpisode: Loading Episode")
+                        bindings.actionbuttonsProgressbar.visibility = View.VISIBLE
                     }
                     is Resource.Success -> {
                         val episode = episodeResource.data
@@ -82,15 +65,20 @@ class EpisodeDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
                                     episode.episode_trakt_id,
                                     episode.name
                                         ?: "S${episode.season_number}E${episode.episode_number}",
-                                    Type.EPISODE
+                                    Type.EPISODE,
+                                    true,
+                                    true
                                 )
                             }
 
                             traktRatingChannel.send(episode.trakt_rating)
+
+                            bindings.actionbuttonsProgressbar.visibility = View.GONE
                         }
                     }
                     is Resource.Error -> {
                         handleError(episodeResource.error, null)
+                        bindings.actionbuttonsProgressbar.visibility = View.GONE
                     }
 
                 }
@@ -119,9 +107,7 @@ class EpisodeDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
         lifecycleScope.launchWhenStarted {
             viewModel.watchedEpisodes.collectLatest { watchedEpisodesResource ->
                 when (watchedEpisodesResource) {
-                    is Resource.Loading -> {
-
-                    }
+                    is Resource.Loading -> {}
                     is Resource.Success -> {
                         onPlayCountUpdated(watchedEpisodesResource.data!!)
                     }
@@ -150,8 +136,7 @@ class EpisodeDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
         lifecycleScope.launchWhenStarted {
             viewModel.rating.collectLatest { ratingResource ->
                 when(ratingResource) {
-                    is Resource.Loading -> {
-                    }
+                    is Resource.Loading -> {}
                     is Resource.Success -> {
                         onRatingChanged(ratingResource.data)
                     }
@@ -191,6 +176,7 @@ class EpisodeDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
                     is Resource.Loading -> {
                     }
                     is Resource.Success -> {
+                        Log.e(TAG, "getCollectedStats: HERE ${collectedEpisodesStatsResource.data}", )
                         oncollectedStateChanged(collectedEpisodesStatsResource.data)
                     }
                     is Resource.Error -> {
@@ -206,16 +192,23 @@ class EpisodeDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
     }
 
     override fun removeFromCollection(traktId: Int) {
-        viewModel.removeFromCollection(traktId)
+        lifecycleScope.launchWhenStarted {
+            val episode = viewModel.episode.first().data
+            
+            if(episode != null) {
+                viewModel.removeFromCollection(traktId, episode.show_trakt_id, episode.season_number ?: 0, episode.episode_number ?: 0)
+            } else {
+                Log.e(TAG, "removeFromCollection: Cannot remove episode (episode cannt be null)", )
+            }
+        }
+
     }
 
     override fun getLists(onListsChanged: (listEntries: List<Pair<TraktList, List<TraktListEntry>>>) -> Unit) {
         lifecycleScope.launchWhenStarted {
             viewModel.lists.collectLatest { listsResource ->
                 when(listsResource) {
-                    is Resource.Loading -> {
-
-                    }
+                    is Resource.Loading -> {}
                     is Resource.Success -> {
                         val lists = listsResource.data
 

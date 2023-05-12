@@ -65,9 +65,11 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
         addListFab.setOnClickListener { addListDialog.add() }
 
-        updateTitle("My Lists")
+        updateTitle(getString(R.string.my_lists))
 
         setHasOptionsMenu(true)
+
+
 
         (activity as OnNavigateToEntity).enableOverviewLayout(false)
 
@@ -94,47 +96,35 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
             viewModel.lists.collectLatest { listsResource ->
                 when (listsResource) {
                     is Resource.Loading -> {
-                        Log.d(TAG, "getLists: Loading ...")
                         progressBar.visibility = View.VISIBLE
-                        recyclerView.visibility = View.GONE
+                        toggleMessageContainer(null, false)
                     }
                     is Resource.Success -> {
                         progressBar.visibility = View.GONE
-                        recyclerView.visibility = View.VISIBLE
 
-                        val lists = listsResource.data ?: emptyList()
+                        val lists = listsResource.data
 
-                        Log.d(TAG, "getLists: Got ${lists.size} lists")
+                        if(lists.isNullOrEmpty()) {
+                            toggleMessageContainer("No lists could be found", true)
 
-                        if(lists.isNotEmpty()) {
-                            messageContainerTextView.visibility = View.GONE
-                            recyclerView.visibility = View.VISIBLE
+                        } else {
+                            toggleMessageContainer(null, false)
 
                             traktListsAdapter.submitList(lists)
-                        } else {
-                            messageContainerTextView.visibility = View.VISIBLE
-                            recyclerView.visibility = View.GONE
-
-                            messageContainerTextView.text = "You have no lists yet. Why not make one?"
                         }
-
-
                     }
                     is Resource.Error -> {
                         progressBar.visibility = View.GONE
 
-                        val lists = listsResource.data ?: emptyList()
+                        val lists = listsResource.data
 
-                        if(lists.isNotEmpty()) {
-                            messageContainerTextView.visibility = View.GONE
-                            recyclerView.visibility = View.VISIBLE
+                        if(lists.isNullOrEmpty()) {
+                            toggleMessageContainer("No lists could be found", true)
+
+                        } else {
+                            toggleMessageContainer(null, false)
 
                             traktListsAdapter.submitList(lists)
-                        } else {
-                            messageContainerTextView.visibility = View.VISIBLE
-                            recyclerView.visibility = View.GONE
-
-                            messageContainerTextView.text = "You have no lists yet. Why not make one?"
                         }
 
                         (activity as IHandleError).showErrorSnackbarRetryButton(listsResource.error, bindings.root) {
@@ -144,6 +134,17 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                     else -> {}
                 }
             }
+        }
+    }
+
+    private fun toggleMessageContainer(message: String?, isVisible: Boolean) {
+        if(isVisible) {
+            bindings.traktlistsfragmentMessageContainer.visibility = View.VISIBLE
+            bindings.traktlistsfragmentRecyclerview.visibility = View.GONE
+            bindings.traktlistsfragmentMessageContainer.text = message
+        } else {
+            bindings.traktlistsfragmentMessageContainer.visibility = View.GONE
+            bindings.traktlistsfragmentRecyclerview.visibility = View.VISIBLE
         }
     }
 
@@ -339,10 +340,9 @@ class ListsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                 }
             }
 
-
-
-
         }
+
+
 
         private fun clearFields() {
             listNameEditText.text.clear()

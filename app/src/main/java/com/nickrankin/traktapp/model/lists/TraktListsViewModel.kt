@@ -68,7 +68,7 @@ class TraktListsViewModel @Inject constructor(private val repository: ListsRepos
     fun editList(traktList: TraktList, listSlug: String) = viewModelScope.launch { eventChannel.send(Event.EditListEvent(repository.editTraktList(traktList, listSlug))) }
     fun deleteList(listTraktId: String) = viewModelScope.launch { eventChannel.send(Event.DeleteListEvent(repository.deleteTraktList(listTraktId))) }
 
-    fun changeListOrdering(traktList: com.nickrankin.traktapp.dao.lists.model.TraktList, newSortBy: SortBy) = viewModelScope.launch { eventChannel.send(Event.ErrorEvent(repository.reorderList(traktList, newSortBy))) }
+    fun changeListOrdering(traktList: com.nickrankin.traktapp.dao.lists.model.TraktList?, newSortBy: SortBy) = viewModelScope.launch { eventChannel.send(Event.ErrorEvent(repository.reorderList(traktList, newSortBy))) }
 
     fun removeEntry(listTraktId: Int, listEntryTraktId: Int, type: Type) = viewModelScope.launch { eventChannel.send(
         Event.RemoveEntryEvent(repository.removeFromList(listEntryTraktId, listTraktId, type))) }

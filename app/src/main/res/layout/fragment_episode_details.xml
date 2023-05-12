@@ -1,251 +1,251 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="4dp">
+        android:layout_height="match_parent">
 
-        <ProgressBar
-            android:id="@+id/episodedetailsactivity_progressbar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <ImageView
-            android:id="@+id/episodedetailsactivity_backdrop"
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:scaleType="fitXY"
-            android:src="@drawable/ic_baseline_local_movies_24"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/episodedetailsactivity_poster_cardview"
-            android:layout_width="98dp"
-            android:layout_height="150dp"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="110dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@id/episodedetailsactivity_backdrop">
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp">
 
             <ImageView
-                android:id="@+id/episodedetailsactivity_poster"
+                android:id="@+id/episodedetailsactivity_backdrop"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="200dp"
                 android:scaleType="fitXY"
-                android:src="@drawable/ic_baseline_movie_filter_24" />
-        </com.google.android.material.card.MaterialCardView>
+                android:src="@drawable/ic_baseline_live_tv_24"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
-        <TextView
-            android:id="@+id/episodedetailsactivity_show_title"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_margin="8dp"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_poster_cardview"
-            tools:text="The Simpsons" />
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/episodedetailsactivity_poster_cardview"
+                android:layout_width="98dp"
+                android:layout_height="150dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="110dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@id/episodedetailsactivity_backdrop">
 
-        <TextView
-            android:id="@+id/episodedetailsactivity_episode_title"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_margin="8dp"
-            android:textAllCaps="true"
-            android:textSize="19sp"
-            android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_show_title"
-            tools:text="A cool, Episode!" />
+                <ImageView
+                    android:id="@+id/episodedetailsactivity_poster"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/ic_baseline_movie_filter_24" />
+            </com.google.android.material.card.MaterialCardView>
 
-        <TextView
-            android:id="@+id/episodedetailsactivity_season_number"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="8dp"
-            android:textAllCaps="true"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            app:layout_constraintEnd_toStartOf="@id/episodedetailsactivity_episode_number"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_episode_title"
-            tools:text="Season: 01" />
+            <TextView
+                android:id="@+id/episodedetailsactivity_show_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_poster_cardview"
+                tools:text="The Simpsons" />
 
-        <TextView
-            android:id="@+id/episodedetailsactivity_episode_number"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="8dp"
-            android:textAllCaps="true"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            app:layout_constraintBaseline_toBaselineOf="@id/episodedetailsactivity_season_number"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/episodedetailsactivity_season_number"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_episode_title"
-            tools:text="Episode: 01" />
+            <TextView
+                android:id="@+id/episodedetailsactivity_episode_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:textAllCaps="true"
+                android:textSize="19sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_show_title"
+                tools:text="A cool, Episode!" />
 
-        <androidx.constraintlayout.widget.Barrier
-            android:id="@+id/episodedetailsactivity_top_barrier"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="8dp"
-            app:barrierDirection="bottom"
-            app:constraint_referenced_ids="episodedetailsactivity_poster_cardview,episodedetailsactivity_episode_title,episodedetailsactivity_backdrop, episodedetailsactivity_season_number,episodedetailsactivity_episode_number" />
+            <TextView
+                android:id="@+id/episodedetailsactivity_season_number"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:textAllCaps="true"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toStartOf="@id/episodedetailsactivity_episode_number"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_episode_title"
+                tools:text="Season: 01" />
 
+            <TextView
+                android:id="@+id/episodedetailsactivity_episode_number"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:textAllCaps="true"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                app:layout_constraintBaseline_toBaselineOf="@id/episodedetailsactivity_season_number"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@id/episodedetailsactivity_season_number"
+                app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_episode_title"
+                tools:text="Episode: 01" />
 
-        <TextView
-            android:id="@+id/episodedetailsactivity_tagline"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginEnd="8dp"
-            android:textAlignment="center"
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_top_barrier"
-            tools:text="A cool Tagline" />
-
-        <TextView
-            android:id="@+id/episodedetailsactivity_overview"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_tagline" />
-
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/episodedetailsactivity_action_buttons"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_overview">
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/episodedetailsactivity_cast_crew"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:padding="4dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_action_buttons" />
-
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/episodedetailsactivity_details"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="4dp"
-            android:padding="4dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_cast_crew">
-
-            <LinearLayout
+            <androidx.constraintlayout.widget.Barrier
+                android:id="@+id/episodedetailsactivity_top_barrier"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                app:barrierDirection="bottom"
+                app:constraint_referenced_ids="episodedetailsactivity_poster_cardview,episodedetailsactivity_episode_title,episodedetailsactivity_backdrop, episodedetailsactivity_season_number,episodedetailsactivity_episode_number" />
+
+
+            <TextView
+                android:id="@+id/episodedetailsactivity_tagline"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
+                android:layout_marginTop="4dp"
                 android:layout_marginEnd="8dp"
-                android:orientation="vertical">
+                android:textAlignment="center"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_top_barrier"
+                tools:text="A cool Tagline" />
 
-                <TextView
-                    android:id="@+id/episodedetailsactivity_runtime"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    tools:text="Runtime: 60m" />
+            <TextView
+                android:id="@+id/episodedetailsactivity_overview"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="8dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_tagline" />
 
-                <TextView
-                    android:id="@+id/episodedetailsactivity_release_date"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    tools:text="Released: 01/01/2000" />
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/episodedetailsactivity_action_buttons"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_overview">
 
-                <com.google.android.flexbox.FlexboxLayout
-                    android:id="@+id/episodedetailsactivity_country"
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/episodedetailsactivity_cast_crew"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:padding="4dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_action_buttons" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/episodedetailsactivity_details"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:padding="4dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/episodedetailsactivity_cast_crew">
+
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal"
-                    android:visibility="gone"
-                    app:flexDirection="row"
-                    app:flexWrap="wrap" />
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:orientation="vertical">
 
-                <com.google.android.flexbox.FlexboxLayout
-                    android:id="@+id/episodedetailsactivity_companies"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal"
-                    android:visibility="gone"
-                    app:flexDirection="row"
-                    app:flexWrap="wrap" />
+                    <TextView
+                        android:id="@+id/episodedetailsactivity_runtime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        tools:text="Runtime: 60m" />
 
-                <TextView
-                    android:id="@+id/episodedetailsactivity_directed_by_title"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="@string/DIRECTED_BY"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:visibility="gone" />
+                    <TextView
+                        android:id="@+id/episodedetailsactivity_release_date"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        tools:text="Released: 01/01/2000" />
 
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/episodedetailsactivity_direct_by_chipgroup"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:visibility="gone" />
+                    <com.google.android.flexbox.FlexboxLayout
+                        android:id="@+id/episodedetailsactivity_country"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal"
+                        android:visibility="gone"
+                        app:flexDirection="row"
+                        app:flexWrap="wrap" />
 
-                <TextView
-                    android:id="@+id/episodedetailsactivity_written_by_title"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/written_by"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:visibility="gone" />
+                    <com.google.android.flexbox.FlexboxLayout
+                        android:id="@+id/episodedetailsactivity_companies"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal"
+                        android:visibility="gone"
+                        app:flexDirection="row"
+                        app:flexWrap="wrap" />
 
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/episodedetailsactivity_written_by_chipgroup"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:visibility="gone" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+                    <TextView
+                        android:id="@+id/episodedetailsactivity_directed_by_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/DIRECTED_BY"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
-</androidx.core.widget.NestedScrollView>
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/episodedetailsactivity_direct_by_chipgroup"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:visibility="gone" />
 
+                    <TextView
+                        android:id="@+id/episodedetailsactivity_written_by_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/written_by"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/episodedetailsactivity_written_by_chipgroup"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.core.widget.NestedScrollView>
+    <ProgressBar
+        android:id="@+id/episodedetailsactivity_progressbar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_centerInParent="true" />
+</RelativeLayout>

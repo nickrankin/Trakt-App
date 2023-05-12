@@ -18,7 +18,6 @@ import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.AdaptorActionControls
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.adapter.movies.ReccomendedMoviesAdaptor
-import com.nickrankin.traktapp.databinding.FragmentRecommendedMoviesBinding
 import com.nickrankin.traktapp.databinding.FragmentSplitviewLayoutBinding
 import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
@@ -86,58 +85,42 @@ class RecommendedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLi
                 when (recommendedMoviesResource) {
                     is Resource.Loading -> {
                         progressBar.visibility = View.VISIBLE
-                        recyclerView.visibility = View.VISIBLE
 
+                        toggleMessageBanner(bindings, null, false)
 
-                        Log.d(TAG, "getRecommendedMovies: Loading recommendations")
                     }
 
                     is Resource.Success -> {
                         progressBar.visibility = View.GONE
 
-                        Log.d(TAG, "getRecommendedMovies: Got recommendations successfully")
-
-                        if(recommendedMoviesResource.data != null && recommendedMoviesResource.data!!.isNotEmpty()) {
-                            bindings.splitviewlayoutRecyclerview.visibility = View.VISIBLE
-                            bindings.splitviewlayoutMessageContainer.visibility = View.GONE
-
-                            if(recommendedMoviesResource.data != null) {
-
-                                adapter.submitList(recommendedMoviesResource.data!!.toMutableList()) {
-                                    recyclerView.scrollToPosition(0)
-                                }
-                            }
-
-
+                        if(recommendedMoviesResource.data.isNullOrEmpty()) {
+                            toggleMessageBanner(bindings, getString(R.string.movie_suggested_none), true)
 
                         } else {
-                            bindings.splitviewlayoutRecyclerview.visibility = View.GONE
-                            bindings.splitviewlayoutMessageContainer.visibility = View.VISIBLE
-
-                            bindings.splitviewlayoutMessageContainer.text = "There are no recommended movies at this time!"
+                            toggleMessageBanner(bindings, null, false)
+                            adapter.submitList(recommendedMoviesResource.data!!.toMutableList()) {
+                                recyclerView.scrollToPosition(0)
+                            }
                         }
                     }
-
                     is Resource.Error -> {
                         progressBar.visibility = View.GONE
 
-                        if(recommendedMoviesResource.data != null && recommendedMoviesResource.data!!.isNotEmpty()) {
-                            bindings.splitviewlayoutRecyclerview.visibility = View.VISIBLE
-                            bindings.splitviewlayoutMessageContainer.visibility = View.GONE
+                        if(recommendedMoviesResource.data.isNullOrEmpty()) {
+                            toggleMessageBanner(bindings, getString(R.string.movie_suggested_none), true)
 
-                            adapter.submitList(recommendedMoviesResource.data)
                         } else {
-                            bindings.splitviewlayoutRecyclerview.visibility = View.GONE
-                            bindings.splitviewlayoutMessageContainer.visibility = View.VISIBLE
-
-                            bindings.splitviewlayoutMessageContainer.text = "There are no recommended movies at this time!"
+                            toggleMessageBanner(bindings, null, false)
+                            adapter.submitList(recommendedMoviesResource.data!!.toMutableList()) {
+                                recyclerView.scrollToPosition(0)
+                            }
                         }
 
                         (activity as IHandleError).showErrorSnackbarRetryButton(
                             recommendedMoviesResource.error,
                             bindings.root
                         ) {
-                            viewModel.onRefresh()
+                            onRefresh()
                         }
                     }
                 }

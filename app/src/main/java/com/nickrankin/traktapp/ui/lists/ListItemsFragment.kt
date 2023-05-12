@@ -1,22 +1,14 @@
 package com.nickrankin.traktapp.ui.lists
 
 import android.content.DialogInterface
-import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.*
-import androidx.fragment.app.Fragment
 import android.widget.ProgressBar
 import android.widget.Toast
-import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.viewModels
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
@@ -26,7 +18,7 @@ import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.lists.ListEntryAdapter
 import com.nickrankin.traktapp.dao.lists.model.TraktList
 import com.nickrankin.traktapp.dao.lists.model.TraktListEntry
-import com.nickrankin.traktapp.databinding.FragmentListItemsBinding
+import com.nickrankin.traktapp.databinding.FragmentSplitviewLayoutBinding
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.nickrankin.traktapp.helper.getResponsiveGridLayoutManager
@@ -48,7 +40,7 @@ private const val TAG = "ListItemsFragment"
 @AndroidEntryPoint
 class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
-    private var _bindings: FragmentListItemsBinding? = null
+    private var _bindings: FragmentSplitviewLayoutBinding? = null
     private val bindings get() = _bindings!!
 
     private val viewModel: TraktListsViewModel by activityViewModels()
@@ -58,7 +50,7 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
     private lateinit var recyclerView: RecyclerView
     private lateinit var listEntryAdapter: ListEntryAdapter
 
-    private lateinit var selectedList: TraktList
+    private var selectedList: TraktList? = null
 
     private var listTraktId: Int = 0
 
@@ -72,13 +64,13 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _bindings = FragmentListItemsBinding.inflate(inflater)
+        _bindings = FragmentSplitviewLayoutBinding.inflate(inflater)
 
         return bindings.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        progressBar = bindings.traktlistsfragmentProgressbar
+        progressBar = bindings.splitviewlayoutProgressbar
         listTraktId = arguments?.getInt(ListEntryViewModel.LIST_ID_KEY, 0) ?: 0
 
         if (!isLoggedIn) {
@@ -87,8 +79,10 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
 
         setHasOptionsMenu(true)
 
+        (activity as OnNavigateToEntity).enableOverviewLayout(true)
+
         initRecycler()
-        getListEntries()
+        getListsAndEntries()
         getEvents()
     }
 
@@ -98,8 +92,7 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
         inflater.inflate(R.menu.list_items_menu, menu)
     }
 
-    private fun getListEntries() {
-        val messageContainerTextView = bindings.traktlistsfragmentMessageContainer
+    private fun getListsAndEntries() {
 
         lifecycleScope.launch {
             viewModel.listItems.collectLatest { listAndListEntriesData ->
@@ -108,76 +101,83 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                 val listEntryResource = listAndListEntriesData.second
 
                 when (listResource) {
-                    is Resource.Loading -> {}
+                    is Resource.Loading -> {
+                        progressBar.visibility = View.VISIBLE
+                    }
                     is Resource.Success -> {
-                        if (listResource.data != null) {
-                            selectedList = listResource.data!!
-                            updateTitle(listResource.data?.name ?: "Unknown List")
-
-                            displayListEntries(listEntryResource)
-
-                        }
-
+                        selectedList = listResource.data
+                        displayListEntries(listAndListEntriesData.second)
+                        updateTitle(listResource.data?.name ?: getString(R.string.unknown_list))
 
                     }
                     is Resource.Error -> {
-                        handleError(listResource.error, null)
+                        progressBar.visibility = View.VISIBLE
+
+                        selectedList = listResource.data
+                        updateTitle(listResource.data?.name ?: getString(R.string.unknown_list))
+
+                        showErrorSnackbarRetryButton(listResource.error, bindings.root) {
+                            onRefresh()
+                        }
                     }
 
                 }
-
             }
         }
     }
 
-    private fun displayListEntries(listEntriesResource: Resource<List<TraktListEntry>>) {
-//        val messageContainerTextView = bindings.traktlistsfragmentMessageContainer
+    private fun displayListEntries(listEntriesResource: Resource<List<TraktListEntry>>?) {
+        if(listEntriesResource == null) {
+            toggleMessageBanner(bindings, getString(R.string.error_loading_list_items), true)
+            return
+        }
 
         when (listEntriesResource) {
             is Resource.Loading -> {
                 progressBar.visibility = View.VISIBLE
-                Log.d(TAG, "getListEntries: Loading entires")
             }
             is Resource.Success -> {
                 progressBar.visibility = View.GONE
 
-                val listItems = listEntriesResource.data ?: emptyList()
+                val listItems = listEntriesResource.data
 
-                if (listItems.isNotEmpty()) {
-//                    messageContainerTextView.visibility = View.GONE
-                    recyclerView.visibility = View.VISIBLE
-
-                    val sortedLists = sortAndDisplayListEntries(selectedList.sortBy!!, selectedList.sortHow!!, listEntriesResource.data ?: emptyList())
-
-                    listEntryAdapter.submitList(sortedLists)
-
-
+                if(listItems.isNullOrEmpty()) {
+                    toggleMessageBanner(bindings, getString(R.string.no_list_entries), true)
                 } else {
-//                    messageContainerTextView.visibility = View.VISIBLE
-                    recyclerView.visibility = View.GONE
+                    toggleMessageBanner(bindings, null, false)
 
-//                            messageContainerTextView.text = "You do not have any entries in list $listName! Why not add some?"
+                    if(selectedList != null) {
+                        val sortedLists = sortAndDisplayListEntries(selectedList!!.sortBy!!, selectedList!!.sortHow!!, listEntriesResource.data ?: emptyList())
+                        listEntryAdapter.submitList(sortedLists)
+
+                    } else {
+                        Log.e(TAG, "displayListEntries: Selected List cannot be null", )
+                    }
                 }
-                Log.d(TAG, "getListEntries: Got ${listEntriesResource.data?.size} entries")
+
             }
             is Resource.Error -> {
                 progressBar.visibility = View.GONE
 
-                val listItems = listEntriesResource.data ?: emptyList()
+                val listItems = listEntriesResource.data
 
-                if (listItems.isNotEmpty()) {
-//                    messageContainerTextView.visibility = View.GONE
-                    recyclerView.visibility = View.VISIBLE
-
-                    listEntryAdapter.submitList(listEntriesResource.data)
+                if(listItems.isNullOrEmpty()) {
+                    toggleMessageBanner(bindings, getString(R.string.no_list_entries), true)
                 } else {
-//                    messageContainerTextView.visibility = View.VISIBLE
-                    recyclerView.visibility = View.GONE
+                    toggleMessageBanner(bindings, null, false)
 
-//                            messageContainerTextView.text = "You do not have any entries in list $listName! Why not add some?"
+                    if(selectedList != null) {
+                        val sortedLists = sortAndDisplayListEntries(selectedList!!.sortBy!!, selectedList!!.sortHow!!, listEntriesResource.data ?: emptyList())
+                        listEntryAdapter.submitList(sortedLists)
+
+                    } else {
+                        Log.e(TAG, "displayListEntries: Selected List cannot be null", )
+                    }
                 }
 
-                handleError(listEntriesResource.error, null)
+                showErrorSnackbarRetryButton(listEntriesResource.error, bindings.root) {
+                    onRefresh()
+                }
             }
         }
     }
@@ -200,8 +200,6 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
         if (sortBy == null || sortHow == null) {
             return listItems
         }
-
-        Log.d(TAG, "getSortedList: Sorting list by : $sortBy $sortHow")
 
         return when (sortBy) {
             SortBy.RANK -> {
@@ -305,7 +303,6 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
         }
     }
 
-
     private fun getEvents() {
         lifecycleScope.launchWhenStarted {
             viewModel.events.collectLatest { event ->
@@ -360,7 +357,7 @@ class ListItemsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
     }
 
     private fun initRecycler() {
-        recyclerView = bindings.traktlistsfragmentRecyclerview
+        recyclerView = bindings.splitviewlayoutRecyclerview
         val lm = getResponsiveGridLayoutManager(requireContext(), null)
 
         listEntryAdapter = ListEntryAdapter(

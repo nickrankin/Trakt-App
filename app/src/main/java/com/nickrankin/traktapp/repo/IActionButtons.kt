@@ -21,7 +21,6 @@ import org.threeten.bp.OffsetDateTime
  */
 interface IActionButtons<T: HistoryEntry> {
     suspend fun getRatings(traktId: Int, shouldFetch: Boolean): Flow<Resource<RatingStats?>>
-    suspend fun getCollectedStats(traktId: Int, shouldFetch: Boolean): Flow<Resource<CollectedStats?>>
     suspend fun getPlaybackHistory(traktId: Int, shouldFetch: Boolean): Flow<Resource<List<T>>>
     suspend fun getTraktListsAndItems(shouldFetch: Boolean): Flow<Resource<out List<Pair<TraktList, List<TraktListEntry>>>>>
 
@@ -32,7 +31,6 @@ interface IActionButtons<T: HistoryEntry> {
     suspend fun addToHistory(traktId: Int, watchedAt: OffsetDateTime): Resource<SyncResponse>
     suspend fun removeFromHistory(id: Long): Resource<SyncResponse>
     suspend fun addToCollection(traktId: Int): Resource<SyncResponse>
-    suspend fun removeFromCollection(traktId: Int): Resource<SyncResponse>
     suspend fun addToList(itemTraktId: Int, listTraktId: Int): Resource<SyncResponse>
     suspend fun removeFromList(itemTraktId: Int, listTraktId: Int): Resource<SyncResponse>
 }

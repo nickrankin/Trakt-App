@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
@@ -42,9 +43,6 @@ class EpisodeDetailsFragment() : BaseFragment(), OnNavigateToShow,
     private val bindings get() = _bindings!!
 
     private val viewModel: EpisodeDetailsViewModel by viewModels()
-
-    private lateinit var watchedEpisodesRecyclerView: RecyclerView
-    private lateinit var watchedEpisodesAdapter: EpisodeWatchedHistoryItemAdapter
 
     private var episodeTitle = ""
 
@@ -252,7 +250,7 @@ class EpisodeDetailsFragment() : BaseFragment(), OnNavigateToShow,
                 .load(AppConstants.TMDB_POSTER_URL + episode.still_path)
                 .into(bindings.episodedetailsactivityBackdrop)
         } else {
-            bindings.episodedetailsactivityBackdrop.visibility = View.GONE
+            bindings.episodedetailsactivityBackdrop.scaleType = ImageView.ScaleType.FIT_XY
         }
 
         bindings.apply {

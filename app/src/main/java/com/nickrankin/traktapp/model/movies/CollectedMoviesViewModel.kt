@@ -96,7 +96,7 @@ class CollectedMoviesViewModel @Inject constructor(private val repository: Colle
     override fun onRefresh() {
         super.onRefresh()
         viewModelScope.launch {
-            movieStatsRepository.refreshCollectedMovieStats()
+           // movieStatsRepository.refreshCollectedMovieStats()
         }
     }
 

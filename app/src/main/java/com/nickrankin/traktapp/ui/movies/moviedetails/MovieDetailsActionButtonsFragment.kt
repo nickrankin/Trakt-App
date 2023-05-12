@@ -46,7 +46,7 @@ class MovieDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
         return bindings.root
     }
 
-    override fun setup(config: (bindings: LayoutActionButtonsBinding, traktId: Int, title: String, type: Type) -> Unit)   {
+    override fun setup(config: (bindings: LayoutActionButtonsBinding, traktId: Int, title: String, type: Type, enableCheckinButton: Boolean, enableHistoryButton: Boolean) -> Unit)   {
 
         lifecycleScope.launchWhenStarted {
                 viewModel.movie.collectLatest { movieResource ->
@@ -59,7 +59,7 @@ class MovieDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
                             val movie = movieResource.data
                             if (movie != null) {
                                 if (isLoggedIn) {
-                                    config(bindings, movie.trakt_id, movie.title, Type.MOVIE)
+                                    config(bindings, movie.trakt_id, movie.title, Type.MOVIE, true, true)
                                     traktRatingChannel.send(movie.trakt_rating)
                                 }
                             }

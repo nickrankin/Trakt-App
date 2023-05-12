@@ -7,6 +7,7 @@ import org.threeten.bp.OffsetDateTime
 @Entity(tableName = "collected_episodes")
 data class CollectedEpisode(
     @PrimaryKey val trakt_id: Int,
+    val show_trakt_id: Int,
     val season_number: Int,
     val episode_number: Int,
     val title: String?,

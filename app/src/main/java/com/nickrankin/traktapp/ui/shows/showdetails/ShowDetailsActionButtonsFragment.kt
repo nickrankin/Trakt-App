@@ -1,41 +1,26 @@
 package com.nickrankin.traktapp.ui.shows.showdetails
 
-import android.content.DialogInterface
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
-import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.dao.history.model.HistoryEntry
 import com.nickrankin.traktapp.dao.lists.model.TraktList
 import com.nickrankin.traktapp.dao.lists.model.TraktListEntry
-import com.nickrankin.traktapp.dao.show.model.TmShow
 import com.nickrankin.traktapp.dao.stats.model.CollectedStats
 import com.nickrankin.traktapp.dao.stats.model.RatingStats
-import com.nickrankin.traktapp.databinding.ActionButtonLayoutBinding
-import com.nickrankin.traktapp.databinding.ActionButtonsFragmentBinding
 import com.nickrankin.traktapp.databinding.LayoutActionButtonsBinding
-import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.Resource
-import com.nickrankin.traktapp.helper.Response
-import com.nickrankin.traktapp.helper.getSyncResponse
 import com.nickrankin.traktapp.model.ActionButtonEvent
 import com.nickrankin.traktapp.model.shows.ShowDetailsViewModel
 import com.nickrankin.traktapp.ui.ActionButtonsBaseFragment
-import com.nickrankin.traktapp.ui.dialog.RatingPickerFragment
-import com.uwetrottmann.trakt5.enums.Rating
 import com.uwetrottmann.trakt5.enums.Type
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import org.threeten.bp.OffsetDateTime
 
@@ -59,7 +44,7 @@ class ShowDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
         return bindings.root
     }
 
-    override fun setup(config: (bindings: LayoutActionButtonsBinding, traktId: Int, title: String, type: Type) -> Unit) {
+    override fun setup(config: (bindings: LayoutActionButtonsBinding, traktId: Int, title: String, type: Type, enableCheckinButton: Boolean, enableHistoryButton: Boolean) -> Unit) {
         lifecycleScope.launchWhenStarted {
             viewModel.show.collectLatest { showResource ->
                 when(showResource) {
@@ -74,7 +59,9 @@ class ShowDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
                                 bindings,
                                 show.trakt_id,
                                 show.name,
-                                Type.SHOW
+                                Type.SHOW,
+                                false,
+                                false
                             )
                         }
 

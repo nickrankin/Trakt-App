@@ -98,23 +98,16 @@ class SeasonEpisodesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
                 val show = showResource.data
                 when (showResource) {
                     is Resource.Loading -> {
-                        Log.d(TAG, "getShow: Loading show ..")
                     }
                     is Resource.Success -> {
                         if (show != null) {
                             showTitle = show.name
-
                         }
                     }
                     is Resource.Error -> {
 
                         if (show != null) {
                             showTitle = show.name
-
-                        }
-
-                        showErrorSnackbarRetryButton(showResource.error, bindings.root) {
-                            viewModel.onRefresh()
                         }
                     }
                 }
@@ -129,15 +122,19 @@ class SeasonEpisodesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
 
                 when (seasonResource) {
                     is Resource.Loading -> {
-                        Log.d(TAG, "getSeason: Loading season ...")
+                        bindings.seasonepisodesactivityProgressbar.visibility = View.VISIBLE
                     }
                     is Resource.Success -> {
+                        bindings.seasonepisodesactivityProgressbar.visibility = View.GONE
                         setupSeasonSwitcher(seasons)
                     }
                     is Resource.Error -> {
+                        bindings.seasonepisodesactivityProgressbar.visibility = View.GONE
+
+                        setupSeasonSwitcher(seasons)
 
                         showErrorSnackbarRetryButton(seasonResource.error, bindings.root) {
-                            viewModel.onRefresh()
+                            onRefresh()
                         }
                     }
                 }
@@ -187,7 +184,6 @@ class SeasonEpisodesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
 
         if (season.air_date != null) {
             bindings.seasonepisodeactivitySeasonAired.text = "First aired ${
-
                 season.air_date.format(
                     DateTimeFormatter.ofPattern(
                         sharedPreferences.getString(
@@ -216,7 +212,6 @@ class SeasonEpisodesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
                 when (episodesResource) {
                     is Resource.Loading -> {
                         progressBar.visibility = View.VISIBLE
-                        Log.d(TAG, "collectEpisodes: Episodes loading")
                     }
                     is Resource.Success -> {
                         progressBar.visibility = View.GONE

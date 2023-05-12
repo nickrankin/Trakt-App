@@ -77,10 +77,6 @@ class WatchedEpisodesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
 
         getViewState()
 
-        if (!isLoggedIn) {
-            handleLoggedOutState(this.id)
-        }
-
         collectEpisodes()
     }
 
@@ -96,7 +92,6 @@ class WatchedEpisodesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
                 progressBar.visibility = View.GONE
 
                 adapter.submitData(latestData)
-
             }
         }
     }
@@ -104,14 +99,13 @@ class WatchedEpisodesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
     private fun collectEvents() {
         lifecycleScope.launchWhenStarted {
             viewModel.events.collectLatest { event ->
-
                 when (event) {
                     is WatchedEpisodesViewModel.Event.RemoveWatchedHistoryEvent -> {
                         val syncResponseResource = event.syncResponse
 
                         when (syncResponseResource) {
                             is Resource.Success -> {
-                                if (syncResponseResource.data?.deleted?.episodes ?: 0 > 0) {
+                                if ((syncResponseResource.data?.deleted?.episodes ?: 0) > 0) {
                                     displayMessageToast(
                                         "Succesfully removed play!",
                                         Toast.LENGTH_LONG
@@ -128,7 +122,6 @@ class WatchedEpisodesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
                                 )
                             }
                             else -> {}
-
                         }
                     }
                     else -> {
@@ -262,11 +255,10 @@ class WatchedEpisodesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
     }
 
     override fun onRefresh() {
-        if (isLoggedIn) {
-            //https://developer.android.com/reference/kotlin/androidx/paging/PagingDataAdapter#refresh()
-            viewModel.onRefresh()
-            //adapter.refresh()
-        }
+        progressBar.visibility = View.VISIBLE
+        //https://developer.android.com/reference/kotlin/androidx/paging/PagingDataAdapter#refresh()
+        viewModel.onRefresh()
+        adapter.refresh()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

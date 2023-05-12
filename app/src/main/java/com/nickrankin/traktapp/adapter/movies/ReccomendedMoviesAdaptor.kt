@@ -12,7 +12,6 @@ import at.blogc.android.views.ExpandableTextView
 import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.adapter.AdaptorActionControls
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
-import com.nickrankin.traktapp.databinding.ReccomendedShowEntryListItemBinding
 import com.nickrankin.traktapp.helper.ImageItemType
 import com.nickrankin.traktapp.helper.TmdbImageLoader
 import com.uwetrottmann.trakt5.entities.Movie

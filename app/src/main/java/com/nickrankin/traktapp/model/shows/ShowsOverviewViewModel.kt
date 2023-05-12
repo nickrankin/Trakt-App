@@ -23,14 +23,8 @@ class ShowsOverviewViewModel @Inject constructor(private val repository: ShowsOv
     @ExperimentalCoroutinesApi
     val myShows = refreshEvent.flatMapLatest { shouldRefresh ->
         repository.getMyShows(shouldRefresh)
-    }.map { resource ->
-        if(resource is Resource.Success) {
-            repository.removeAlreadyAiredEpisodes(resource.data ?: emptyList())
-
-        }
-        resource
-    }.map { resource ->
-        repository.getHiddenStatus(showHiddenEntries, resource.data ?: emptyList())
+    }.map { result ->
+        repository.getHiddenStatus(showHiddenEntries, result.data ?: emptyList())
     }
 
     fun showHiddenEntries(showHidden: Boolean) {

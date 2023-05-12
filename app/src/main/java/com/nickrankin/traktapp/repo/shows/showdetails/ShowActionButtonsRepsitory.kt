@@ -98,7 +98,7 @@ class ShowActionButtonsRepsitory @Inject constructor(
         return ratedShowStats
     }
 
-    override suspend fun getCollectedStats(
+    suspend fun getCollectedStats(
         traktId: Int,
         shouldFetch: Boolean
     ): Flow<Resource<CollectedStats?>> = networkBoundResource(
@@ -480,7 +480,7 @@ class ShowActionButtonsRepsitory @Inject constructor(
         }
     }
 
-    override suspend fun removeFromCollection(traktId: Int): Resource<SyncResponse> {
+    suspend fun removeFromCollection(traktId: Int): Resource<SyncResponse> {
         return try {
             val removeFromCollectionResponse =
                 traktApi.tmSync().deleteItemsFromCollection(getSyncItems(traktId))

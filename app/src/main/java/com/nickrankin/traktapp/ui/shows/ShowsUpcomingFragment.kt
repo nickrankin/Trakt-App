@@ -99,40 +99,42 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
             viewModel.myShows.collectLatest { myShowsResource ->
                 when(myShowsResource) {
                     is Resource.Loading -> {
-                        Log.d(TAG, "getMyShows: Loading shows")
                         progressBar.visibility = View.VISIBLE
+
+                        toggleMessageBanner(bindings, null, false)
+
                     }
                     is Resource.Success -> {
                         progressBar.visibility = View.GONE
-                        messageContainer.visibility = View.GONE
 
                         val data = myShowsResource.data
 
-                        if(data?.isEmpty() == true) {
-                            messageContainer.visibility = View.VISIBLE
-                            messageContainer.text = "No upcoming shows!"
+                        if(data.isNullOrEmpty()) {
+                            toggleMessageBanner(bindings, getString(R.string.no_upcoming_shows), true)
+
                         } else {
-                            messageContainer.visibility = View.GONE
+                            toggleMessageBanner(bindings, null, false)
+                            adapter.submitList(sortShows(data))
                         }
-
-
-                        adapter.submitList(sortShows(data))
-
                     }
                     is Resource.Error -> {
-                        messageContainer.visibility = View.GONE
                         progressBar.visibility = View.GONE
 
+                        val data = myShowsResource.data
 
-//                        if(myShowsResource.data != null) {
-//                            adapter.submitList(myShowsResource.data ?: emptyList())
-//                        }
+                        if(data.isNullOrEmpty()) {
+                            toggleMessageBanner(bindings, getString(R.string.no_upcoming_shows), true)
+
+                        } else {
+                            toggleMessageBanner(bindings, null, false)
+                            adapter.submitList(sortShows(data))
+                        }
 
                         (activity as IHandleError).showErrorSnackbarRetryButton(
                             myShowsResource.error,
                             bindings.root
                         ) {
-                            viewModel.onRefresh()
+                            onRefresh()
                         }
                     }
                 }
@@ -174,6 +176,9 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
         recyclerView = bindings.splitviewlayoutRecyclerview
 
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
+
+        // Prevent 'flickering' headings when screen refreshed
+        recyclerView.itemAnimator = null
 
         adapter = ShowCalendarEntriesAdapter(sharedPreferences, tmdbImageLoader, callback = { calendarEntry, action ->
             if(calendarEntry is ShowBaseCalendarEntry) {
@@ -220,10 +225,6 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
             episodeNumber,
             language
         ))
-
-//        // We cannot guarantee Watched Episode data is up to date at this point so force refresh (user could have watched more of this show in meantime)
-//        intent.putExtra(EpisodeDetailsRepository.SHOULD_REFRESH_WATCHED_KEY, true)
-
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -241,20 +242,6 @@ class ShowsUpcomingFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
 
         return false
     }
-
-    private fun  getViewType() {
-        lifecycleScope.launchWhenStarted {
-            viewModel.viewType.collectLatest { viewType ->
-//                adapter.switchView(viewType)
-
-                switchRecyclerViewLayoutManager(requireContext(), recyclerView, viewType)
-
-
-                recyclerView.scrollToPosition(0)
-            }
-        }
-    }
-
 
     override fun onResume() {
         super.onResume()

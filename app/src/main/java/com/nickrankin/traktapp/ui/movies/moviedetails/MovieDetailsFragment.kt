@@ -25,7 +25,6 @@ import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.dao.credits.model.TmCrewPerson
 import com.nickrankin.traktapp.dao.movies.model.TmMovie
-import com.nickrankin.traktapp.databinding.ActivityMovieDetailsLayoutBinding
 import com.nickrankin.traktapp.databinding.FragmentMovieDetailsLayoutBinding
 import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
@@ -108,9 +107,11 @@ class MovieDetailsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListene
 
                 when (movieResource) {
                     is Resource.Loading -> {
-
+                        bindings.moviedetailsactivityProgressbar.visibility = View.VISIBLE
                     }
                     is Resource.Success -> {
+                        bindings.moviedetailsactivityProgressbar.visibility = View.GONE
+
                         val movie = movieResource.data
                         if (movie != null) {
                             displayMovie(movie)
@@ -118,15 +119,15 @@ class MovieDetailsFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListene
                     }
 
                     is Resource.Error -> {
-                        if (movieResource.data != null) {
-                            val movie = movieResource.data
+                        bindings.moviedetailsactivityProgressbar.visibility = View.GONE
+
+                        val movie = movieResource.data
+                        if (movie != null) {
                             displayMovie(movie)
                         }
-
                         showErrorSnackbarRetryButton(movieResource.error, bindings.root) {
                             viewModel.onRefresh()
                         }
-
                     }
                 }
             }

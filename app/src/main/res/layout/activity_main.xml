@@ -19,193 +19,206 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="8dp">
-
-                    <androidx.constraintlayout.widget.ConstraintLayout
-                        android:id="@+id/home_stats_layout"
+                    <RelativeLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content">
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:id="@+id/home_stats_layout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
 
+                            <TextView
+                                android:id="@+id/home_stats_title"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="8dp"
+                                android:text="@string/stats"
+
+                                android:textAppearance="?attr/textAppearanceHeadline5"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent" />
+
+                            <com.google.android.material.divider.MaterialDivider
+                                android:id="@+id/home_stats_divider"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="10dp"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/home_stats_title" />
+
+                            <TextView
+                                android:id="@+id/home_stats_movies"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="8dp"
+                                android:text="@string/movies"
+                                android:textAppearance="?attr/textAppearanceHeadline6"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/home_stats_divider" />
+
+                            <ImageView
+                                android:id="@+id/home_stats_movies_collected_icon"
+                                android:layout_width="15dp"
+                                android:layout_height="15dp"
+                                android:layout_marginStart="8dp"
+                                android:layout_marginTop="8dp"
+                                android:src="@drawable/ic_baseline_collections_bookmark_24"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/home_stats_movies" />
+
+                            <TextView
+                                android:id="@+id/home_stats_movies_collected"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:text="@string/collected_empty"
+                                app:layout_constraintEnd_toEndOf="@id/home_stats_guideline"
+                                app:layout_constraintStart_toEndOf="@+id/home_stats_movies_collected_icon"
+                                app:layout_constraintTop_toTopOf="@id/home_stats_movies_collected_icon" />
+
+                            <ImageView
+                                android:id="@+id/home_stats_movies_plays_icon"
+                                android:layout_width="15dp"
+                                android:layout_height="15dp"
+                                android:layout_marginStart="8dp"
+                                android:layout_marginTop="8dp"
+                                android:src="@drawable/ic_baseline_play_circle_24"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/home_stats_movies_collected_icon" />
+
+                            <TextView
+                                android:id="@+id/home_stats_movies_plays"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+
+                                android:text="@string/plays_empty"
+                                app:layout_constraintEnd_toStartOf="@+id/home_stats_guideline"
+                                app:layout_constraintStart_toEndOf="@id/home_stats_movies_plays_icon"
+                                app:layout_constraintTop_toTopOf="@id/home_stats_movies_plays_icon" />
+
+                            <ImageView
+                                android:id="@+id/home_stats_movies_duration_icon"
+                                android:layout_width="15dp"
+                                android:layout_height="15dp"
+                                android:layout_marginStart="8dp"
+                                android:layout_marginTop="8dp"
+                                android:src="@drawable/ic_baseline_local_movies_24"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/home_stats_movies_plays_icon" />
+
+                            <TextView
+                                android:id="@+id/home_stats_movies_duration"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:layout_marginBottom="8dp"
+                                android:text="@string/duration_empty"
+                                app:layout_constraintBottom_toBottomOf="parent"
+                                app:layout_constraintEnd_toEndOf="@id/home_stats_guideline"
+                                app:layout_constraintStart_toEndOf="@id/home_stats_movies_duration_icon"
+                                app:layout_constraintTop_toTopOf="@id/home_stats_movies_duration_icon" />
+
+
+                            <androidx.constraintlayout.widget.Guideline
+                                android:id="@+id/home_stats_guideline"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                app:layout_constraintGuide_percent="0.5" />
+
+                            <TextView
+                                android:id="@+id/home_stats_shows"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="@string/shows"
+                                android:textAppearance="?attr/textAppearanceHeadline6"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="@id/home_stats_guideline"
+                                app:layout_constraintTop_toBottomOf="@id/home_stats_divider" />
+
+                            <ImageView
+                                android:id="@+id/home_stats_shows_collected_icon"
+                                android:layout_width="15dp"
+                                android:layout_height="15dp"
+                                android:layout_marginTop="8dp"
+                                android:layout_marginEnd="8dp"
+                                android:src="@drawable/ic_baseline_collections_bookmark_24"
+                                app:layout_constraintEnd_toStartOf="@id/home_stats_shows_collected"
+                                app:layout_constraintStart_toStartOf="@id/home_stats_guideline"
+                                app:layout_constraintTop_toBottomOf="@id/home_stats_shows" />
+
+                            <TextView
+                                android:id="@+id/home_stats_shows_collected"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="8dp"
+                                android:text="@string/collected_empty"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toEndOf="@id/home_stats_shows_collected_icon"
+
+                                app:layout_constraintTop_toTopOf="@id/home_stats_shows_collected_icon" />
+
+                            <ImageView
+                                android:id="@+id/home_stats_shows_plays_icon"
+                                android:layout_width="15dp"
+                                android:layout_height="15dp"
+                                android:layout_marginTop="8dp"
+                                android:layout_marginEnd="8dp"
+                                android:src="@drawable/ic_baseline_play_circle_24"
+                                app:layout_constraintEnd_toStartOf="@id/home_stats_shows_plays"
+                                app:layout_constraintStart_toStartOf="@+id/home_stats_guideline"
+                                app:layout_constraintTop_toBottomOf="@id/home_stats_shows_collected_icon" />
+
+                            <TextView
+                                android:id="@+id/home_stats_shows_plays"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+
+                                android:text="@string/plays_empty"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toEndOf="@id/home_stats_shows_plays_icon"
+                                app:layout_constraintTop_toTopOf="@id/home_stats_shows_plays_icon" />
+
+                            <ImageView
+                                android:id="@+id/home_stats_shows_duration_icon"
+                                android:layout_width="15dp"
+                                android:layout_height="15dp"
+                                android:layout_marginTop="8dp"
+                                android:src="@drawable/ic_baseline_live_tv_24"
+                                app:layout_constraintStart_toStartOf="@id/home_stats_guideline"
+                                app:layout_constraintTop_toBottomOf="@id/home_stats_shows_plays_icon" />
+
+                            <TextView
+                                android:id="@+id/home_stats_shows_duration"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:layout_marginEnd="8dp"
+                                android:layout_marginBottom="8dp"
+                                android:text="@string/duration_empty"
+                                app:layout_constraintBottom_toBottomOf="parent"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toEndOf="@id/home_stats_shows_duration_icon"
+                                app:layout_constraintTop_toTopOf="@id/home_stats_shows_duration_icon"
+                                />
+
+                        </androidx.constraintlayout.widget.ConstraintLayout>
                         <TextView
-                            android:id="@+id/home_stats_title"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_margin="8dp"
-                            android:text="@string/stats"
-
-                            android:textAppearance="?attr/textAppearanceHeadline5"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent" />
-
-                        <com.google.android.material.divider.MaterialDivider
-                            android:id="@+id/home_stats_divider"
+                            android:id="@+id/home_stats_message_container"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_margin="10dp"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toBottomOf="@id/home_stats_title" />
-
-                        <TextView
-                            android:id="@+id/home_stats_movies"
+                            android:visibility="gone" />
+                        <ProgressBar
+                            android:id="@+id/home_stats_progressbar"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_margin="8dp"
-                            android:text="@string/movies"
-                            android:textAppearance="?attr/textAppearanceHeadline6"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toBottomOf="@id/home_stats_divider" />
+                            android:layout_centerInParent="true" />
+                    </RelativeLayout>
 
-                        <ImageView
-                            android:id="@+id/home_stats_movies_collected_icon"
-                            android:layout_width="15dp"
-                            android:layout_height="15dp"
-                            android:layout_marginStart="8dp"
-                            android:layout_marginTop="8dp"
-                            android:src="@drawable/ic_baseline_collections_bookmark_24"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toBottomOf="@id/home_stats_movies" />
-
-                        <TextView
-                            android:id="@+id/home_stats_movies_collected"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:text="@string/collected_empty"
-                            app:layout_constraintEnd_toEndOf="@id/home_stats_guideline"
-                            app:layout_constraintStart_toEndOf="@+id/home_stats_movies_collected_icon"
-                            app:layout_constraintTop_toTopOf="@id/home_stats_movies_collected_icon" />
-
-                        <ImageView
-                            android:id="@+id/home_stats_movies_plays_icon"
-                            android:layout_width="15dp"
-                            android:layout_height="15dp"
-                            android:layout_marginStart="8dp"
-                            android:layout_marginTop="8dp"
-                            android:src="@drawable/ic_baseline_play_circle_24"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toBottomOf="@id/home_stats_movies_collected_icon" />
-
-                        <TextView
-                            android:id="@+id/home_stats_movies_plays"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-
-                            android:text="@string/plays_empty"
-                            app:layout_constraintEnd_toStartOf="@+id/home_stats_guideline"
-                            app:layout_constraintStart_toEndOf="@id/home_stats_movies_plays_icon"
-                            app:layout_constraintTop_toTopOf="@id/home_stats_movies_plays_icon" />
-
-                        <ImageView
-                            android:id="@+id/home_stats_movies_duration_icon"
-                            android:layout_width="15dp"
-                            android:layout_height="15dp"
-                            android:layout_marginStart="8dp"
-                            android:layout_marginTop="8dp"
-                            android:src="@drawable/ic_baseline_local_movies_24"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toBottomOf="@id/home_stats_movies_plays_icon" />
-
-                        <TextView
-                            android:id="@+id/home_stats_movies_duration"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:layout_marginBottom="8dp"
-                            android:text="@string/duration_empty"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toEndOf="@id/home_stats_guideline"
-                            app:layout_constraintStart_toEndOf="@id/home_stats_movies_duration_icon"
-                            app:layout_constraintTop_toTopOf="@id/home_stats_movies_duration_icon" />
-
-
-                        <androidx.constraintlayout.widget.Guideline
-                            android:id="@+id/home_stats_guideline"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            app:layout_constraintGuide_percent="0.5" />
-
-                        <TextView
-                            android:id="@+id/home_stats_shows"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="@string/shows"
-                            android:textAppearance="?attr/textAppearanceHeadline6"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="@id/home_stats_guideline"
-                            app:layout_constraintTop_toBottomOf="@id/home_stats_divider" />
-
-                        <ImageView
-                            android:id="@+id/home_stats_shows_collected_icon"
-                            android:layout_width="15dp"
-                            android:layout_height="15dp"
-                            android:layout_marginTop="8dp"
-                            android:layout_marginEnd="8dp"
-                            android:src="@drawable/ic_baseline_collections_bookmark_24"
-                            app:layout_constraintEnd_toStartOf="@id/home_stats_shows_collected"
-                            app:layout_constraintStart_toStartOf="@id/home_stats_guideline"
-                            app:layout_constraintTop_toBottomOf="@id/home_stats_shows" />
-
-                        <TextView
-                            android:id="@+id/home_stats_shows_collected"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="8dp"
-                            android:text="@string/collected_empty"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toEndOf="@id/home_stats_shows_collected_icon"
-
-                            app:layout_constraintTop_toTopOf="@id/home_stats_shows_collected_icon" />
-
-                        <ImageView
-                            android:id="@+id/home_stats_shows_plays_icon"
-                            android:layout_width="15dp"
-                            android:layout_height="15dp"
-                            android:layout_marginTop="8dp"
-                            android:layout_marginEnd="8dp"
-                            android:src="@drawable/ic_baseline_play_circle_24"
-                            app:layout_constraintEnd_toStartOf="@id/home_stats_shows_plays"
-                            app:layout_constraintStart_toStartOf="@+id/home_stats_guideline"
-                            app:layout_constraintTop_toBottomOf="@id/home_stats_shows_collected_icon" />
-
-                        <TextView
-                            android:id="@+id/home_stats_shows_plays"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-
-                            android:text="@string/plays_empty"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toEndOf="@id/home_stats_shows_plays_icon"
-                            app:layout_constraintTop_toTopOf="@id/home_stats_shows_plays_icon" />
-
-                        <ImageView
-                            android:id="@+id/home_stats_shows_duration_icon"
-                            android:layout_width="15dp"
-                            android:layout_height="15dp"
-                            android:layout_marginTop="8dp"
-                            android:src="@drawable/ic_baseline_live_tv_24"
-                            app:layout_constraintStart_toStartOf="@id/home_stats_guideline"
-                            app:layout_constraintTop_toBottomOf="@id/home_stats_shows_plays_icon" />
-
-                        <TextView
-                            android:id="@+id/home_stats_shows_duration"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:layout_marginEnd="8dp"
-                            android:layout_marginBottom="8dp"
-                            android:text="@string/duration_empty"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toEndOf="@id/home_stats_shows_duration_icon"
-                            app:layout_constraintTop_toTopOf="@id/home_stats_shows_duration_icon"
-
-                            />
-
-                    </androidx.constraintlayout.widget.ConstraintLayout>
                 </com.google.android.material.card.MaterialCardView>
 
                 <com.google.android.material.card.MaterialCardView
@@ -213,61 +226,70 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="8dp">
-
-                    <androidx.constraintlayout.widget.ConstraintLayout
+                    <RelativeLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content">
-
-                        <TextView
-                            android:id="@+id/home_next_airing_title"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_margin="8dp"
-                            android:text="@string/airing_soon"
-                            android:textAppearance="?attr/textAppearanceHeadline5"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent" />
-
-                        <com.google.android.material.divider.MaterialDivider
-                            android:id="@+id/home_next_airing_divider"
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:id="@+id/home_airing_layout"
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_margin="10dp"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toBottomOf="@id/home_next_airing_title" />
+                            android:layout_height="wrap_content">
 
+                            <TextView
+                                android:id="@+id/home_next_airing_title"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="8dp"
+                                android:text="@string/airing_soon"
+                                android:textAppearance="?attr/textAppearanceHeadline5"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent" />
+
+                            <com.google.android.material.divider.MaterialDivider
+                                android:id="@+id/home_next_airing_divider"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="10dp"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/home_next_airing_title" />
+
+
+
+
+                            <androidx.recyclerview.widget.RecyclerView
+                                android:id="@+id/home_next_airing_recyclerview"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="8dp"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/home_next_airing_divider" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/home_next_airing_all_btn"
+                                style="?attr/borderlessButtonStyle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="8dp"
+                                android:text="@string/show_all"
+                                app:icon="@drawable/ic_baseline_local_movies_24"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/home_next_airing_recyclerview" />
+                        </androidx.constraintlayout.widget.ConstraintLayout>
                         <ProgressBar
                             android:id="@+id/home_next_airing_progressbar"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            app:layout_constraintBottom_toBottomOf="@id/home_next_airing_recyclerview"
-                            app:layout_constraintEnd_toEndOf="@id/home_next_airing_recyclerview"
-                            app:layout_constraintStart_toStartOf="@id/home_next_airing_recyclerview"
-                            app:layout_constraintTop_toTopOf="@id/home_next_airing_recyclerview" />
-
-
-                        <androidx.recyclerview.widget.RecyclerView
-                            android:id="@+id/home_next_airing_recyclerview"
+                            android:layout_centerInParent="true" />
+                        <TextView
+                            android:id="@+id/home_airing_message_container"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_margin="8dp"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toBottomOf="@id/home_next_airing_divider" />
+                            android:visibility="gone" />
+                    </RelativeLayout>
 
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/home_next_airing_all_btn"
-                            style="?attr/borderlessButtonStyle"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_margin="8dp"
-                            android:text="@string/show_all"
-                            app:icon="@drawable/ic_baseline_local_movies_24"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toBottomOf="@id/home_next_airing_recyclerview" />
-                    </androidx.constraintlayout.widget.ConstraintLayout>
+
                 </com.google.android.material.card.MaterialCardView>
 
 
@@ -277,60 +299,72 @@
                     android:layout_height="wrap_content"
                     android:layout_margin="8dp">
 
-                    <androidx.constraintlayout.widget.ConstraintLayout
+                    <RelativeLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content">
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:id="@+id/home_watched_movies_layout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                android:id="@+id/home_watched_movies_title"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="8dp"
+                                android:text="@string/last_watched_movies"
+                                android:textAppearance="?attr/textAppearanceHeadline5"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent" />
+
+                            <com.google.android.material.divider.MaterialDivider
+                                android:id="@+id/home_watched_movies_divider"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="10dp"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/home_watched_movies_title" />
+
+
+                            <androidx.recyclerview.widget.RecyclerView
+                                android:id="@+id/home_watched_movies_recyclerview"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="8dp"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/home_watched_movies_divider" />
+
+
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/home_watched_movies_all_btn"
+                                style="?attr/borderlessButtonStyle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="8dp"
+                                android:text="@string/show_all"
+                                app:icon="@drawable/ic_baseline_local_movies_24"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/home_watched_movies_recyclerview" />
+                        </androidx.constraintlayout.widget.ConstraintLayout>
 
                         <TextView
-                            android:id="@+id/home_watched_movies_title"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_margin="8dp"
-                            android:text="@string/last_watched_movies"
-                            android:textAppearance="?attr/textAppearanceHeadline5"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent" />
-
-                        <com.google.android.material.divider.MaterialDivider
-                            android:id="@+id/home_watched_movies_divider"
+                            android:id="@+id/home_watched_movies_message_container"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_margin="10dp"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toBottomOf="@id/home_watched_movies_title" />
-
-
-                        <androidx.recyclerview.widget.RecyclerView
-                            android:id="@+id/home_watched_movies_recyclerview"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_margin="8dp"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toBottomOf="@id/home_watched_movies_divider" />
+                            android:visibility="gone" />
 
                         <ProgressBar
                             android:id="@+id/home_watched_movies_progressbar"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent" />
+                            android:layout_centerInParent="true" />
+                    </RelativeLayout>
 
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/home_watched_movies_all_btn"
-                            style="?attr/borderlessButtonStyle"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_margin="8dp"
-                            android:text="@string/show_all"
-                            app:icon="@drawable/ic_baseline_local_movies_24"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toBottomOf="@id/home_watched_movies_recyclerview" />
-                    </androidx.constraintlayout.widget.ConstraintLayout>
+
 
                 </com.google.android.material.card.MaterialCardView>
 
@@ -340,61 +374,70 @@
                     android:layout_height="wrap_content"
                     android:layout_margin="8dp">
 
-                    <androidx.constraintlayout.widget.ConstraintLayout
+                    <RelativeLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content">
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:id="@+id/home_watched_shows_layout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
 
+                            <TextView
+                                android:id="@+id/home_watched_Shows_title"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="8dp"
+                                android:text="@string/last_watched_episodes"
+                                android:textAppearance="?attr/textAppearanceHeadline5"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent" />
+
+                            <com.google.android.material.divider.MaterialDivider
+                                android:id="@+id/home_watched_shows_divider"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="10dp"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/home_watched_Shows_title" />
+
+                            <androidx.recyclerview.widget.RecyclerView
+                                android:id="@+id/home_watched_shows_recyclerview"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="8dp"
+                                android:orientation="horizontal"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/home_watched_shows_divider" />
+
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/home_watched_shows_all_btn"
+                                style="?attr/borderlessButtonStyle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="8dp"
+                                android:text="@string/show_all"
+                                app:icon="@drawable/ic_baseline_tv_24"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toBottomOf="@id/home_watched_shows_recyclerview" />
+                        </androidx.constraintlayout.widget.ConstraintLayout>
                         <TextView
-                            android:id="@+id/home_watched_Shows_title"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_margin="8dp"
-                            android:text="@string/last_watched_episodes"
-                            android:textAppearance="?attr/textAppearanceHeadline5"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent" />
-
-                        <com.google.android.material.divider.MaterialDivider
-                            android:id="@+id/home_watched_shows_divider"
+                            android:id="@+id/home_watched_shows_message_container"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_margin="10dp"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toBottomOf="@id/home_watched_Shows_title" />
+                            android:visibility="gone" />
 
                         <ProgressBar
                             android:id="@+id/home_watched_shows_progressbar"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            app:layout_constraintBottom_toBottomOf="@id/home_watched_shows_recyclerview"
-                            app:layout_constraintEnd_toEndOf="@id/home_watched_shows_recyclerview"
-                            app:layout_constraintStart_toStartOf="@id/home_watched_shows_recyclerview"
-                            app:layout_constraintTop_toTopOf="@id/home_watched_shows_recyclerview" />
-
-                        <androidx.recyclerview.widget.RecyclerView
-                            android:id="@+id/home_watched_shows_recyclerview"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_margin="8dp"
-                            android:orientation="horizontal"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toBottomOf="@id/home_watched_shows_divider" />
+                            android:layout_centerInParent="true" />
+                    </RelativeLayout>
 
 
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/home_watched_shows_all_btn"
-                            style="?attr/borderlessButtonStyle"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_margin="8dp"
-                            android:text="@string/show_all"
-                            app:icon="@drawable/ic_baseline_tv_24"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toBottomOf="@id/home_watched_shows_recyclerview" />
-                    </androidx.constraintlayout.widget.ConstraintLayout>
                 </com.google.android.material.card.MaterialCardView>
 
 

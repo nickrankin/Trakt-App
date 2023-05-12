@@ -125,12 +125,25 @@ class MainFragment: BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
             viewModel.userStats.collectLatest { userStatsResource ->
                 when (userStatsResource) {
                     is Resource.Loading -> {
-                        Log.d(TAG, "getUserStats: Loading UserStats")
+                        bindings.homeStatsProgressbar.visibility = View.VISIBLE
+
                     }
                     is Resource.Success -> {
+                        bindings.homeStatsProgressbar.visibility = View.GONE
+                        bindings.homeStatsLayout.visibility = View.VISIBLE
+                        bindings.homeStatsMessageContainer.visibility = View.GONE
+
                         bindUserStats(userStatsResource.data)
                     }
                     is Resource.Error -> {
+                        bindings.homeStatsProgressbar.visibility = View.GONE
+
+                        if(userStatsResource.data == null) {
+                            bindings.homeStatsLayout.visibility = View.GONE
+                            bindings.homeStatsMessageContainer.visibility = View.VISIBLE
+                            bindings.homeStatsMessageContainer.text = getString(R.string.unable_load_stats)
+                        }
+
                         handleError(userStatsResource.error, null)
                     }
                 }
@@ -143,23 +156,36 @@ class MainFragment: BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
             viewModel.upcomingShows.collectLatest { upcomingEpisodes ->
                 when (upcomingEpisodes) {
                     is Resource.Loading -> {
-                        Log.d(TAG, "getUpcomingEpisodes: Loading Upcoming episodes")
                         bindings.homeNextAiringProgressbar.visibility = View.VISIBLE
                     }
                     is Resource.Success -> {
-                        Log.d(
-                            TAG,
-                            "getUpcomingEpisodes: Got ${upcomingEpisodes.data?.size} episodes"
-                        )
                         bindings.homeNextAiringProgressbar.visibility = View.GONE
 
-                        upcomingEpisodesAdapter.submitList(upcomingEpisodes.data?.sortedBy { it.first_aired })
+                        if(upcomingEpisodes.data.isNullOrEmpty()) {
+                            bindings.homeAiringLayout.visibility = View.GONE
+                            bindings.homeAiringMessageContainer.visibility = View.VISIBLE
+                            bindings.homeAiringMessageContainer.text = getString(R.string.airing_empty)
+                        } else {
+                            bindings.homeAiringLayout.visibility = View.VISIBLE
+                            bindings.homeAiringMessageContainer.visibility = View.GONE
+
+                            upcomingEpisodesAdapter.submitList(upcomingEpisodes.data?.sortedBy { it.first_aired })
+                        }
                     }
                     is Resource.Error -> {
-
                         bindings.homeNextAiringProgressbar.visibility = View.GONE
 
-                        upcomingEpisodesAdapter.submitList(upcomingEpisodes.data?.sortedBy { it.first_aired })
+                        if(upcomingEpisodes.data.isNullOrEmpty()) {
+                            bindings.homeAiringLayout.visibility = View.GONE
+                            bindings.homeAiringMessageContainer.visibility = View.VISIBLE
+                            bindings.homeAiringMessageContainer.text = getString(R.string.airing_empty)
+                        } else {
+                            bindings.homeAiringLayout.visibility = View.VISIBLE
+                            bindings.homeAiringMessageContainer.visibility = View.GONE
+
+                            upcomingEpisodesAdapter.submitList(upcomingEpisodes.data?.sortedBy { it.first_aired })
+                        }
+
 
                         handleError(upcomingEpisodes.error, null)
 
@@ -174,22 +200,41 @@ class MainFragment: BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
             viewModel.watchedMovies.collectLatest { latestMoviesResource ->
                 when(latestMoviesResource) {
                     is Resource.Loading -> {
-                        Log.e(TAG, "getLastWatchedMovies: loading")
                         bindings.homeWatchedMoviesProgressbar.visibility = View.VISIBLE
 
                     }
                     is Resource.Success -> {
-                        Log.e(TAG, "getLastWatchedMovies: get ${latestMoviesResource.data?.size}")
                         bindings.homeWatchedMoviesProgressbar.visibility = View.GONE
 
-                        lastWatchedMoviesAdapter.submitList(latestMoviesResource.data)
+                        val watchedMovies = latestMoviesResource.data
+
+                        if(watchedMovies.isNullOrEmpty()) {
+                            bindings.homeWatchedMoviesLayout.visibility = View.GONE
+                            bindings.homeWatchedMoviesMessageContainer.visibility = View.VISIBLE
+                            bindings.homeWatchedMoviesMessageContainer.text = getString(R.string.no_watched_movies)
+
+                        } else {
+                            bindings.homeWatchedMoviesLayout.visibility = View.VISIBLE
+                            bindings.homeWatchedMoviesMessageContainer.visibility = View.GONE
+                            lastWatchedMoviesAdapter.submitList(latestMoviesResource.data)
+                        }
                     }
                     is Resource.Error -> {
                         bindings.homeWatchedMoviesProgressbar.visibility = View.GONE
 
 
-                        lastWatchedMoviesAdapter.submitList(latestMoviesResource.data)
+                        val watchedMovies = latestMoviesResource.data
 
+                        if(watchedMovies.isNullOrEmpty()) {
+                            bindings.homeWatchedMoviesLayout.visibility = View.GONE
+                            bindings.homeWatchedMoviesMessageContainer.visibility = View.VISIBLE
+                            bindings.homeWatchedMoviesMessageContainer.text = getString(R.string.no_watched_movies)
+
+                        } else {
+                            bindings.homeWatchedMoviesLayout.visibility = View.VISIBLE
+                            bindings.homeWatchedMoviesMessageContainer.visibility = View.GONE
+                            lastWatchedMoviesAdapter.submitList(latestMoviesResource.data)
+                        }
                         handleError(latestMoviesResource.error, null)
                     }
 
@@ -208,18 +253,37 @@ class MainFragment: BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
                     }
 
                     is Resource.Success -> {
-
                         bindings.homeWatchedShowsProgressbar.visibility = View.GONE
 
-                        lastWatchedEpisodesAdapter.submitList(watchedEpisodesResource.data)
+                        val watchedEpisodes = watchedEpisodesResource.data
+
+                        if(watchedEpisodes.isNullOrEmpty()) {
+                            bindings.homeWatchedShowsLayout.visibility = View.GONE
+                            bindings.homeWatchedShowsMessageContainer.visibility = View.VISIBLE
+                            bindings.homeWatchedShowsMessageContainer.text = getString(R.string.no_watched_episodes)
+                        } else {
+                            bindings.homeWatchedShowsLayout.visibility = View.VISIBLE
+                            bindings.homeWatchedShowsMessageContainer.visibility = View.GONE
+
+                            lastWatchedEpisodesAdapter.submitList(watchedEpisodesResource.data)
+                        }
 
                     }
                     is Resource.Error -> {
                         bindings.homeWatchedShowsProgressbar.visibility = View.GONE
 
-                        bindings.homeWatchedShowsProgressbar.visibility = View.GONE
+                        val watchedEpisodes = watchedEpisodesResource.data
 
-                        lastWatchedEpisodesAdapter.submitList(watchedEpisodesResource.data)
+                        if(watchedEpisodes.isNullOrEmpty()) {
+                            bindings.homeWatchedShowsLayout.visibility = View.GONE
+                            bindings.homeWatchedShowsMessageContainer.visibility = View.VISIBLE
+                            bindings.homeWatchedShowsMessageContainer.text = getString(R.string.no_watched_episodes)
+                        } else {
+                            bindings.homeWatchedShowsLayout.visibility = View.VISIBLE
+                            bindings.homeWatchedShowsMessageContainer.visibility = View.GONE
+
+                            lastWatchedEpisodesAdapter.submitList(watchedEpisodesResource.data)
+                        }
 
                         handleError(watchedEpisodesResource.error, null)
 

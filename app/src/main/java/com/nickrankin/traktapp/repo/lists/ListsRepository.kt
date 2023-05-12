@@ -149,8 +149,12 @@ class ListsRepository @Inject constructor(
     )
 
     suspend fun reorderList(
-        traktList: com.nickrankin.traktapp.dao.lists.model.TraktList,
+        traktList: com.nickrankin.traktapp.dao.lists.model.TraktList?,
         newSortBy: SortBy): Throwable? {
+        if(traktList == null) {
+            Log.e(TAG, "reorderList: Trakt List cannot be null!", )
+            return null
+        }
 
         val newSortHow = if(traktList.sortBy == newSortBy) {
             // Sorting by same criteria, so flip the SortHow filtering

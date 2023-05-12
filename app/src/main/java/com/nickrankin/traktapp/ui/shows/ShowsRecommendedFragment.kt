@@ -72,12 +72,6 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
 
         updateTitle("Suggested Shows")
 
-        if(!isLoggedIn) {
-            // TODO display relevant message to UI
-            Log.e(TAG, "onViewCreated: Need login for this action")
-            return
-        }
-
         initRecycler()
         getViewType()
 
@@ -139,30 +133,50 @@ class ShowsRecommendedFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshLis
 
     private fun getSuggestedShows() {
         lifecycleScope.launchWhenStarted {
-            viewModel.suggestedShows.collectLatest { data ->
-                when (data) {
+            viewModel.suggestedShows.collectLatest { suggestedShowsResource ->
+                when (suggestedShowsResource) {
                     is Resource.Loading -> {
                         progressBar.visibility = View.VISIBLE
+                        toggleMessageBanner(bindings, null, false)
                     }
                     is Resource.Success -> {
 
                         progressBar.visibility = View.GONE
 
-                        // Create a new list to allow ListAdapters AsyncListDiffer checks to run https://stackoverflow.com/questions/69715381/diffutil-not-refreshing-view-in-observer-call-android-kotlin
-                        adapter.submitList(data.data?.toMutableList()) {
-                            recyclerView.scrollToPosition(0)
+                        val shows = suggestedShowsResource.data
+
+                        if(shows.isNullOrEmpty()) {
+                            toggleMessageBanner(bindings, getString(R.string.no_recommended_shows), true)
+                        } else {
+                            toggleMessageBanner(bindings, null, false)
+
+                            // Create a new list to allow ListAdapters AsyncListDiffer checks to run https://stackoverflow.com/questions/69715381/diffutil-not-refreshing-view-in-observer-call-android-kotlin
+                            adapter.submitList(shows.toMutableList()) {
+                                recyclerView.scrollToPosition(0)
+                            }
                         }
                     }
                     is Resource.Error -> {
 
                         progressBar.visibility = View.GONE
 
-                        handleError(data.error, "Error loading recommended shows from Trakt. ")
+                        val shows = suggestedShowsResource.data
+
+                        if(shows.isNullOrEmpty()) {
+                            toggleMessageBanner(bindings, getString(R.string.no_recommended_shows), true)
+                        } else {
+                            toggleMessageBanner(bindings, null, false)
+
+                            // Create a new list to allow ListAdapters AsyncListDiffer checks to run https://stackoverflow.com/questions/69715381/diffutil-not-refreshing-view-in-observer-call-android-kotlin
+                            adapter.submitList(shows.toMutableList()) {
+                                recyclerView.scrollToPosition(0)
+                            }
+                        }
 
                         showErrorSnackbarRetryButton(
-                            data.error, bindings.root
+                            suggestedShowsResource.error, bindings.root
                         ) {
-                            viewModel.onRefresh()
+                            onRefresh()
                         }
                     }
                 }

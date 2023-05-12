@@ -42,7 +42,10 @@ class ShowsOverviewRepository @Inject constructor(private val traktApi: TraktApi
                 .apply()
 
             showsDatabase.withTransaction {
-                showCalendarEntryDao.insert(convertEntries(calendarShowEntries))
+                showCalendarEntryDao.deleteShowCalendarEntries()
+                showCalendarEntryDao.insert(
+                    removeAlreadyAiredEpisodes(convertEntries(calendarShowEntries))
+                )
             }
         }
     )
@@ -76,17 +79,19 @@ class ShowsOverviewRepository @Inject constructor(private val traktApi: TraktApi
         }
     }
 
-    suspend fun removeAlreadyAiredEpisodes(shows: List<ShowBaseCalendarEntry>) {
+    fun removeAlreadyAiredEpisodes(shows: List<ShowBaseCalendarEntry>): List<ShowBaseCalendarEntry> {
         Log.e(TAG, "removeAlreadyAiredEpisodes: ${shows.size}")
         val dateNow = OffsetDateTime.now()
+        val filteredShows: MutableList<ShowBaseCalendarEntry> = mutableListOf()
+
         shows.map { calendarEntry ->
             Log.d(TAG, "removeAlreadyAiredEpisodes: Entry ${calendarEntry.episode_title}. Aired ${calendarEntry.first_aired?.atZoneSameInstant(ZoneId.systemDefault())} Now ${dateNow?.atZoneSameInstant(ZoneId.systemDefault())}. Is before ${calendarEntry.first_aired?.isBefore(dateNow)}")
-            if(calendarEntry.first_aired?.atZoneSameInstant(ZoneId.systemDefault())?.isBefore(dateNow?.atZoneSameInstant(ZoneId.systemDefault())) == true) {
-                showsDatabase.withTransaction {
-                    showCalendarEntryDao.delete(calendarEntry)
-                }
+            if(calendarEntry.first_aired?.atZoneSameInstant(ZoneId.systemDefault())?.isBefore(dateNow?.atZoneSameInstant(ZoneId.systemDefault())) == false) {
+                filteredShows.add(calendarEntry)
             }
         }
+
+        return filteredShows
     }
 
     private fun convertEntries(entries: List<CalendarShowEntry>): List<ShowBaseCalendarEntry> {

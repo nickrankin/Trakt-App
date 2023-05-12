@@ -11,15 +11,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <ProgressBar
-            android:id="@+id/traktlistsfragment_progressbar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
         <TextView
             android:id="@+id/traktlistsfragment_message_container"
             android:layout_width="0dp"
@@ -34,7 +25,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/traktlistsfragment_recyclerview"
             android:layout_width="match_parent"
@@ -48,14 +38,18 @@
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
+    <ProgressBar
+        android:id="@+id/traktlistsfragment_progressbar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center" />
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/traktlistsfragment_add_list"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|right"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginEnd="26dp"
+        android:layout_marginBottom="26dp"
         android:src="@drawable/ic_baseline_add_24" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
 

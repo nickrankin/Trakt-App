@@ -107,7 +107,7 @@ class MovieActionButtonsRepository @Inject constructor(
         return listsRepository.removeFromList(itemTraktId, listTraktId, Type.MOVIE)
     }
 
-    override suspend fun getCollectedStats(
+    suspend fun getCollectedStats(
         traktId: Int,
         shouldFetch: Boolean
     ): Flow<Resource<CollectedStats?>> = networkBoundResource(
@@ -448,7 +448,7 @@ class MovieActionButtonsRepository @Inject constructor(
         }
     }
 
-    override suspend fun removeFromCollection(traktId: Int): Resource<SyncResponse> {
+    suspend fun removeFromCollection(traktId: Int): Resource<SyncResponse> {
         return try {
             val removeFromCollectionResponse =
                 traktApi.tmSync().deleteItemsFromCollection(getSyncItems(traktId))

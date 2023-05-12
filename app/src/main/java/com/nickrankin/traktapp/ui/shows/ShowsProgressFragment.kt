@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.OnNavigateToEntity
+import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.shows.ShowProgressAdapter
 import com.nickrankin.traktapp.databinding.FragmentSplitviewLayoutBinding
 import com.nickrankin.traktapp.helper.Resource
@@ -61,17 +62,36 @@ class ShowsProgressFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListen
                 when(showProgressResource) {
                     is Resource.Loading -> {
                         bindings.splitviewlayoutProgressbar.visibility = View.VISIBLE
+                        toggleMessageBanner(bindings, null, false)
                     }
                     is Resource.Success -> {
+                        bindings.splitviewlayoutProgressbar.visibility = View.GONE
+                        toggleMessageBanner(bindings, null, false)
+
+                        val stats = showProgressResource.data
+
+                        if(stats?.isNotEmpty() == true) {
+                            toggleMessageBanner(bindings, null, false)
+                            showProgressAdapter.submitList(stats)
+                        } else {
+                            toggleMessageBanner(bindings, getString(R.string.none_watched), true)
+                        }
+                    }
+                    is Resource.Error -> {
                         bindings.splitviewlayoutProgressbar.visibility = View.GONE
 
                         val stats = showProgressResource.data
 
-                        showProgressAdapter.submitList(stats)
-                        
-                    }
-                    is Resource.Error -> {
-                        handleError(showProgressResource.error, null)
+                        if(stats?.isNotEmpty() == true) {
+                            toggleMessageBanner(bindings, null, false)
+                            showProgressAdapter.submitList(stats)
+                        } else {
+                            toggleMessageBanner(bindings, getString(R.string.none_watched), true)
+                        }
+
+                        showErrorSnackbarRetryButton(showProgressResource.error, bindings.root) {
+                            onRefresh()
+                        }
                     }
 
                 }

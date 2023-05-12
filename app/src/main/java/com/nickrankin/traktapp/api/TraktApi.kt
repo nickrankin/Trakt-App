@@ -43,7 +43,7 @@ class TraktApi(
                     .writeTimeout(25, TimeUnit.SECONDS)
                     .connectionPool(ConnectionPool(1, 25, TimeUnit.SECONDS))
                 if (loggingOn) {
-                    builder.eventListener(OkHttpPerformanceEventListener())
+//                    builder.eventListener(OkHttpPerformanceEventListener())
                     builder.addInterceptor(getLogger())
                 }
                 setOkHttpClientDefaults(builder)

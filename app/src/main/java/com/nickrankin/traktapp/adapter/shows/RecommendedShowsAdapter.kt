@@ -1,7 +1,6 @@
 package com.nickrankin.traktapp.adapter.shows
 
 import android.util.Log
-import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -13,7 +12,6 @@ import com.bumptech.glide.RequestManager
 import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.AdaptorActionControls
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
-import com.nickrankin.traktapp.databinding.ReccomendedShowEntryListItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.ImageItemType
 import com.nickrankin.traktapp.helper.TmdbImageLoader

@@ -88,27 +88,29 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
 //        }
 //    }
 
-    val watchedEpisodes = episodeId.flatMapLatest { traktId ->
-        refreshEvent.flatMapLatest { shouldRefresh ->
+    val watchedEpisodes = refreshEvent.flatMapLatest { shouldRefresh ->
+
+        episodeId.flatMapLatest { traktId ->
             episodeActionButtonsRepository.getPlaybackHistory(traktId, shouldRefresh)
         }
     }
 
-    val collectionStatus = episodeId.flatMapLatest { episodeId ->
-        refreshEvent.flatMapLatest { shouldRefresh ->
-            episodeActionButtonsRepository.getCollectedStats(episodeId, shouldRefresh)
+    val collectionStatus = refreshEvent.flatMapLatest { shouldRefresh ->
+        episodeDataModelChanged.flatMapLatest { episodeDataModel ->
+            episodeActionButtonsRepository.getCollectedStats(episodeDataModel.traktId, episodeDataModel.seasonNumber, episodeDataModel.episodeNumber, shouldRefresh)
         }
     }
 
-    val rating = episodeId.flatMapLatest { episodeId ->
-        refreshEvent.flatMapLatest { shouldRefresh ->
+    val rating = refreshEvent.flatMapLatest { shouldRefresh ->
+        episodeId.flatMapLatest { episodeId ->
+
             episodeActionButtonsRepository.getRatings(episodeId, shouldRefresh)
         }
     }
 
     // Overview Fragment
-    override val cast = castToggle.flatMapLatest { showGuestStars ->
-        refreshEvent.flatMapLatest { shouldRefresh ->
+    override val cast = refreshEvent.flatMapLatest { shouldRefresh ->
+        castToggle.flatMapLatest { showGuestStars ->
             episodeDataModelChanged.flatMapLatest { episodeDataModel ->
                 showDetailsOverviewRepository.getEpisodeCast(episodeDataModel, showGuestStars, shouldRefresh)
             }
@@ -180,8 +182,8 @@ class EpisodeDetailsViewModel @Inject constructor(private val savedStateHandle: 
         )
     }
 
-    fun removeFromCollection(traktId: Int) = viewModelScope.launch {
-        eventChannel.send(ActionButtonEvent.RemoveFromCollectionEvent(episodeActionButtonsRepository.removeFromCollection(traktId)))
+    fun removeFromCollection(episodeTraktId: Int, showTraktId: Int, seasonNumber: Int, episodeNumber: Int) = viewModelScope.launch {
+        eventChannel.send(ActionButtonEvent.RemoveFromCollectionEvent(episodeActionButtonsRepository.removeFromCollection(episodeTraktId, showTraktId, seasonNumber, episodeNumber)))
     }
 
 //    fun switchEpisode(episodeNumber: Int?) {

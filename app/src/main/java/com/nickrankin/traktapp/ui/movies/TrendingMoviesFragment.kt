@@ -15,7 +15,6 @@ import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.adapter.movies.TrendingMoviesAdaptor
 import com.nickrankin.traktapp.databinding.FragmentSplitviewLayoutBinding
-import com.nickrankin.traktapp.databinding.FragmentTrendingMoviesBinding
 import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.movies.TrendingMoviesViewModel
@@ -76,34 +75,44 @@ class TrendingMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshListe
             viewModel.trendingMovies.collectLatest { trendingMoviesResource ->
                 when(trendingMoviesResource) {
                     is Resource.Loading -> {
-                        Log.d(TAG, "getTrendingMovies: Loading Trending Movies")
                         progressBar.visibility = View.VISIBLE
 
-                        recyclerView.visibility = View.VISIBLE
+                        toggleMessageBanner(bindings, null, false)
+
                     }
 
                     is Resource.Success -> {
-                        Log.d(TAG, "getTrendingMovies: Got ${trendingMoviesResource.data?.size} movies")
 
                         progressBar.visibility = View.GONE
 
-                        adapter.submitList(trendingMoviesResource.data) {
-                            recyclerView.scrollToPosition(0)
+                        if(trendingMoviesResource.data.isNullOrEmpty()) {
+                            toggleMessageBanner(bindings, getString(R.string.load_trending_movies_failed), true)
+                        } else {
+                            toggleMessageBanner(bindings, null, false)
+                            adapter.submitList(trendingMoviesResource.data) {
+                                recyclerView.scrollToPosition(0)
+                            }
                         }
 
                     }
 
                     is Resource.Error -> {
-
                         progressBar.visibility = View.GONE
 
-                        recyclerView.visibility = View.GONE
+                        if(trendingMoviesResource.data.isNullOrEmpty()) {
+                            toggleMessageBanner(bindings, getString(R.string.load_trending_movies_failed), true)
+                        } else {
+                            toggleMessageBanner(bindings, null, false)
+                            adapter.submitList(trendingMoviesResource.data) {
+                                recyclerView.scrollToPosition(0)
+                            }
+                        }
 
                         (activity as IHandleError).showErrorSnackbarRetryButton(
                             trendingMoviesResource.error,
                             bindings.root
                         ) {
-                            viewModel.onRefresh()
+                            onRefresh()
                         }
 
                     }

@@ -18,7 +18,6 @@ import com.nickrankin.traktapp.adapter.AdaptorActionControls
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.dao.show.model.TrackedEpisode
 import com.nickrankin.traktapp.dao.show.model.TrackedShowWithEpisodes
-import com.nickrankin.traktapp.databinding.TrackedShowListItemBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.ImageItemType
 import com.nickrankin.traktapp.helper.TmdbImageLoader

@@ -39,8 +39,6 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: CollectedMoviesAdapter
 
-    private var currentViewType = MediaEntryBaseAdapter.VIEW_TYPE_POSTER
-
     @Inject
     lateinit var glide: RequestManager
 
@@ -93,24 +91,19 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
                 when (collectedMoviesResource) {
                     is Resource.Loading -> {
                         bindings.splitviewlayoutProgressbar.visibility = View.VISIBLE
-                        Log.d(TAG, "getCollectedMovies: Loading collected")
+                        toggleMessageBanner(bindings, null, false)
                     }
                     is Resource.Success -> {
                         bindings.splitviewlayoutProgressbar.visibility = View.GONE
 
                         val collectedMovies = collectedMoviesResource.data
 
-                        if(collectedMovies != null && collectedMovies.isNotEmpty()) {
-                            bindings.splitviewlayoutMainGroup.visibility = View.VISIBLE
-                            bindings.splitviewlayoutMessageContainer.visibility = View.GONE
-
+                        if(collectedMovies.isNullOrEmpty()) {
+                            toggleMessageBanner(bindings, getString(R.string.collected_movies_none), true)
+                        } else {
                             adapter.submitList(collectedMoviesResource.data) {
                                 recyclerView.scrollToPosition(0)
                             }
-
-                        } else {
-                            handleNoResults()
-                            adapter.submitList(collectedMoviesResource.data)
                         }
                     }
                     is Resource.Error -> {
@@ -118,32 +111,26 @@ class CollectedMoviesFragment : BaseFragment(), SwipeRefreshLayout.OnRefreshList
 
                         val collectedMovies = collectedMoviesResource.data
 
-                        if(collectedMovies != null && collectedMovies.isNotEmpty()) {
-                            bindings.splitviewlayoutMainGroup.visibility = View.VISIBLE
-                            bindings.splitviewlayoutMessageContainer.visibility = View.GONE
-
-                            adapter.submitList(collectedMoviesResource.data)
+                        if(collectedMovies.isNullOrEmpty()) {
+                            toggleMessageBanner(bindings, getString(R.string.collected_movies_none), true)
                         } else {
-                            handleNoResults()
-                            adapter.submitList(collectedMoviesResource.data)
+                            adapter.submitList(collectedMoviesResource.data) {
+                                toggleMessageBanner(bindings, null, false)
+                                recyclerView.scrollToPosition(0)
+                            }
                         }
+
 
                         (activity as IHandleError).showErrorSnackbarRetryButton(
                             collectedMoviesResource.error,
                             bindings.root
                         ) {
-                            viewModel.onRefresh()
+                            onRefresh()
                         }
                     }
                 }
             }
         }
-    }
-
-    private fun handleNoResults() {
-        bindings.splitviewlayoutMainGroup.visibility = View.GONE
-        bindings.splitviewlayoutMessageContainer.visibility = View.VISIBLE
-        bindings.splitviewlayoutMessageContainer.text = "You have nothing in your Trakt Collection :( "
     }
 
     private fun initRecycler() {

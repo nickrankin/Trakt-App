@@ -26,7 +26,6 @@ import com.nickrankin.traktapp.adapter.movies.WatchedMoviesPagingAdapter
 import com.nickrankin.traktapp.dao.movies.model.WatchedMovie
 import com.nickrankin.traktapp.dao.movies.model.WatchedMovieAndStats
 import com.nickrankin.traktapp.databinding.FragmentSplitviewLayoutBinding
-import com.nickrankin.traktapp.databinding.FragmentWatchedMoviesBinding
 import com.nickrankin.traktapp.helper.*
 import com.nickrankin.traktapp.model.datamodel.MovieDataModel
 import com.nickrankin.traktapp.model.movies.WatchedMoviesViewModel

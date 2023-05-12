@@ -9,6 +9,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.nickrankin.traktapp.BaseFragment
+import com.nickrankin.traktapp.R
 import com.nickrankin.traktapp.adapter.history.WatchedHistoryEntryAdapter
 import com.nickrankin.traktapp.adapter.lists.ListsCheckboxAdapter
 import com.nickrankin.traktapp.dao.history.model.HistoryEntry
@@ -50,12 +51,12 @@ abstract class ActionButtonsBaseFragment: BaseFragment() {
 
     private lateinit var typeString: String
 
-    abstract fun setup(config: (bindings: LayoutActionButtonsBinding, traktId: Int, title: String, type: Type) -> Unit)
+    abstract fun setup(config: (bindings: LayoutActionButtonsBinding, traktId: Int, title: String, type: Type, enableCheckinButton: Boolean, enableHistoryButton: Boolean) -> Unit)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setup { bindings, traktId, title, type ->
+        setup { bindings, traktId, title, type, enableCheckinButton, enableHistoryButton ->
             this.bindings = bindings
             this.traktId = traktId
             this.title = title
@@ -68,19 +69,25 @@ abstract class ActionButtonsBaseFragment: BaseFragment() {
 
             setTypeString()
 
-            setupDialogs()
+            setupDialogs(enableCheckinButton, enableHistoryButton)
 
             getEvents()
         }
 
     }
 
-    private fun setupDialogs() {
-        setupCheckinDialogButton()
-        setupAddHistoryButton()
+    private fun setupDialogs(enableCheckinButton: Boolean, enableHistoryButton: Boolean) {
+
         setupRatingButton()
         setupAddToCollectionButton()
         setupListsDialog()
+
+        if(enableHistoryButton) {
+            setupAddHistoryButton()
+        }
+        if(enableCheckinButton) {
+            setupCheckinDialogButton()
+        }
     }
 
     private fun setTypeString() {
@@ -126,19 +133,27 @@ abstract class ActionButtonsBaseFragment: BaseFragment() {
 
     private fun displayPlayCount() {
         updatePlayCount { historyEntries ->
-            if(historyEntries.isNotEmpty()) {
                 bindings.apply {
-                    actionbuttonsLastWatched.text = "Last watched: ${getFormattedDateTime(historyEntries.first().watched_date, sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString(AppConstants.TIME_FORMAT, AppConstants.DEFAULT_TIME_FORMAT))}"
-
                     actionbuttonsAllPlays.visibility = View.VISIBLE
-                    actionbuttonsAllPlays.text = "Plays (${historyEntries.size})"
+                    if(historyEntries.isNotEmpty()) {
+                        actionbuttonsLastWatched.text = "Last watched: ${getFormattedDateTime(historyEntries.first().watched_date, sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString(AppConstants.TIME_FORMAT, AppConstants.DEFAULT_TIME_FORMAT))}"
 
-                    actionbuttonsAllPlays.setOnClickListener {
-                        getAllPlaysDialog().show()
+                        actionbuttonsAllPlays.text = "Plays (${historyEntries.size})"
+
+                        actionbuttonsAllPlays.setOnClickListener {
+                            getAllPlaysDialog().show()
+                        }
+                    } else {
+                        actionbuttonsLastWatched.text = getString(R.string.unwatched_placeholder)
+                        actionbuttonsAllPlays.text = getString(R.string.plays_unwatched)
+
+                        actionbuttonsAllPlays.setOnClickListener {
+                            Toast.makeText(requireContext(), getString(R.string.not_watched, type.name.lowercase()), Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
                 watchedHistoryAdapter.submitList(historyEntries.sortedBy { it.watched_date }.reversed())
-            }
+
         }
     }
 
@@ -159,6 +174,7 @@ abstract class ActionButtonsBaseFragment: BaseFragment() {
     private fun setupAddHistoryButton() {
 
         val button = bindings.actionbuttonsHistory
+        button.visibility = View.VISIBLE
 
 
         button.setOnClickListener {
@@ -187,14 +203,13 @@ abstract class ActionButtonsBaseFragment: BaseFragment() {
                 RatingPickerFragment.RATING_RESET -> {
                     Log.d(TAG, "initDialogs: Deleting rating")
                     deleteRating(traktId)
-
+                    setProgressBar(false)
                 }
                 RatingPickerFragment.DIALOG_CLOSED -> {
                     setProgressBar(false)
                 }
                 else -> {
                     Log.d(TAG, "initDialogs: Updating rating with $newRating")
-
                     setNewRating(traktId, newRating)
                 }
             }
@@ -253,6 +268,8 @@ abstract class ActionButtonsBaseFragment: BaseFragment() {
     private fun setupCheckinDialogButton() {
         val button = bindings.actionbuttonsCheckin
 
+        button.visibility = View.VISIBLE
+
         button.setOnClickListener {
             getCheckinDialog(traktId, title).show()
         }
@@ -310,9 +327,9 @@ abstract class ActionButtonsBaseFragment: BaseFragment() {
                 addToCollection(traktId)
                 setProgressBar(true)
             }
-            .setNegativeButton("Cancel", { dialogInterface, i ->
+            .setNegativeButton("Cancel") { dialogInterface, i ->
                 dialogInterface.dismiss()
-            })
+            }
             .create()
 
         // Remove from collection
@@ -351,7 +368,7 @@ abstract class ActionButtonsBaseFragment: BaseFragment() {
     abstract fun addToCollection(traktId: Int)
     abstract fun removeFromCollection(traktId: Int)
 
-    protected fun setProgressBar(isSpinning: Boolean) {
+    private fun setProgressBar(isSpinning: Boolean) {
         synchronized(this) {
             progressBar!!.visibility = if (isSpinning) View.VISIBLE else View.GONE
         }
@@ -480,6 +497,7 @@ abstract class ActionButtonsBaseFragment: BaseFragment() {
                         ).name
                     } (${newRating})", Toast.LENGTH_SHORT
                 )
+                setProgressBar(false)
             }
             Response.NOT_FOUND -> {
                 Log.e(
@@ -490,13 +508,17 @@ abstract class ActionButtonsBaseFragment: BaseFragment() {
                     "Current $typeString could not be found on Trakt (ID: ${traktId})",
                     Toast.LENGTH_SHORT
                 )
+                setProgressBar(false)
             }
             Response.ERROR -> {
                 Log.e(TAG, "getEvents: SyncResponse cannot be NULL")
+                setProgressBar(false)
             }
             else -> {
                 Log.e(TAG, "getEvents: Invalid Response")
+                setProgressBar(false)
             }
+
         }
     }
 
@@ -507,18 +529,22 @@ abstract class ActionButtonsBaseFragment: BaseFragment() {
                     "Reset ${title} Rating successfully!",
                     Toast.LENGTH_SHORT
                 )
+                setProgressBar(false)
             }
             Response.NOT_FOUND -> {
                 displayMessageToast(
                     "Current $typeString could not be found on Trakt (ID: ${traktId})",
                     Toast.LENGTH_SHORT
                 )
+                setProgressBar(false)
             }
             Response.ERROR -> {
                 Log.e(TAG, "getEvents: SyncResponse cannot be NULL")
+                setProgressBar(false)
             }
             else -> {
                 Log.e(TAG, "getEvents: Invalid Response")
+                setProgressBar(false)
             }
         }
     }
@@ -563,18 +589,23 @@ abstract class ActionButtonsBaseFragment: BaseFragment() {
                     "${title} Added to collection successfully!",
                     Toast.LENGTH_SHORT
                 )
+                setProgressBar(false)
+
             }
             Response.NOT_FOUND -> {
                 displayMessageToast(
                     "Current $typeString could not be found on Trakt",
                     Toast.LENGTH_SHORT
                 )
+                setProgressBar(false)
             }
             Response.ERROR -> {
                 Log.e(TAG, "getEvents: SyncResponse cannot be NULL")
+                setProgressBar(false)
             }
             else -> {
                 Log.e(TAG, "getEvents: Invalid Response")
+                setProgressBar(false)
             }
         }
     }
@@ -586,18 +617,22 @@ abstract class ActionButtonsBaseFragment: BaseFragment() {
                     "$title deleted from collection successfully!",
                     Toast.LENGTH_SHORT
                 )
+                setProgressBar(false)
             }
             Response.NOT_FOUND -> {
                 displayMessageToast(
                     "Current $typeString could not be found on Trakt",
                     Toast.LENGTH_SHORT
                 )
+                setProgressBar(false)
             }
             Response.ERROR -> {
                 Log.e(TAG, "getEvents: SyncResponse cannot be NULL")
+                setProgressBar(false)
             }
             else -> {
                 Log.e(TAG, "getEvents: Invalid Response")
+                setProgressBar(false)
             }
         }
     }

@@ -1,41 +1,16 @@
 <resources>
     <string name="app_name">Trakt Manager</string>
-    <string name="title_home">Home</string>
-    <string name="title_dashboard">Dashboard</string>
-    <string name="title_notifications">Notifications</string>
     <!-- Preference Titles -->
-    <string name="messages_header">Messages</string>
-    <string name="sync_header">Sync</string>
 
     <!-- Messages Preferences -->
-    <string name="signature_title">Your signature</string>
-    <string name="reply_title">Default reply action</string>
 
     <!-- Sync Preferences -->
-    <string name="sync_title">Sync email periodically</string>
-    <string name="attachment_title">Download incoming attachments</string>
-    <string name="attachment_summary_on">Automatically download attachments for incoming emails
-    </string>
-    <string name="attachment_summary_off">Only download attachments when manually requested</string>
 
 
     <string name="retry">Retry</string>
     <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="title_activity_movie_details">MovieDetailsActivity</string>
     <!-- Strings used for fragments for navigation -->
-    <string name="first_fragment_label">First Fragment</string>
-    <string name="second_fragment_label">Second Fragment</string>
-    <string name="next">Next</string>
-    <string name="previous">Previous</string>
 
-    <string name="hello_first_fragment">Hello first fragment</string>
-    <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
-    <string name="vertical_ellipsis">&#8942;</string>
-    <string name="CHECKIN">Checkin</string>
-    <string name="ADD_HISTORY">Add to Watch History</string>
-    <string name="RATE">Rate</string>
-    <string name="ADD_COLLECTION">Add to Collection</string>
     <string name="LISTS">Lists</string>
     <string name="DIRECTED_BY">Directed By:</string>
     <string name="written_by">Written By:</string>
@@ -45,10 +20,10 @@
     <string name="plays_empty">Plays: 0</string>
     <string name="duration_empty">Duration: 0 days, 0 hours, 0 minutes</string>
     <string name="shows">Shows</string>
-    <string name="airing_soon">Airing soon...</string>
+    <string name="airing_soon">Airing soon…</string>
     <string name="show_all">Show all</string>
-    <string name="last_watched_movies">Last Watched Movies ...</string>
-    <string name="last_watched_episodes">Last Watched Episodes ...</string>
+    <string name="last_watched_movies">Last Watched Movies …</string>
+    <string name="last_watched_episodes">Last Watched Episodes …</string>
     <string name="information">Information</string>
     <string name="directed_by">Directed By:</string>
     <string name="external_links">External Links:</string>
@@ -70,7 +45,6 @@
     <string name="reload_poster">Reload Poster</string>
     <string name="switch_layout">Switch layout</string>
     <string name="show_hidden_shows">Show hidden shows</string>
-    <string name="collected">Collected</string>
     <string name="sort">Sort</string>
     <string name="title">Title</string>
     <string name="collected_at">Collected At</string>
@@ -81,17 +55,14 @@
     <string name="rate">Rate!</string>
     <string name="reset_rating">Reset Rating</string>
     <string name="close">Close</string>
-    <string name="refresh">Refresh</string>
     <string name="unwatched">Unwatched</string>
     <string name="logoff">Logoff</string>
-    <string name="connect_trakt_account">Connect Trakt Account</string>
     <string name="cast">Cast</string>
     <string name="you_are_not_logged_in_to_trakt">You are not logged in to Trakt! Please connect your Trakt account to access this feature!</string>
     <string name="connect_to_trakt">Connect to Trakt</string>
-    <string name="no_cast_persons">No Cast Persons</string>
+    <string name="no_cast_persons">No cast found</string>
     <string name="main_cast">Main Cast</string>
     <string name="guest_stars">Guest Stars</string>
-    <string name="overall_progress">Overall Progress</string>
     <string name="my_trakt">My Trakt</string>
     <string name="dash">-</string>
     <string name="your_rating">Your Rating</string>
@@ -129,7 +100,6 @@
     <string name="not_interested">Not Interested</string>
     <string name="last_recommended">Last Recommended</string>
     <string name="season_progress">Season Progress:</string>
-    <string name="hide_show">Hide Show</string>
     <string name="add_from_collection">Add From Collection</string>
     <string name="add_from_search">Add From Search</string>
     <string name="go_to_show">Go to show</string>
@@ -137,7 +107,6 @@
     <string name="upcoming_episodes">Upcoming Episodes</string>
     <string name="collection">Collection</string>
     <string name="watched">Watched</string>
-    <string name="watched_date">Watched: %1$s</string>
     <string name="suggested">Suggested</string>
     <string name="trending">Trending</string>
     <string name="upcoming">Upcoming</string>
@@ -149,10 +118,27 @@
     <string name="items">Items</string>
     <string name="total_watching">Total watching</string>
     <string name="go_to_episode">Go to Episode</string>
-    <string name="hide_this_show">Hide This Show</string>
     <string name="shows_airing">Shows airing</string>
-    <string name="last_watched">Last Watched</string>
-    <string name="last_collected">Last Collected: %1$s</string>
     <string name="similar_shows">Similar Shows</string>
+    <string name="plays_unwatched">Plays (0)</string>
+    <string name="not_watched">You have not watched this %s yet!</string>
+    <string name="unwatched_placeholder">Last watched: Unwatched</string>
+    <string name="collection_shows_empty">You have nothing in your collection :-(</string>
+    <string name="none_watched">Start watching shows on Trakt and the progress will appear here!</string>
+    <string name="no_recommended_shows">You have no recommendations right now.</string>
+    <string name="no_upcoming_shows">You have no upcoming shows.</string>
+    <string name="credits_loading_error">Error loading credits</string>
+    <string name="collected_movies_none">You have not collected any movies yet!</string>
+    <string name="movie_suggested_none">You have no movie recommendations at this time</string>
+    <string name="load_trending_movies_failed">Could not load Trending movies from Trakt</string>
+    <string name="no_list_entries">There are no items in this list, why not add some?</string>
+    <string name="error_loading_list_items">An error occurred loading list items</string>
+    <string name="unknown_list">Unknown List</string>
+    <string name="my_lists">My Lists</string>
+    <string name="unable_load_stats">Unable to load user stats</string>
+    <string name="airing_empty">Nothing airing soon</string>
+    <string name="no_watched_movies">No watched movies</string>
+    <string name="no_watched_episodes">No watched episodes..</string>
+    <string name="refresh">Refresh</string>
 
 </resources>

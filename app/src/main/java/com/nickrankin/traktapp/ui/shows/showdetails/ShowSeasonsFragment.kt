@@ -84,9 +84,10 @@ class ShowSeasonsFragment : BaseFragment() {
                     is Resource.Error -> {
                         seasonsProgressBar.visibility = View.GONE
 
-                        if(!seasonsResource.data.isNullOrEmpty()) {
-                            adapter.submitList(seasonsResource.data)
-                        }
+                        val sortedSeasonData = seasonsResource.data?.sortedBy { it.season.season_number }
+
+                        adapter.submitList(sortedSeasonData?.reversed())
+                        popupAdapter.submitList(sortedSeasonData)
 
                         handleError(seasonsResource.error, null)
                     }

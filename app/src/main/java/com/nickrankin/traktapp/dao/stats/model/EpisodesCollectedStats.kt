@@ -12,7 +12,6 @@ data class EpisodesCollectedStats(
     override val collected_at: OffsetDateTime?,
     override val title: String,
     override val listedAt: OffsetDateTime?,
-    val show_trakt_id: Int,
     val season: Int,
     val episode: Int
 ) : CollectedStats

@@ -87,6 +87,7 @@ class ShowDetailsSeasonsFragment : BaseFragment() {
                 when(seasonsResource) {
                     is Resource.Loading -> {
                         Log.d(TAG, "getSeasons: Loading Seasons")
+                        bindings.showdetailsseasonsProgressbar.visibility = View.VISIBLE
                     }
                     is Resource.Success -> {
                         val seasons = seasonsResource.data
@@ -102,6 +103,19 @@ class ShowDetailsSeasonsFragment : BaseFragment() {
                         }
                     }
                     is Resource.Error -> {
+
+                        val seasons = seasonsResource.data
+
+                        if(seasons != null) {
+                            bindings.apply {
+                                showdetailsseasonsMainGroup.visibility = View.VISIBLE
+                                showdetailsseasonsProgressbar.visibility = View.GONE
+                                showdetailsseasonsRecyclerview.visibility = View.VISIBLE
+                            }
+
+                            submitSeasons(seasons)
+                        }
+
                         handleError(seasonsResource.error, null)
                     }
 

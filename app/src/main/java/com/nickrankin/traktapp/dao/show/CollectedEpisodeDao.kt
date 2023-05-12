@@ -27,8 +27,8 @@ interface CollectedEpisodeDao {
     fun delete(collectedEpisode: CollectedEpisode)
 
     @Transaction
-    @Query("DELETE FROM collected_episodes WHERE trakt_id = :episodeTraktId")
-    fun deleteCollectedEpisodeById(episodeTraktId: Int)
+    @Query("DELETE FROM collected_episodes WHERE show_trakt_id = :showTraktId AND season_number = :seasonNumber AND episode_number = :episodeNumber")
+    fun deleteCollectedEpisodeById(showTraktId: Int, seasonNumber: Int, episodeNumber: Int)
 
     @Transaction
     @Query("DELETE FROM collected_episodes")
