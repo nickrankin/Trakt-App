@@ -42,6 +42,7 @@ import javax.inject.Inject
 import kotlin.text.StringBuilder
 
 private const val TAG = "BaseActivity"
+private const val SIMULATE_LOGGED_OUT = false
 @AndroidEntryPoint
 abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener, IHandleError {
 
@@ -53,7 +54,8 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
     @Inject
     lateinit var sharedPreferences: SharedPreferences
 
-    protected var isLoggedIn = false
+    private var _isLoggedIn = false
+    val isLoggedIn get() = _isLoggedIn
 
     private var errorHandled = false
 
@@ -68,17 +70,17 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
         // Load the default preferences
         PreferenceManager.setDefaultValues(this, R.xml.root_preferences, false)
 
-        isLoggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
-
-
-
+        _isLoggedIn = checkIsLoggedIn()
 
 //        lifecycleScope.launchWhenStarted {
 //            trackedEpisodeAlarmScheduler.scheduleAllAlarms()
 //
 //        }
 
+    }
 
+    private fun checkIsLoggedIn(): Boolean {
+        return if(SIMULATE_LOGGED_OUT) false else sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
     }
 
     private fun getTmApplication() {
@@ -237,7 +239,7 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
 
 interface OnNavigateToEntity {
     fun enableOverviewLayout(isEnabled: Boolean)
-    fun navigateToFragment(fragmentTag: String)
+    fun navigateToFragment(fragmentTag: String, loginRequired: Boolean)
     fun navigateToMovie(movieDataModel: MovieDataModel)
     fun navigateToShow(showDataModel: ShowDataModel)
     fun navigateToSeason(seasonDataModel: SeasonDataModel)

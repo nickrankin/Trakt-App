@@ -109,7 +109,6 @@ class EpisodeDetailsFragment() : BaseFragment(), OnNavigateToShow,
     }
 
     private fun initFragments() {
-        if (isLoggedIn) {
             childFragmentManager.beginTransaction()
                 .replace(
                     bindings.episodedetailsactivityActionButtons.id,
@@ -121,7 +120,6 @@ class EpisodeDetailsFragment() : BaseFragment(), OnNavigateToShow,
                     EpisodeCreditsFragment.newInstance()
                 )
                 .commit()
-        }
 
     }
 

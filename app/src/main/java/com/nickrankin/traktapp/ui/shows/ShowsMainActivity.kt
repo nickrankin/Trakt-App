@@ -86,7 +86,7 @@ class ShowsMainActivity : SplitViewActivity(),
             showTabsFragment.selectTab(selectTabByTag(currentFragmentTag))
         } else {
 
-            super.navigateToFragment(PROGRESS_SHOWS_TAG)
+            super.navigateToFragment(PROGRESS_SHOWS_TAG, true)
             currentFragmentTag = PROGRESS_SHOWS_TAG
         }
 
@@ -131,46 +131,46 @@ class ShowsMainActivity : SplitViewActivity(),
     }
 
 
-    override fun navigateToFragment(fragmentTag: String) {
+    override fun navigateToFragment(fragmentTag: String, loginRequired: Boolean) {
         when (fragmentTag) {
             PROGRESS_SHOWS_TAG -> {
                 Log.d(TAG, "onTabSelected: Progress")
-                super.navigateToFragment(PROGRESS_SHOWS_TAG)
+                super.navigateToFragment(PROGRESS_SHOWS_TAG, true)
 
                 currentFragmentTag = PROGRESS_SHOWS_TAG
             }
             UPCOMING_SHOWS_TAG -> {
                 Log.d(TAG, "onTabSelected: Upcoming")
 
-                super.navigateToFragment(UPCOMING_SHOWS_TAG)
+                super.navigateToFragment(UPCOMING_SHOWS_TAG, true)
 
                 currentFragmentTag = UPCOMING_SHOWS_TAG
             }
             WATCHED_SHOWS_TAG -> {
                 Log.d(TAG, "onTabSelected: Watched")
 
-                super.navigateToFragment(WATCHED_SHOWS_TAG)
+                super.navigateToFragment(WATCHED_SHOWS_TAG, true)
 
                 currentFragmentTag = WATCHED_SHOWS_TAG
             }
             TRACKING_SHOWS_TAG -> {
                 Log.d(TAG, "onTabSelected: Tracking")
 
-                super.navigateToFragment(TRACKING_SHOWS_TAG)
+                super.navigateToFragment(TRACKING_SHOWS_TAG, true)
 
                 currentFragmentTag = TRACKING_SHOWS_TAG
             }
             COLLECTED_SHOWS_TAG -> {
                 Log.d(TAG, "onTabSelected: Collected")
 
-                super.navigateToFragment(COLLECTED_SHOWS_TAG)
+                super.navigateToFragment(COLLECTED_SHOWS_TAG, true)
 
                 currentFragmentTag = COLLECTED_SHOWS_TAG
             }
             SUGGESTED_SHOWS_TAG -> {
                 Log.d(TAG, "onTabSelected: Recommended")
 
-                super.navigateToFragment(SUGGESTED_SHOWS_TAG)
+                super.navigateToFragment(SUGGESTED_SHOWS_TAG, true)
 
                 currentFragmentTag = SUGGESTED_SHOWS_TAG
             }

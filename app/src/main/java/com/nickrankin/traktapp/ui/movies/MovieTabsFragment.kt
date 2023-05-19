@@ -49,17 +49,17 @@ class MovieTabsFragment: BaseFragment(), TabLayout.OnTabSelectedListener {
 
         when (tab?.position) {
             0 -> {
-                moviesMainActivity.navigateToFragment(MoviesMainActivity.TAG_COLLECTED_MOVIES)
+                moviesMainActivity.navigateToFragment(MoviesMainActivity.TAG_COLLECTED_MOVIES, true)
             }
             1 -> {
-                moviesMainActivity.navigateToFragment(MoviesMainActivity.TAG_WATCHED_MOVIES)
+                moviesMainActivity.navigateToFragment(MoviesMainActivity.TAG_WATCHED_MOVIES, true)
             }
             2 -> {
 
-                moviesMainActivity.navigateToFragment(MoviesMainActivity.TAG_SUGGESTED_MOVIES)
+                moviesMainActivity.navigateToFragment(MoviesMainActivity.TAG_SUGGESTED_MOVIES, true)
             }
             3 -> {
-                moviesMainActivity.navigateToFragment(MoviesMainActivity.TAG_TRENDING_MOVIES)
+                moviesMainActivity.navigateToFragment(MoviesMainActivity.TAG_TRENDING_MOVIES, false)
             }
             else -> {
                 Log.e(TAG, "onTabSelected: Tab position invalid: ${tab?.position}")

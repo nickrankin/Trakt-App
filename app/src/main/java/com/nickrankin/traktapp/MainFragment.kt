@@ -113,11 +113,29 @@ class MainFragment: BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
         initLastWatchedMoviesRecyclerView()
         initLastWatchedShowsRecyclerView()
 
-        getUserStats()
+        if(isLoggedIn) {
+            getUserStats()
+            getUpcomingEpisodes()
+            getLastWatchedMovies()
+            getLastWatchedEpisodes()
+        } else {
+            // If user is not logged in, do not show logon only features
+            bindings.homeStatsLayout.visibility = View.GONE
+            bindings.homeStatsMessageContainer.visibility = View.VISIBLE
+            bindings.homeStatsMessageContainer.text = getString(R.string.login_trakt_required)
 
-        getUpcomingEpisodes()
-        getLastWatchedMovies()
-        getLastWatchedEpisodes()
+            bindings.homeAiringLayout.visibility = View.GONE
+            bindings.homeAiringMessageContainer.visibility = View.VISIBLE
+            bindings.homeAiringMessageContainer.text = getString(R.string.login_trakt_required)
+
+            bindings.homeWatchedMoviesLayout.visibility = View.GONE
+            bindings.homeWatchedMoviesMessageContainer.visibility = View.VISIBLE
+            bindings.homeWatchedMoviesMessageContainer.text = getString(R.string.login_trakt_required)
+
+            bindings.homeWatchedShowsLayout.visibility = View.GONE
+            bindings.homeWatchedShowsMessageContainer.visibility = View.VISIBLE
+            bindings.homeWatchedShowsMessageContainer.text = getString(R.string.login_trakt_required)
+        }
     }
 
     private fun getUserStats() {

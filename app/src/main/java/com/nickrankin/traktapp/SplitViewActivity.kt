@@ -18,6 +18,7 @@ import com.nickrankin.traktapp.databinding.ActivitySplitviewBinding
 import com.nickrankin.traktapp.model.SplitViewViewModel
 import com.nickrankin.traktapp.model.datamodel.*
 import com.nickrankin.traktapp.ui.OnSearchByGenre
+import com.nickrankin.traktapp.ui.auth.NotLoggedInFragment
 import com.nickrankin.traktapp.ui.movies.MoviesMainActivity
 import com.nickrankin.traktapp.ui.movies.RecommendedMoviesFragment
 import com.nickrankin.traktapp.ui.movies.TrendingMoviesFragment
@@ -107,7 +108,13 @@ open class SplitViewActivity : BaseActivity(), OnNavigateToEntity,
         navView.setNavigationItemSelectedListener(this)
     }
 
-    override fun navigateToFragment(fragmentTag: String) {
+    override fun navigateToFragment(fragmentTag: String, loginRequired: Boolean) {
+        if(loginRequired && !isLoggedIn) {
+            Log.d(TAG, "navigateToFragment: You must be logged in to perform this action", )
+
+            viewModel.switchPrimaryFragment(FRAGMENT_NO_LOGIN_TAG)
+            return
+        }
         viewModel.switchPrimaryFragment(fragmentTag)
     }
 
@@ -167,6 +174,9 @@ open class SplitViewActivity : BaseActivity(), OnNavigateToEntity,
                 }
                 ShowsMainActivity.PROGRESS_SHOWS_TAG -> {
                     ShowsProgressFragment.newInstance()
+                }
+                FRAGMENT_NO_LOGIN_TAG -> {
+                    NotLoggedInFragment.newInstance()
                 }
 
                 else -> {
@@ -389,6 +399,7 @@ open class SplitViewActivity : BaseActivity(), OnNavigateToEntity,
     companion object {
         const val PRIMARY_FRAGMENT_TAG = "primary_fragment"
         const val SECONDARY_FRAGMENT_TAG = "secondary_fragment"
+        const val FRAGMENT_NO_LOGIN_TAG = "not_logged_in_fragment"
     }
 
 }

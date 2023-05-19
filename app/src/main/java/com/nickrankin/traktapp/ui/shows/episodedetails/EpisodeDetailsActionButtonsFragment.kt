@@ -59,7 +59,6 @@ class EpisodeDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
                         val episode = episodeResource.data
 
                         if (episode != null) {
-                            if (isLoggedIn) {
                                 config(
                                     bindings,
                                     episode.episode_trakt_id,
@@ -69,7 +68,6 @@ class EpisodeDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
                                     true,
                                     true
                                 )
-                            }
 
                             traktRatingChannel.send(episode.trakt_rating)
 

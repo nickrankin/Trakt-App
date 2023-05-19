@@ -46,25 +46,25 @@ class ShowTabsFragment: BaseFragment(), TabLayout.OnTabSelectedListener {
 
         when (tab?.position) {
             0 -> {
-                showsMainActivity.navigateToFragment(ShowsMainActivity.PROGRESS_SHOWS_TAG)
+                showsMainActivity.navigateToFragment(ShowsMainActivity.PROGRESS_SHOWS_TAG, true)
             }
             1 -> {
-                showsMainActivity.navigateToFragment(ShowsMainActivity.UPCOMING_SHOWS_TAG)
+                showsMainActivity.navigateToFragment(ShowsMainActivity.UPCOMING_SHOWS_TAG, true)
             }
             2 -> {
 
-                showsMainActivity.navigateToFragment(ShowsMainActivity.WATCHED_SHOWS_TAG)
+                showsMainActivity.navigateToFragment(ShowsMainActivity.WATCHED_SHOWS_TAG, true)
             }
             3 -> {
-                showsMainActivity.navigateToFragment(ShowsMainActivity.TRACKING_SHOWS_TAG)
+                showsMainActivity.navigateToFragment(ShowsMainActivity.TRACKING_SHOWS_TAG, true)
             }
             4 -> {
 
-                showsMainActivity.navigateToFragment(ShowsMainActivity.COLLECTED_SHOWS_TAG)
+                showsMainActivity.navigateToFragment(ShowsMainActivity.COLLECTED_SHOWS_TAG, true)
             }
             5 -> {
 
-                showsMainActivity.navigateToFragment(ShowsMainActivity.SUGGESTED_SHOWS_TAG)
+                showsMainActivity.navigateToFragment(ShowsMainActivity.SUGGESTED_SHOWS_TAG, true)
 
             }
             else -> {

@@ -15,7 +15,7 @@ class MainActivity : SplitViewActivity(), OnTitleChangeListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        navigateToFragment(MAIN_ACTIVITY_TAG)
+        navigateToFragment(MAIN_ACTIVITY_TAG, false)
 
         onTitleChanged(AppConstants.APP_TITLE)
     }

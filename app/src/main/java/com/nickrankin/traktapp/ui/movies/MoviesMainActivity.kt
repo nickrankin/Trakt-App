@@ -79,7 +79,7 @@ class MoviesMainActivity : SplitViewActivity(), OnTitleChangeListener, OnNavigat
 
         if (currentFragmentTag.isBlank()) {
 
-            super.navigateToFragment(TAG_COLLECTED_MOVIES)
+            super.navigateToFragment(TAG_COLLECTED_MOVIES, true)
 
             currentFragmentTag = TAG_COLLECTED_MOVIES
         } else {
@@ -129,12 +129,12 @@ class MoviesMainActivity : SplitViewActivity(), OnTitleChangeListener, OnNavigat
     }
 
 
-    override fun navigateToFragment(fragmentTag: String) {
+    override fun navigateToFragment(fragmentTag: String, loginRequired: Boolean) {
         when (fragmentTag) {
             TAG_COLLECTED_MOVIES -> {
                 Log.d(TAG, "onTabSelected: Collected")
 
-                super.navigateToFragment(TAG_COLLECTED_MOVIES)
+                super.navigateToFragment(TAG_COLLECTED_MOVIES, true)
 
 //                supportFragmentManager.beginTransaction()
 //                    .replace(
@@ -149,7 +149,7 @@ class MoviesMainActivity : SplitViewActivity(), OnTitleChangeListener, OnNavigat
             TAG_WATCHED_MOVIES -> {
                 Log.d(TAG, "onTabSelected: Watched")
 
-                super.navigateToFragment(TAG_WATCHED_MOVIES)
+                super.navigateToFragment(TAG_WATCHED_MOVIES, true)
 
 //
 //                supportFragmentManager.beginTransaction()
@@ -165,7 +165,7 @@ class MoviesMainActivity : SplitViewActivity(), OnTitleChangeListener, OnNavigat
             TAG_SUGGESTED_MOVIES -> {
                 Log.d(TAG, "onTabSelected: Recommended")
 
-                super.navigateToFragment(TAG_SUGGESTED_MOVIES)
+                super.navigateToFragment(TAG_SUGGESTED_MOVIES, true)
 
 //                supportFragmentManager.beginTransaction()
 //                    .replace(
@@ -180,7 +180,7 @@ class MoviesMainActivity : SplitViewActivity(), OnTitleChangeListener, OnNavigat
             TAG_TRENDING_MOVIES -> {
                 Log.d(TAG, "onTabSelected: Trending")
 
-                super.navigateToFragment(TAG_TRENDING_MOVIES)
+                super.navigateToFragment(TAG_TRENDING_MOVIES, false)
 
 //                supportFragmentManager.beginTransaction()
 //                    .replace(

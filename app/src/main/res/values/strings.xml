@@ -140,5 +140,7 @@
     <string name="no_watched_movies">No watched movies</string>
     <string name="no_watched_episodes">No watched episodes..</string>
     <string name="refresh">Refresh</string>
+    <string name="trakt_account_not_connected">Trakt account not connected. Connect your Trakt account to enable features such as Ratings, Checking in and saving this %s for later!</string>
+    <string name="login_trakt_required">Please connect your Trakt Account to access this feature.</string>
 
 </resources>

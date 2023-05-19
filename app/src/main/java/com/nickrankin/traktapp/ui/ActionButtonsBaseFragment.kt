@@ -2,6 +2,7 @@ package com.nickrankin.traktapp.ui
 
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
@@ -28,6 +29,7 @@ import com.uwetrottmann.trakt5.entities.SyncResponse
 import com.uwetrottmann.trakt5.enums.Rating
 import com.uwetrottmann.trakt5.enums.Type
 import dagger.hilt.android.AndroidEntryPoint
+import org.apache.commons.lang3.StringUtils
 import org.threeten.bp.OffsetDateTime
 import retrofit2.HttpException
 import java.io.IOException
@@ -61,6 +63,17 @@ abstract class ActionButtonsBaseFragment: BaseFragment() {
             this.traktId = traktId
             this.title = title
             this.type = type
+
+            if(!isLoggedIn) {
+                bindings.actionbuttonsLayout.visibility = View.GONE
+                bindings.actionbuttonsLoggedOut.visibility = View.VISIBLE
+                bindings.actionbuttonsLoggedOutTextview.text = getString(R.string.trakt_account_not_connected, StringUtils.capitalize(type.name.lowercase()))
+                Log.e(TAG, "onViewCreated: Action buttons only available if logged in!", )
+                return@setup
+            }
+
+            bindings.actionbuttonsLoggedOut.visibility = View.GONE
+            bindings.actionbuttonsLayout.visibility = View.VISIBLE
 
             initWatchedHistoryAdapter()
             displayPlayCount()

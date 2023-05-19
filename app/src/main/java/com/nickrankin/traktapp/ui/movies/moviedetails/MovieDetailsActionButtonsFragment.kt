@@ -58,10 +58,9 @@ class MovieDetailsActionButtonsFragment : ActionButtonsBaseFragment() {
                         is Resource.Success -> {
                             val movie = movieResource.data
                             if (movie != null) {
-                                if (isLoggedIn) {
-                                    config(bindings, movie.trakt_id, movie.title, Type.MOVIE, true, true)
-                                    traktRatingChannel.send(movie.trakt_rating)
-                                }
+                                config(bindings, movie.trakt_id, movie.title, Type.MOVIE, true, true)
+                                traktRatingChannel.send(movie.trakt_rating)
+
                             }
                         }
                         is Resource.Error -> {

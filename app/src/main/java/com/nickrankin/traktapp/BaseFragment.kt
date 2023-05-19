@@ -20,15 +20,16 @@ abstract class BaseFragment: Fragment(), IHandleError {
     @Inject
     lateinit var sharedPreferences: SharedPreferences
 
-    protected var isLoggedIn = false
+    val isLoggedIn get() = getIsLoggedIn()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-
-        super.onCreate(savedInstanceState)
-        isLoggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
+    private fun getIsLoggedIn(): Boolean {
+        return try {
+            (activity as BaseActivity).isLoggedIn
+        } catch(e: Exception) {
+            Log.e(TAG, "getIsLoggedIn: Activity ${activity?.javaClass?.name} should Extend BaseActivity", )
+            false
+        }
     }
-
-
 
     open fun updateTitle(newTitle: String) {
         try {

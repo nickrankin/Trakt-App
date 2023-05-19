@@ -216,7 +216,8 @@
                             android:id="@+id/home_stats_progressbar"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_centerInParent="true" />
+                            android:layout_centerInParent="true"
+                            android:visibility="gone" />
                     </RelativeLayout>
 
                 </com.google.android.material.card.MaterialCardView>
@@ -281,7 +282,8 @@
                             android:id="@+id/home_next_airing_progressbar"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_centerInParent="true" />
+                            android:layout_centerInParent="true"
+                            android:visibility="gone" />
                         <TextView
                             android:id="@+id/home_airing_message_container"
                             android:layout_width="match_parent"
@@ -361,7 +363,8 @@
                             android:id="@+id/home_watched_movies_progressbar"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_centerInParent="true" />
+                            android:layout_centerInParent="true"
+                            android:visibility="gone" />
                     </RelativeLayout>
 
 
@@ -434,7 +437,8 @@
                             android:id="@+id/home_watched_shows_progressbar"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_centerInParent="true" />
+                            android:layout_centerInParent="true"
+                            android:visibility="gone" />
                     </RelativeLayout>
 
 
