@@ -20,11 +20,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TraktApp">
 
+        <activity android:name=".DebugActvity"
+            android:exported="false"/>
 
         <activity
             android:name=".ui.lists.TraktListsActivity"
             android:exported="false" />
-
         <activity
             android:name=".ui.movies.MoviesMainActivity"
             android:exported="false" />
@@ -56,7 +57,6 @@
         <activity
             android:name=".ui.shows.SeasonEpisodesFragment"
             android:exported="true" />
-
         <activity
             android:name=".ui.auth.AuthActivity"
             android:exported="true"
@@ -78,6 +78,7 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

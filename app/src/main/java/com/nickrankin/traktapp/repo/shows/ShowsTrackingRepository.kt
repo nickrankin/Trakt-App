@@ -36,7 +36,7 @@ class ShowsTrackingRepository @Inject constructor(
         saveFetchResult = { trackedEpisodes ->
 
             showsDatabase.withTransaction {
-                trackedEpisodeDao.deleteAllEpisodesForNotification()
+//                trackedEpisodeDao.deleteAllEpisodesForNotification()
                 trackedEpisodeDao.insert(trackedEpisodes)
             }
         }
@@ -51,8 +51,6 @@ class ShowsTrackingRepository @Inject constructor(
             trackedShowDao.insertTrackedShow(trackedShow)
         }
     }
-
-    suspend fun removeExpiredTrackedShows(showTraktId: Int) = episodeTrackingDataHelper.removeExpiredTrackedEpisodesPerShow(showTraktId)
 
     suspend fun deleteTrackedShow(trackedShow: TrackedShow) {
         Log.d(TAG, "deleteTrackedShow: Stop tracking Show ${trackedShow.title} // Trakt Id ${trackedShow.trakt_id}")

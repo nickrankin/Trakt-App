@@ -1,6 +1,7 @@
 package com.nickrankin.traktapp.helper
 
 import android.util.Log
+import androidx.lifecycle.lifecycleScope
 import androidx.room.withTransaction
 import com.nickrankin.traktapp.api.TraktApi
 import com.nickrankin.traktapp.dao.show.ShowsDatabase
@@ -12,6 +13,7 @@ import com.uwetrottmann.trakt5.enums.Extended
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import org.threeten.bp.OffsetDateTime
+import org.threeten.bp.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -32,9 +34,12 @@ class EpisodeTrackingDataHelper @Inject constructor(
         val trackedShows = trackedShowDao.getTrackedShows().first()
         val trackedEpisodes: MutableList<TrackedEpisode> = mutableListOf()
 
-            trackedShows.map { trackedShow ->
-                trackedEpisodes.addAll(getTrackedEpisodesPerShow(trackedShow.trakt_id))
-            }
+        trackedShows.map { trackedShow ->
+            trackedEpisodes.addAll(getTrackedEpisodesPerShow(trackedShow.trakt_id))
+        }
+
+        // After refreshing Tracked Episodes, remove any already expired
+        removeExpiredEpisodesForTracking()
 
         return trackedEpisodes
     }
@@ -118,24 +123,23 @@ class EpisodeTrackingDataHelper @Inject constructor(
                 trackedEpisodeDao.deleteAllEpisodesForNotification()
             }
         }
-
     }
 
-    suspend fun removeExpiredTrackedEpisodesPerShow(showTraktId: Int) {
-        val trackedEpisodes = trackedEpisodeDao.getAllEpisodesForShow(showTraktId).first()
-        val expiredTrackedEpisodes = trackedEpisodes.filter { it.airs_date?.isBefore(OffsetDateTime.now()) ?: false}
+    suspend fun removeExpiredEpisodesForTracking() {
+        val currentDateTime = OffsetDateTime.now()
+        val trackedEpisodes = trackedEpisodeDao.getAllEpisodesForNotification().first()
 
-        // Cancel any remaining alarms
-        expiredTrackedEpisodes.map { trackedEpisode ->
-            trackedEpisodeAlarmScheduler.cancelAlarm(trackedEpisode.trakt_id)
-        }
+        trackedEpisodes.map { trackedEpisode ->
+            if(trackedEpisode.airs_date?.isBefore(currentDateTime) == true) {
+                Log.d(TAG, "removeExpiredEpisodesForTracking: Episode $trackedEpisode is expired, removing from Tracking.")
 
-        // Remove the tracked episodes
-        showsDatabase.withTransaction {
-            trackedEpisodeDao.deleteAll(expiredTrackedEpisodes)
+                showsDatabase.withTransaction {
+                    trackedEpisodeDao.delete(trackedEpisode)
+                }
+            }
+
         }
     }
-
     private fun buildTrackedEpisodes(show: TmShow?, episodes: List<Episode>): List<TrackedEpisode> {
         val trackedEpisodes: MutableList<TrackedEpisode> = mutableListOf()
 
@@ -161,7 +165,7 @@ class EpisodeTrackingDataHelper @Inject constructor(
         return trackedEpisodes
     }
 
-    private fun scheduleAlarms(trackedEpisodes: List<TrackedEpisode>) {
+    private suspend fun scheduleAlarms(trackedEpisodes: List<TrackedEpisode>) {
         trackedEpisodes.map { trackedEpisode ->
             Log.d(TAG, "scheduleAlarms: Scheduling alarm for ${trackedEpisode.title} S${trackedEpisode.season}E${trackedEpisode.episode}. Airing ${trackedEpisode.airs_date}")
             trackedEpisodeAlarmScheduler.scheduleTrackedEpisodeAlarm(trackedEpisode)

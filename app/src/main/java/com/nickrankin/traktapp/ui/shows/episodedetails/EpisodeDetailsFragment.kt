@@ -48,6 +48,8 @@ class EpisodeDetailsFragment() : BaseFragment(), OnNavigateToShow,
 
     private var episodeDataModel: EpisodeDataModel? = null
 
+    private var shouldDismissEpisodeNotification = false
+
     @Inject
     lateinit var trackedEpisodesAlarmScheduler: TrackedEpisodeAlarmScheduler
 
@@ -75,7 +77,15 @@ class EpisodeDetailsFragment() : BaseFragment(), OnNavigateToShow,
             throw RuntimeException("EpisodeDataModel must be passed to this Activity.")
         }
 
-        episodeDataModel = arguments!!.getParcelable<EpisodeDataModel>(EPISODE_DATA_KEY)!!
+        episodeDataModel = arguments?.getParcelable<EpisodeDataModel>(EPISODE_DATA_KEY)
+        
+        val isClickedFromNotification = arguments?.getBoolean(CLICK_FROM_NOTIFICATION_KEY) ?: false
+        
+        if(isClickedFromNotification) {
+            Log.d(TAG, "onViewCreated: Episode clicked from notification")
+
+            shouldDismissEpisodeNotification = true
+        }
 
         viewModel.switchEpisodeDataModel(episodeDataModel!!)
 
@@ -93,18 +103,6 @@ class EpisodeDetailsFragment() : BaseFragment(), OnNavigateToShow,
         if(episodeTitle.isNotBlank()) {
             // In situation fragment got cached, make sure the title is changed when switched
             updateTitle(episodeTitle)
-        }
-    }
-
-    private fun dismissEipsodeNotifications() {
-        val episodeTraktId = arguments?.getInt(TrackedEpisodeNotificationsBuilder.EPISODE_TRAKT_ID)
-        Log.d(
-            TAG,
-            "dismissEipsodeNotifications: Dismissing notifications for episode ${episodeTraktId}",
-        )
-
-        lifecycleScope.launchWhenStarted {
-            trackedEpisodesAlarmScheduler.dismissNotification(episodeTraktId ?: 0, true)
         }
     }
 
@@ -172,6 +170,16 @@ class EpisodeDetailsFragment() : BaseFragment(), OnNavigateToShow,
                         progressBar.visibility = View.GONE
 
                         episodeTitle = episode?.name ?: "Unknown"
+
+                        // If user reaches episode via the notification, we dismiss the notification at this point
+                        if(shouldDismissEpisodeNotification) {
+                            val episodeTraktId = episodeResource.data?.episode_trakt_id
+                            if(episodeTraktId != null) {
+                                trackedEpisodesAlarmScheduler.dismissNotification(episodeTraktId, true)
+                            } else {
+                                Log.e(TAG, "dismissEipsodeNotifications: Episode Trakt Id cannot be null", )
+                            }
+                        }
 
                         updateTitle(episodeTitle)
 
@@ -304,5 +312,6 @@ class EpisodeDetailsFragment() : BaseFragment(), OnNavigateToShow,
             EpisodeDetailsFragment()
 
         const val EPISODE_DATA_KEY = "episode_data_key"
+        const val CLICK_FROM_NOTIFICATION_KEY = "click_notification_key"
     }
 }

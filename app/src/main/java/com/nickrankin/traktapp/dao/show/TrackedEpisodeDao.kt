@@ -29,6 +29,9 @@ interface TrackedEpisodeDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(trackedEpisodes: List<TrackedEpisode>)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insert(trackedEpisode: TrackedEpisode)
+
     @Update
     fun update(trackedEpisode: TrackedEpisode)
 

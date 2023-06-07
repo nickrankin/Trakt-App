@@ -114,11 +114,9 @@ class ShowsTrackingViewModel @Inject constructor(
     fun addTrackedShow(trackedShow: TrackedShow) =
         viewModelScope.launch { showsTrackingRepository.insertTrackedShow(trackedShow) }
 
-    fun stopTracking(trackedShow: TrackedShow) =
+    fun cancelTracking(trackedShow: TrackedShow) =
         viewModelScope.launch { showsTrackingRepository.deleteTrackedShow(trackedShow) }
 
-    suspend fun removeExpiredTrackedEpisodes(showTraktId: Int) =
-        showsTrackingRepository.removeExpiredTrackedShows(showTraktId)
 
     override fun applySorting(sortBy: String) {
         viewModelScope.launch {

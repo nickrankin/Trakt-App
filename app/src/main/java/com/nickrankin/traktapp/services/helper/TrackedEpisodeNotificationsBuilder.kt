@@ -27,9 +27,6 @@ private const val TAG = "TrackedEpisodeNotificat"
 @Singleton
 class TrackedEpisodeNotificationsBuilder(private val context: Context) {
     private var sharedPreferences: SharedPreferences
-    private var groupSummaryNotification: Notification
-
-    private var notificationSummaryDisplay = false
 
     init {
         Log.d(TAG, "Creating instance: ")
@@ -38,38 +35,29 @@ class TrackedEpisodeNotificationsBuilder(private val context: Context) {
         createNotificationChannel()
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-
-        groupSummaryNotification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_trakt_white_svgrepo_com)
-            .setStyle(NotificationCompat.InboxStyle()
-                .setSummaryText("Upcoming Episodes"))
-            .setGroup(GROUP_KEY)
-            .setGroupSummary(true)
-            .build()
     }
 
     fun buildNotification(trackedEpisode: TrackedEpisode) {
 
         if(trackedEpisode.alreadyNotified || OffsetDateTime.now().isAfter(trackedEpisode.airs_date)) {
             // No notification for already dismissed notifications one ones expired ...
+            Log.d(TAG, "buildNotification: Notfication not shown as alrwady notified or it has already aired $trackedEpisode")
             return
         }
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_trakt_white_svgrepo_com)
-            .setContentTitle("${trackedEpisode.show_title}")
-            .setContentText("Airing ${trackedEpisode.show_title} - Upcoming episode: ${trackedEpisode.title} (${convertToHumanReadableTime(trackedEpisode.airs_date!!)})")
+            .setContentTitle("Upcoming Episode - ${trackedEpisode.show_title}")
+            .setContentText("Season: ${ trackedEpisode.season } Episode: ${ trackedEpisode.episode } (Airing in: ${convertToHumanReadableTime(trackedEpisode.airs_date!!)})")
             .setContentIntent(getPendingIntent(trackedEpisode))
             .setDeleteIntent(getCancelPendingIntent(trackedEpisode))
-            .setStyle(NotificationCompat.BigTextStyle()
-                .bigText("Airing ${trackedEpisode.show_title} - ${trackedEpisode.title} - ${convertToHumanReadableTime(
-                    trackedEpisode.airs_date
-                )}"))
-            .setGroup(GROUP_KEY)
+//            .setStyle(NotificationCompat.BigTextStyle()
+//                .bigText("Airing ${trackedEpisode.show_title} - ${trackedEpisode.title} - ${convertToHumanReadableTime(
+//                    trackedEpisode.airs_date
+//                )}"))
             .setAutoCancel(true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-
-        displayAsSummaryGroup()
 
         with(NotificationManagerCompat.from(context)) {
             // notificationId is a unique int for each notification that you must define
@@ -77,19 +65,7 @@ class TrackedEpisodeNotificationsBuilder(private val context: Context) {
         }
     }
 
-    private fun displayAsSummaryGroup() {
-        synchronized(this) {
-            // Create one group
-            if(!notificationSummaryDisplay) {
-                Log.d(TAG, "buildNotification: Creating Summary Group")
-                with(NotificationManagerCompat.from(context)) {
-                    notify(SUMMARY_ID, groupSummaryNotification)
-                }
 
-                notificationSummaryDisplay = true
-            }
-        }
-    }
 
     private fun createNotificationChannel() {
         // Create the NotificationChannel, but only on API 26+ because
@@ -119,6 +95,8 @@ class TrackedEpisodeNotificationsBuilder(private val context: Context) {
             )
         )
 
+        intent.putExtra(EpisodeDetailsFragment.CLICK_FROM_NOTIFICATION_KEY, true)
+
         // Extra params to handle Notification dismissal in EpisodeDetailsActivity
         intent.putExtra(FROM_NOTIFICATION_TAP, true)
         intent.putExtra(EPISODE_TRAKT_ID, trackedEpisode.trakt_id)
@@ -147,6 +125,5 @@ class TrackedEpisodeNotificationsBuilder(private val context: Context) {
         const val CHANNEL_NAME = "Upcoming Episodes Notifications"
         const val CHANNEL_DESCRIPTION = "Upcoming Episodes Notifications"
         const val GROUP_KEY = "com.nickrankin.traktapp.notifications.shows.upcoming"
-        const val SUMMARY_ID = 0
     }
 }

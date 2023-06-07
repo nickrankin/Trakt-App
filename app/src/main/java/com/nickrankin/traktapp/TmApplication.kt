@@ -11,6 +11,7 @@ import androidx.core.app.ActivityCompat.recreate
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.*
 import com.nickrankin.traktapp.api.TraktApi
+import com.nickrankin.traktapp.services.DeleteExpiredEpisodesFromTrackingWorker
 import com.nickrankin.traktapp.services.EpisodeTrackingRefreshWorker
 import com.nickrankin.traktapp.services.StatsRefreshWorker
 import com.nickrankin.traktapp.ui.auth.AuthActivity
@@ -21,7 +22,10 @@ import javax.inject.Inject
 
 
 private const val REFRESH_INTERVAL = 24L
+private const val REFRESH_INTERVAL_REMOVE_EXPIRED_EPISODES = 4L
 private const val RETRY_INTERVAL = 30
+
+private const val EPISODES_DELETE_EXPIRED_TRACKING_ITEMS_KEY = "delete_expired_tracked_episodes"
 private const val EPISODES_NOTIFICATION_SERVICE_WORKER_KEY = "refresh_trakt_episodes_worker"
 private const val STATS_REFRESH_WORK_KEY = "refresh_user_stats_worker"
 
@@ -138,6 +142,8 @@ class TmApplication : Application(), Configuration.Provider {
     }
 
     private fun setupEpisodeNotificationService() {
+
+        // Refresh the users Tracked Shows to get any new Episodes
         val notificationsRefreshWork = PeriodicWorkRequestBuilder<EpisodeTrackingRefreshWorker>(
             REFRESH_INTERVAL, TimeUnit.HOURS
         ).addTag(EPISODES_NOTIFICATION_SERVICE_WORKER_KEY)
@@ -150,8 +156,22 @@ class TmApplication : Application(), Configuration.Provider {
             ExistingPeriodicWorkPolicy.KEEP,
             notificationsRefreshWork
         )
+
+        // Check every 4 hours if there are any Expired episodes being tracked and delete them
+        val expiredEpisodesDeletionWorker = PeriodicWorkRequestBuilder<DeleteExpiredEpisodesFromTrackingWorker>(
+            REFRESH_INTERVAL_REMOVE_EXPIRED_EPISODES, TimeUnit.HOURS
+        ).addTag(EPISODES_DELETE_EXPIRED_TRACKING_ITEMS_KEY)
+            .setBackoffCriteria(
+                BackoffPolicy.EXPONENTIAL, PeriodicWorkRequest.MIN_BACKOFF_MILLIS, TimeUnit.MINUTES
+            ).build()
+
+        workManager.enqueueUniquePeriodicWork(
+            EPISODES_DELETE_EXPIRED_TRACKING_ITEMS_KEY,
+            ExistingPeriodicWorkPolicy.KEEP,
+            expiredEpisodesDeletionWorker
+        )
     }
-    
+
     private fun setupStatisticsRefreshService() {
         Log.d(TAG, "setupStatisticsRefreshService: Setting up StatsRefreshWorker")
         val statsWork = PeriodicWorkRequestBuilder<StatsRefreshWorker>(

@@ -42,22 +42,11 @@ class ShowsMainActivity : SplitViewActivity(),
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if(intent.hasExtra(EpisodeDetailsFragment.EPISODE_DATA_KEY)) {
-            // User has click on a upcoming episode pending intent, bring him to the episode overview
-            val episodeDataModel = intent.getParcelableExtra<EpisodeDataModel>(EpisodeDetailsFragment.EPISODE_DATA_KEY)
-
-            if(episodeDataModel != null) {
-                navigateToEpisode(episodeDataModel)
-            }
-        }
-
         // Search defaults to shows
         setSearchType(SearchResultsActivity.TYPE_SHOW_KEY)
 
         initNavTabs()
-
         currentFragmentTag = savedInstanceState?.getString(SHOW_CURRENT_FRAGMENT_TAG) ?: ""
-
     }
 
     override fun onResume() {
@@ -82,14 +71,34 @@ class ShowsMainActivity : SplitViewActivity(),
             currentFragmentTag = intent.getStringExtra(SHOW_CURRENT_FRAGMENT_TAG) ?: ""
         }
 
-        if (currentFragmentTag.isNotBlank()) {
-            showTabsFragment.selectTab(selectTabByTag(currentFragmentTag))
+        // Episode to be shown individually
+        if (intent.hasExtra(EpisodeDetailsFragment.EPISODE_DATA_KEY)) {
+            Log.d(TAG, "navigateToFragment: Navigating to Episode directly")
+
+            // User has click on a upcoming episode pending intent, bring him to the episode overview
+            val episodeDataModel =
+                intent.getParcelableExtra<EpisodeDataModel>(EpisodeDetailsFragment.EPISODE_DATA_KEY)
+
+            val episodeDetailsFragment = EpisodeDetailsFragment.newInstance()
+            val bundle = Bundle()
+
+            bundle.putBoolean(EpisodeDetailsFragment.CLICK_FROM_NOTIFICATION_KEY, true)
+            bundle.putParcelable(EpisodeDetailsFragment.EPISODE_DATA_KEY, episodeDataModel)
+
+            episodeDetailsFragment.arguments = bundle
+
+
+            if (episodeDataModel != null) {
+                displayEpisode(episodeDetailsFragment)
+            }
         } else {
-
-            super.navigateToFragment(PROGRESS_SHOWS_TAG, true)
-            currentFragmentTag = PROGRESS_SHOWS_TAG
+            if (currentFragmentTag.isNotBlank()) {
+                showTabsFragment.selectTab(selectTabByTag(currentFragmentTag))
+            } else {
+                super.navigateToFragment(PROGRESS_SHOWS_TAG, true)
+                currentFragmentTag = PROGRESS_SHOWS_TAG
+            }
         }
-
     }
 
     private fun selectTabByTag(tag: String): Int {
@@ -99,25 +108,31 @@ class ShowsMainActivity : SplitViewActivity(),
                 tabPos = 0
 
             }
+
             UPCOMING_SHOWS_TAG -> {
                 tabPos = 1
 
             }
+
             WATCHED_SHOWS_TAG -> {
                 tabPos = 2
 
             }
+
             TRACKING_SHOWS_TAG -> {
                 tabPos = 3
 
             }
+
             COLLECTED_SHOWS_TAG -> {
                 tabPos = 4
 
             }
+
             SUGGESTED_SHOWS_TAG -> {
                 tabPos = 5
             }
+
             else -> {
                 tabPos = 0
             }
@@ -139,6 +154,7 @@ class ShowsMainActivity : SplitViewActivity(),
 
                 currentFragmentTag = PROGRESS_SHOWS_TAG
             }
+
             UPCOMING_SHOWS_TAG -> {
                 Log.d(TAG, "onTabSelected: Upcoming")
 
@@ -146,6 +162,7 @@ class ShowsMainActivity : SplitViewActivity(),
 
                 currentFragmentTag = UPCOMING_SHOWS_TAG
             }
+
             WATCHED_SHOWS_TAG -> {
                 Log.d(TAG, "onTabSelected: Watched")
 
@@ -153,6 +170,7 @@ class ShowsMainActivity : SplitViewActivity(),
 
                 currentFragmentTag = WATCHED_SHOWS_TAG
             }
+
             TRACKING_SHOWS_TAG -> {
                 Log.d(TAG, "onTabSelected: Tracking")
 
@@ -160,6 +178,7 @@ class ShowsMainActivity : SplitViewActivity(),
 
                 currentFragmentTag = TRACKING_SHOWS_TAG
             }
+
             COLLECTED_SHOWS_TAG -> {
                 Log.d(TAG, "onTabSelected: Collected")
 
@@ -167,6 +186,7 @@ class ShowsMainActivity : SplitViewActivity(),
 
                 currentFragmentTag = COLLECTED_SHOWS_TAG
             }
+
             SUGGESTED_SHOWS_TAG -> {
                 Log.d(TAG, "onTabSelected: Recommended")
 
@@ -174,6 +194,7 @@ class ShowsMainActivity : SplitViewActivity(),
 
                 currentFragmentTag = SUGGESTED_SHOWS_TAG
             }
+
             else -> {
                 Log.e(TAG, "onTabSelected: Fragment $fragmentTag not supported")
             }

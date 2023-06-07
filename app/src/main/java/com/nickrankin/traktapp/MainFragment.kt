@@ -66,13 +66,6 @@ class MainFragment: BaseFragment(), SwipeRefreshLayout.OnRefreshListener {
         savedInstanceState: Bundle?
     ): View {
 
-
-
-//        lifecycleScope.launchWhenStarted {
-//            trackedEpisodeAlarmScheduler.scheduleAllAlarms()
-//
-//        }
-
         _bindings = ActivityMainBinding.inflate(layoutInflater)
 
         return bindings.root

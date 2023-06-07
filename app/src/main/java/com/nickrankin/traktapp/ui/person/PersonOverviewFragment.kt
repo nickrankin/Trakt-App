@@ -483,7 +483,7 @@ class PersonOverviewFragment : BaseFragment() {
 
         // Populate the toggler chipgroup
         CrewType.values().map { crewType ->
-            val chip = Chip(requireContext(), null, R.style.Widget_MaterialComponents_Chip_Choice)
+            val chip = Chip(requireContext(), null, com.google.android.material.R.style.Widget_MaterialComponents_Chip_Choice)
            chip.isCheckable = true
 
             when(crewType) {

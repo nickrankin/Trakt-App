@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/debug_tracking_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:text="Tracking Notifications" />
+
+        <Button
+            android:id="@+id/debug_refresh_tracked_episodes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Refresh Tracked Shows" />
+
+        <Button
+            android:id="@+id/debug_remove_expired_episodes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Delete Expired Tracked Shows" />
+
+        <Button
+            android:id="@+id/debug_add_sample_episodes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Add Sample Tracked Episodes" />
+
+        <Button
+            android:id="@+id/debug_register_sample_notifications"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Create Sample Notifications" />
+
+        <Button
+            android:id="@+id/debug_register_delete_notifications"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Delete ALL Notifications" />
+
+    </LinearLayout>
+</ScrollView>

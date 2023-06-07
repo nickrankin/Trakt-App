@@ -20,10 +20,10 @@
         <!--        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>-->
         <!--        &lt;!&ndash; Customize your theme here. &ndash;&gt;-->
         <!--        <item name="toolbarStyle">@style/Custom.ActionBar</item>-->
-        <item name="android:statusBarColor" >@color/md_theme_dark_onPrimary</item>
+        <item name="android:statusBarColor">@color/md_theme_dark_onPrimary</item>
         <item name="android:actionBarStyle">@style/Custom.ActionBar</item>
 
-        <item name="android:action" >@color/md_theme_dark_onPrimary</item>
+        <item name="android:action">@color/md_theme_dark_onPrimary</item>
 
         <item name="colorPrimary">@color/md_theme_dark_primary</item>
         <item name="colorOnPrimary">@color/md_theme_dark_onPrimary</item>
@@ -62,6 +62,11 @@
 
     <style name="Custom.ActionBar" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
         <item name="background">@color/md_theme_dark_onPrimary</item>
+    </style>
+    <!-- Base application theme. -->
+    <style name="Base.Theme.TraktApp" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Customize your light theme here. -->
+        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
     </style>
 
 

@@ -2,6 +2,7 @@ package com.nickrankin.traktapp.ui.shows
 
 import android.content.DialogInterface
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Canvas
 import android.graphics.Typeface
 import android.os.Bundle
@@ -31,6 +32,7 @@ import com.google.android.flexbox.FlexboxLayoutManager
 import com.google.android.flexbox.JustifyContent
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
+import com.nickrankin.traktapp.BaseActivity
 import com.nickrankin.traktapp.BaseFragment
 import com.nickrankin.traktapp.OnNavigateToEntity
 import com.nickrankin.traktapp.R
@@ -68,14 +70,12 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
     private val bindings get() = _bindings!!
 
     private lateinit var fab: FloatingActionButton
-    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
     private lateinit var trackedShowsRecyclerView: RecyclerView
     private lateinit var trackedShowsAdapter: TrackedShowsAdapter
 
     private lateinit var addCollectDialog: AlertDialog
     private lateinit var addFromSearchDialog: AlertDialog
-    private lateinit var upcomingEpisodesDialog: AlertDialog
 
     private lateinit var collectedShowsRecyclerView: RecyclerView
     private lateinit var collectedShowsPickerAdapter: CollectedShowsPickerAdapter
@@ -84,9 +84,6 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
     private lateinit var searchShowsRecyclerView: RecyclerView
     private lateinit var searchShowsPickerAdapter: SearchResultShowsPickerAdapter
     private lateinit var searchShowsProgressBar: ProgressBar
-
-    private lateinit var upcomingEpisodesRecyclerView: RecyclerView
-    private lateinit var upcomingEpisodesAdapter: TrackedEpisodesAdapter
 
 //    // for testing
     @Inject
@@ -98,7 +95,6 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
     @Inject
     lateinit var tmdbImageLoader: TmdbImageLoader
 
-    private var isloggedIn = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -116,12 +112,7 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
 
         updateTitle("Tracked Shows")
 
-        isloggedIn = sharedPreferences.getBoolean(AuthActivity.IS_LOGGED_IN, false)
-
-        swipeRefreshLayout = bindings.showstrackingfragmentSwipeRefreshLayout
-        swipeRefreshLayout.setOnRefreshListener(this)
-
-        if (isloggedIn) {
+        if (isLoggedIn) {
             fab = bindings.showstrackingfragmentFab
             fab.visibility = View.VISIBLE
 
@@ -130,11 +121,9 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
             }
 
             initRecycler()
-            getViewType()
 
             createAddFromCollectionDialog()
             createAddFromSearchDialog()
-            createUpcomingEpisodesDialog()
 
             getTrackedShows()
             getCollectedShows()
@@ -169,10 +158,6 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
                         val trackedShows = trackedShowsResource.data
                         Log.d(TAG, "getTrackedShows: Loaded ${trackedShows?.size} tracked shows")
 
-                        if(swipeRefreshLayout.isRefreshing) {
-                            swipeRefreshLayout.isRefreshing = false
-                        }
-
                         bindings.showstrackingfragmentErrorText.visibility = View.GONE
                         trackedShowsRecyclerView.visibility = View.VISIBLE
 
@@ -189,15 +174,9 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
                     }
 
                     is Resource.Error -> {
-                        if(swipeRefreshLayout.isRefreshing) {
-                            swipeRefreshLayout.isRefreshing = false
-                        }
-
                         handleError(trackedShowsResource.error, null)
                     }
                 }
-
-
 
             }
         }
@@ -283,64 +262,31 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
 
     private fun initRecycler() {
         trackedShowsRecyclerView = bindings.showstrackingfragmentRecyclerview
+        trackedShowsRecyclerView.layoutManager = LinearLayoutManager(context)
 
-        switchRecyclerViewLayoutManager(requireContext(), trackedShowsRecyclerView, MediaEntryBaseAdapter.VIEW_TYPE_POSTER)
 
         trackedShowsAdapter = TrackedShowsAdapter(
-            controls = AdaptorActionControls(
-                context?.getDrawable(R.drawable.ic_baseline_live_tv_24), "Upcoming Episodes", false, R.menu.shows_tracking_popup_menu,
-                entrySelectedCallback = {selectedItem ->
-//                    navigateToShow(
-//                        selectedItem.ids?.trakt ?: 0,
-//                        selectedItem.ids?.tmdb ?: 0,
-//                        selectedItem.title)
-                },
-                buttonClickedCallback = { selectedShow ->
-//                    deleteRecommendation(selectedShow)
-                },
-                menuItemSelectedCallback = { selectedShow, menuItem ->
-                    when(menuItem) {
-                        R.id.suggestedpopupmenu_dismiss_suggestion -> {
-//                            deleteRecommendation(selectedShow)
-                        }
-                        else -> {
-                            Log.e(TAG, "initRecycler: Invalid menu item $menuItem")
-                        }
+            callback = { operation, selectedItem ->
+
+                when(operation) {
+                    TrackedShowsAdapter.OPT_VIEW -> {
+                        navigateToShow(selectedItem.trackedShow.trakt_id, selectedItem.trackedShow.tmdb_id, selectedItem.trackedShow.title)
+                    }
+                    TrackedShowsAdapter.OPT_LIST_EPISODES -> {
+                            createUpcomingEpisodesDialog(selectedItem.episodes).show()
+                    }
+                    TrackedShowsAdapter.OPT_STOP_TRACKING -> {
+                        viewModel.cancelTracking(selectedItem.trackedShow)
                     }
                 }
-            ),
-            tmdbImageLoader = tmdbImageLoader
+
+            },
+            tmdbImageLoader = tmdbImageLoader,
+            sharedPreferences = sharedPreferences
         )
-
-
-//        , callback = { trackedShowWithEpisodes ->
-//            val trackedShow = trackedShowWithEpisodes.trackedShow
-//            navigateToShow(trackedShow.trakt_id, trackedShow.tmdb_id, trackedShow.title)
-//        }) { showTitle, upcomingEpisodes ->
-//            upcomingEpisodesDialog.setTitle("Upcoming episodes for $showTitle")
-//            upcomingEpisodesAdapter.submitList(emptyList())
-//            upcomingEpisodesAdapter.submitList(upcomingEpisodes.filter {
-//                // Only show episodes which are airing after current time
-//                it?.airs_date?.isAfter(OffsetDateTime.now()) ?: false
-//            })
-//            upcomingEpisodesDialog.show()
-//        }
 
         trackedShowsRecyclerView.adapter = trackedShowsAdapter
     }
-
-    private fun getViewType() {
-        lifecycleScope.launchWhenStarted {
-            viewModel.viewType.collectLatest { viewType ->
-                trackedShowsAdapter.switchView(viewType)
-
-                switchRecyclerViewLayoutManager(requireContext(), trackedShowsRecyclerView, viewType)
-
-                trackedShowsRecyclerView.scrollToPosition(0)
-            }
-        }
-    }
-
 
     private fun createAddFromCollectionDialog() {
         val view = layoutInflater.inflate(R.layout.collected_shows_picker_dialog, null, false)
@@ -396,17 +342,18 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
         })
     }
 
-    private fun createUpcomingEpisodesDialog() {
-        val layoutManager = LinearLayoutManager(requireContext())
-        upcomingEpisodesRecyclerView = RecyclerView(requireContext())
-        upcomingEpisodesAdapter = TrackedEpisodesAdapter(sharedPreferences, tmdbImageLoader, callback = { trackedEpisode ->
+    private fun createUpcomingEpisodesDialog(trackedEpisodes: List<TrackedEpisode?>): AlertDialog {
+        val upcomingEpisodesRecyclerView = RecyclerView(requireContext())
+        val upcomingEpisodesAdapter = TrackedEpisodesAdapter(sharedPreferences, tmdbImageLoader, callback = { trackedEpisode ->
             navigateToEpisode(trackedEpisode.show_trakt_id, trackedEpisode.show_tmdb_id, trackedEpisode.season, trackedEpisode.episode, null)
         })
 
-        upcomingEpisodesRecyclerView.layoutManager = layoutManager
+        upcomingEpisodesRecyclerView.layoutManager = LinearLayoutManager(requireContext())
         upcomingEpisodesRecyclerView.adapter = upcomingEpisodesAdapter
 
-        upcomingEpisodesDialog = AlertDialog.Builder(requireContext())
+        upcomingEpisodesAdapter.submitList(trackedEpisodes)
+
+        return AlertDialog.Builder(requireContext())
             .setTitle("Upcoming episodes")
             .setView(upcomingEpisodesRecyclerView)
             .setNegativeButton("Exit", DialogInterface.OnClickListener { dialogInterface, i ->
@@ -416,8 +363,6 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
     }
 
     private fun initCollectedRecyclerView() {
-        setupViewSwipeBehaviour()
-
         val layoutManager = LinearLayoutManager(requireContext())
 
         collectedShowsPickerAdapter = CollectedShowsPickerAdapter(sharedPreferences) { collectedShow ->
@@ -498,6 +443,7 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
                 collectedShow.language,
                 collectedShow.airedDate,
                 collectedShow.runtime,
+                collectedShow.status,
                 OffsetDateTime.now()
             )
         )
@@ -515,6 +461,7 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
                 searchResult?.show?.language,
                 searchResult?.show?.first_aired,
                 searchResult?.show?.runtime,
+                searchResult?.show?.status,
                 OffsetDateTime.now()
             )
         )
@@ -527,133 +474,6 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
     private fun getUpcomingEpisodes(showTraktId: Int) {
         viewModel.getUpcomingEpisodesPerShow(showTraktId)
     }
-
-    private fun setupViewSwipeBehaviour() {
-
-        var itemTouchHelper: ItemTouchHelper? = null
-
-        itemTouchHelper = ItemTouchHelper(
-            object :
-                ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
-                override fun onMove(
-                    recyclerView: RecyclerView,
-                    viewHolder: RecyclerView.ViewHolder,
-                    target: RecyclerView.ViewHolder
-                ): Boolean {
-                    viewHolder.itemView.background = null
-
-                    return true
-                }
-
-                override fun onChildDraw(
-                    c: Canvas,
-                    recyclerView: RecyclerView,
-                    viewHolder: RecyclerView.ViewHolder,
-                    dX: Float,
-                    dY: Float,
-                    actionState: Int,
-                    isCurrentlyActive: Boolean
-                ) {
-                    val colorAlert = ContextCompat.getColor(requireContext(), R.color.red)
-                    val teal200 = ContextCompat.getColor(requireContext(), R.color.teal_200)
-                    val defaultWhiteColor = ContextCompat.getColor(requireContext(), R.color.white)
-
-                    ItemDecorator.Builder(c, recyclerView, viewHolder, dX, actionState).set(
-                        iconHorizontalMargin = 23f,
-                        backgroundColorFromStartToEnd = teal200,
-                        backgroundColorFromEndToStart = colorAlert,
-                        textFromStartToEnd = "",
-                        textFromEndToStart = "Stop Tracking",
-                        textColorFromStartToEnd = defaultWhiteColor,
-                        textColorFromEndToStart = defaultWhiteColor,
-                        iconTintColorFromStartToEnd = defaultWhiteColor,
-                        iconTintColorFromEndToStart = defaultWhiteColor,
-                        textSizeFromStartToEnd = 16f,
-                        textSizeFromEndToStart = 16f,
-                        typeFaceFromStartToEnd = Typeface.DEFAULT_BOLD,
-                        typeFaceFromEndToStart = Typeface.SANS_SERIF,
-                        iconResIdFromStartToEnd = R.drawable.ic_baseline_delete_forever_24,
-                        iconResIdFromEndToStart = R.drawable.ic_trakt_svgrepo_com
-                    )
-
-                    super.onChildDraw(
-                        c,
-                        recyclerView,
-                        viewHolder,
-                        dX,
-                        dY,
-                        actionState,
-                        isCurrentlyActive
-                    )
-
-                }
-
-                override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                    val showsList: MutableList<TrackedShowWithEpisodes> = mutableListOf()
-                    showsList.addAll(trackedShowsAdapter.currentList)
-
-                    val showPosition = viewHolder.layoutPosition
-                    val show = showsList[showPosition]
-
-                    when (direction) {
-                        ItemTouchHelper.LEFT -> {
-                            val updatedList: MutableList<TrackedShowWithEpisodes> = mutableListOf()
-                            updatedList.addAll(showsList)
-                            updatedList.remove(show)
-
-                            trackedShowsAdapter.submitList(updatedList)
-
-                            val timer = getTimer {
-                                Log.e(
-                                    TAG,
-                                    "onFinish: Timer ended for remove tracked show ${show.trackedShow.title}!"
-                                )
-                                viewModel.stopTracking(show.trackedShow)
-
-                            }.start()
-
-                            getSnackbar(
-                                trackedShowsRecyclerView,
-                                "You have stopped tracking: ${show.trackedShow.title}",
-                                "Cancel",
-                                Snackbar.LENGTH_LONG
-                            ) {
-                                timer.cancel()
-                                trackedShowsAdapter.submitList(showsList) {
-                                    // For first and last element, always scroll to the position to bring the element to focus
-                                    if (showPosition == 0) {
-                                        trackedShowsRecyclerView.scrollToPosition(0)
-                                    } else if (showPosition == showsList.size - 1) {
-                                        trackedShowsRecyclerView.scrollToPosition(showsList.size - 1)
-                                    }
-                                }
-                            }.show()
-                        }
-
-                        ItemTouchHelper.RIGHT -> {
-
-                        }
-
-                    }
-                }
-            }
-        )
-
-        itemTouchHelper.attachToRecyclerView(trackedShowsRecyclerView)
-    }
-
-    private fun getTimer(doAction: () -> Unit): CountDownTimer {
-        return object : CountDownTimer(5000, 1000) {
-            override fun onTick(p0: Long) {
-            }
-
-            override fun onFinish() {
-                doAction()
-            }
-        }
-    }
-
-
 
     override fun navigateToShow(traktId: Int, tmdbId: Int?, title: String?) {
         (activity as OnNavigateToEntity).navigateToShow(
@@ -731,39 +551,12 @@ class ShowsTrackingFragment : BaseFragment(), OnNavigateToShow, OnNavigateToEpis
 
     override fun onRefresh() {
         viewModel.onRefresh()
-
-        //generateTestNotifications()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
 
         _bindings = null
-    }
-
-    private fun generateTestNotifications() {
-        val testTrackingEpisodes = listOf(
-            TrackedEpisode(
-                5907165,3501517,42221,42445, OffsetDateTime.now().plusSeconds(6L),
-                null,"Episode 6","Borgen",4,6,OffsetDateTime.now(),0,false
-            ),
-            TrackedEpisode(
-                5907167,3501519,42221,42445,OffsetDateTime.now().plusSeconds(12L),null,"Episode 7","Borgen",4,7,OffsetDateTime.now(),0,false
-            ),
-            TrackedEpisode(
-                5907169,3501520,42221,42445,OffsetDateTime.now().plusSeconds(24L),null,"Episode 8","Borgen",4,8,OffsetDateTime.now(),0,false
-            )
-        )
-
-        lifecycleScope.launchWhenStarted {
-            showsDatabase.withTransaction {
-                showsDatabase.trackedEpisodeDao().insert(testTrackingEpisodes)
-            }
-        }
-
-        testTrackingEpisodes.map { ep ->
-            tracktAlarmScheduler.scheduleTrackedEpisodeAlarm(ep)
-        }
     }
 
     companion object {

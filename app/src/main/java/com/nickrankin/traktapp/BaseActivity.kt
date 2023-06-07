@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.FragmentManager
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.navigation.NavigationView
@@ -23,6 +24,7 @@ import com.nickrankin.traktapp.databinding.ActivitySplitviewBinding
 import com.nickrankin.traktapp.helper.IHandleError
 import com.nickrankin.traktapp.helper.Resource
 import com.nickrankin.traktapp.model.datamodel.*
+import com.nickrankin.traktapp.services.helper.TrackedEpisodeAlarmScheduler
 import com.nickrankin.traktapp.ui.OnSearchByGenre
 import com.nickrankin.traktapp.ui.auth.AuthActivity
 import com.nickrankin.traktapp.ui.lists.TraktListsActivity
@@ -59,9 +61,6 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
 
     private var errorHandled = false
 
-//    @Inject
-//    lateinit var trackedEpisodeAlarmScheduler: TrackedEpisodeAlarmScheduler
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -71,12 +70,6 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
         PreferenceManager.setDefaultValues(this, R.xml.root_preferences, false)
 
         _isLoggedIn = checkIsLoggedIn()
-
-//        lifecycleScope.launchWhenStarted {
-//            trackedEpisodeAlarmScheduler.scheduleAllAlarms()
-//
-//        }
-
     }
 
     private fun checkIsLoggedIn(): Boolean {
@@ -100,6 +93,10 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
 
         ((searchMenuItem).actionView as SearchView).apply {
             startSearch(this)
+        }
+
+        if(BuildConfig.DEBUG) {
+            menuInflater.inflate(R.menu.debug, menu)
         }
 
 
@@ -140,6 +137,11 @@ abstract class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationIt
             R.id.mainmenu_settings -> {
                 val intent = Intent(this, SettingsActivity::class.java)
                 startActivity(intent)
+            }
+            R.id.menudebug_debug -> {
+                startActivity(
+                    Intent(this, DebugActvity::class.java)
+                )
             }
             else -> {
 

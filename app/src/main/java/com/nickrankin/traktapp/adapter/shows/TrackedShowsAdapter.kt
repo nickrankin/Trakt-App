@@ -18,59 +18,65 @@ import com.nickrankin.traktapp.adapter.AdaptorActionControls
 import com.nickrankin.traktapp.adapter.MediaEntryBaseAdapter
 import com.nickrankin.traktapp.dao.show.model.TrackedEpisode
 import com.nickrankin.traktapp.dao.show.model.TrackedShowWithEpisodes
+import com.nickrankin.traktapp.databinding.LayoutTrackedShowBinding
 import com.nickrankin.traktapp.helper.AppConstants
 import com.nickrankin.traktapp.helper.ImageItemType
 import com.nickrankin.traktapp.helper.TmdbImageLoader
+import com.nickrankin.traktapp.helper.getFormattedDate
+import com.nickrankin.traktapp.helper.getFormattedDateTime
+import org.apache.commons.lang3.StringUtils
 import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 
 private const val TAG = "TrackedShowsAdapter"
-class TrackedShowsAdapter(val controls: AdaptorActionControls<TrackedShowWithEpisodes>, private val tmdbImageLoader: TmdbImageLoader): MediaEntryBaseAdapter<TrackedShowWithEpisodes>(
-    controls, COMPARATOR) {
+class TrackedShowsAdapter(val callback: (option: Int, trackedShowsWithEpisode: TrackedShowWithEpisodes) -> Unit, private val tmdbImageLoader: TmdbImageLoader, private val sharedPreferences: SharedPreferences): ListAdapter<TrackedShowWithEpisodes, TrackedShowsAdapter.TrackedItemViewHolder>(
+    COMPARATOR) {
 
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        super.onBindViewHolder(holder, holder.absoluteAdapterPosition)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrackedItemViewHolder {
+        return TrackedItemViewHolder(
+            LayoutTrackedShowBinding.inflate(
+                LayoutInflater.from(
+                    parent.context
+                ),
+                parent,
+                false
+            )
+        )
+    }
+
+    override fun onBindViewHolder(holder: TrackedItemViewHolder, position: Int) {
         val selectedShow = getItem(position)
 
-        when(holder) {
-            is MediaEntryBaseAdapter<*>.PosterViewHolder -> {
-                holder.bindings.apply {
+        holder.bindings.apply {
+            root.setOnClickListener {
+                callback(OPT_VIEW, selectedShow)
+            }
 
-                    itemTitle.text = "${selectedShow.trackedShow.title} (${selectedShow?.trackedShow?.releaseDate?.year})"
+            trackedshowTitle.text = selectedShow.trackedShow.title
+            trackedshowTrackedAt.text = "Tracked at: ${getFormattedDateTime(selectedShow.trackedShow.tracked_on, sharedPreferences.getString(AppConstants.DATE_FORMAT, AppConstants.DEFAULT_DATE_FORMAT), sharedPreferences.getString(AppConstants.TIME_FORMAT, AppConstants.DEFAULT_TIME_FORMAT))}"
+            trackedshowOverview.text = selectedShow.trackedShow.overview
 
-                    itemTimestamp.visibility = View.VISIBLE
+            trackedshowStatus.text = "Status: ${StringUtils.capitalize(selectedShow.trackedShow.status?.name?.lowercase())}"
 
-                    itemTimestamp.text = "Tracked on: " + selectedShow.trackedShow.tracked_on.atZoneSameInstant(
-                        ZoneId.systemDefault())?.format(
-                        DateTimeFormatter.ofPattern("dd/MM/YYYY"))
+            if(selectedShow.episodes.isNullOrEmpty()) {
+                trackedshowChipUpcoming.visibility = View.GONE
+            } else {
+                trackedshowChipUpcoming.visibility = View.VISIBLE
+                trackedshowChipUpcoming.text = "Airing Soon (${selectedShow.episodes.size})"
 
-
-                    tmdbImageLoader.loadImages(selectedShow.trackedShow.trakt_id, ImageItemType.SHOW, selectedShow.trackedShow.tmdb_id, selectedShow.trackedShow.title ?: "", selectedShow.trackedShow.language,true, itemPoster, null, false)
-
+                trackedshowChipUpcoming.setOnClickListener {
+                    callback(OPT_LIST_EPISODES, selectedShow)
                 }
+
             }
-            is MediaEntryBaseAdapter<*>.CardViewHolder -> {
-                holder.bindings.apply {
 
-                    itemTitle.text = "${selectedShow.trackedShow.title} (${selectedShow?.trackedShow?.releaseDate?.year})"
-
-                    itemWatchedDate.text = "Tracked on: " + selectedShow.trackedShow.tracked_on.atZoneSameInstant(
-                        ZoneId.systemDefault())?.format(
-                        DateTimeFormatter.ofPattern("dd/MM/YYYY"))
-
-                    itemOverview.text = selectedShow.trackedShow.overview
-
-                    tmdbImageLoader.loadImages(selectedShow.trackedShow.trakt_id, ImageItemType.SHOW, selectedShow.trackedShow.tmdb_id, selectedShow.trackedShow.title ?: "", selectedShow.trackedShow.language,true, itemPoster, itemBackdropImageview, false)
-
-                    updateUpcomingUpisodesCount(selectedShow, buttonControl)
-
-
-                }
+            trackedshowChipStopTracking.setOnClickListener {
+                callback(OPT_STOP_TRACKING, selectedShow)
             }
-            else -> {
-                Log.e(TAG, "onBindViewHolder: Invalid ViewHolder ${holder.javaClass.name}")
-            }
+
+            tmdbImageLoader.loadImages(selectedShow.trackedShow.trakt_id, ImageItemType.SHOW, selectedShow.trackedShow.tmdb_id, selectedShow.trackedShow.title, selectedShow.trackedShow.language, true, trackedshowPoster, null, false)
         }
+
     }
 
     private fun updateUpcomingUpisodesCount(trackedShowWithEpisodes: TrackedShowWithEpisodes, upcomingEpisodesButton: MaterialButton) {
@@ -86,7 +92,7 @@ class TrackedShowsAdapter(val controls: AdaptorActionControls<TrackedShowWithEpi
         }
     }
 
-    override fun reloadImages(
+    fun reloadImages(
         selectedItem: TrackedShowWithEpisodes,
         posterImageView: ImageView,
         backdropImageView: ImageView?
@@ -94,7 +100,12 @@ class TrackedShowsAdapter(val controls: AdaptorActionControls<TrackedShowWithEpi
         tmdbImageLoader.loadImages(selectedItem.trackedShow.trakt_id, ImageItemType.SHOW, selectedItem.trackedShow.tmdb_id, selectedItem.trackedShow.title ?: "", selectedItem.trackedShow.language,true, posterImageView, backdropImageView, true)
     }
 
+    inner class TrackedItemViewHolder(val bindings: LayoutTrackedShowBinding): RecyclerView.ViewHolder(bindings.root)
+
     companion object {
+        const val OPT_VIEW = 1
+        const val OPT_LIST_EPISODES = 2
+        const val OPT_STOP_TRACKING = 3
         val COMPARATOR = object: DiffUtil.ItemCallback<TrackedShowWithEpisodes>() {
             override fun areItemsTheSame(
                 oldItem: TrackedShowWithEpisodes,

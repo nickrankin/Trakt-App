@@ -17,5 +17,7 @@ class AppConstants {
         const val TMDB_MOVIE_URL = "https://www.themoviedb.org/movie/"
         const val TMDB_SHOW_URL = "https://www.themoviedb.org/tv/"
         const val TMDB_POSTER_URL = "https://image.tmdb.org/t/p/w500"
+
+        const val EPISODE_TRACKING_ENABLED = "enable_traked_show_notification"
     }
 }

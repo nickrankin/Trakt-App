@@ -108,6 +108,19 @@ open class SplitViewActivity : BaseActivity(), OnNavigateToEntity,
         navView.setNavigationItemSelectedListener(this)
     }
 
+    fun displayEpisode(episodeFragment: EpisodeDetailsFragment) {
+        Log.d(TAG, "displayEpisode: Displaying single episode")
+        supportFragmentManager.beginTransaction()
+            .replace(
+                bindings.splitviewactivityFirstContainer.id,
+                episodeFragment,
+                PRIMARY_FRAGMENT_TAG
+            )
+            .setReorderingAllowed(true)
+//                    .setPrimaryNavigationFragment(fragment)
+            .commit()
+    }
+
     override fun navigateToFragment(fragmentTag: String, loginRequired: Boolean) {
         if(loginRequired && !isLoggedIn) {
             Log.d(TAG, "navigateToFragment: You must be logged in to perform this action", )
